@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { site } from "@/content/site";
 import { album } from "@/content/album";
 import { assets } from "@/content/assets";
@@ -10,13 +10,7 @@ import { assets } from "@/content/assets";
 export default function ModoHero() {
   const [coverOk, setCoverOk] = useState(true);
 
-  // Parallax drift (very subtle)
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const bgX = useTransform(mx, [-1, 1], [-10, 10]);
-  const bgY = useTransform(my, [-1, 1], [-8, 8]);
-
-  // One-time reveal on first load (stored in sessionStorage)
+  // One-time reveal on first load
   const [reveal, setReveal] = useState(false);
 
   useEffect(() => {
@@ -32,41 +26,12 @@ export default function ModoHero() {
     }
   }, []);
 
-  const onMove = (e: React.MouseEvent<HTMLElement>) => {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-    const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-    mx.set(Math.max(-1, Math.min(1, dx)));
-    my.set(Math.max(-1, Math.min(1, dy)));
-  };
-
-  const onLeave = () => {
-    mx.set(0);
-    my.set(0);
-  };
-
-  // CSS background fallback if cover missing
-  const fallback = useMemo(
-    () => ({
-      background:
-        "radial-gradient(900px 520px at 30% 25%, rgba(11,27,52,0.70) 0%, transparent 60%)," +
-        "radial-gradient(800px 520px at 78% 38%, rgba(216,178,90,0.22) 0%, transparent 62%)," +
-        "radial-gradient(900px 520px at 60% 70%, rgba(154,147,139,0.14) 0%, transparent 62%)," +
-        "linear-gradient(180deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.78) 55%, rgba(0,0,0,0.92) 100%)",
-    }),
-    []
-  );
-
   return (
-    <section
-      className="relative isolate min-h-[92vh] w-full overflow-hidden"
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-    >
-      {/* Background */}
-      <div className="absolute inset-0 -z-10 hero-pop">
+    <section className="relative isolate min-h-[92vh] w-full overflow-hidden">
+      {/* Background — STATIC cover, no parallax */}
+      <div className="absolute inset-0 -z-10">
         {coverOk ? (
-          <motion.div style={{ x: bgX, y: bgY }} className="absolute inset-0 scale-[1.06]">
+          <div className="absolute inset-0 hero-cover-pop">
             <Image
               src={assets.cover}
               alt="Album cover background"
@@ -76,12 +41,13 @@ export default function ModoHero() {
               className="object-cover"
               onError={() => setCoverOk(false)}
             />
-          </motion.div>
+          </div>
         ) : (
-          <div className="absolute inset-0" style={fallback} />
+          <div className="absolute inset-0 hero-gradient" />
         )}
 
-        {/* Cinematic layers: vignette + warmth + storm */}
+        {/* Cinematic layers: deep blue + vignette + warmth + storm */}
+        <div className="absolute inset-0 hero-deep" />
         <div className="absolute inset-0 hero-vignette" />
         <div className="absolute inset-0 hero-warmth" />
         <div className="absolute inset-0 hero-storm" />
@@ -92,7 +58,7 @@ export default function ModoHero() {
         {/* Grain */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.10] grain-overlay" />
 
-        {/* Unique first-load "light reveal" */}
+        {/* First-load light reveal */}
         {reveal && (
           <motion.div
             className="pointer-events-none absolute inset-0 hero-reveal"

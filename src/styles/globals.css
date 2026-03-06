@@ -3,16 +3,11 @@
 @tailwind utilities;
 
 :root {
-  /* Keep the "old" deep-blue/inky base */
+  /* OLD FEEL: deep inky base + blue haze */
   --colour-bg: #09080e;
   --colour-ink: #f4f0e8;
 
-  /*
-    Album-art influence (subtle):
-    - amber sunrise warmth
-    - stormy grey
-    - deep blue haze
-  */
+  /* Album-art accents (keep subtle; do not turn whole page warm) */
   --colour-amber: #d8b25a;
   --colour-storm: #9a938b;
   --colour-deep: #0b1b34;
@@ -47,7 +42,7 @@ body {
   text-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
 }
 
-/* Prevent weird word/letter breaking (no "Glor / y") */
+/* Prevent awkward breaking ("Glor / y") */
 .modo-wrap {
   max-width: 28ch;
   overflow-wrap: normal;
@@ -93,16 +88,34 @@ body {
   backdrop-filter: blur(10px);
 }
 
-/*
-  Hero background: restores the first screenshot vibe.
-  Dark blue haze + subtle amber warmth (album) + storm grey depth.
-*/
-.hero-gradient {
-  background:
-    radial-gradient(900px 520px at 30% 25%, rgba(11,27,52,0.70) 0%, transparent 60%),
-    radial-gradient(800px 520px at 78% 38%, rgba(216,178,90,0.22) 0%, transparent 62%),
-    radial-gradient(900px 520px at 60% 70%, rgba(154,147,139,0.14) 0%, transparent 62%),
-    linear-gradient(180deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.78) 55%, rgba(0,0,0,0.92) 100%);
+/* OLD hero overlays (deep blue + subtle warmth) */
+.hero-vignette {
+  background: radial-gradient(
+    1200px 800px at 50% 40%,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,0.58) 70%,
+    rgba(0,0,0,0.82) 100%
+  );
+}
+
+/* Blue haze = the "old feel" */
+.hero-deep {
+  background: radial-gradient(980px 560px at 32% 28%, rgba(11,27,52,0.66) 0%, transparent 62%);
+}
+
+/* Warmth kept subtle */
+.hero-warmth {
+  background: radial-gradient(900px 520px at 78% 38%, rgba(216,178,90,0.16) 0%, transparent 62%);
+}
+
+/* Storm depth */
+.hero-storm {
+  background: radial-gradient(900px 620px at 30% 72%, rgba(154,147,139,0.12) 0%, transparent 60%);
+}
+
+/* Makes the cover stand out (crisper but still cinematic) */
+.hero-cover-pop {
+  filter: saturate(1.06) contrast(1.08) brightness(0.94);
 }
 
 /* Hero bottom blend into next section */
@@ -115,6 +128,31 @@ body {
   background: linear-gradient(to bottom, transparent, var(--colour-bg));
   pointer-events: none;
   z-index: 2;
+}
+
+/* Hero gradient fallback */
+.hero-gradient {
+  background:
+    radial-gradient(900px 520px at 30% 25%, rgba(11,27,52,0.70) 0%, transparent 60%),
+    radial-gradient(800px 520px at 78% 38%, rgba(216,178,90,0.22) 0%, transparent 62%),
+    radial-gradient(900px 520px at 60% 70%, rgba(154,147,139,0.14) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.78) 55%, rgba(0,0,0,0.92) 100%);
+}
+
+/* First-load light reveal */
+.hero-reveal {
+  background: radial-gradient(600px 400px at 50% 38%, rgba(241,215,166,0.12) 0%, transparent 70%);
+}
+
+.hero-reveal-beam {
+  background: radial-gradient(400px 250px at 50% 35%, rgba(255,255,255,0.08) 0%, transparent 70%);
+}
+
+/* Social links: small + readable */
+.hero-social {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 /* ── Image-flow tiles ────────────────────────────────── */
@@ -173,47 +211,4 @@ body {
 ::selection {
   background: var(--colour-amber);
   color: var(--colour-bg);
-}
-
-/* ── Hero cinematic layers ───────────────────────────── */
-.hero-vignette {
-  background: radial-gradient(1200px 800px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.58) 70%, rgba(0,0,0,0.80) 100%);
-}
-
-.hero-warmth {
-  background: radial-gradient(900px 520px at 76% 34%, rgba(216,178,90,0.24) 0%, transparent 62%);
-  mix-blend-mode: soft-light;
-}
-
-.hero-storm {
-  background: radial-gradient(900px 620px at 30% 72%, rgba(154,147,139,0.16) 0%, transparent 60%);
-  mix-blend-mode: overlay;
-}
-
-/* First-load light reveal */
-.hero-reveal {
-  background: radial-gradient(600px 400px at 50% 38%, rgba(241,215,166,0.12) 0%, transparent 70%);
-}
-
-.hero-reveal-beam {
-  background: radial-gradient(400px 250px at 50% 35%, rgba(255,255,255,0.08) 0%, transparent 70%);
-}
-
-/* More POP (premium, subtle) */
-.hero-pop {
-  animation: heroPopPulse 7.5s ease-in-out infinite;
-  transform: translateZ(0);
-}
-
-@keyframes heroPopPulse {
-  0%   { opacity: 0.95; filter: saturate(1.00) contrast(1.00); }
-  45%  { opacity: 1.00; filter: saturate(1.06) contrast(1.06); }
-  100% { opacity: 0.95; filter: saturate(1.00) contrast(1.00); }
-}
-
-/* Social links: small + readable */
-.hero-social {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
 }
