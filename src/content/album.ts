@@ -13,7 +13,7 @@ export const albumConfig = {
   title: "From Darkness To Light",
   subtitle: "\u2132\u0279o\u026F \u15E1\u0250\u0279\u029E\u01DD\u0073\u0073 \u2020o \uD835\uDD43\u0268\uD835\uDD58\uD835\uDCF1\uD835\uDC13",
   year: 2025,
-  cover: "/media/album.jpg",
+  cover: "/media/cover.jpg",
   streamingLinks: {
     spotify: "#",
     appleMusic: "#",

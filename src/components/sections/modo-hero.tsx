@@ -13,7 +13,7 @@ export default function ModoHero() {
       {/* Background image — ocean hero with fallback */}
       {!imgError ? (
         <img
-          src={assets.oceanHero}
+          src={assets.hero}
           alt=""
           onError={() => setImgError(true)}
           className="absolute inset-0 w-full h-full object-cover"
