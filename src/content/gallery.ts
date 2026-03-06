@@ -7,27 +7,12 @@ export type GalleryItem = {
 export const homeGallery: GalleryItem[] = [
   {
     src: "/media/cover.jpg",
-    alt: "Album cover art — From Darkness To Light",
+    alt: "Light breaking into darkness — From Darkness To Light",
     caption: "From Darkness To Light",
   },
   {
-    src: "/media/artist.jpg",
-    alt: "Artist portrait — All The Glory",
-    caption: "All The Glory",
-  },
-  {
-    src: "/media/cover.jpg",
-    alt: "Album artwork detail",
-    caption: "Truth that sets us free",
-  },
-  {
-    src: "/media/artist.jpg",
-    alt: "Artist portrait detail",
-    caption: "Hope in Jesus",
-  },
-  {
-    src: "/media/cover.jpg",
-    alt: "From Darkness To Light",
-    caption: "From darkness to light",
+    src: "/media/dad.jpg",
+    alt: "Father and son — the story behind the music",
+    caption: "Where it all began",
   },
 ];

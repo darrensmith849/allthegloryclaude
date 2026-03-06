@@ -64,7 +64,7 @@ export default function ModoHero() {
       onMouseLeave={onLeave}
     >
       {/* Background */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 hero-pop">
         {coverOk ? (
           <motion.div style={{ x: bgX, y: bgY }} className="absolute inset-0 scale-[1.06]">
             <Image
@@ -113,26 +113,6 @@ export default function ModoHero() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent to-[var(--colour-bg)]" />
       </div>
 
-      {/* Top-left socials (visible) */}
-      <div className="absolute left-6 top-24 md:top-28 z-10 hidden md:flex flex-col gap-2">
-        <a
-          href={site.socials.instagram}
-          target="_blank"
-          rel="noreferrer"
-          className="surface rounded-full px-4 py-2 text-xs tracking-[0.22em] uppercase text-white/85 hover:text-white shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
-        >
-          Instagram ↗
-        </a>
-        <a
-          href={site.socials.youtube}
-          target="_blank"
-          rel="noreferrer"
-          className="surface rounded-full px-4 py-2 text-xs tracking-[0.22em] uppercase text-white/85 hover:text-white shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
-        >
-          YouTube ↗
-        </a>
-      </div>
-
       {/* Foreground */}
       <div className="mx-auto w-full max-w-6xl px-6 pt-24 pb-16 md:pt-28 md:pb-20">
         <motion.div
@@ -163,27 +143,27 @@ export default function ModoHero() {
               A testimony of truth and freedom — from darkness to light.
             </p>
           </div>
-
-          {/* Mobile socials */}
-          <div className="mt-8 flex gap-3 md:hidden">
-            <a
-              href={site.socials.instagram}
-              target="_blank"
-              rel="noreferrer"
-              className="surface rounded-full px-4 py-2 text-xs tracking-[0.22em] uppercase text-white/85 hover:text-white"
-            >
-              Instagram ↗
-            </a>
-            <a
-              href={site.socials.youtube}
-              target="_blank"
-              rel="noreferrer"
-              className="surface rounded-full px-4 py-2 text-xs tracking-[0.22em] uppercase text-white/85 hover:text-white"
-            >
-              YouTube ↗
-            </a>
-          </div>
         </motion.div>
+      </div>
+
+      {/* Bottom-left socials — small + subtle */}
+      <div className="absolute bottom-8 left-6 z-10 flex gap-4">
+        <a
+          href={site.socials.instagram}
+          target="_blank"
+          rel="noreferrer"
+          className="hero-social text-white/50 hover:text-white/90 transition-colors"
+        >
+          Instagram ↗
+        </a>
+        <a
+          href={site.socials.youtube}
+          target="_blank"
+          rel="noreferrer"
+          className="hero-social text-white/50 hover:text-white/90 transition-colors"
+        >
+          YouTube ↗
+        </a>
       </div>
     </section>
   );

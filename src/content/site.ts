@@ -11,6 +11,8 @@ export const site = {
     { label: "Music", href: "/music" },
     { label: "Videos", href: "/videos" },
     { label: "Events", href: "/events" },
+    { label: "Store", href: "/store" },
+    { label: "Give", href: "/give" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ],
