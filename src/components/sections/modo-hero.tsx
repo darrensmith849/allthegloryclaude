@@ -31,7 +31,7 @@ export default function ModoHero() {
       {/* Background — STATIC cover, no parallax */}
       <div className="absolute inset-0 -z-10">
         {coverOk ? (
-          <div className="absolute inset-0 hero-cover-pop">
+          <div className="absolute inset-0 hero-cover-pop hero-pop-2ko">
             <Image
               src={assets.cover}
               alt="Album cover background"
@@ -54,6 +54,9 @@ export default function ModoHero() {
 
         {/* Legibility veil */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
+
+        {/* 2KO grid overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-grid bg-grid-fade" />
 
         {/* Grain */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.10] grain-overlay" />
@@ -92,10 +95,11 @@ export default function ModoHero() {
             <span className="block">Glory</span>
           </h1>
 
-          <div className="mt-8 surface rounded-2xl px-5 py-5 md:px-6 md:py-6">
-            <div className="text-xs uppercase tracking-[0.28em] text-white/70">
-              New album
-            </div>
+          <div className="pill mt-6 mb-4">
+            <span>New Album</span>
+          </div>
+
+          <div className="mt-4 panel panel-hover px-5 py-5 md:px-6 md:py-6">
 
             <div className="mt-2 text-2xl md:text-3xl font-semibold text-white/92">
               {album.title}

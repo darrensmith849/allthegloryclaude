@@ -27,7 +27,7 @@ function Tile({
         delay: index * 0.15,
         ease: [0.16, 1, 0.3, 1],
       }}
-      className="image-flow-tile aspect-[3/4]"
+      className="image-flow-tile panel panel-hover aspect-[3/4]"
     >
       {!imgError ? (
         <img
@@ -55,6 +55,10 @@ export default function ImageFlow() {
   return (
     <section className="relative w-full py-24 md:py-32">
       <div className="max-w-7xl mx-auto px-6">
+        <div className="section-head mb-14">
+          <h2 className="section-title">Gallery</h2>
+          <p className="section-subtitle">A visual journey through the album</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
           {homeGallery.map((item, i) => (
             <Tile

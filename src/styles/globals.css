@@ -212,3 +212,80 @@ body {
   background: var(--colour-amber);
   color: var(--colour-bg);
 }
+
+/* ===================== 2KO THEME LAYER ===================== */
+
+/* Subtle grid background like 2KO */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center;
+}
+
+/* Fade the grid near edges so it feels premium */
+.bg-grid-fade {
+  mask-image: radial-gradient(70% 60% at 50% 28%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 28%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0) 100%);
+}
+
+/* 2KO-style pill label */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(216,178,90,0.28);
+  background: rgba(0,0,0,0.28);
+  color: rgba(216,178,90,0.92);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+}
+
+/* Panels like the 2KO cards */
+.panel {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.35);
+}
+
+/* Panel hover = slight lift + brighter edge */
+.panel-hover {
+  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+}
+.panel-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+}
+
+/* Section headers (centred like 2KO) */
+.section-head {
+  text-align: center;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.section-title {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  line-height: 1.05;
+  font-weight: 600;
+  color: rgba(244,240,232,0.92);
+}
+.section-subtitle {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(244,240,232,0.58);
+}
+
+/* Optional: gives "pop" without changing palette */
+.hero-pop-2ko {
+  filter: saturate(1.05) contrast(1.06) brightness(0.94);
+}
