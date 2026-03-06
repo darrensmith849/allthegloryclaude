@@ -5,4 +5,5 @@
 export const assets = {
   albumCover: "/media/album.jpg",
   artistPortrait: "/media/artist.jpg",
+  oceanHero: "/media/ocean.jpg",
 } as const;

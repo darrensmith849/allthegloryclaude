@@ -10,10 +10,10 @@ export default function ModoHero() {
 
   return (
     <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image with fallback */}
+      {/* Background image — ocean hero with fallback */}
       {!imgError ? (
         <img
-          src={assets.artistPortrait}
+          src={assets.oceanHero}
           alt=""
           onError={() => setImgError(true)}
           className="absolute inset-0 w-full h-full object-cover"
