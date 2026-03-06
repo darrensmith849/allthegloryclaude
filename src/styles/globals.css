@@ -3,26 +3,36 @@
 @tailwind utilities;
 
 :root {
-  /* British spelling + site palette */
-  --colour-bg: #09080e;
+  /* LOCKED background (matches current screenshot feel) */
+  --colour-bg: #100E12;
+  --colour-bg-rgb: 16 14 18;
+
   --colour-ink: #f4f0e8;
+  --colour-ink-rgb: 244 240 232;
   --colour-accent-1: #d8b25a;
   --colour-accent-2: #9a938b;
   --colour-glow: #f1d7a6;
   --colour-surface: rgba(255,255,255,0.06);
 
   /* RGB triplets for Tailwind opacity modifier support */
-  --colour-bg-rgb: 9 8 14;
   --colour-fg-rgb: 244 240 232;
   --colour-accent-rgb: 216 178 90;
   --colour-surface-rgb: 18 17 26;
 }
 
-html, body { height: 100%; }
+/* Hard lock page background */
+html, body {
+  height: 100%;
+  background-color: rgb(var(--colour-bg-rgb) / 1) !important;
+}
 
 body {
-  background: var(--colour-bg);
-  color: var(--colour-ink);
+  color: rgb(var(--colour-ink-rgb) / 1);
+}
+
+/* Ensure common wrappers don't override background */
+main {
+  background-color: transparent;
 }
 
 /* Big Modo-like title */
