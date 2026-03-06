@@ -2,35 +2,21 @@
 
 import { motion } from "framer-motion";
 import { album } from "@/content/album";
-import { assets } from "@/content/assets";
 import { site } from "@/content/site";
-import { useState } from "react";
 
 export default function ModoHero() {
-  const [imgError, setImgError] = useState(false);
-
   return (
     <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image — ocean hero with fallback */}
-      {!imgError ? (
-        <img
-          src={assets.hero}
-          alt=""
-          onError={() => setImgError(true)}
-          className="absolute inset-0 w-full h-full object-cover"
-          aria-hidden="true"
-        />
-      ) : (
-        <div className="absolute inset-0 fallback-gradient" aria-hidden="true" />
-      )}
+      {/* Gradient-only background — moody amber/storm/deep-blue */}
+      <div className="absolute inset-0 hero-gradient" aria-hidden="true" />
 
-      {/* Legibility veil */}
-      <div className="hero-legibility-veil" aria-hidden="true" />
+      {/* Grain */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.08] grain-overlay" aria-hidden="true" />
 
       {/* Bottom gradient blend */}
       <div className="hero-bottom-blend" aria-hidden="true" />
 
-      {/* Social links — left rail (desktop) */}
+      {/* Social links — top-left (desktop) */}
       <div className="absolute top-8 left-8 z-20 hidden md:flex flex-col gap-3 text-xs tracking-[0.22em] uppercase text-white/70">
         <a href={site.socials.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
           Instagram ↗
@@ -67,7 +53,7 @@ export default function ModoHero() {
           </p>
           <p
             className="subtitle-glyph mt-3"
-            style={{ color: "var(--colour-accent-1)", opacity: 0.9 }}
+            style={{ color: "var(--colour-amber)", opacity: 0.9 }}
           >
             {album.subtitle}
           </p>
@@ -85,7 +71,7 @@ export default function ModoHero() {
               href={cta.href}
               className="inline-block px-8 py-3 text-sm font-semibold uppercase tracking-widest transition-colors duration-300"
               style={{
-                background: "var(--colour-accent-1)",
+                background: "var(--colour-amber)",
                 color: "var(--colour-bg)",
               }}
             >

@@ -3,54 +3,53 @@
 @tailwind utilities;
 
 :root {
-  /* LOCKED background (matches current screenshot feel) */
-  --colour-bg: #100E12;
-  --colour-bg-rgb: 16 14 18;
-
+  /* Keep the "old" deep-blue/inky base */
+  --colour-bg: #09080e;
   --colour-ink: #f4f0e8;
-  --colour-ink-rgb: 244 240 232;
-  --colour-accent-1: #d8b25a;
-  --colour-accent-2: #9a938b;
+
+  /*
+    Album-art influence (subtle):
+    - amber sunrise warmth
+    - stormy grey
+    - deep blue haze
+  */
+  --colour-amber: #d8b25a;
+  --colour-storm: #9a938b;
+  --colour-deep: #0b1b34;
   --colour-glow: #f1d7a6;
+
   --colour-surface: rgba(255,255,255,0.06);
 
-  /* RGB triplets for Tailwind opacity modifier support */
+  /* Tailwind compatibility aliases */
+  --colour-accent-1: #d8b25a;
+  --colour-accent-2: #9a938b;
+  --colour-bg-rgb: 9 8 14;
   --colour-fg-rgb: 244 240 232;
   --colour-accent-rgb: 216 178 90;
   --colour-surface-rgb: 18 17 26;
 }
 
-/* Hard lock page background */
 html, body {
   height: 100%;
-  background-color: rgb(var(--colour-bg-rgb) / 1) !important;
+  background: var(--colour-bg);
 }
 
 body {
-  color: rgb(var(--colour-ink-rgb) / 1);
+  color: var(--colour-ink);
 }
 
-/* Ensure common wrappers don't override background */
-main {
-  background-color: transparent;
-}
-
-/* Big Modo-like title */
+/* Big title */
 .modo-title {
   font-size: clamp(2.8rem, 7.2vw, 6.6rem);
   line-height: 0.92;
   letter-spacing: -0.03em;
   font-weight: 600;
-  text-shadow: 0 24px 90px rgba(0, 0, 0, 0.58);
+  text-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
 }
 
-/*
-Fix: do NOT allow aggressive word-breaking.
-This prevents "Glor / y" style fragmentation.
-Allow wraps only at spaces between words.
-*/
+/* Prevent weird word/letter breaking (no "Glor / y") */
 .modo-wrap {
-  max-width: 26ch;
+  max-width: 28ch;
   overflow-wrap: normal;
   word-break: normal;
   hyphens: none;
@@ -83,18 +82,30 @@ Allow wraps only at spaces between words.
   z-index: 9999;
   opacity: 0.035;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.33'/%3E%3C/svg%3E");
   background-size: 220px 220px;
 }
 
-/* Optional: subtle glass surface utility */
+/* Glass surface */
 .surface {
   background: var(--colour-surface);
   border: 1px solid rgba(255,255,255,0.10);
   backdrop-filter: blur(10px);
 }
 
-/* ── Hero overlays ───────────────────────────────────── */
+/*
+  Hero background: restores the first screenshot vibe.
+  Dark blue haze + subtle amber warmth (album) + storm grey depth.
+*/
+.hero-gradient {
+  background:
+    radial-gradient(900px 520px at 30% 25%, rgba(11,27,52,0.70) 0%, transparent 60%),
+    radial-gradient(800px 520px at 78% 38%, rgba(216,178,90,0.22) 0%, transparent 62%),
+    radial-gradient(900px 520px at 60% 70%, rgba(154,147,139,0.14) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.78) 55%, rgba(0,0,0,0.92) 100%);
+}
+
+/* Hero bottom blend into next section */
 .hero-bottom-blend {
   position: absolute;
   bottom: 0;
@@ -104,13 +115,6 @@ Allow wraps only at spaces between words.
   background: linear-gradient(to bottom, transparent, var(--colour-bg));
   pointer-events: none;
   z-index: 2;
-}
-
-.hero-legibility-veil {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 1;
 }
 
 /* ── Image-flow tiles ────────────────────────────────── */
@@ -161,12 +165,12 @@ Allow wraps only at spaces between words.
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--colour-accent-2);
+  background: var(--colour-storm);
   border-radius: 3px;
 }
 
 /* ── Selection ───────────────────────────────────────── */
 ::selection {
-  background: var(--colour-accent-1);
+  background: var(--colour-amber);
   color: var(--colour-bg);
 }
