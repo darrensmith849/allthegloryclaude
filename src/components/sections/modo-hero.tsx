@@ -55,9 +55,6 @@ export default function ModoHero() {
         {/* Legibility veil */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
 
-        {/* 2KO grid overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-grid bg-grid-fade" />
-
         {/* Grain */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.10] grain-overlay" />
 
