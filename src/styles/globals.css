@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* British spelling — hex values for direct CSS usage */
+  --colour-bg: #09080e;
+  --colour-ink: #f4f0e8;
+  --colour-accent-1: #d8b25a;
+  --colour-accent-2: #9a938b;
+  --colour-glow: #f1d7a6;
+  --colour-surface: #12111a;
+
+  /* RGB triplets for Tailwind opacity modifier support */
+  --colour-bg-rgb: 9 8 14;
+  --colour-fg-rgb: 244 240 232;
+  --colour-accent-rgb: 216 178 90;
+  --colour-surface-rgb: 18 17 26;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--colour-bg);
+  color: var(--colour-ink);
+}
+
+/* ── Modo-style giant title ──────────────────────────── */
+.modo-title {
+  font-size: clamp(3rem, 7.2vw, 6.8rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  text-shadow: 0 24px 90px rgba(0, 0, 0, 0.58);
+}
+
+/* Forces clean wrapping behaviour */
+.modo-wrap {
+  max-width: 18ch;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* ── Subtitle: Unicode glyph fallback ────────────────── */
+.subtitle-glyph {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Sans Symbols 2",
+    "Noto Sans Symbols",
+    "Noto Sans",
+    Arial,
+    sans-serif;
+  letter-spacing: 0.02em;
+  text-rendering: geometricPrecision;
+}
+
+/* ── Grain overlay ───────────────────────────────────── */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* ── Hero overlays ───────────────────────────────────── */
+.hero-bottom-blend {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, transparent, var(--colour-bg));
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hero-legibility-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+
+/* ── Image-flow tiles ────────────────────────────────── */
+.image-flow-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.image-flow-tile img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image-flow-tile:hover img {
+  transform: scale(1.05);
+}
+
+.image-flow-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── Fallback gradient when images are missing ───────── */
+.fallback-gradient {
+  background: linear-gradient(
+    135deg,
+    #1a1a2e 0%,
+    #16213e 25%,
+    #0f3460 50%,
+    #1a1a2e 75%,
+    #09080e 100%
+  );
+}
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--colour-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--colour-accent-2);
+  border-radius: 3px;
+}
+
+/* ── Selection ───────────────────────────────────────── */
+::selection {
+  background: var(--colour-accent-1);
+  color: var(--colour-bg);
+}
