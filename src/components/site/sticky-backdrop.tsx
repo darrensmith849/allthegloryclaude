@@ -17,40 +17,24 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Layer 1: Base — guitar/red door (IMG_0442) */}
+      {/* Layer 1: Base — night sky + stars (IMG_2746) */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src="/media/IMG_0442.jpg"
+          src="/media/IMG_2746.jpg"
           alt="Backdrop"
           fill
           priority
           sizes="100vw"
           className="object-cover"
           quality={100}
-          style={{ objectPosition: "50% 50%" }}
+          style={{ objectPosition: "50% 40%", filter: "brightness(1.6) contrast(1.2)" }}
         />
       </motion.div>
 
-      {/* Layer 2: Night sky + stars (IMG_2746) — lighten blend so stars punch through */}
+      {/* Layer 2: Ocean + stormy sky (IMG_2678) — screen blend for blue/storm mood */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "lighten", opacity: 0.75 }}
-      >
-        <Image
-          src="/media/IMG_2746.jpg"
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover"
-          quality={90}
-          style={{ objectPosition: "50% 40%", filter: "brightness(1.8) contrast(1.3)" }}
-        />
-      </div>
-
-      {/* Layer 3: Ocean + stormy sky (IMG_2678) — overlay blend for blue/storm mood */}
-      <div
-        className="absolute inset-0"
-        style={{ mixBlendMode: "overlay", opacity: 0.60 }}
+        style={{ mixBlendMode: "screen", opacity: 0.65 }}
       >
         <Image
           src="/media/IMG_2678.jpg"
@@ -58,7 +42,7 @@ export default function StickyBackdrop() {
           fill
           sizes="100vw"
           className="object-cover"
-          quality={90}
+          quality={100}
           style={{ objectPosition: "50% 35%" }}
         />
       </div>
