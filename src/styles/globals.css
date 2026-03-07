@@ -203,7 +203,6 @@ body { background: transparent; color: var(--colour-ink); }
 .hero-corner {
   font-size: 11px;
   letter-spacing: 0.26em;
-  text-transform: uppercase;
   color: rgba(244,240,232,0.55);
 }
 .hero-caption {
