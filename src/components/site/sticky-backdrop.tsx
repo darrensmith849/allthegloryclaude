@@ -41,10 +41,13 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
-      {/* Cloud layer — on top with screen blend so it merges with the stars */}
+      {/* Dark veil — fades to nothing as you scroll */}
+      <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
+
+      {/* Cloud layer — blended on top of everything */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "screen", opacity: 0.5 }}
+        style={{ opacity: 0.35 }}
       >
         <Image
           src="/media/clouds.jpg"
@@ -54,13 +57,10 @@ export default function StickyBackdrop() {
           className="object-cover"
           quality={90}
           style={{
-            filter: "brightness(0.8) contrast(1.2)",
+            filter: "brightness(1.2) contrast(1.1)",
           }}
         />
       </div>
-
-      {/* Dark veil — fades to nothing as you scroll */}
-      <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
       {/* LIGHT BAND — wide glow across the top, moves down + intensifies on scroll */}
       <motion.div
