@@ -7,8 +7,8 @@ export type GalleryItem = {
 export const homeGallery: GalleryItem[] = [
   {
     src: "/media/cover.jpg",
-    alt: "Light breaking into darkness — From Darkness To Light",
-    caption: "From Darkness To Light",
+    alt: "Light breaking into darkness — Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
+    caption: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   },
   {
     src: "/media/dad.jpg",

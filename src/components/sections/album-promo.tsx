@@ -22,7 +22,7 @@ export default function AlbumPromo() {
           <div>
             <div className="text-xs uppercase tracking-[0.28em] text-white/70">Album</div>
             <h2 className="mt-2 text-2xl md:text-3xl font-semibold text-white/92">
-              From Darkness To Light
+              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
             </h2>
 
             <p className="subtitle-glyph mt-2 text-sm md:text-base text-white/75">
@@ -30,7 +30,7 @@ export default function AlbumPromo() {
             </p>
 
             <p className="mt-4 text-sm md:text-base text-white/70 leading-relaxed">
-              A testimony of truth and freedom — from darkness to light.
+              A testimony of truth and freedom — Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">

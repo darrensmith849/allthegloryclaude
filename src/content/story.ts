@@ -1,4 +1,4 @@
-export const storyTitle = "From Darkness To Light";
+export const storyTitle = "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓";
 export const storyKicker = "Truth that sets us free.";
 
 export const storyParagraphs = [

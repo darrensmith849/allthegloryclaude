@@ -20,7 +20,7 @@ export default function StickyBackdrop() {
     <div className="fixed inset-0 -z-50">
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src="/media/artist.jpg"
+          src="/media/IMG_0442.jpg"
           alt="Backdrop"
           fill
           priority

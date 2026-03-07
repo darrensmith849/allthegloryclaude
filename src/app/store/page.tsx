@@ -12,7 +12,7 @@ export default function StorePage() {
     <main className="bg-transparent">
       <div className="mx-auto w-full max-w-4xl px-6 py-16">
         <h1 className="text-3xl md:text-4xl font-semibold text-white">Buy the album</h1>
-        <p className="mt-4 text-white/70">From Darkness To Light — digital download.</p>
+        <p className="mt-4 text-white/70">Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓 — digital download.</p>
 
         <div className="mt-8 panel-scrim p-6">
           <div className="text-xl font-semibold text-white">$10</div>
