@@ -2,12 +2,10 @@
 
 import Image from "next/image";
 import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
-import { assets } from "@/content/assets";
 
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
-  // More POP / lighter
   const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.42, 0.28, 0.12]);
   const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.14, 0.34, 0.70]);
 
@@ -15,20 +13,35 @@ export default function StickyBackdrop() {
   const contrast = useTransform(scrollYProgress, [0, 1], [1.10, 1.06]);
   const saturate = useTransform(scrollYProgress, [0, 1], [1.12, 1.22]);
 
-  // Tiny blur = denoise feel for grainy photo (subtle)
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(0.22px)`;
 
   return (
     <div className="fixed inset-0 -z-50">
+      {/* Base layer: ocean */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src={assets.backdrop}
-          alt="Backdrop"
+          src="/media/ocean.jpg"
+          alt="Ocean backdrop"
           fill
           priority
           sizes="100vw"
           className="object-cover"
           style={{ objectPosition: "50% 65%" }}
+        />
+      </motion.div>
+
+      {/* Blended layer: artist — screen-blended on top */}
+      <motion.div
+        className="absolute inset-0"
+        style={{ filter, mixBlendMode: "screen", opacity: 0.45 }}
+      >
+        <Image
+          src="/media/artist.jpg"
+          alt="Artist"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          style={{ objectPosition: "50% 30%" }}
         />
       </motion.div>
 
