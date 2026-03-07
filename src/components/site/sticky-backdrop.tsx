@@ -6,7 +6,7 @@ import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motio
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.38, 0.24, 0.10]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.22, 0.14, 0.06]);
   const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.14, 0.34, 0.70]);
 
   const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.08, 1.16, 1.24]);
@@ -31,10 +31,10 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
-      {/* Layer 2: Night sky + stars (IMG_2746) — screen blend for starlight */}
+      {/* Layer 2: Night sky + stars (IMG_2746) — lighten blend so stars punch through */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "screen", opacity: 0.55 }}
+        style={{ mixBlendMode: "lighten", opacity: 0.75 }}
       >
         <Image
           src="/media/IMG_2746.jpg"
@@ -43,14 +43,14 @@ export default function StickyBackdrop() {
           sizes="100vw"
           className="object-cover"
           quality={90}
-          style={{ objectPosition: "50% 40%" }}
+          style={{ objectPosition: "50% 40%", filter: "brightness(1.8) contrast(1.3)" }}
         />
       </div>
 
-      {/* Layer 3: Ocean + stormy sky (IMG_2678) — soft-light blend for blue mood */}
+      {/* Layer 3: Ocean + stormy sky (IMG_2678) — overlay blend for blue/storm mood */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "soft-light", opacity: 0.50 }}
+        style={{ mixBlendMode: "overlay", opacity: 0.60 }}
       >
         <Image
           src="/media/IMG_2678.jpg"
