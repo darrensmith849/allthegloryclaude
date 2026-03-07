@@ -47,7 +47,7 @@ export default function StickyBackdrop() {
       {/* Cloud layer — blended on top of everything */}
       <div
         className="absolute inset-0"
-        style={{ opacity: 0.35 }}
+        style={{ opacity: 1 }}
       >
         <Image
           src="/media/clouds.jpg"
