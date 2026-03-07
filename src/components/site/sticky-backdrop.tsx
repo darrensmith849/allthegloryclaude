@@ -23,23 +23,7 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Cloud layer — underneath the stars portrait */}
-      <div className="absolute inset-0">
-        <Image
-          src="/media/clouds.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-          quality={90}
-          style={{
-            filter: "brightness(0.7) contrast(1.1)",
-          }}
-        />
-      </div>
-
-      {/* Stars image — layered on top of clouds */}
+      {/* Stars image — base layer */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
           src={assets.backdrop}
@@ -56,6 +40,24 @@ export default function StickyBackdrop() {
           }}
         />
       </motion.div>
+
+      {/* Cloud layer — on top with screen blend so it merges with the stars */}
+      <div
+        className="absolute inset-0"
+        style={{ mixBlendMode: "screen", opacity: 0.5 }}
+      >
+        <Image
+          src="/media/clouds.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          quality={90}
+          style={{
+            filter: "brightness(0.8) contrast(1.2)",
+          }}
+        />
+      </div>
 
       {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
