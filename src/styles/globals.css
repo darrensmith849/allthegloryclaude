@@ -189,6 +189,7 @@ body { background: transparent; color: var(--colour-ink); }
 .verse-block { display: inline-flex; flex-direction: column; padding: 0 24px; white-space: nowrap; }
 .verse-text { font-size: 14px; letter-spacing: 0.01em; color: rgba(244,240,232,0.82); }
 .verse-ref-center { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(244,240,232,0.55); padding-bottom: 6px; }
+.verse-ref { font-size: 11px; letter-spacing: 0.18em; color: rgba(244,240,232,0.45); }
 
 /* Move off-screen and loop */
 @keyframes marqueeSingle {

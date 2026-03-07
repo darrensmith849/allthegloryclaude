@@ -7,16 +7,16 @@ export default function VerseMarquee() {
             <div className="marquee-single-track">
               <div className="verse-block">
                 <div className="verse-text">
-                  "The light shines in the darkness, and the darkness has not overcome it."
+                  &ldquo;The light shines in the darkness, and the darkness
+                  has not overcome it.&rdquo;
                 </div>
+                <div className="verse-ref mt-1">— John 1:5</div>
               </div>
             </div>
           </div>
 
           <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/45 to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-black/45 to-transparent" />
-
-          <div className="text-center verse-ref-center">John 1:5</div>
         </div>
       </div>
     </section>
