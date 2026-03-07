@@ -21,9 +21,9 @@ export default function ModoHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[56rem] ml-auto text-right"
+          className="w-full max-w-[56rem]"
         >
-          <h1 className="modo-title modo-wrap text-white ml-auto">
+          <h1 className="modo-title modo-wrap text-white">
             <span className="block">All The</span>
             <span className="block">Glory</span>
           </h1>
