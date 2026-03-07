@@ -8,12 +8,12 @@ export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
   // Darkness -> Light grade
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.78, 0.55, 0.18]);
-  const lightWash = useTransform(scrollYProgress, [0, 0.55, 1], [0.00, 0.22, 0.62]);
-  const warmth = useTransform(scrollYProgress, [0, 0.70, 1], [0.12, 0.18, 0.26]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.68, 0.45, 0.12]);
+  const lightWash = useTransform(scrollYProgress, [0, 0.55, 1], [0.06, 0.28, 0.68]);
+  const warmth = useTransform(scrollYProgress, [0, 0.70, 1], [0.16, 0.22, 0.30]);
 
   // Gentle "grade" (no movement/parallax)
-  const brightness = useTransform(scrollYProgress, [0, 0.70, 1], [0.86, 0.94, 1.04]);
+  const brightness = useTransform(scrollYProgress, [0, 0.70, 1], [0.96, 1.04, 1.14]);
   const contrast = useTransform(scrollYProgress, [0, 1], [1.10, 1.04]);
   const saturate = useTransform(scrollYProgress, [0, 1], [1.06, 1.16]);
 

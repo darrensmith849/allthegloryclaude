@@ -5,8 +5,9 @@ import { storyTitle, storyKicker, storyParagraphs } from "@/content/story";
 
 export default function Testimony() {
   return (
-    <section className="relative w-full py-24 md:py-36">
-      <div className="max-w-3xl mx-auto px-6 panel-scrim rounded-2xl py-12">
+    <section className="bg-transparent">
+      <div className="mx-auto w-full max-w-4xl px-6 py-14 md:py-20">
+        <div className="panel-scrim p-7 md:p-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,6 +47,7 @@ export default function Testimony() {
               {paragraph}
             </motion.p>
           ))}
+        </div>
         </div>
       </div>
     </section>

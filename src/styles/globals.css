@@ -24,21 +24,16 @@
   --colour-surface-rgb: 18 17 26;
 }
 
-html {
-  height: 100%;
-  background: var(--colour-bg);
-}
+html, body { height: 100%; }
+body { background: transparent; color: var(--colour-ink); }
 
-body {
-  height: 100%;
-  background: transparent;
-  color: var(--colour-ink);
-}
-
-/* Panel scrim — gives content sections a readable background */
+/* A readable panel that still lets backdrop show through */
 .panel-scrim {
-  background: rgba(9,8,14,0.72);
+  background: rgba(7, 6, 16, 0.58);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
   backdrop-filter: blur(12px);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.38);
 }
 
 /* Big title */
@@ -163,42 +158,24 @@ body {
   text-transform: uppercase;
 }
 
-/* ── Image-flow tiles ────────────────────────────────── */
-.image-flow-tile {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.5rem;
+/* ── Verse marquee ──────────────────────────────────── */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 45s linear infinite;
 }
 
-.image-flow-tile img {
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+.marquee-content {
+  white-space: nowrap;
+  font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+  letter-spacing: 0.04em;
+  color: var(--colour-ink);
+  opacity: 0.38;
 }
 
-.image-flow-tile:hover img {
-  transform: scale(1.05);
-}
-
-.image-flow-gradient {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* ── Fallback gradient when images are missing ───────── */
-.fallback-gradient {
-  background: linear-gradient(
-    135deg,
-    #1a1a2e 0%,
-    #16213e 25%,
-    #0f3460 50%,
-    #1a1a2e 75%,
-    #09080e 100%
-  );
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ── Scrollbar ───────────────────────────────────────── */

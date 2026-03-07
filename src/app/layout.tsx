@@ -24,9 +24,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-transparent">
         <StickyBackdrop />
-        <Nav />
-        {children}
-        <SiteFooter />
+        <div className="relative z-10">
+          <Nav />
+          {children}
+          <SiteFooter />
+        </div>
         <div className="grain-overlay" aria-hidden="true" />
       </body>
     </html>
