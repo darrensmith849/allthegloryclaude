@@ -6,18 +6,18 @@ import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motio
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.42, 0.28, 0.12]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.38, 0.24, 0.10]);
   const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.14, 0.34, 0.70]);
 
-  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.12, 1.20, 1.28]);
-  const contrast = useTransform(scrollYProgress, [0, 1], [1.14, 1.08]);
-  const saturate = useTransform(scrollYProgress, [0, 1], [1.18, 1.28]);
+  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.08, 1.16, 1.24]);
+  const contrast = useTransform(scrollYProgress, [0, 1], [1.12, 1.06]);
+  const saturate = useTransform(scrollYProgress, [0, 1], [1.14, 1.24]);
 
-  // No blur — keep it sharp / HD
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
     <div className="fixed inset-0 -z-50">
+      {/* Layer 1: Base — guitar/red door (IMG_0442) */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
           src="/media/IMG_0442.jpg"
@@ -27,33 +27,71 @@ export default function StickyBackdrop() {
           sizes="100vw"
           className="object-cover"
           quality={100}
-          style={{ objectPosition: "50% 50%", imageRendering: "auto" }}
+          style={{ objectPosition: "50% 50%" }}
         />
       </motion.div>
 
+      {/* Layer 2: Night sky + stars (IMG_2746) — screen blend for starlight */}
+      <div
+        className="absolute inset-0"
+        style={{ mixBlendMode: "screen", opacity: 0.55 }}
+      >
+        <Image
+          src="/media/IMG_2746.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          quality={90}
+          style={{ objectPosition: "50% 40%" }}
+        />
+      </div>
+
+      {/* Layer 3: Ocean + stormy sky (IMG_2678) — soft-light blend for blue mood */}
+      <div
+        className="absolute inset-0"
+        style={{ mixBlendMode: "soft-light", opacity: 0.50 }}
+      >
+        <Image
+          src="/media/IMG_2678.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          quality={90}
+          style={{ objectPosition: "50% 35%" }}
+        />
+      </div>
+
+      {/* Grid overlay */}
       <div className="absolute inset-0 bg-grid bg-grid-fade opacity-[0.12]" />
+
+      {/* Dark veil — eases off on scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
+      {/* Warm golden radiance */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.85,
-          background: "radial-gradient(820px 520px at 70% 38%, rgba(216,178,90,0.18) 0%, transparent 64%)",
+          opacity: 0.80,
+          background: "radial-gradient(820px 520px at 70% 38%, rgba(216,178,90,0.16) 0%, transparent 64%)",
           mixBlendMode: "screen",
         }}
       />
 
+      {/* Light wash — brightens on scroll */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
           opacity: lightWash,
           background:
-            "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.16) 0%, transparent 70%)," +
-            "radial-gradient(980px 620px at 52% 78%, rgba(241,215,166,0.14) 0%, transparent 74%)",
+            "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.14) 0%, transparent 70%)," +
+            "radial-gradient(980px 620px at 52% 78%, rgba(241,215,166,0.12) 0%, transparent 74%)",
           mixBlendMode: "screen",
         }}
       />
 
+      {/* Vignette / scrim */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -62,6 +100,7 @@ export default function StickyBackdrop() {
         }}
       />
 
+      {/* Grain + bottom fade */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] grain-overlay" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-[var(--colour-bg)]" />
     </div>
