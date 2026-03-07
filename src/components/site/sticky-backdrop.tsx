@@ -35,6 +35,25 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
+      {/* Cover — tunnel light screen-blended over stars */}
+      <div
+        className="absolute inset-0"
+        style={{ mixBlendMode: "screen", opacity: 0.55 }}
+      >
+        <Image
+          src={assets.cover}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          quality={90}
+          style={{
+            objectPosition: "50% 38%",
+            filter: "brightness(1.4) contrast(1.1)",
+          }}
+        />
+      </div>
+
       {/* Dark veil */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
