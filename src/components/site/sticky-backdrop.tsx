@@ -33,7 +33,8 @@ export default function StickyBackdrop() {
           className="object-cover"
           quality={90}
           style={{
-            filter: "brightness(0.9) contrast(1.1)",
+            filter: "brightness(0.9) contrast(1.1) blur(2px)",
+            transform: "scale(1.05)",
           }}
         />
       </div>
