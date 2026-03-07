@@ -50,7 +50,7 @@ export default function StickyBackdrop() {
         style={{ opacity: 1 }}
       >
         <Image
-          src="/media/clouds.jpg"
+          src="/media/clouds.webp"
           alt=""
           fill
           sizes="100vw"
