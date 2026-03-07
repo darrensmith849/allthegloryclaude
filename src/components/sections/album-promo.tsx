@@ -37,7 +37,7 @@ export default function AlbumPromo() {
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-white/95 tracking-tight">
                 From Darkness To Light
               </h2>
-              <p className="glyph-line subtitle-glyph mt-2 text-sm md:text-base text-white/65">
+              <p className="subtitle-glyph mt-2 text-sm md:text-base text-white/65">
                 Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
               </p>
               <p className="mt-4 text-sm md:text-base leading-relaxed text-white/70 max-w-md">
