@@ -207,10 +207,28 @@ body { background: transparent; color: var(--colour-ink); }
   max-width: 320px;
 }
 
-/* Album promo image — brighter and more visible */
-.album-promo-img {
-  filter: brightness(1.25) contrast(1.05) saturate(1.1);
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 10px;
+  transition: opacity 180ms ease, border-color 180ms ease;
+  text-decoration: none;
 }
+.btn-primary {
+  background: var(--colour-amber);
+  color: var(--colour-bg);
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-ghost {
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(244,240,232,0.80);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.38); }
 
 /* ── Scrollbar ───────────────────────────────────────── */
 ::-webkit-scrollbar {
