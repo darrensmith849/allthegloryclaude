@@ -3,25 +3,21 @@
 @tailwind utilities;
 
 :root {
-  /* OLD FEEL: deep inky base + blue haze */
-  --colour-bg: #09080e;
+  /* Base */
+  --colour-bg: #070610;        /* deeper ink */
   --colour-ink: #f4f0e8;
 
-  /* Album-art accents (keep subtle; do not turn whole page warm) */
+  /* Purple grade */
+  --colour-purple: #7c3aed;    /* violet */
+  --colour-purple-2: #a78bfa;  /* soft lavender */
+  --colour-indigo: #1e1b4b;    /* deep indigo */
+
+  /* Keep a warm "light" highlight so tunnel-light still pops */
   --colour-amber: #d8b25a;
-  --colour-storm: #9a938b;
-  --colour-deep: #0b1b34;
   --colour-glow: #f1d7a6;
 
+  /* Surface */
   --colour-surface: rgba(255,255,255,0.06);
-
-  /* Tailwind compatibility aliases */
-  --colour-accent-1: #d8b25a;
-  --colour-accent-2: #9a938b;
-  --colour-bg-rgb: 9 8 14;
-  --colour-fg-rgb: 244 240 232;
-  --colour-accent-rgb: 216 178 90;
-  --colour-surface-rgb: 18 17 26;
 }
 
 html, body {
@@ -98,9 +94,9 @@ body {
   );
 }
 
-/* Blue haze = the "old feel" */
+/* Indigo base (replaces old blue haze) */
 .hero-deep {
-  background: radial-gradient(980px 560px at 32% 28%, rgba(11,27,52,0.66) 0%, transparent 62%);
+  background: radial-gradient(980px 560px at 32% 28%, rgba(30,27,75,0.58) 0%, transparent 62%);
 }
 
 /* Warmth kept subtle */
@@ -211,4 +207,27 @@ body {
 ::selection {
   background: var(--colour-amber);
   color: var(--colour-bg);
+}
+
+/* === Purple aurora grade (premium, subtle) === */
+.hero-aurora {
+  background:
+    radial-gradient(900px 520px at 26% 30%, rgba(124,58,237,0.26) 0%, transparent 62%),
+    radial-gradient(820px 520px at 78% 34%, rgba(167,139,250,0.18) 0%, transparent 64%),
+    radial-gradient(980px 620px at 52% 78%, rgba(30,27,75,0.24) 0%, transparent 62%);
+  mix-blend-mode: screen;
+  opacity: 0.72;
+}
+
+/* Keeps tunnel "light" warm and clean */
+.hero-warm-light {
+  background: radial-gradient(700px 420px at 70% 38%, rgba(216,178,90,0.18) 0%, transparent 60%);
+  mix-blend-mode: screen;
+  opacity: 0.75;
+}
+
+/* Indigo vignette to keep the purple rich */
+.hero-indigo-vignette {
+  background: radial-gradient(1200px 860px at 50% 40%, rgba(0,0,0,0) 0%, rgba(7,6,16,0.58) 70%, rgba(7,6,16,0.86) 100%);
+  opacity: 1;
 }

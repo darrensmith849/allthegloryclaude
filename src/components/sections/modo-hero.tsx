@@ -46,11 +46,15 @@ export default function ModoHero() {
           <div className="absolute inset-0 hero-gradient" />
         )}
 
-        {/* Cinematic layers: deep blue + vignette + warmth + storm */}
+        {/* Cinematic layers: indigo + vignette + warmth + storm */}
         <div className="absolute inset-0 hero-deep" />
         <div className="absolute inset-0 hero-vignette" />
         <div className="absolute inset-0 hero-warmth" />
         <div className="absolute inset-0 hero-storm" />
+
+        {/* Aurora purple grade */}
+        <div className="absolute inset-0 hero-aurora" />
+        <div className="absolute inset-0 hero-indigo-vignette" />
 
         {/* Legibility veil */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
@@ -101,7 +105,7 @@ export default function ModoHero() {
               {album.title}
             </div>
 
-            <p className="subtitle-glyph mt-2 text-sm md:text-base" style={{ color: "var(--colour-amber)", opacity: 0.9 }}>
+            <p className="subtitle-glyph mt-2 text-sm md:text-base" style={{ color: "var(--colour-purple-2)", opacity: 0.9 }}>
               {album.subtitle}
             </p>
 
