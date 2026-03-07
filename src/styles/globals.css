@@ -283,50 +283,7 @@ body { background: transparent; color: var(--colour-ink); }
   filter: blur(0.2px);
 }
 
-/* ===== LIGHT VEINS (scroll-revealed, natural look) ===== */
-
-/* Soft vertical light streaks — like distant lightning frozen in sky */
-.light-vein {
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  mix-blend-mode: screen;
-  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(200,210,255,0.2) 30%, rgba(180,195,240,0.05) 70%, transparent 100%);
-  filter: blur(3px);
-  animation: veinPulse 6s ease-in-out infinite alternate;
-}
-
-/* Wider ambient glow behind each vein */
-.light-vein-glow {
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  mix-blend-mode: screen;
-  filter: blur(20px);
-  background: linear-gradient(180deg, rgba(200,210,255,0.25) 0%, rgba(180,195,240,0.08) 40%, transparent 80%);
-  animation: veinPulse 8s ease-in-out infinite alternate;
-}
-
-/* Positions + sizes — each one unique */
-.light-vein-1 { left: 8%;  width: 2px; height: 65%; }
-.light-vein-2 { left: 22%; width: 1.5px; height: 55%; animation-delay: -2s; }
-.light-vein-3 { left: 38%; width: 2.5px; height: 72%; animation-delay: -4s; }
-.light-vein-4 { left: 52%; width: 1px; height: 48%; animation-delay: -1s; }
-.light-vein-5 { left: 65%; width: 2px; height: 60%; animation-delay: -3s; }
-.light-vein-6 { left: 78%; width: 1.5px; height: 52%; animation-delay: -5s; }
-.light-vein-7 { left: 90%; width: 2px; height: 58%; animation-delay: -2.5s; }
-
-.light-vein-glow-1 { left: 6%;  width: 40px; height: 50%; }
-.light-vein-glow-2 { left: 35%; width: 50px; height: 55%; animation-delay: -3s; }
-.light-vein-glow-3 { left: 62%; width: 45px; height: 48%; animation-delay: -1.5s; }
-.light-vein-glow-4 { left: 86%; width: 35px; height: 45%; animation-delay: -4s; }
-
-@keyframes veinPulse {
-  0%   { opacity: 0.4; }
-  100% { opacity: 0.9; }
-}
-
-/* Subtle depth haze (no gold) */
+/* Subtle depth haze */
 .stars-glow {
   pointer-events: none;
   position: absolute;
