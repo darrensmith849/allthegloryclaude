@@ -283,34 +283,141 @@ body { background: transparent; color: var(--colour-ink); }
   filter: blur(0.2px);
 }
 
-/* Lightning flash — subtle distant storm flicker */
-.lightning-flash {
+/* ===== LIGHTNING BOLTS ===== */
+
+/* SVG bolt shape — jagged zigzag from top to bottom */
+.bolt {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 120px;
+  height: 70%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 700'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.9'/%3E%3Cstop offset='100%25' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M60 0 L52 80 L72 120 L48 220 L68 280 L42 400 L66 460 L38 580 L62 640 L55 700' stroke='url(%23g)' stroke-width='2' fill='none'/%3E%3Cpath d='M60 0 L52 80 L72 120 L48 220 L68 280 L42 400 L66 460 L38 580 L62 640 L55 700' stroke='url(%23g)' stroke-width='6' fill='none' opacity='0.3'/%3E%3C/svg%3E");
+}
+
+/* Branch bolt — shorter, thinner fork */
+.bolt-branch {
+  pointer-events: none;
+  position: absolute;
+  top: 8%;
+  width: 80px;
+  height: 40%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  filter: blur(0.8px);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 400'%3E%3Cdefs%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.7'/%3E%3Cstop offset='100%25' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M40 0 L34 60 L50 100 L30 180 L48 240 L28 320 L42 400' stroke='url(%23g2)' stroke-width='1.5' fill='none'/%3E%3Cpath d='M40 0 L34 60 L50 100 L30 180 L48 240 L28 320 L42 400' stroke='url(%23g2)' stroke-width='4' fill='none' opacity='0.2'/%3E%3C/svg%3E");
+}
+
+/* Bolt glow — illumination around each bolt */
+.bolt-glow {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 300px;
+  height: 60%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(50% 50% at 50% 30%, rgba(200,210,255,0.15) 0%, transparent 70%);
+}
+
+/* Positions for bolts across the top */
+.bolt-1 { left: 12%; animation: boltStrike1 10s ease-in-out infinite; }
+.bolt-2 { left: 35%; animation: boltStrike2 13s ease-in-out infinite; }
+.bolt-3 { left: 58%; animation: boltStrike3 11s ease-in-out infinite; }
+.bolt-4 { left: 78%; animation: boltStrike4 14s ease-in-out infinite; }
+.bolt-5 { left: 48%; animation: boltStrike5 12s ease-in-out infinite; }
+
+.bolt-branch-1 { left: 16%; animation: boltStrike1 10s 0.05s ease-in-out infinite; }
+.bolt-branch-2 { left: 32%; animation: boltStrike2 13s 0.04s ease-in-out infinite; }
+.bolt-branch-3 { left: 62%; animation: boltStrike3 11s 0.06s ease-in-out infinite; }
+.bolt-branch-4 { left: 74%; animation: boltStrike4 14s 0.03s ease-in-out infinite; }
+
+.bolt-glow-1 { left: 8%; animation: boltStrike1 10s ease-in-out infinite; }
+.bolt-glow-2 { left: 31%; animation: boltStrike2 13s ease-in-out infinite; }
+.bolt-glow-3 { left: 54%; animation: boltStrike3 11s ease-in-out infinite; }
+.bolt-glow-4 { left: 74%; animation: boltStrike4 14s ease-in-out infinite; }
+
+/* Each bolt has its own timing — quick flash + afterglow */
+@keyframes boltStrike1 {
+  0%, 100% { opacity: 0; }
+  5%   { opacity: 0; }
+  5.3% { opacity: 0.9; }
+  5.6% { opacity: 0.1; }
+  5.9% { opacity: 0.7; }
+  6.4% { opacity: 0; }
+}
+@keyframes boltStrike2 {
+  0%, 100% { opacity: 0; }
+  28%   { opacity: 0; }
+  28.3% { opacity: 0.85; }
+  28.5% { opacity: 0.1; }
+  28.8% { opacity: 0.6; }
+  29.3% { opacity: 0; }
+}
+@keyframes boltStrike3 {
+  0%, 100% { opacity: 0; }
+  52%   { opacity: 0; }
+  52.4% { opacity: 0.9; }
+  52.7% { opacity: 0; }
+  53%   { opacity: 0.5; }
+  53.5% { opacity: 0; }
+}
+@keyframes boltStrike4 {
+  0%, 100% { opacity: 0; }
+  70%   { opacity: 0; }
+  70.2% { opacity: 0.8; }
+  70.5% { opacity: 0.15; }
+  70.8% { opacity: 0.65; }
+  71.2% { opacity: 0; }
+}
+@keyframes boltStrike5 {
+  0%, 100% { opacity: 0; }
+  15%   { opacity: 0; }
+  15.3% { opacity: 0.75; }
+  15.6% { opacity: 0; }
+  15.8% { opacity: 0.5; }
+  16.2% { opacity: 0; }
+  85%   { opacity: 0; }
+  85.2% { opacity: 0.85; }
+  85.5% { opacity: 0.1; }
+  85.7% { opacity: 0.6; }
+  86.1% { opacity: 0; }
+}
+
+/* Sky illumination flash synced with bolts */
+.lightning-sky {
   pointer-events: none;
   position: absolute;
   inset: 0;
   opacity: 0;
-  background:
-    radial-gradient(600px 400px at 50% 20%, rgba(255,255,255,0.35) 0%, rgba(200,210,240,0.10) 40%, transparent 70%);
+  background: linear-gradient(180deg, rgba(200,210,255,0.15) 0%, transparent 50%);
   mix-blend-mode: screen;
-  animation: lightningFlicker 12s ease-in-out infinite;
+  animation: skyFlash 10s ease-in-out infinite;
+}
+.lightning-sky-2 {
+  animation: skyFlash2 13s ease-in-out infinite;
 }
 
-@keyframes lightningFlicker {
+@keyframes skyFlash {
   0%, 100% { opacity: 0; }
-  4%   { opacity: 0; }
-  4.5% { opacity: 0.7; }
-  5%   { opacity: 0; }
-  5.5% { opacity: 0.4; }
-  6%   { opacity: 0; }
-  42%  { opacity: 0; }
-  42.3% { opacity: 0.5; }
-  42.6% { opacity: 0; }
-  43%  { opacity: 0.3; }
-  43.3% { opacity: 0; }
-  78%  { opacity: 0; }
-  78.5% { opacity: 0.6; }
-  79%  { opacity: 0.1; }
-  79.5% { opacity: 0; }
+  5.3% { opacity: 0.6; }
+  5.6% { opacity: 0; }
+  5.9% { opacity: 0.3; }
+  6.4% { opacity: 0; }
+}
+@keyframes skyFlash2 {
+  0%, 100% { opacity: 0; }
+  28.3% { opacity: 0.5; }
+  28.5% { opacity: 0; }
+  28.8% { opacity: 0.25; }
+  29.3% { opacity: 0; }
 }
 
 /* Subtle depth haze (no gold) */

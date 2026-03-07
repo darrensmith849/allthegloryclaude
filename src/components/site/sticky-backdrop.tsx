@@ -7,12 +7,12 @@ import { assets } from "@/content/assets";
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
-  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.12, 1.20, 1.28]);
-  const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.10]);
+  const brightness = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.30, 1.55]);
+  const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.04]);
   const saturate = useTransform(scrollYProgress, [0, 1], [1.18, 1.28]);
 
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.22, 0.14, 0.06]);
-  const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.10, 0.24, 0.48]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
+  const lightWash = useTransform(scrollYProgress, [0, 0.4, 1], [0.0, 0.20, 0.65]);
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
@@ -36,11 +36,10 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
-      {/* Dark veil */}
+      {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* DIVINE LIGHT — striking beam breaking through darkness */}
-      {/* Central pillar of light from above */}
+      {/* DIVINE LIGHT — beam from above */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -51,7 +50,7 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Radiant glow at the source — where the light originates */}
+      {/* Radiant glow source */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -62,7 +61,7 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Scattered light rays — secondary beams */}
+      {/* Scattered light rays */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -73,19 +72,40 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Light wash — grows as you scroll (darkness → light) */}
+      {/* ===== LIGHTNING BOLTS raining from the top ===== */}
+      {/* Main bolts */}
+      <div className="bolt bolt-1" />
+      <div className="bolt bolt-2" />
+      <div className="bolt bolt-3" />
+      <div className="bolt bolt-4" />
+      <div className="bolt bolt-5" />
+
+      {/* Branch forks */}
+      <div className="bolt-branch bolt-branch-1" />
+      <div className="bolt-branch bolt-branch-2" />
+      <div className="bolt-branch bolt-branch-3" />
+      <div className="bolt-branch bolt-branch-4" />
+
+      {/* Glow around bolts */}
+      <div className="bolt-glow bolt-glow-1" />
+      <div className="bolt-glow bolt-glow-2" />
+      <div className="bolt-glow bolt-glow-3" />
+      <div className="bolt-glow bolt-glow-4" />
+
+      {/* Sky illumination flash */}
+      <div className="lightning-sky" />
+      <div className="lightning-sky lightning-sky-2" />
+
+      {/* Light wash — gets MUCH brighter as you scroll (darkness → light) */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
           opacity: lightWash,
           background:
-            "radial-gradient(1200px 800px at 50% 30%, rgba(255,255,255,0.16) 0%, transparent 65%)",
+            "radial-gradient(1400px 1000px at 50% 40%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 50%, transparent 70%)",
           mixBlendMode: "screen",
         }}
       />
-
-      {/* Lightning flash */}
-      <div className="absolute inset-0 lightning-flash" />
 
       {/* Starfield CSS overlays */}
       <div className="absolute inset-0 stars-glow" />
