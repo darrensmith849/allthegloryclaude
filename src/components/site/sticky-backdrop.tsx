@@ -38,13 +38,26 @@ export default function StickyBackdrop() {
       {/* Dark veil */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Subtle gold warmth across the sky */}
+      {/* Cool indigo / tunnel-grade haze (replaces heavy gold) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.70,
+          opacity: 0.62,
           background:
-            "linear-gradient(180deg, rgba(216,178,90,0.14) 0%, rgba(232,184,75,0.10) 40%, rgba(241,215,166,0.06) 70%, transparent 100%)",
+            "radial-gradient(980px 620px at 30% 28%, rgba(11,27,52,0.50) 0%, transparent 62%)," +
+            "radial-gradient(980px 620px at 72% 40%, rgba(30,27,75,0.34) 0%, transparent 66%)," +
+            "radial-gradient(1200px 780px at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 70%, rgba(0,0,0,0.40) 100%)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Very subtle warm "light" accent (keeps the theme without gold wash) */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.18,
+          background:
+            "radial-gradient(740px 460px at 62% 42%, rgba(241,215,166,0.22) 0%, transparent 62%)",
           mixBlendMode: "screen",
         }}
       />
@@ -55,8 +68,8 @@ export default function StickyBackdrop() {
         style={{
           opacity: lightWash,
           background:
-            "radial-gradient(980px 620px at 52% 22%, rgba(241,215,166,0.18) 0%, transparent 70%)," +
-            "radial-gradient(980px 620px at 52% 78%, rgba(216,178,90,0.16) 0%, transparent 74%)",
+            "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.12) 0%, transparent 70%)," +
+            "radial-gradient(980px 620px at 52% 78%, rgba(180,195,220,0.10) 0%, transparent 74%)",
           mixBlendMode: "screen",
         }}
       />
