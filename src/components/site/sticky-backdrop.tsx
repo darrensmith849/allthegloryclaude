@@ -14,6 +14,12 @@ export default function StickyBackdrop() {
   const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
   const lightWash = useTransform(scrollYProgress, [0, 0.4, 1], [0.0, 0.20, 0.65]);
 
+  // Bolts reveal — clip from top, extending downward as you scroll
+  const boltReveal = useTransform(scrollYProgress, [0, 0.8], [15, 100]);
+  const boltClip = useMotionTemplate`inset(0 0 ${boltReveal}% 0)`;
+  // Bolt opacity — start visible, stay visible
+  const boltOpacity = useTransform(scrollYProgress, [0, 0.3], [0.5, 0.85]);
+
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
@@ -72,31 +78,35 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* ===== LIGHTNING BOLTS raining from the top ===== */}
-      {/* Main bolts */}
-      <div className="bolt bolt-1" />
-      <div className="bolt bolt-2" />
-      <div className="bolt bolt-3" />
-      <div className="bolt bolt-4" />
-      <div className="bolt bolt-5" />
+      {/* ===== LIGHTNING BOLTS — static, revealed downward on scroll ===== */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{ clipPath: boltClip, opacity: boltOpacity }}
+      >
+        {/* Main bolts */}
+        <div className="bolt-static bolt-static-1" />
+        <div className="bolt-static bolt-static-2" />
+        <div className="bolt-static bolt-static-3" />
+        <div className="bolt-static bolt-static-4" />
+        <div className="bolt-static bolt-static-5" />
+        <div className="bolt-static bolt-static-6" />
+        <div className="bolt-static bolt-static-7" />
 
-      {/* Branch forks */}
-      <div className="bolt-branch bolt-branch-1" />
-      <div className="bolt-branch bolt-branch-2" />
-      <div className="bolt-branch bolt-branch-3" />
-      <div className="bolt-branch bolt-branch-4" />
+        {/* Branch forks */}
+        <div className="bolt-static-branch bolt-static-branch-1" />
+        <div className="bolt-static-branch bolt-static-branch-2" />
+        <div className="bolt-static-branch bolt-static-branch-3" />
+        <div className="bolt-static-branch bolt-static-branch-4" />
+        <div className="bolt-static-branch bolt-static-branch-5" />
 
-      {/* Glow around bolts */}
-      <div className="bolt-glow bolt-glow-1" />
-      <div className="bolt-glow bolt-glow-2" />
-      <div className="bolt-glow bolt-glow-3" />
-      <div className="bolt-glow bolt-glow-4" />
+        {/* Glow around bolts */}
+        <div className="bolt-static-glow bolt-static-glow-1" />
+        <div className="bolt-static-glow bolt-static-glow-2" />
+        <div className="bolt-static-glow bolt-static-glow-3" />
+        <div className="bolt-static-glow bolt-static-glow-4" />
+      </motion.div>
 
-      {/* Sky illumination flash */}
-      <div className="lightning-sky" />
-      <div className="lightning-sky lightning-sky-2" />
-
-      {/* Light wash — gets MUCH brighter as you scroll (darkness → light) */}
+      {/* Light wash — gets brighter as you scroll (darkness → light) */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
