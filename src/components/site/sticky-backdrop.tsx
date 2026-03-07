@@ -23,7 +23,23 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Stars image — single HD layer */}
+      {/* Cloud layer — underneath the stars portrait */}
+      <div className="absolute inset-0">
+        <Image
+          src="/media/clouds.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+          quality={90}
+          style={{
+            filter: "brightness(0.7) contrast(1.1)",
+          }}
+        />
+      </div>
+
+      {/* Stars image — layered on top of clouds */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
           src={assets.backdrop}
@@ -40,23 +56,6 @@ export default function StickyBackdrop() {
           }}
         />
       </motion.div>
-
-      {/* Lightning video — subtle, slowed down, screen blended */}
-      <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ mixBlendMode: "screen", opacity: 0.45 }}
-      >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: "brightness(1.3) contrast(1.1)" }}
-        >
-          <source src="/media/lightning.mp4" type="video/mp4" />
-        </video>
-      </div>
 
       {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
