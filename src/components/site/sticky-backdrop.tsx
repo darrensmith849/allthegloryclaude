@@ -18,10 +18,10 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Stars image — single crisp layer */}
+      {/* Layer 1: Tunnel light — base layer */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src={assets.backdrop}
+          src={assets.cover}
           alt="Backdrop"
           fill
           priority
@@ -29,27 +29,27 @@ export default function StickyBackdrop() {
           className="object-cover"
           quality={100}
           style={{
-            objectPosition: "50% 58%",
-            filter: "brightness(1.6) contrast(1.2)",
+            objectPosition: "50% 38%",
+            filter: "brightness(2.0) contrast(1.3) saturate(1.2)",
           }}
         />
       </motion.div>
 
-      {/* Cover — tunnel light screen-blended over stars (BOLD) */}
+      {/* Layer 2: Stars + figure — screen blended ON TOP so you stand out */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "screen", opacity: 0.90 }}
+        style={{ mixBlendMode: "screen", opacity: 0.85 }}
       >
         <Image
-          src={assets.cover}
+          src={assets.backdrop}
           alt=""
           fill
           sizes="100vw"
           className="object-cover"
           quality={100}
           style={{
-            objectPosition: "50% 38%",
-            filter: "brightness(2.2) contrast(1.3) saturate(1.2)",
+            objectPosition: "50% 58%",
+            filter: "brightness(1.8) contrast(1.2)",
           }}
         />
       </div>

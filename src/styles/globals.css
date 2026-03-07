@@ -61,11 +61,8 @@ body { background: transparent; color: var(--colour-ink); }
 .modo-title {
   font-size: clamp(2.8rem, 7.2vw, 6.6rem);
   line-height: 0.92;
-  font-weight: 700;
-  text-shadow:
-    0 2px 20px rgba(0, 0, 0, 0.80),
-    0 8px 40px rgba(0, 0, 0, 0.60),
-    0 24px 90px rgba(0, 0, 0, 0.50);
+  font-weight: 600;
+  text-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
 }
 
 /* Prevent awkward breaking ("Glor / y") */
