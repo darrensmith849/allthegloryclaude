@@ -190,10 +190,10 @@ body { background: transparent; color: var(--colour-ink); }
 .verse-ref-center { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(244,240,232,0.55); padding-bottom: 6px; }
 .verse-ref { font-size: 13px; letter-spacing: 0.18em; color: rgba(244,240,232,0.45); }
 
-/* Start centred, then scroll left and loop */
+/* Seamless loop — 3 copies, shift by one-third */
 @keyframes marqueeSingle {
-  0%   { transform: translateX(30vw); }
-  100% { transform: translateX(-120%); }
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

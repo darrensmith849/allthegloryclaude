@@ -12,6 +12,20 @@ export default function VerseMarquee() {
                 </div>
                 <div className="verse-ref text-center mt-1">John 1:5</div>
               </div>
+              <div className="verse-block">
+                <div className="verse-text">
+                  &ldquo;The light shines in the darkness, and the darkness
+                  has not overcome it.&rdquo;
+                </div>
+                <div className="verse-ref text-center mt-1">John 1:5</div>
+              </div>
+              <div className="verse-block">
+                <div className="verse-text">
+                  &ldquo;The light shines in the darkness, and the darkness
+                  has not overcome it.&rdquo;
+                </div>
+                <div className="verse-ref text-center mt-1">John 1:5</div>
+              </div>
             </div>
           </div>
 
