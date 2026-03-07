@@ -103,9 +103,9 @@ export default function StickyBackdrop() {
       </div>
 
       {/* Starfield overlays */}
-      <div className="stars-layer-1" />
-      <div className="stars-layer-2" />
-      <div className="stars-glow" />
+      <div className="absolute inset-0 stars-glow" />
+      <div className="absolute inset-0 stars-layer-1" />
+      <div className="absolute inset-0 stars-layer-2" />
 
       {/* Vignette for text legibility */}
       <div
