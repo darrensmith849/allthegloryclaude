@@ -83,27 +83,20 @@ export default function StickyBackdrop() {
         className="absolute inset-0 pointer-events-none"
         style={{ clipPath: boltClip, opacity: boltOpacity }}
       >
-        {/* Main bolts */}
-        <div className="bolt-static bolt-static-1" />
-        <div className="bolt-static bolt-static-2" />
-        <div className="bolt-static bolt-static-3" />
-        <div className="bolt-static bolt-static-4" />
-        <div className="bolt-static bolt-static-5" />
-        <div className="bolt-static bolt-static-6" />
-        <div className="bolt-static bolt-static-7" />
+        {/* Light veins — soft natural streaks */}
+        <div className="light-vein light-vein-1" />
+        <div className="light-vein light-vein-2" />
+        <div className="light-vein light-vein-3" />
+        <div className="light-vein light-vein-4" />
+        <div className="light-vein light-vein-5" />
+        <div className="light-vein light-vein-6" />
+        <div className="light-vein light-vein-7" />
 
-        {/* Branch forks */}
-        <div className="bolt-static-branch bolt-static-branch-1" />
-        <div className="bolt-static-branch bolt-static-branch-2" />
-        <div className="bolt-static-branch bolt-static-branch-3" />
-        <div className="bolt-static-branch bolt-static-branch-4" />
-        <div className="bolt-static-branch bolt-static-branch-5" />
-
-        {/* Glow around bolts */}
-        <div className="bolt-static-glow bolt-static-glow-1" />
-        <div className="bolt-static-glow bolt-static-glow-2" />
-        <div className="bolt-static-glow bolt-static-glow-3" />
-        <div className="bolt-static-glow bolt-static-glow-4" />
+        {/* Ambient glow behind veins */}
+        <div className="light-vein-glow light-vein-glow-1" />
+        <div className="light-vein-glow light-vein-glow-2" />
+        <div className="light-vein-glow light-vein-glow-3" />
+        <div className="light-vein-glow light-vein-glow-4" />
       </motion.div>
 
       {/* Light wash — gets brighter as you scroll (darkness → light) */}

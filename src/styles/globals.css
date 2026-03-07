@@ -283,86 +283,46 @@ body { background: transparent; color: var(--colour-ink); }
   filter: blur(0.2px);
 }
 
-/* ===== STATIC LIGHTNING BOLTS (scroll-revealed) ===== */
+/* ===== LIGHT VEINS (scroll-revealed, natural look) ===== */
 
-/* Main bolt — always visible, different zigzag paths */
-.bolt-static {
+/* Soft vertical light streaks — like distant lightning frozen in sky */
+.light-vein {
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: 140px;
-  height: 85%;
   mix-blend-mode: screen;
-  filter: blur(0.4px);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 850'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.95'/%3E%3Cstop offset='60%25' stop-color='%23c8d4ff' stop-opacity='0.6'/%3E%3Cstop offset='100%25' stop-color='%23c8d4ff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M70 0 L62 90 L82 140 L54 260 L78 330 L46 480 L74 540 L40 680 L68 760 L58 850' stroke='url(%23g)' stroke-width='2.5' fill='none'/%3E%3Cpath d='M70 0 L62 90 L82 140 L54 260 L78 330 L46 480 L74 540 L40 680 L68 760 L58 850' stroke='url(%23g)' stroke-width='8' fill='none' opacity='0.2'/%3E%3C/svg%3E");
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(200,210,255,0.2) 30%, rgba(180,195,240,0.05) 70%, transparent 100%);
+  filter: blur(3px);
+  animation: veinPulse 6s ease-in-out infinite alternate;
 }
 
-/* Branch bolt — shorter fork off main */
-.bolt-static-branch {
-  pointer-events: none;
-  position: absolute;
-  top: 5%;
-  width: 90px;
-  height: 50%;
-  mix-blend-mode: screen;
-  filter: blur(0.6px);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 500'%3E%3Cdefs%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.75'/%3E%3Cstop offset='100%25' stop-color='%23c8d4ff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M45 0 L38 70 L56 120 L32 210 L52 280 L30 380 L48 450 L40 500' stroke='url(%23g2)' stroke-width='1.5' fill='none'/%3E%3Cpath d='M45 0 L38 70 L56 120 L32 210 L52 280 L30 380 L48 450 L40 500' stroke='url(%23g2)' stroke-width='5' fill='none' opacity='0.15'/%3E%3C/svg%3E");
-}
-
-/* Glow halo around each bolt */
-.bolt-static-glow {
+/* Wider ambient glow behind each vein */
+.light-vein-glow {
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: 320px;
-  height: 70%;
   mix-blend-mode: screen;
-  background: radial-gradient(50% 40% at 50% 25%, rgba(200,210,255,0.12) 0%, transparent 70%);
+  filter: blur(20px);
+  background: linear-gradient(180deg, rgba(200,210,255,0.25) 0%, rgba(180,195,240,0.08) 40%, transparent 80%);
+  animation: veinPulse 8s ease-in-out infinite alternate;
 }
 
-/* Bolt positions — spread across the top */
-.bolt-static-1 { left: 5%; }
-.bolt-static-2 { left: 18%; transform: scaleX(-1); }
-.bolt-static-3 { left: 33%; }
-.bolt-static-4 { left: 48%; transform: scaleX(-1); }
-.bolt-static-5 { left: 60%; }
-.bolt-static-6 { left: 72%; transform: scaleX(-1); }
-.bolt-static-7 { left: 85%; }
+/* Positions + sizes — each one unique */
+.light-vein-1 { left: 8%;  width: 2px; height: 65%; }
+.light-vein-2 { left: 22%; width: 1.5px; height: 55%; animation-delay: -2s; }
+.light-vein-3 { left: 38%; width: 2.5px; height: 72%; animation-delay: -4s; }
+.light-vein-4 { left: 52%; width: 1px; height: 48%; animation-delay: -1s; }
+.light-vein-5 { left: 65%; width: 2px; height: 60%; animation-delay: -3s; }
+.light-vein-6 { left: 78%; width: 1.5px; height: 52%; animation-delay: -5s; }
+.light-vein-7 { left: 90%; width: 2px; height: 58%; animation-delay: -2.5s; }
 
-.bolt-static-branch-1 { left: 10%; }
-.bolt-static-branch-2 { left: 25%; transform: scaleX(-1); }
-.bolt-static-branch-3 { left: 55%; }
-.bolt-static-branch-4 { left: 68%; transform: scaleX(-1); }
-.bolt-static-branch-5 { left: 80%; }
+.light-vein-glow-1 { left: 6%;  width: 40px; height: 50%; }
+.light-vein-glow-2 { left: 35%; width: 50px; height: 55%; animation-delay: -3s; }
+.light-vein-glow-3 { left: 62%; width: 45px; height: 48%; animation-delay: -1.5s; }
+.light-vein-glow-4 { left: 86%; width: 35px; height: 45%; animation-delay: -4s; }
 
-.bolt-static-glow-1 { left: 3%; }
-.bolt-static-glow-2 { left: 30%; }
-.bolt-static-glow-3 { left: 56%; }
-.bolt-static-glow-4 { left: 78%; }
-
-/* Subtle shimmer on the bolts */
-.bolt-static { animation: boltShimmer 4s ease-in-out infinite alternate; }
-.bolt-static-branch { animation: boltShimmer 5s ease-in-out infinite alternate; }
-.bolt-static-glow { animation: boltGlowPulse 6s ease-in-out infinite alternate; }
-
-.bolt-static-2, .bolt-static-branch-2 { animation-delay: -1s; }
-.bolt-static-3, .bolt-static-branch-3 { animation-delay: -2s; }
-.bolt-static-4, .bolt-static-branch-4 { animation-delay: -0.5s; }
-.bolt-static-5, .bolt-static-branch-5 { animation-delay: -3s; }
-.bolt-static-6 { animation-delay: -1.5s; }
-.bolt-static-7 { animation-delay: -2.5s; }
-
-@keyframes boltShimmer {
-  0%   { opacity: 0.6; filter: blur(0.4px); }
-  100% { opacity: 1; filter: blur(0.2px); }
-}
-
-@keyframes boltGlowPulse {
-  0%   { opacity: 0.5; }
+@keyframes veinPulse {
+  0%   { opacity: 0.4; }
   100% { opacity: 0.9; }
 }
 
