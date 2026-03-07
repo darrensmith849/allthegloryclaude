@@ -39,17 +39,53 @@ export default function StickyBackdrop() {
       {/* Dark veil */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Light wash — brightens on scroll */}
+      {/* DIVINE LIGHT — striking beam breaking through darkness */}
+      {/* Central pillar of light from above */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.65,
+          background:
+            "conic-gradient(from 180deg at 50% 15%, transparent 40%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0.18) 49.5%, rgba(255,255,255,0.08) 53%, transparent 59%)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Radiant glow at the source — where the light originates */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.80,
+          background:
+            "radial-gradient(280px 180px at 50% 12%, rgba(255,255,255,0.30) 0%, rgba(220,230,255,0.12) 40%, transparent 70%)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Scattered light rays — secondary beams */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.35,
+          background:
+            "conic-gradient(from 180deg at 50% 15%, transparent 35%, rgba(255,255,255,0.04) 42%, transparent 45%, rgba(255,255,255,0.06) 48%, transparent 52%, rgba(255,255,255,0.04) 56%, transparent 63%)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Light wash — grows as you scroll (darkness → light) */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
           opacity: lightWash,
           background:
-            "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.12) 0%, transparent 70%)," +
-            "radial-gradient(980px 620px at 52% 78%, rgba(255,255,255,0.08) 0%, transparent 74%)",
+            "radial-gradient(1200px 800px at 50% 30%, rgba(255,255,255,0.16) 0%, transparent 65%)",
           mixBlendMode: "screen",
         }}
       />
+
+      {/* Lightning flash */}
+      <div className="absolute inset-0 lightning-flash" />
 
       {/* Starfield CSS overlays */}
       <div className="absolute inset-0 stars-glow" />

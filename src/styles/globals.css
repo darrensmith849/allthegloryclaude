@@ -184,16 +184,16 @@ body { background: transparent; color: var(--colour-ink); }
 
 /* Verse marquee: boxed + slower loop */
 .marquee-single { overflow: hidden; padding: 16px 0 10px; }
-.marquee-single-track { width: max-content; animation: marqueeSingle 42s linear infinite; }
+.marquee-single-track { width: max-content; animation: marqueeSingle 26s linear infinite; }
 .verse-block { display: inline-flex; flex-direction: column; padding: 0 24px; white-space: nowrap; }
 .verse-text { font-size: clamp(18px, 2.4vw, 28px); letter-spacing: 0.02em; color: rgba(244,240,232,0.82); }
 .verse-ref-center { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(244,240,232,0.55); padding-bottom: 6px; }
 .verse-ref { font-size: 13px; letter-spacing: 0.18em; color: rgba(244,240,232,0.45); }
 
-/* Seamless loop — 3 copies, shift by one-third */
+/* Start centred, then scroll left and loop */
 @keyframes marqueeSingle {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-33.333%); }
+  0%   { transform: translateX(30vw); }
+  100% { transform: translateX(-120%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -281,6 +281,36 @@ body { background: transparent; color: var(--colour-ink); }
   background-size: 180px 180px;
   background-position: 40px 20px;
   filter: blur(0.2px);
+}
+
+/* Lightning flash — subtle distant storm flicker */
+.lightning-flash {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(600px 400px at 50% 20%, rgba(255,255,255,0.35) 0%, rgba(200,210,240,0.10) 40%, transparent 70%);
+  mix-blend-mode: screen;
+  animation: lightningFlicker 12s ease-in-out infinite;
+}
+
+@keyframes lightningFlicker {
+  0%, 100% { opacity: 0; }
+  4%   { opacity: 0; }
+  4.5% { opacity: 0.7; }
+  5%   { opacity: 0; }
+  5.5% { opacity: 0.4; }
+  6%   { opacity: 0; }
+  42%  { opacity: 0; }
+  42.3% { opacity: 0.5; }
+  42.6% { opacity: 0; }
+  43%  { opacity: 0.3; }
+  43.3% { opacity: 0; }
+  78%  { opacity: 0; }
+  78.5% { opacity: 0.6; }
+  79%  { opacity: 0.1; }
+  79.5% { opacity: 0; }
 }
 
 /* Subtle depth haze (no gold) */
