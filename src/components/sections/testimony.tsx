@@ -5,8 +5,8 @@ import { storyTitle, storyKicker, storyParagraphs } from "@/content/story";
 
 export default function Testimony() {
   return (
-    <section className="relative w-full py-24 md:py-36" style={{ background: "var(--colour-bg)" }}>
-      <div className="max-w-3xl mx-auto px-6">
+    <section className="relative w-full py-24 md:py-36">
+      <div className="max-w-3xl mx-auto px-6 panel-scrim rounded-2xl py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

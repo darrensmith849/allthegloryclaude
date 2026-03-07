@@ -24,13 +24,21 @@
   --colour-surface-rgb: 18 17 26;
 }
 
-html, body {
+html {
   height: 100%;
   background: var(--colour-bg);
 }
 
 body {
+  height: 100%;
+  background: transparent;
   color: var(--colour-ink);
+}
+
+/* Panel scrim — gives content sections a readable background */
+.panel-scrim {
+  background: rgba(9,8,14,0.72);
+  backdrop-filter: blur(12px);
 }
 
 /* Big title */
