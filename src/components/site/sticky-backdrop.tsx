@@ -70,13 +70,13 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Very subtle warm "light" accent (keeps the theme without gold wash) */}
+      {/* Subtle gold tinge — wide but gentle */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.18,
+          opacity: 0.40,
           background:
-            "radial-gradient(740px 460px at 62% 42%, rgba(241,215,166,0.22) 0%, transparent 62%)",
+            "radial-gradient(1200px 700px at 50% 35%, rgba(216,178,90,0.18) 0%, rgba(232,184,75,0.08) 45%, transparent 72%)",
           mixBlendMode: "screen",
         }}
       />

@@ -23,7 +23,7 @@ export default function ModoHero() {
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-[56rem] text-right"
         >
-          <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
+          <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.95)]">
             <span className="block">All The</span>
             <span className="block">Glory</span>
           </h1>
