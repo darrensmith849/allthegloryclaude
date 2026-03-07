@@ -17,28 +17,12 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Base layer: ocean */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src="/media/ocean.jpg"
-          alt="Ocean backdrop"
+          src="/media/artist.jpg"
+          alt="Backdrop"
           fill
           priority
-          sizes="100vw"
-          className="object-cover"
-          style={{ objectPosition: "50% 65%" }}
-        />
-      </motion.div>
-
-      {/* Blended layer: artist — screen-blended on top */}
-      <motion.div
-        className="absolute inset-0"
-        style={{ filter, mixBlendMode: "screen", opacity: 0.45 }}
-      >
-        <Image
-          src="/media/artist.jpg"
-          alt="Artist"
-          fill
           sizes="100vw"
           className="object-cover"
           style={{ objectPosition: "50% 30%" }}

@@ -187,13 +187,13 @@ body { background: transparent; color: var(--colour-ink); }
 .marquee-single { overflow: hidden; padding: 16px 0 10px; }
 .marquee-single-track { width: max-content; animation: marqueeSingle 42s linear infinite; }
 .verse-block { display: inline-flex; flex-direction: column; padding: 0 24px; white-space: nowrap; }
-.verse-text { font-size: 14px; letter-spacing: 0.01em; color: rgba(244,240,232,0.82); }
+.verse-text { font-size: clamp(18px, 2.4vw, 28px); letter-spacing: 0.02em; color: rgba(244,240,232,0.82); }
 .verse-ref-center { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(244,240,232,0.55); padding-bottom: 6px; }
-.verse-ref { font-size: 11px; letter-spacing: 0.18em; color: rgba(244,240,232,0.45); }
+.verse-ref { font-size: 13px; letter-spacing: 0.18em; color: rgba(244,240,232,0.45); }
 
-/* Move off-screen and loop */
+/* Start centred, then scroll left and loop */
 @keyframes marqueeSingle {
-  0%   { transform: translateX(100vw); }
+  0%   { transform: translateX(30vw); }
   100% { transform: translateX(-120%); }
 }
 
