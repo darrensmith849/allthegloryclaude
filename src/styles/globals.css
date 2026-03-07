@@ -74,7 +74,7 @@ body { background: transparent; color: var(--colour-ink); }
   hyphens: none;
 }
 
-/* Subtitle: Unicode glyph support */
+/* Subtitle: Unicode glyph support — generous line-height + overflow visible */
 .subtitle-glyph {
   font-family:
     ui-sans-serif,
@@ -91,6 +91,17 @@ body { background: transparent; color: var(--colour-ink); }
     sans-serif;
   letter-spacing: 0.02em;
   text-rendering: geometricPrecision;
+  line-height: 1.8;
+  overflow: visible;
+}
+
+/* Glyph line — ensure nothing is clipped */
+.glyph-line {
+  display: inline-block;
+  padding-top: 0.15em;
+  padding-bottom: 0.15em;
+  overflow: visible;
+  line-height: 1.8;
 }
 
 /* Grain overlay */
@@ -172,7 +183,7 @@ body { background: transparent; color: var(--colour-ink); }
   background: radial-gradient(400px 250px at 50% 35%, rgba(255,255,255,0.08) 0%, transparent 70%);
 }
 
-/* Bottom-left socials (no box) */
+/* Bottom-left socials (no box, no pill) */
 .social-dock-bottom {
   position: fixed;
   left: 18px;
@@ -190,6 +201,9 @@ body { background: transparent; color: var(--colour-ink); }
   color: rgba(244,240,232,0.72);
   transition: color 180ms ease, opacity 180ms ease;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
 }
 
 .social-link:hover {
@@ -252,16 +266,23 @@ body { background: transparent; color: var(--colour-ink); }
 
 /* Hero corner labels + bottom-right caption */
 .hero-corner {
-  font-size: 11px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.22em;
   color: rgba(244,240,232,0.55);
+  line-height: 1.8;
+  overflow: visible;
+  padding: 0.15em 0;
 }
 .hero-caption {
   font-size: 13px;
   line-height: 1.45;
   color: rgba(244,240,232,0.62);
   max-width: 320px;
+}
+
+/* Album promo image — brighter and more visible */
+.album-promo-img {
+  filter: brightness(1.25) contrast(1.05) saturate(1.1);
 }
 
 /* ── Scrollbar ───────────────────────────────────────── */
