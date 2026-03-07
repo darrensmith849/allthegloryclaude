@@ -27,7 +27,7 @@ export default function StickyBackdrop() {
           sizes="100vw"
           className="object-cover"
           quality={100}
-          style={{ objectPosition: "50% 40%", filter: "brightness(1.6) contrast(1.2)" }}
+          style={{ objectPosition: "50% 58%", filter: "brightness(1.6) contrast(1.2)" }}
         />
       </motion.div>
 
@@ -53,24 +53,13 @@ export default function StickyBackdrop() {
       {/* Dark veil — eases off on scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Warm golden wash — big and rich */}
+      {/* Wide subtle golden wash across the whole sky */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 1,
+          opacity: 0.70,
           background:
-            "radial-gradient(1100px 700px at 50% 45%, rgba(216,178,90,0.32) 0%, rgba(241,215,166,0.12) 50%, transparent 72%)",
-          mixBlendMode: "screen",
-        }}
-      />
-
-      {/* Extra amber glow near the figure */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          opacity: 0.90,
-          background:
-            "radial-gradient(600px 400px at 55% 75%, rgba(232,184,75,0.25) 0%, transparent 65%)",
+            "linear-gradient(180deg, rgba(216,178,90,0.14) 0%, rgba(232,184,75,0.10) 40%, rgba(241,215,166,0.06) 70%, transparent 100%)",
           mixBlendMode: "screen",
         }}
       />
