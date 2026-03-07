@@ -62,8 +62,23 @@ body { background: transparent; color: var(--colour-ink); }
   font-size: clamp(2.8rem, 7.2vw, 6.6rem);
   line-height: 0.92;
   letter-spacing: -0.03em;
-  font-weight: 600;
-  text-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
+  font-weight: 700;
+}
+
+/* Vibrant gradient text */
+.modo-gradient {
+  background: linear-gradient(135deg, #fff 0%, #f0d999 25%, #e8b84b 50%, #f5e6c8 75%, #fff 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 30px rgba(232, 184, 75, 0.4)) drop-shadow(0 20px 60px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* Prevent awkward breaking ("Glor / y") */
