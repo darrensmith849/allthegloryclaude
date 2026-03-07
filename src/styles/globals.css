@@ -172,35 +172,39 @@ body { background: transparent; color: var(--colour-ink); }
   background: radial-gradient(400px 250px at 50% 35%, rgba(255,255,255,0.08) 0%, transparent 70%);
 }
 
-/* Social dock top-left */
-.social-dock {
+/* Bottom-left socials (no box) */
+.social-dock-bottom {
   position: fixed;
   left: 18px;
-  top: 88px; /* below nav */
+  bottom: 18px;
   z-index: 60;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.social-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 10px 14px;
+
+.social-link {
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(244,240,232,0.86);
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 55px rgba(0,0,0,0.30);
-  transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+  color: rgba(244,240,232,0.72);
+  transition: color 180ms ease, opacity 180ms ease;
+  text-decoration: none;
 }
-.social-pill:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.16);
+
+.social-link:hover {
+  color: rgba(244,240,232,0.92);
+}
+
+/* Backdrop "HD / denoise" grade (reduces visible noise) */
+.backdrop-hd {
+  filter: brightness(1.08) contrast(1.10) saturate(1.18) blur(0.22px);
+  transform: translateZ(0);
+}
+
+/* Optional: counter-soften text edge by keeping vignette strong */
+.backdrop-vignette {
+  background: radial-gradient(1200px 860px at 50% 45%, rgba(0,0,0,0) 0%, rgba(7,6,16,0.52) 70%, rgba(7,6,16,0.78) 100%);
 }
 
 /* Single marquee */

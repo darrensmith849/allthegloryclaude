@@ -26,12 +26,16 @@ export default function StickyBackdrop() {
           fill
           priority
           sizes="100vw"
-          className="object-cover"
+          className="object-cover backdrop-hd"
+          style={{ objectPosition: "50% 70%" }}
         />
       </motion.div>
 
       {/* 2KO-ish subtle grid + fade */}
       <div className="absolute inset-0 bg-grid bg-grid-fade opacity-[0.14]" />
+
+      {/* Vignette */}
+      <div className="absolute inset-0 backdrop-vignette pointer-events-none" />
 
       {/* Darkness veil fades down page */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />

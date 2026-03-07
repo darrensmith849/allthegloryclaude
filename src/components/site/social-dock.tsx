@@ -2,15 +2,10 @@
 
 import { site } from "@/content/site";
 
-function SocialLink({ href, label }: { href?: string; label: string }) {
+function Item({ href, label }: { href?: string; label: string }) {
   if (!href) return null;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="social-pill"
-    >
+    <a href={href} target="_blank" rel="noreferrer" className="social-link">
       {label} ↗
     </a>
   );
@@ -18,11 +13,11 @@ function SocialLink({ href, label }: { href?: string; label: string }) {
 
 export default function SocialDock() {
   return (
-    <div className="social-dock">
-      <SocialLink href={site.socials.instagram} label="Instagram" />
-      <SocialLink href={site.socials.youtube} label="YouTube" />
-      <SocialLink href={site.socials.spotify} label="Spotify" />
-      <SocialLink href={site.socials.facebook} label="Facebook" />
+    <div className="social-dock-bottom">
+      <Item href={site.socials.instagram} label="Instagram" />
+      <Item href={site.socials.youtube} label="YouTube" />
+      <Item href={site.socials.spotify} label="Spotify" />
+      <Item href={site.socials.facebook} label="Facebook" />
     </div>
   );
 }
