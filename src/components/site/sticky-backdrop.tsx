@@ -31,10 +31,10 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
-      {/* Layer 2: Ocean + stormy sky (IMG_2678) — screen blend for blue/storm mood */}
+      {/* Layer 2: Ocean (IMG_2678) — subtle soft-light blend */}
       <div
         className="absolute inset-0"
-        style={{ mixBlendMode: "screen", opacity: 0.65 }}
+        style={{ mixBlendMode: "soft-light", opacity: 0.35 }}
       >
         <Image
           src="/media/IMG_2678.jpg"
@@ -42,7 +42,7 @@ export default function StickyBackdrop() {
           fill
           sizes="100vw"
           className="object-cover"
-          quality={100}
+          quality={90}
           style={{ objectPosition: "50% 35%" }}
         />
       </div>
@@ -53,12 +53,24 @@ export default function StickyBackdrop() {
       {/* Dark veil — eases off on scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Warm golden radiance */}
+      {/* Warm golden wash — big and rich */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.80,
-          background: "radial-gradient(820px 520px at 70% 38%, rgba(216,178,90,0.16) 0%, transparent 64%)",
+          opacity: 1,
+          background:
+            "radial-gradient(1100px 700px at 50% 45%, rgba(216,178,90,0.32) 0%, rgba(241,215,166,0.12) 50%, transparent 72%)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Extra amber glow near the figure */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.90,
+          background:
+            "radial-gradient(600px 400px at 55% 75%, rgba(232,184,75,0.25) 0%, transparent 65%)",
           mixBlendMode: "screen",
         }}
       />
@@ -69,8 +81,8 @@ export default function StickyBackdrop() {
         style={{
           opacity: lightWash,
           background:
-            "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.14) 0%, transparent 70%)," +
-            "radial-gradient(980px 620px at 52% 78%, rgba(241,215,166,0.12) 0%, transparent 74%)",
+            "radial-gradient(980px 620px at 52% 22%, rgba(241,215,166,0.18) 0%, transparent 70%)," +
+            "radial-gradient(980px 620px at 52% 78%, rgba(216,178,90,0.16) 0%, transparent 74%)",
           mixBlendMode: "screen",
         }}
       />
