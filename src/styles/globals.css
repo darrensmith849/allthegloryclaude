@@ -200,6 +200,12 @@ body { background: transparent; color: var(--colour-ink); }
   .marquee-single-track { animation: none; }
 }
 
+.hero-corner {
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(244,240,232,0.55);
+}
 .hero-caption {
   font-size: 13px;
   line-height: 1.45;
