@@ -16,12 +16,12 @@ export default function ModoHero() {
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
       </div>
 
-      <div className="mx-auto w-full max-w-6xl px-2 pt-28 pb-16 md:pt-36 md:pb-20 flex justify-end">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-28 pb-16 md:pt-36 md:pb-20 flex justify-end">
         <motion.div
-          initial={{ opacity: 0, x: -60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[56rem] text-right pr-0 md:pr-0"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[56rem] text-right"
         >
           <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
             <span className="block">All The</span>
