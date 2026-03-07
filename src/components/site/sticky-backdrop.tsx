@@ -9,11 +9,12 @@ export default function StickyBackdrop() {
   const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.42, 0.28, 0.12]);
   const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.14, 0.34, 0.70]);
 
-  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.06, 1.14, 1.22]);
-  const contrast = useTransform(scrollYProgress, [0, 1], [1.10, 1.06]);
-  const saturate = useTransform(scrollYProgress, [0, 1], [1.12, 1.22]);
+  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.12, 1.20, 1.28]);
+  const contrast = useTransform(scrollYProgress, [0, 1], [1.14, 1.08]);
+  const saturate = useTransform(scrollYProgress, [0, 1], [1.18, 1.28]);
 
-  const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(0.22px)`;
+  // No blur — keep it sharp / HD
+  const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
     <div className="fixed inset-0 -z-50">
@@ -25,7 +26,8 @@ export default function StickyBackdrop() {
           priority
           sizes="100vw"
           className="object-cover"
-          style={{ objectPosition: "50% 30%" }}
+          quality={100}
+          style={{ objectPosition: "50% 50%", imageRendering: "auto" }}
         />
       </motion.div>
 
