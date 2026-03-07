@@ -1,5 +1,5 @@
 export const assets = {
   cover: "/media/cover.jpg",
-  tunnel: "/media/cover.jpg", // fallback until tunnel.jpg is uploaded
-  backdrop: "/media/terminal.jpg",
+  tunnel: "/media/IMG_2746.jpg",
+  backdrop: "/media/IMG_2678.jpg",
 };
