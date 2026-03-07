@@ -39,17 +39,6 @@ export default function StickyBackdrop() {
       {/* Dark veil */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Wide subtle gold wash across the sky */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          opacity: 0.70,
-          background:
-            "linear-gradient(180deg, rgba(216,178,90,0.14) 0%, rgba(232,184,75,0.10) 40%, rgba(241,215,166,0.06) 70%, transparent 100%)",
-          mixBlendMode: "screen",
-        }}
-      />
-
       {/* Light wash — brightens on scroll */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
@@ -57,7 +46,7 @@ export default function StickyBackdrop() {
           opacity: lightWash,
           background:
             "radial-gradient(980px 620px at 52% 22%, rgba(255,255,255,0.12) 0%, transparent 70%)," +
-            "radial-gradient(980px 620px at 52% 78%, rgba(180,195,220,0.10) 0%, transparent 74%)",
+            "radial-gradient(980px 620px at 52% 78%, rgba(255,255,255,0.08) 0%, transparent 74%)",
           mixBlendMode: "screen",
         }}
       />
