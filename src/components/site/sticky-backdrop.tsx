@@ -7,21 +7,21 @@ import { assets } from "@/content/assets";
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
-  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.08, 1.16, 1.24]);
-  const contrast = useTransform(scrollYProgress, [0, 1], [1.14, 1.08]);
-  const saturate = useTransform(scrollYProgress, [0, 1], [1.10, 1.20]);
+  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.12, 1.20, 1.28]);
+  const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.10]);
+  const saturate = useTransform(scrollYProgress, [0, 1], [1.18, 1.28]);
 
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.28, 0.18, 0.08]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.22, 0.14, 0.06]);
   const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.10, 0.24, 0.48]);
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
     <div className="fixed inset-0 -z-50">
-      {/* Layer 1: Tunnel light — base layer */}
+      {/* Stars image — single HD layer */}
       <motion.div className="absolute inset-0" style={{ filter }}>
         <Image
-          src={assets.cover}
+          src={assets.backdrop}
           alt="Backdrop"
           fill
           priority
@@ -29,54 +29,23 @@ export default function StickyBackdrop() {
           className="object-cover"
           quality={100}
           style={{
-            objectPosition: "50% 38%",
-            filter: "brightness(2.0) contrast(1.3) saturate(1.2)",
+            objectPosition: "50% 58%",
+            filter: "brightness(1.6) contrast(1.2)",
+            imageRendering: "auto",
           }}
         />
       </motion.div>
 
-      {/* Layer 2: Stars + figure — screen blended ON TOP so you stand out */}
-      <div
-        className="absolute inset-0"
-        style={{ mixBlendMode: "screen", opacity: 0.85 }}
-      >
-        <Image
-          src={assets.backdrop}
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover"
-          quality={100}
-          style={{
-            objectPosition: "50% 58%",
-            filter: "brightness(1.8) contrast(1.2)",
-          }}
-        />
-      </div>
-
       {/* Dark veil */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Cool indigo / tunnel-grade haze (replaces heavy gold) */}
+      {/* Wide subtle gold wash across the sky */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.62,
+          opacity: 0.70,
           background:
-            "radial-gradient(980px 620px at 30% 28%, rgba(11,27,52,0.50) 0%, transparent 62%)," +
-            "radial-gradient(980px 620px at 72% 40%, rgba(30,27,75,0.34) 0%, transparent 66%)," +
-            "radial-gradient(1200px 780px at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 70%, rgba(0,0,0,0.40) 100%)",
-          mixBlendMode: "screen",
-        }}
-      />
-
-      {/* Subtle gold tinge — wide but gentle */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          opacity: 0.40,
-          background:
-            "radial-gradient(1200px 700px at 50% 35%, rgba(216,178,90,0.18) 0%, rgba(232,184,75,0.08) 45%, transparent 72%)",
+            "linear-gradient(180deg, rgba(216,178,90,0.14) 0%, rgba(232,184,75,0.10) 40%, rgba(241,215,166,0.06) 70%, transparent 100%)",
           mixBlendMode: "screen",
         }}
       />
