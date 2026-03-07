@@ -8,12 +8,12 @@ export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
 
   // Lighter overall (more pop)
-  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.50, 0.34, 0.16]);
-  const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.10, 0.28, 0.62]);
+  const darkVeil = useTransform(scrollYProgress, [0, 0.55, 1], [0.42, 0.28, 0.12]);
+  const lightWash = useTransform(scrollYProgress, [0, 0.6, 1], [0.14, 0.34, 0.70]);
 
-  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.02, 1.10, 1.18]);
+  const brightness = useTransform(scrollYProgress, [0, 0.7, 1], [1.06, 1.14, 1.22]);
   const contrast = useTransform(scrollYProgress, [0, 1], [1.10, 1.06]);
-  const saturate = useTransform(scrollYProgress, [0, 1], [1.10, 1.18]);
+  const saturate = useTransform(scrollYProgress, [0, 1], [1.12, 1.22]);
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
