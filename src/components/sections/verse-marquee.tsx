@@ -10,7 +10,7 @@ export default function VerseMarquee() {
                   &ldquo;The light shines in the darkness, and the darkness
                   has not overcome it.&rdquo;
                 </div>
-                <div className="verse-ref mt-1">— John 1:5</div>
+                <div className="verse-ref text-center mt-1">John 1:5</div>
               </div>
             </div>
           </div>
