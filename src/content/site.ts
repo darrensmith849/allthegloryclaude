@@ -5,6 +5,7 @@ export const site = {
     instagram: "https://www.instagram.com/allthe_glory/",
     youtube: "https://www.youtube.com/@Allthe_glory",
     spotify: "https://open.spotify.com/artist/3k1a0DpzY9A1cGtavpQXt5?si=5w17YKdiSlWR05_EqGj9aw",
+    facebook: "", // TODO: paste your FB page URL here when you have it
   },
   nav: [
     { label: "Home", href: "/" },
