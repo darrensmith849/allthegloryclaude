@@ -26,7 +26,7 @@ export default function StickyBackdrop() {
       {/* Cloud layer — subtle base underneath */}
       <div className="absolute inset-0">
         <Image
-          src="/media/heavenly-clouds.png"
+          src="/media/clouds.webp"
           alt=""
           fill
           sizes="100vw"
