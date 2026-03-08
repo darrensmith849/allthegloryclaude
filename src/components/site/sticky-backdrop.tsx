@@ -13,11 +13,11 @@ export default function StickyBackdrop() {
 
   const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
 
-  // Subtle light — drifts down as you scroll, soft and clean
+  // Light band — moves down + gets brighter as you scroll
   const lightY = useTransform(scrollYProgress, [0, 1], [5, 65]);
-  const lightOpacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.15, 0.30, 0.50]);
-  const lightSize = useTransform(scrollYProgress, [0, 1], [400, 700]);
-  const lightBg = useMotionTemplate`radial-gradient(130% ${lightSize}px at 50% ${lightY}%, rgba(200,210,240,0.18) 0%, rgba(180,200,240,0.06) 45%, transparent 75%)`;
+  const lightOpacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.30, 0.55, 0.90]);
+  const lightSize = useTransform(scrollYProgress, [0, 1], [300, 600]);
+  const lightBg = useMotionTemplate`radial-gradient(120% ${lightSize}px at 50% ${lightY}%, rgba(255,255,255,0.28) 0%, rgba(220,230,255,0.10) 40%, transparent 70%)`;
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
@@ -63,13 +63,13 @@ export default function StickyBackdrop() {
       {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Subtle light — drifts down on scroll */}
+      {/* LIGHT BAND — wide glow across the top, moves down + intensifies on scroll */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
           opacity: lightOpacity,
           background: lightBg,
-          mixBlendMode: "soft-light",
+          mixBlendMode: "screen",
         }}
       />
 
@@ -87,7 +87,8 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Bottom fade */}
+      {/* Grain + bottom fade */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.06] grain-overlay" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-[var(--colour-bg)]" />
     </div>
   );
