@@ -13,11 +13,8 @@ export default function StickyBackdrop() {
 
   const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
 
-  // Light band — moves down + gets brighter as you scroll
-  const lightY = useTransform(scrollYProgress, [0, 1], [5, 65]);
-  const lightOpacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.30, 0.55, 0.90]);
-  const lightSize = useTransform(scrollYProgress, [0, 1], [300, 600]);
-  const lightBg = useMotionTemplate`radial-gradient(120% ${lightSize}px at 50% ${lightY}%, rgba(255,255,255,0.28) 0%, rgba(220,230,255,0.10) 40%, transparent 70%)`;
+  // Ambient glow — smoothly brightens the whole scene as you scroll
+  const glowOpacity = useTransform(scrollYProgress, [0, 0.4, 1], [0, 0.12, 0.28]);
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
@@ -63,13 +60,12 @@ export default function StickyBackdrop() {
       {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* LIGHT BAND — wide glow across the top, moves down + intensifies on scroll */}
+      {/* Ambient glow — smooth scene brightening on scroll */}
       <motion.div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none bg-white"
         style={{
-          opacity: lightOpacity,
-          background: lightBg,
-          mixBlendMode: "screen",
+          opacity: glowOpacity,
+          mixBlendMode: "soft-light",
         }}
       />
 
@@ -87,8 +83,7 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Grain + bottom fade */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06] grain-overlay" />
+      {/* Bottom fade */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-[var(--colour-bg)]" />
     </div>
   );
