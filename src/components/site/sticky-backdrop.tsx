@@ -13,12 +13,6 @@ export default function StickyBackdrop() {
 
   const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
 
-  // Light band — moves down + gets brighter as you scroll
-  const lightY = useTransform(scrollYProgress, [0, 1], [5, 65]);
-  const lightOpacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.30, 0.55, 0.90]);
-  const lightSize = useTransform(scrollYProgress, [0, 1], [300, 600]);
-  const lightBg = useMotionTemplate`radial-gradient(120% ${lightSize}px at 50% ${lightY}%, rgba(255,255,255,0.28) 0%, rgba(220,230,255,0.10) 40%, transparent 70%)`;
-
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
@@ -62,16 +56,6 @@ export default function StickyBackdrop() {
 
       {/* Dark veil — fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
-
-      {/* LIGHT BAND — wide glow across the top, moves down + intensifies on scroll */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          opacity: lightOpacity,
-          background: lightBg,
-          mixBlendMode: "screen",
-        }}
-      />
 
       {/* Starfield CSS overlays */}
       <div className="absolute inset-0 stars-glow" />
