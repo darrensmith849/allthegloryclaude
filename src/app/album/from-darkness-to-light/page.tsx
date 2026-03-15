@@ -166,20 +166,18 @@ export default function AlbumPage() {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 4.5, ease: [0.22, 1, 0.36, 1] }}
-            className="panel-scrim p-5 md:p-6 rounded-2xl lg:self-center lg:w-[200px]"
+            className="panel-scrim p-5 md:p-6 rounded-2xl lg:self-center lg:w-[240px]"
           >
-            <div className="flex flex-col gap-3">
-              <Link href="/store" className="btn btn-primary text-center">
+            <div className="flex gap-2">
+              <Link href="/store" className="btn btn-primary text-center flex-1">
                 Download free →
               </Link>
-              <Link href="/give" className="btn btn-ghost text-center">
-                Give / donate →
+              <Link href="/give" className="btn btn-ghost text-center flex-1">
+                Give →
               </Link>
             </div>
             <p className="mt-4 text-[11px] text-white/55 leading-relaxed">
               I didn't want to put a price on worship — this is an offering unto the Lord.
-            </p>
-            <p className="mt-2 text-[10px] text-white/45 leading-relaxed">
               If you feel led to support the work, your gift goes directly into recording,
               production, and releasing more music.
             </p>
