@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,9 +9,36 @@ import { site } from "@/content/site";
 
 export default function SiteFooter() {
   const pathname = usePathname();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    setInView(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !inView) {
+          setInView(true);
+          videoRef.current?.play();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(footer);
+    return () => obs.disconnect();
+  }, [pathname, inView]);
 
   return (
-    <footer className="relative w-full overflow-hidden">
+    <footer ref={footerRef} className="relative w-full overflow-hidden">
       {/* Jesus painting background — full width */}
       <div className="absolute inset-0">
         <Image
@@ -28,13 +56,13 @@ export default function SiteFooter() {
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[var(--colour-bg)] to-transparent" />
       </div>
 
-      {/* Lightning video — footer only */}
+      {/* Lightning video — starts when footer enters view */}
       <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ mixBlendMode: "screen", opacity: 0.2 }}
+        className="absolute inset-0 overflow-hidden transition-opacity duration-[2000ms]"
+        style={{ mixBlendMode: "screen", opacity: inView ? 0.2 : 0 }}
       >
         <video
-          autoPlay
+          ref={videoRef}
           loop
           muted
           playsInline
