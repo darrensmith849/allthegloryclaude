@@ -120,32 +120,34 @@ export default function AlbumPage() {
             transition={{ duration: 0.65, delay: 0.1, ease }}
             className="flex flex-col items-center text-center"
           >
-            {/* Album name */}
-            <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-              2025 • Album
-            </div>
-            <h1 className="subtitle-glyph mt-3 text-2xl md:text-4xl font-semibold text-white">
-              {album.title}
-            </h1>
-            <p className="subtitle-glyph mt-2 text-sm text-white/65">
-              {album.subtitle}
-            </p>
+            {/* Album header — panel-scrim glass background */}
+            <div className="panel-scrim p-6 md:p-8 rounded-2xl w-full">
+              <div className="text-xs uppercase tracking-[0.28em] text-white/60">
+                2025 • Album
+              </div>
+              <h1 className="subtitle-glyph mt-3 text-2xl md:text-4xl font-semibold text-white">
+                {album.title}
+              </h1>
+              <p className="subtitle-glyph mt-2 text-sm text-white/65">
+                {album.subtitle}
+              </p>
 
-            {/* Download / Give */}
-            <div className="mt-6 flex gap-3">
-              <Link href="/store" className="btn btn-primary">
-                Download free →
-              </Link>
-              <Link href="/give" className="btn btn-ghost">
-                Give →
-              </Link>
-            </div>
+              {/* Download / Give */}
+              <div className="mt-6 flex justify-center gap-3">
+                <Link href="/store" className="btn btn-primary">
+                  Download free →
+                </Link>
+                <Link href="/give" className="btn btn-ghost">
+                  Give →
+                </Link>
+              </div>
 
-            <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-sm">
-              I didn't want to put a price on worship — this is an offering unto the Lord.
-              If you feel led to support the work, your gift goes directly into recording,
-              production, and releasing more music.
-            </p>
+              <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-sm mx-auto">
+                I didn't want to put a price on worship — this is an offering unto the Lord.
+                If you feel led to support the work, your gift goes directly into recording,
+                production, and releasing more music.
+              </p>
+            </div>
 
             {/* Tracks — alternating fly-in from left and right */}
             <div className="mt-8 grid gap-3 w-full">
