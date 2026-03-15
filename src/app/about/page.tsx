@@ -1,19 +1,21 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Testimony from "@/components/sections/testimony";
+"use client";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "The story behind All The Glory — from darkness to light.",
-};
+import Image from "next/image";
+import { motion } from "framer-motion";
+import Testimony from "@/components/sections/testimony";
 
 export default function AboutPage() {
   return (
-    <div className="pt-24">
-      {/* Dad image — large, like album art */}
+    <div className="pt-24 overflow-x-clip">
+      {/* Dad image — flies in from top like music page art */}
       <section className="w-full pt-20 md:pt-28 pb-10">
         <div className="mx-auto max-w-xl px-6 flex flex-col items-center text-center">
-          <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]">
+          <motion.div
+            initial={{ opacity: 0, y: -80 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 3.5, ease: [0.12, 1, 0.25, 1] }}
+            className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]"
+          >
             <Image
               src="/media/dad.jpg"
               alt="All The Glory"
@@ -23,12 +25,17 @@ export default function AboutPage() {
               style={{ objectPosition: "50% 40%" }}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
-          </div>
+          </motion.div>
 
-          <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 3, delay: 1.5, ease: "easeOut" }}
+            className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl"
+          >
             The story behind the music — a testimony of grace, surrender, and
             the relentless pursuit of light in the darkest places.
-          </p>
+          </motion.p>
         </div>
       </section>
 

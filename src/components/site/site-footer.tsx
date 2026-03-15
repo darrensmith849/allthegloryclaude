@@ -49,7 +49,7 @@ export default function SiteFooter() {
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 2, delay: 3, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
@@ -68,7 +68,7 @@ export default function SiteFooter() {
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 2, delay: 4, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
