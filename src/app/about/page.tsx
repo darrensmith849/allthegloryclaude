@@ -27,17 +27,15 @@ export default function AboutPage() {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
           </motion.div>
 
-          <motion.div
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 3, delay: 1.5, ease: "easeOut" }}
-            className="mt-6 panel-scrim p-5 md:p-6 rounded-2xl max-w-2xl"
+            transition={{ duration: 4, delay: 1.5, ease: "easeOut" }}
+            className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl"
           >
-            <p className="text-lg md:text-xl text-white/60">
-              The story behind the music - a testimony of grace, surrender, and
-              the relentless pursuit of light in the darkest places.
-            </p>
-          </motion.div>
+            The story behind the music - a testimony of grace, surrender, and
+            the relentless pursuit of light in the darkest places.
+          </motion.p>
         </div>
       </section>
 
