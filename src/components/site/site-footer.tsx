@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { site } from "@/content/site";
 
 export default function SiteFooter() {
+  const pathname = usePathname();
+
   return (
     <footer className="relative w-full overflow-hidden">
       {/* Jesus painting background — full width */}
@@ -47,9 +50,10 @@ export default function SiteFooter() {
         <div className="mx-auto max-w-md flex flex-col gap-6">
           {/* Scripture — fades in after painting is visible */}
           <motion.div
+            key={`scripture-${pathname}`}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 2, delay: 3, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
@@ -66,9 +70,10 @@ export default function SiteFooter() {
 
           {/* Nav + socials + credits — fades in slightly after scripture */}
           <motion.div
+            key={`nav-${pathname}`}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 2, delay: 4, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
