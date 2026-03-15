@@ -40,19 +40,16 @@ export default function AlbumPromo() {
               Listen now →
             </div>
           </div>
+          {/* Artwork credit */}
+          <div className="mt-3 panel-scrim p-3 text-center rounded-xl">
+            <span className="text-xs text-white/55">
+              Artwork by{" "}
+              <span className="text-white/75 underline decoration-white/20 underline-offset-4">
+                Debbie Clarke
+              </span>
+            </span>
+          </div>
         </Link>
-
-        <div className="mt-2 text-center text-xs text-white/55">
-          Artwork by{" "}
-          <a
-            href="https://debbieclarkart.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
-          >
-            Debbie Clarke
-          </a>
-        </div>
       </div>
     </section>
   );

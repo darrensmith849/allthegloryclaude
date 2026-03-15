@@ -26,6 +26,7 @@ export default function StickyBackdrop() {
           src="/media/clouds.webp"
           alt=""
           fill
+          priority
           sizes="100vw"
           className="object-cover"
           quality={90}
