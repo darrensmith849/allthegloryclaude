@@ -1,26 +1,28 @@
+import Image from "next/image";
 import Link from "next/link";
 import { site } from "@/content/site";
 
 export default function SiteFooter() {
   return (
-    <footer className="relative w-full border-t border-white/5 overflow-hidden" style={{ background: "var(--colour-bg)" }}>
-      {/* Crown of thorns vine — spans full width */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[120px] md:h-[160px] opacity-[0.07]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 120' fill='none' stroke='%23911' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M0 60C40 58 60 45 100 50s60 30 100 25 40-30 100-28 60 22 100 18 40-25 100-22 60 20 100 17 40-18 100-20' /%3E%3Cpath d='M0 65C50 62 70 52 110 55s50 25 90 22 50-28 100-24 55 20 95 15 45-22 95-18 55 18 95 14 45-16 120-18' /%3E%3C!-- thorns --%3E%3Cline x1='68' y1='52' x2='58' y2='38' /%3E%3Cline x1='135' y1='62' x2='142' y2='46' /%3E%3Cline x1='210' y1='48' x2='200' y2='34' /%3E%3Cline x1='285' y1='58' x2='294' y2='42' /%3E%3Cline x1='350' y1='44' x2='340' y2='30' /%3E%3Cline x1='420' y1='55' x2='430' y2='40' /%3E%3Cline x1='495' y1='46' x2='485' y2='32' /%3E%3Cline x1='560' y1='56' x2='570' y2='40' /%3E%3Cline x1='630' y1='42' x2='620' y2='28' /%3E%3Cline x1='710' y1='52' x2='720' y2='36' /%3E%3Cline x1='775' y1='46' x2='765' y2='32' /%3E%3Cline x1='95' y1='68' x2='88' y2='82' /%3E%3Cline x1='175' y1='56' x2='168' y2='72' /%3E%3Cline x1='248' y1='65' x2='256' y2='80' /%3E%3Cline x1='330' y1='52' x2='322' y2='68' /%3E%3Cline x1='398' y1='60' x2='406' y2='76' /%3E%3Cline x1='465' y1='50' x2='458' y2='66' /%3E%3Cline x1='538' y1='62' x2='546' y2='78' /%3E%3Cline x1='605' y1='48' x2='598' y2='64' /%3E%3Cline x1='680' y1='58' x2='688' y2='74' /%3E%3Cline x1='750' y1='50' x2='742' y2='66' /%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat-x",
-          backgroundPosition: "center top",
-          backgroundSize: "800px 120px",
-        }}
-      />
-      {/* Blood-red glow behind thorns */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[100px] md:h-[140px] opacity-[0.12]"
-        style={{
-          background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(120,20,20,0.8) 0%, transparent 70%)",
-        }}
-      />
+    <footer className="relative w-full overflow-hidden">
+      {/* Jesus painting background — full width */}
+      <div className="absolute inset-0">
+        <Image
+          src="/media/jesus-painting.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          style={{
+            objectPosition: "50% 25%",
+            opacity: 0.18,
+          }}
+        />
+        {/* Top fade into page */}
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[var(--colour-bg)] to-transparent" />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--colour-bg)]/60 via-transparent to-[var(--colour-bg)]/80" />
+      </div>
 
       <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
         {/* Scripture — Mark 8:36 */}
@@ -92,6 +94,19 @@ export default function SiteFooter() {
             </Link>
           ))}
         </div>
+
+        {/* Artwork credit */}
+        <p className="text-center text-xs mb-4" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
+          Artwork by{" "}
+          <a
+            href="https://debbieclarkart.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-white/20 underline-offset-4 hover:opacity-80"
+          >
+            Debbie Clarke
+          </a>
+        </p>
 
         {/* Copyright */}
         <p className="text-center text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>

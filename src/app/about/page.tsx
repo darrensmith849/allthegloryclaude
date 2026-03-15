@@ -10,21 +10,18 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="pt-24">
-      {/* Dad image — no background, fades into page */}
+      {/* Dad image — large, like album art */}
       <section className="w-full pt-20 md:pt-28 pb-10">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
-          <div className="relative w-56 h-56 md:w-72 md:h-72">
+        <div className="mx-auto max-w-xl px-6 flex flex-col items-center text-center">
+          <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]">
             <Image
               src="/media/dad.jpg"
               alt="All The Glory"
               fill
-              sizes="288px"
+              sizes="(max-width: 768px) 100vw, 520px"
               className="object-cover"
-              style={{
-                maskImage: "radial-gradient(ellipse 50% 50% at 50% 45%, black 60%, transparent 100%)",
-                WebkitMaskImage: "radial-gradient(ellipse 50% 50% at 50% 45%, black 60%, transparent 100%)",
-              }}
             />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
           </div>
 
           <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl">

@@ -51,7 +51,7 @@ export default function ContactPage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h1 className="modo-title text-colour-fg mb-6">Contact</h1>
           <p className="text-lg md:text-xl text-colour-fg/60">
-            Get in touch. We&apos;d love to hear from you.
+            Get in touch.
           </p>
         </div>
       </section>
