@@ -184,7 +184,7 @@ body { background: transparent; color: var(--colour-ink); }
 
 /* Verse marquee: boxed + slower loop */
 .marquee-single { overflow: hidden; padding: 16px 0 10px; }
-.marquee-single-track { width: max-content; animation: marqueeSingle 26s linear infinite; }
+.marquee-single-track { width: max-content; animation: marqueeSingle 44s linear infinite; }
 .verse-block { display: inline-flex; flex-direction: column; padding: 0 24px; white-space: nowrap; }
 .verse-text { font-size: clamp(18px, 2.4vw, 28px); letter-spacing: 0.02em; color: rgba(244,240,232,0.82); }
 .verse-ref-center { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(244,240,232,0.55); padding-bottom: 6px; }
