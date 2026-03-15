@@ -16,9 +16,8 @@ function TrackRow({
   href?: string;
   delay: number;
 }) {
-  // "Fly in" from the left as if passing over the album art, then settle.
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5 overflow-hidden">
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="text-xs uppercase tracking-[0.24em] text-white/45">
@@ -26,10 +25,10 @@ function TrackRow({
           </div>
 
           <motion.div
-            initial={{ opacity: 0, x: -140 }}
+            initial={{ opacity: 0, x: "-60vw" }}
             animate={{ opacity: 1, x: 0 }}
             transition={{
-              duration: 0.75,
+              duration: 2,
               delay,
               ease: [0.22, 1, 0.36, 1],
             }}
@@ -60,38 +59,36 @@ function TrackRow({
 
 export default function AlbumPage() {
   return (
-    <main className="bg-transparent">
+    <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
-        <div className="grid gap-10 lg:grid-cols-[minmax(360px,520px)_1fr] items-start">
-          {/* LEFT: album art (capped so it never becomes taller than right column) */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(380px,540px)_1fr] items-start">
+          {/* LEFT: album art — tall to match right column */}
           <motion.div
             initial={{ opacity: 0, x: -22 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className="w-full"
           >
-            {/* IMPORTANT: cap height; keep big but contained */}
             <div
               className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
               style={{
                 width: "100%",
-                maxWidth: "520px",
-                // Big, but capped so it doesn't run past the right-side content
-                height: "min(520px, 62vh)",
+                maxWidth: "540px",
+                aspectRatio: "1 / 1",
               }}
             >
               <Image
                 src={album.coverImage}
                 alt="Album cover"
                 fill
-                sizes="(max-width: 1024px) 100vw, 520px"
+                sizes="(max-width: 1024px) 100vw, 540px"
                 className="object-cover"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
             </div>
 
             {/* Credit under the image */}
-            <div className="mt-3 text-xs text-white/55 max-w-[520px]">
+            <div className="mt-3 text-xs text-white/55 max-w-[540px]">
               Artwork by{" "}
               <a
                 href="https://debbieclarkart.com/"
@@ -113,7 +110,7 @@ export default function AlbumPage() {
               </Link>
             </div>
 
-            <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-[520px]">
+            <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-[540px]">
               I didn't want to put a price on worship — this is an offering unto the Lord.
               If you feel led to support the work, your gift goes directly into recording, production,
               and releasing more music.
@@ -142,7 +139,7 @@ export default function AlbumPage() {
               Tracklist
             </h2>
 
-            {/* Tracklist: fly-in titles */}
+            {/* Tracklist: titles fly slowly across from the album art side, one by one */}
             <div className="mt-6 grid gap-4">
               {album.tracks.map((t, i) => (
                 <TrackRow
@@ -150,7 +147,7 @@ export default function AlbumPage() {
                   index={i + 1}
                   title={t.title}
                   href={(t as any).previewUrl}
-                  delay={0.10 + i * 0.06}
+                  delay={0.5 + i * 0.55}
                 />
               ))}
             </div>
