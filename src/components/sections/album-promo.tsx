@@ -10,7 +10,7 @@ export default function AlbumPromo() {
           href="/album/from-darkness-to-light"
           className="block group"
         >
-          {/* Album image - centred above the glass */}
+          {/* Album image */}
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]">
             <Image
               src={assets.albumArt}
@@ -21,9 +21,26 @@ export default function AlbumPromo() {
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
           </div>
+        </Link>
 
+        <div className="mt-2 mb-4 text-center text-xs text-white/55">
+          Artwork by{" "}
+          <a
+            href="https://debbieclarkart.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
+          >
+            Debbie Clarke
+          </a>
+        </div>
+
+        <Link
+          href="/album/from-darkness-to-light"
+          className="block group"
+        >
           {/* Glass panel with text */}
-          <div className="mt-6 panel-scrim p-5 md:p-6 text-center group-hover:border-white/20 transition-colors duration-300">
+          <div className="panel-scrim p-5 md:p-6 text-center group-hover:border-white/20 transition-colors duration-300">
             <div className="text-xs uppercase tracking-[0.28em] text-white/70">
               Album
             </div>
@@ -39,13 +56,6 @@ export default function AlbumPromo() {
             <div className="mt-4 text-xs uppercase tracking-[0.24em] text-white/55 group-hover:text-white/80 transition-colors duration-300">
               Listen now →
             </div>
-
-            <p className="mt-3 pt-3 border-t border-white/10 text-xs text-white/55">
-              Artwork by{" "}
-              <span className="text-white/75 underline decoration-white/20 underline-offset-4">
-                Debbie Clarke
-              </span>
-            </p>
           </div>
         </Link>
       </div>

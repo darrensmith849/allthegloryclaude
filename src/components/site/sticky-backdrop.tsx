@@ -19,7 +19,7 @@ export default function StickyBackdrop() {
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
 
   return (
-    <div className="fixed inset-0 -z-50">
+    <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">
       {/* Cloud layer — subtle base underneath */}
       <div className="absolute inset-0">
         <Image
