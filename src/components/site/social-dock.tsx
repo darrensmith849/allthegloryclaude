@@ -11,9 +11,9 @@ function Item({ href, label, delay }: { href?: string; label: string; delay: num
       target="_blank"
       rel="noreferrer"
       className="social-link"
-      initial={{ opacity: 0, x: "-30vw" }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 5, delay, ease: [0.06, 1, 0.18, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 4, delay, ease: "easeOut" }}
     >
       {label} ↗
     </motion.a>
