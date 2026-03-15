@@ -10,11 +10,15 @@ const ease = [0.22, 1, 0.36, 1] as const;
 function TrackRow({
   index,
   title,
+  verse,
+  verseUrl,
   delay,
   fromRight,
 }: {
   index: number;
   title: string;
+  verse: string;
+  verseUrl: string;
   delay: number;
   fromRight: boolean;
 }) {
@@ -23,22 +27,36 @@ function TrackRow({
       initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 5, delay, ease: [0.08, 1, 0.2, 1] }}
-      className="panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
+      className="group panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs uppercase tracking-[0.24em] text-white/45">
-            Track {String(index).padStart(2, "0")}
+      <a
+        href={verseUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="block"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-[0.24em] text-white/45">
+              Track {String(index).padStart(2, "0")}
+            </div>
+            <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate group-hover:text-[var(--colour-amber)] transition-colors duration-300">
+              {title}
+            </div>
           </div>
-          <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate">
-            {title}
-          </div>
+
+          <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
+            Read verse ↗
+          </span>
         </div>
 
-        <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
-          Preview
-        </span>
-      </div>
+        {/* Verse tooltip on hover */}
+        <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
+          <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
+            {verse}
+          </p>
+        </div>
+      </a>
 
       {/* Shimmer sweep after landing */}
       <motion.div
@@ -156,6 +174,8 @@ export default function AlbumPage() {
                   key={t.title}
                   index={i + 1}
                   title={t.title}
+                  verse={t.verse}
+                  verseUrl={t.verseUrl}
                   delay={0.6 + i * 0.8}
                   fromRight={i % 2 === 1}
                 />
