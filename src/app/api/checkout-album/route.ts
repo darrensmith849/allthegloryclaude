@@ -22,7 +22,7 @@ export async function POST() {
         price_data: {
           currency: "usd",
           product_data: { name: "From Darkness To Light — Digital Album" },
-          unit_amount: 1000,
+          unit_amount: 2000,
         },
         quantity: 1,
       },

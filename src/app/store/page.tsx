@@ -15,11 +15,11 @@ export default function StorePage() {
         <p className="mt-4 text-white/70">Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓 — digital download.</p>
 
         <div className="mt-8 panel-scrim p-6">
-          <div className="text-xl font-semibold text-white">$10</div>
+          <div className="text-xl font-semibold text-white">$20</div>
           <button onClick={buy} className="mt-5 btn btn-primary">Checkout →</button>
 
           <p className="mt-4 text-xs text-white/55">
-            Buying supports new releases directly. Streaming helps, but a single purchase funds far more creation than many listens.
+            Purchasing the album is a meaningful way to support the work — and it shows you value what's being made.
           </p>
         </div>
       </div>
