@@ -3,7 +3,7 @@ export default function SuccessPage() {
     <main className="bg-transparent">
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <h1 className="text-3xl md:text-4xl font-semibold text-white">Thank you 🙏</h1>
-        <p className="mt-4 text-white/70">Your purchase makes new music possible. Here's your download.</p>
+        <p className="mt-4 text-white/70">Your generosity makes new music possible.</p>
 
         <a href="/downloads/from-darkness-to-light.zip" className="mt-8 inline-flex btn btn-primary">
           Download album →

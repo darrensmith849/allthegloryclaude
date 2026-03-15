@@ -7,7 +7,7 @@ export default function AlbumPromo() {
     <section className="bg-transparent">
       <div className="mx-auto w-full max-w-6xl px-6 py-10 md:py-14">
         <div className="panel-scrim p-6 md:p-8 grid gap-6 md:grid-cols-[360px_1fr] items-center">
-          {/* Album artwork */}
+          {/* Album image */}
           <div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[240px] md:h-[320px]">
               <Image
@@ -49,7 +49,7 @@ export default function AlbumPromo() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/store" className="btn btn-primary">
-                Buy album ($20) →
+                Download free →
               </Link>
               <Link href="/give" className="btn btn-ghost">
                 Give / donate →
@@ -57,9 +57,10 @@ export default function AlbumPromo() {
             </div>
 
             <div className="mt-5 text-xs md:text-sm text-white/62 leading-relaxed max-w-xl">
-              Purchasing the album is a meaningful way to support the work — and it shows you value what's being made.
+              I didn't want to put a price on worship — this is an offering unto the Lord.
               <br />
-              Every purchase and gift goes back into recording, production, and releasing new music.
+              If this blessed you and you'd like to support what's next, your giving helps fund recording,
+              production, and future releases.
             </div>
           </div>
         </div>
