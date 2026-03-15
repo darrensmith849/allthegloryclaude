@@ -9,8 +9,7 @@ export const site = {
   },
   nav: [
     { label: "Home", href: "/" },
-    { label: "Album", href: "/album/from-darkness-to-light" },
-    { label: "Music", href: "/music" },
+    { label: "Music", href: "/album/from-darkness-to-light" },
     { label: "Videos", href: "/videos" },
     { label: "Events", href: "/events" },
     { label: "Store", href: "/store" },
