@@ -5,16 +5,35 @@ import { motion } from "framer-motion";
 export default function ModoHero() {
   return (
     <section className="relative min-h-[92vh] w-full overflow-x-clip">
-      <div className="absolute left-6 top-20 md:top-24 hero-corner subtitle-glyph">
+      {/* Top-left: dissolve in */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 4, delay: 1.5, ease: "easeOut" }}
+        className="absolute left-6 top-20 md:top-24 hero-corner subtitle-glyph"
+      >
         Ⅎɹoɯ ᗡɐɹʞuǝss
-      </div>
-      <div className="absolute right-6 top-20 md:top-24 hero-corner subtitle-glyph text-right">
-        †o 𝕃Ɨ𝕘𝓱𝐓
-      </div>
+      </motion.div>
 
-      <div className="absolute right-6 bottom-8 hero-caption hidden md:block">
+      {/* Top-right: dissolve in */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 4, delay: 2, ease: "easeOut" }}
+        className="absolute right-6 top-20 md:top-24 hero-corner subtitle-glyph text-right"
+      >
+        †o 𝕃Ɨ𝕘𝓱𝐓
+      </motion.div>
+
+      {/* Caption: flies in from right with the title */}
+      <motion.div
+        initial={{ opacity: 0, x: "40vw" }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 7, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
+        className="absolute right-6 bottom-8 hero-caption hidden md:block"
+      >
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
-      </div>
+      </motion.div>
 
       <div className="mx-auto w-full max-w-6xl px-6 pt-28 pb-16 md:pt-36 md:pb-20 flex justify-end">
         <motion.div
