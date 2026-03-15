@@ -83,8 +83,13 @@ export default function StickyBackdrop() {
         }}
       />
 
-      {/* Bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-[var(--colour-bg)]" />
+      {/* Bottom fade — deep purple gradient */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-72"
+        style={{
+          background: "linear-gradient(to bottom, transparent 0%, rgba(14,10,30,0.4) 40%, rgba(14,10,30,0.85) 70%, #0e0a1e 100%)",
+        }}
+      />
     </div>
   );
 }
