@@ -14,7 +14,7 @@ export default function SiteFooter() {
           sizes="100vw"
           className="object-cover"
           style={{
-            objectPosition: "50% 40%",
+            objectPosition: "50% 20%",
             opacity: 0.22,
           }}
         />
