@@ -54,7 +54,7 @@ export default function SiteFooter() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 2, delay: 3, ease: "easeOut" }}
+            transition={{ duration: 2, delay: 2, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
             <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
@@ -74,7 +74,7 @@ export default function SiteFooter() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 2, delay: 4, ease: "easeOut" }}
+            transition={{ duration: 2, delay: 3, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
             {/* Social links */}

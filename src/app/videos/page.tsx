@@ -41,6 +41,7 @@ export default function VideosPage() {
               src={assets.albumArt}
               alt="All The Glory"
               fill
+              priority
               sizes="(max-width: 768px) 100vw, 800px"
               className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
             />
