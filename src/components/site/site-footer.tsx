@@ -12,9 +12,9 @@ export default function SiteFooter() {
           alt=""
           fill
           sizes="100vw"
-          className="object-cover"
+          className="object-contain"
           style={{
-            objectPosition: "50% 65%",
+            objectPosition: "50% 50%",
             opacity: 0.22,
           }}
         />
