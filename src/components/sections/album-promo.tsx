@@ -23,7 +23,7 @@ export default function AlbumPromo() {
           </div>
 
           {/* Glass panel with text */}
-          <div className="mt-4 panel-scrim p-5 md:p-6 text-center group-hover:border-white/20 transition-colors duration-300">
+          <div className="mt-3 panel-scrim p-5 md:p-6 text-center group-hover:border-white/20 transition-colors duration-300">
             <div className="text-xs uppercase tracking-[0.28em] text-white/70">
               Album
             </div>
