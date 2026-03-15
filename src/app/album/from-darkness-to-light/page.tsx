@@ -26,7 +26,7 @@ function TrackRow({
     <motion.div
       initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 5, delay, ease: [0.08, 1, 0.2, 1] }}
+      transition={{ duration: 7, delay, ease: [0.06, 1, 0.18, 1] }}
       className="group panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
     >
       <div className="flex items-center justify-between gap-4">
@@ -83,7 +83,7 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
     <motion.section
       initial={{ opacity: 0, y: -80 }}
       animate={{ opacity: 0.85, y: 0 }}
-      transition={{ duration: 3.5, delay, ease: [0.12, 1, 0.25, 1] }}
+      transition={{ duration: 6, delay, ease: [0.06, 1, 0.18, 1] }}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
@@ -136,7 +136,7 @@ export default function AlbumPage() {
           <motion.section
             initial={{ opacity: 0, y: -60 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 3.5, delay: 0.3, ease: [0.12, 1, 0.25, 1] }}
+            transition={{ duration: 6, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
             className="flex flex-col items-center text-center"
           >
             {/* Album header — panel-scrim glass background */}
@@ -187,7 +187,7 @@ export default function AlbumPage() {
             <motion.div
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 3, delay: 6.5, ease: [0.12, 1, 0.25, 1] }}
+              transition={{ duration: 5, delay: 7, ease: [0.06, 1, 0.18, 1] }}
               className="mt-8 flex flex-wrap justify-center gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
             >
               <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
