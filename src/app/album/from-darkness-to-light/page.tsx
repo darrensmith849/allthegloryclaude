@@ -1,115 +1,167 @@
 "use client";
 
-import { useState, useRef } from "react";
 import Image from "next/image";
-import { albumConfig } from "@/content/album";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { album } from "@/content/album";
 
-export default function AlbumPage() {
-  const [playing, setPlaying] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  function togglePreview(trackNumber: number, src?: string) {
-    if (!src) return;
-
-    if (playing === trackNumber) {
-      audioRef.current?.pause();
-      setPlaying(null);
-      return;
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
-    const audio = new Audio(src);
-    audio.addEventListener("ended", () => setPlaying(null));
-    audio.play();
-    audioRef.current = audio;
-    setPlaying(trackNumber);
-  }
-
+function TrackRow({
+  index,
+  title,
+  previewSrc,
+}: {
+  index: number;
+  title: string;
+  previewSrc?: string;
+}) {
   return (
-    <div className="pt-24">
-      <section className="w-full py-20 md:py-28">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-start">
-            {/* Cover — larger */}
-            <div className="w-full md:w-[26rem] lg:w-[32rem] flex-shrink-0">
-              <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10">
-                <Image
-                  src={albumConfig.cover}
-                  alt="From Darkness To Light album artwork"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 32rem"
-                  className="object-cover"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/40" />
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="flex-1">
-              <p className="text-sm text-white/55 uppercase tracking-widest mb-3">
-                {albumConfig.year} &middot; Album
-              </p>
-              <h1 className="subtitle-glyph text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">
-                {albumConfig.title}
-              </h1>
-              <p className="subtitle-glyph text-white/50 mb-8">
-                {albumConfig.subtitle}
-              </p>
-
-              {/* Tracklist */}
-              <h2 className="text-lg font-semibold text-white mb-4">
-                Tracklist
-              </h2>
-              <div className="space-y-1">
-                {albumConfig.tracklist.map((track) => (
-                  <div
-                    key={track.number}
-                    className="flex items-center gap-4 py-3 border-b border-white/10 hover:bg-white/5 transition-colors px-2 -mx-2 rounded"
-                  >
-                    <span className="text-sm text-white/30 w-8 tabular-nums">
-                      {String(track.number).padStart(2, "0")}
-                    </span>
-                    <span className="text-white/80 font-medium flex-1">
-                      {track.title}
-                    </span>
-                    {track.previewSrc && (
-                      <button
-                        onClick={() => togglePreview(track.number, track.previewSrc)}
-                        className="text-xs uppercase tracking-widest text-white/40 hover:text-white/70 transition-colors"
-                      >
-                        {playing === track.number ? "Stop" : "Preview"}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Streaming links — social-link style, below tracklist */}
-              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2">
-                {Object.entries(albumConfig.streamingLinks).map(
-                  ([platform, url]) => (
-                    <a
-                      key={platform}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="social-link"
-                    >
-                      {platform === "appleMusic"
-                        ? "Apple Music"
-                        : platform.charAt(0).toUpperCase() + platform.slice(1)}{" "}
-                      ↗
-                    </a>
-                  )
-                )}
-              </div>
-            </div>
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-[0.24em] text-white/50">
+            Track {String(index).padStart(2, "0")}
+          </div>
+          <div className="mt-1 text-base md:text-lg font-semibold text-white/90">
+            {title}
           </div>
         </div>
-      </section>
+
+        <Link href="/store" className="btn btn-ghost">
+          Download free →
+        </Link>
+      </div>
+
+      {previewSrc ? (
+        <div className="mt-4">
+          <div className="text-xs text-white/55 mb-2">30s preview</div>
+          <audio controls preload="none" className="w-full" src={previewSrc} />
+        </div>
+      ) : (
+        <div className="mt-4 text-xs text-white/45">Preview coming soon.</div>
+      )}
     </div>
+  );
+}
+
+export default function AlbumPage() {
+  return (
+    <main className="bg-transparent">
+      <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+        {/* NOTE: align-start + constrained image prevents overlap */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(320px,480px)_1fr] items-start">
+          {/* LEFT: album art, sized to never exceed right column feel */}
+          <motion.div
+            initial={{ opacity: 0, x: -26 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full"
+          >
+            {/* Square, responsive, capped */}
+            <div
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+              style={{
+                width: "100%",
+                maxWidth: "480px",
+                aspectRatio: "1 / 1",
+              }}
+            >
+              <Image
+                src={album.coverImage}
+                alt="Album cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 480px"
+                className="object-cover"
+              />
+
+              {/* Depth + polish */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                {/* subtle sheen */}
+                <div className="absolute -left-24 top-10 h-40 w-64 rotate-12 bg-white/10 blur-2xl" />
+              </div>
+
+              {/* Optional: hover label */}
+              <div className="pointer-events-none absolute bottom-4 left-4 right-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <div className="text-xs text-white/70">
+                  Artwork by{" "}
+                  <a
+                    href="https://debbieclarkart.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="pointer-events-auto underline decoration-white/20 underline-offset-4 hover:text-white"
+                  >
+                    Debbie Clarke
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* CTAs under art */}
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/store" className="btn btn-primary">
+                Download free →
+              </Link>
+              <Link href="/give" className="btn btn-ghost">
+                Give / donate →
+              </Link>
+            </div>
+
+            <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-[480px]">
+              I didn't want to put a price on worship — this is an offering unto the Lord.
+              If you feel led to support the work, your gift goes directly into recording, production,
+              and releasing more music.
+            </p>
+          </motion.div>
+
+          {/* RIGHT: text + tracklist */}
+          <motion.div
+            initial={{ opacity: 0, x: 26 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="text-xs uppercase tracking-[0.28em] text-white/60">
+              2025 • Album
+            </div>
+
+            <h1 className="mt-3 text-3xl md:text-5xl font-semibold text-white">
+              {album.title}
+            </h1>
+
+            {/* keep glyph safe from clipping */}
+            <p className="subtitle-glyph mt-3 text-sm md:text-base text-white/75">
+              {album.subtitle}
+            </p>
+
+            <h2 className="mt-10 text-xl md:text-2xl font-semibold text-white/90">
+              Tracklist
+            </h2>
+
+            <div className="mt-6 grid gap-4">
+              {album.tracks.map((t, i) => (
+                <TrackRow
+                  key={t.title}
+                  index={i + 1}
+                  title={t.title}
+                  previewSrc={t.previewSrc}
+                />
+              ))}
+            </div>
+
+            {/* Optional streaming row (if you want it back later) */}
+            <div className="mt-10 flex flex-wrap gap-6 text-xs uppercase tracking-[0.26em] text-white/55">
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                Spotify ↗
+              </a>
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                Apple Music ↗
+              </a>
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                YouTube ↗
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </main>
   );
 }
