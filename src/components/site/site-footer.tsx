@@ -40,24 +40,25 @@ export default function SiteFooter() {
       </div>
 
       <div className="relative px-6 py-16 md:py-24">
-        {/* Two-column layout: far left and far right */}
-        <div className="flex flex-col md:flex-row md:justify-between gap-8">
-          {/* Left — Scripture */}
-          <div className="panel-scrim p-6 md:p-8 md:max-w-sm">
-            <blockquote>
-              <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
-                &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
-              </p>
-              <cite
-                className="block mt-3 text-sm not-italic uppercase tracking-widest"
-                style={{ color: "var(--colour-accent-1)" }}
-              >
-                &mdash; Mark 8:36
-              </cite>
-            </blockquote>
+        {/* Stacked centre — narrow panels so Jesus shows on both sides */}
+        <div className="mx-auto max-w-md flex flex-col gap-6">
+          {/* Scripture */}
+          <div className="panel-scrim p-6 text-center">
+            <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
+              &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
+            </p>
+            <cite
+              className="block mt-3 text-sm not-italic uppercase tracking-widest"
+              style={{ color: "var(--colour-accent-1)" }}
+            >
+              &mdash; Mark 8:36
+            </cite>
+          </div>
 
+          {/* Nav + socials + credits */}
+          <div className="panel-scrim p-6 text-center">
             {/* Social links */}
-            <div className="flex items-center gap-6 mt-6 pt-6 border-t border-white/10">
+            <div className="flex items-center justify-center gap-6 mb-5">
               <a
                 href={site.socials.youtube}
                 target="_blank"
@@ -98,39 +99,35 @@ export default function SiteFooter() {
                 </svg>
               </a>
             </div>
-          </div>
 
-          {/* Right — Nav + credits */}
-          <div className="panel-scrim p-6 md:p-8 md:max-w-sm md:text-right md:ml-auto">
-            <div className="flex flex-wrap gap-4 mb-6 md:justify-end">
+            {/* Nav links */}
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-5 pb-5 border-b border-white/10">
               {site.nav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className="text-xs uppercase tracking-widest transition-colors hover:opacity-80"
-                  style={{ color: "var(--colour-ink)", opacity: 0.45 }}
+                  style={{ color: "var(--colour-ink)", opacity: 0.40 }}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
 
-            <div className="border-t border-white/10 pt-6 space-y-2">
-              <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
-                Artwork by{" "}
-                <a
-                  href="https://debbieclarkart.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-white/20 underline-offset-4 hover:opacity-80"
-                >
-                  Debbie Clarke
-                </a>
-              </p>
-              <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>
-                &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
-              </p>
-            </div>
+            <p className="text-xs mb-1" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
+              Artwork by{" "}
+              <a
+                href="https://debbieclarkart.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-white/20 underline-offset-4 hover:opacity-80"
+              >
+                Debbie Clarke
+              </a>
+            </p>
+            <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>
+              &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
+            </p>
           </div>
         </div>
       </div>
