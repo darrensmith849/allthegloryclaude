@@ -150,8 +150,8 @@ export default function AlbumPage() {
             transition={{ duration: 6, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
             className="flex flex-col items-center text-center"
           >
-            {/* Album header — panel-scrim glass background */}
-            <div className="panel-scrim p-6 md:p-8 rounded-2xl w-full">
+            {/* Album header */}
+            <div className="p-6 md:p-8 w-full">
               <div className="text-xs uppercase tracking-[0.28em] text-white/60">
                 2025 • Album
               </div>

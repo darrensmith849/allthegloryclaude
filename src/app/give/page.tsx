@@ -19,7 +19,7 @@ export default function GivePage() {
 
   return (
     <main className="bg-transparent">
-      <div className="mx-auto w-full max-w-3xl px-6 py-16">
+      <div className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 pb-16">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

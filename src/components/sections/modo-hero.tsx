@@ -40,7 +40,7 @@ export default function ModoHero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 5, delay: 3, ease: "easeOut" }}
+          transition={{ duration: 5, delay: 2, ease: "easeOut" }}
           className="w-full max-w-[56rem] text-right"
         >
           <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
