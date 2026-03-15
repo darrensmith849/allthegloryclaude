@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Deep inky base + blue haze */
+  /* OLD FEEL: deep inky base + blue haze */
   --colour-bg: #09080e;
   --colour-ink: #f4f0e8;
 
