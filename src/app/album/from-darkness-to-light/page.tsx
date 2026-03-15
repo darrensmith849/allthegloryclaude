@@ -31,16 +31,16 @@ export default function AlbumPage() {
   return (
     <div className="pt-24">
       <section className="w-full py-20 md:py-28">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-start">
-            {/* Cover */}
-            <div className="w-full md:w-96 lg:w-[28rem] flex-shrink-0">
+            {/* Cover — larger */}
+            <div className="w-full md:w-[26rem] lg:w-[32rem] flex-shrink-0">
               <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10">
                 <Image
                   src={albumConfig.cover}
                   alt="From Darkness To Light album artwork"
                   fill
-                  sizes="(max-width: 768px) 100vw, 28rem"
+                  sizes="(max-width: 768px) 100vw, 32rem"
                   className="object-cover"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/40" />
@@ -52,32 +52,15 @@ export default function AlbumPage() {
               <p className="text-sm text-white/55 uppercase tracking-widest mb-3">
                 {albumConfig.year} &middot; Album
               </p>
-              <h1 className="subtitle-glyph text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+              <h1 className="subtitle-glyph text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">
                 {albumConfig.title}
               </h1>
-              <p className="subtitle-glyph text-white/50 mb-10">
+              <p className="subtitle-glyph text-white/50 mb-8">
                 {albumConfig.subtitle}
               </p>
 
-              {/* Streaming links */}
-              <div className="flex flex-wrap gap-3 mb-12">
-                {Object.entries(albumConfig.streamingLinks).map(
-                  ([platform, url]) => (
-                    <a
-                      key={platform}
-                      href={url}
-                      className="btn btn-ghost"
-                    >
-                      {platform === "appleMusic"
-                        ? "Apple Music"
-                        : platform.charAt(0).toUpperCase() + platform.slice(1)}
-                    </a>
-                  )
-                )}
-              </div>
-
               {/* Tracklist */}
-              <h2 className="text-xl font-semibold text-white mb-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
                 Tracklist
               </h2>
               <div className="space-y-1">
@@ -102,6 +85,26 @@ export default function AlbumPage() {
                     )}
                   </div>
                 ))}
+              </div>
+
+              {/* Streaming links — social-link style, below tracklist */}
+              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2">
+                {Object.entries(albumConfig.streamingLinks).map(
+                  ([platform, url]) => (
+                    <a
+                      key={platform}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="social-link"
+                    >
+                      {platform === "appleMusic"
+                        ? "Apple Music"
+                        : platform.charAt(0).toUpperCase() + platform.slice(1)}{" "}
+                      ↗
+                    </a>
+                  )
+                )}
               </div>
             </div>
           </div>
