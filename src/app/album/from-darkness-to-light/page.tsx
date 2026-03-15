@@ -34,12 +34,11 @@ function TrackRow({
             }}
             className="mt-0.5 relative overflow-hidden"
           >
-            {/* The title text */}
             <span className="text-sm md:text-base font-semibold text-white/90 truncate block">
               {title}
             </span>
 
-            {/* Shimmer sweep — a golden light that passes across the text after it lands */}
+            {/* Shimmer sweep */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: "200%" }}
@@ -77,12 +76,9 @@ function TrackRow({
 }
 
 export default function AlbumPage() {
-  const firstHalf = album.tracks.slice(0, 4);
-  const secondHalf = album.tracks.slice(4);
-
   return (
     <main className="bg-transparent overflow-x-clip">
-      <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+      <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         {/* Album title ABOVE the grid */}
         <div className="mb-8">
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
@@ -96,8 +92,8 @@ export default function AlbumPage() {
           </p>
         </div>
 
-        {/* Two-column: bigger art left, tracklist right */}
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] items-start">
+        {/* Three-column: album art | tracklist | download/give */}
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_auto] items-start">
           {/* LEFT: album art */}
           <motion.div
             initial={{ opacity: 0, x: -22 }}
@@ -110,7 +106,7 @@ export default function AlbumPage() {
                 src={album.coverImage}
                 alt="Album cover"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 100vw, 40vw"
                 className="object-cover"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
@@ -130,57 +126,21 @@ export default function AlbumPage() {
             </div>
           </motion.div>
 
-          {/* RIGHT: tracklist with download/give in the middle */}
+          {/* MIDDLE: tracklist */}
           <motion.div
             initial={{ opacity: 0, x: 22 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.65, delay: 0.03, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col"
           >
-            {/* Tracks 1–4 */}
             <div className="grid gap-2.5">
-              {firstHalf.map((t, i) => (
+              {album.tracks.map((t, i) => (
                 <TrackRow
                   key={t.title}
                   index={i + 1}
                   title={t.title}
                   href={(t as any).previewUrl}
                   delay={0.8 + i * 0.9}
-                />
-              ))}
-            </div>
-
-            {/* Download / Give panel — in the middle */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 4.5, ease: [0.22, 1, 0.36, 1] }}
-              className="panel-scrim my-3 p-4 md:p-5 rounded-xl"
-            >
-              <div className="flex flex-wrap gap-3">
-                <Link href="/store" className="btn btn-primary">
-                  Download free →
-                </Link>
-                <Link href="/give" className="btn btn-ghost">
-                  Give / donate →
-                </Link>
-              </div>
-              <p className="mt-3 text-xs text-white/55 leading-relaxed">
-                I didn't want to put a price on worship — this is an offering unto the Lord.
-                If you feel led to support the work, your gift goes directly into recording,
-                production, and releasing more music.
-              </p>
-            </motion.div>
-
-            {/* Tracks 5–7 */}
-            <div className="grid gap-2.5">
-              {secondHalf.map((t, i) => (
-                <TrackRow
-                  key={t.title}
-                  index={i + 5}
-                  title={t.title}
-                  href={(t as any).previewUrl}
-                  delay={4.8 + i * 0.9}
                 />
               ))}
             </div>
@@ -199,6 +159,30 @@ export default function AlbumPage() {
                 </a>
               </div>
             </div>
+          </motion.div>
+
+          {/* RIGHT: download / give — vertically centered beside tracklist */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 4.5, ease: [0.22, 1, 0.36, 1] }}
+            className="panel-scrim p-5 md:p-6 rounded-2xl lg:self-center lg:w-[200px]"
+          >
+            <div className="flex flex-col gap-3">
+              <Link href="/store" className="btn btn-primary text-center">
+                Download free →
+              </Link>
+              <Link href="/give" className="btn btn-ghost text-center">
+                Give / donate →
+              </Link>
+            </div>
+            <p className="mt-4 text-[11px] text-white/55 leading-relaxed">
+              I didn't want to put a price on worship — this is an offering unto the Lord.
+            </p>
+            <p className="mt-2 text-[10px] text-white/45 leading-relaxed">
+              If you feel led to support the work, your gift goes directly into recording,
+              production, and releasing more music.
+            </p>
           </motion.div>
         </div>
       </div>
