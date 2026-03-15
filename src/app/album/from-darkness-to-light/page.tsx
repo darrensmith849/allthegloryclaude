@@ -102,13 +102,45 @@ export default function AlbumPage() {
             className="w-full"
           >
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 aspect-square">
+              {/* Ocean layer (bottom 60%) — slow surge outward */}
+              <div
+                className="absolute inset-0 album-ocean-drift"
+                style={{ clipPath: "inset(42% 0 0 0)" }}
+              >
+                <Image
+                  src={album.coverImage}
+                  alt=""
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Clouds layer (top 48%) — slow swirl */}
+              <div
+                className="absolute inset-0 album-clouds-swirl"
+                style={{ clipPath: "inset(0 0 55% 0)" }}
+              >
+                <Image
+                  src={album.coverImage}
+                  alt=""
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Centre layer (the woman + horizon) — stays still, blends the seam */}
               <Image
                 src={album.coverImage}
                 alt="Album cover"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 className="object-cover"
+                style={{ clipPath: "inset(30% 0 40% 0)" }}
               />
+
+              {/* Depth overlay */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
             </div>
 
