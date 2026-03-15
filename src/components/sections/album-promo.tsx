@@ -10,7 +10,7 @@ export default function AlbumPromo() {
           href="/album/from-darkness-to-light"
           className="block group"
         >
-          {/* Album image — centred above the glass */}
+          {/* Album image - centred above the glass */}
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]">
             <Image
               src={assets.albumArt}
@@ -20,10 +20,6 @@ export default function AlbumPromo() {
               className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
-          </div>
-
-          <div className="mt-2 text-center text-xs text-white/55">
-            Artwork by Debbie Clarke
           </div>
 
           {/* Glass panel with text */}
@@ -45,6 +41,18 @@ export default function AlbumPromo() {
             </div>
           </div>
         </Link>
+
+        <div className="mt-2 text-center text-xs text-white/55">
+          Artwork by{" "}
+          <a
+            href="https://debbieclarkart.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
+          >
+            Debbie Clarke
+          </a>
+        </div>
       </div>
     </section>
   );

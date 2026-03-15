@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       "success_url": `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://alltheglory.vercel.app"}/success`,
       "cancel_url": `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://alltheglory.vercel.app"}/cancel`,
       "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][product_data][name]": `Donation — $${dollars}`,
+      "line_items[0][price_data][product_data][name]": `Donation - $${dollars}`,
       "line_items[0][price_data][unit_amount]": String(cents),
       "line_items[0][quantity]": "1",
     }),

@@ -33,7 +33,7 @@ export default function AboutPage() {
             transition={{ duration: 3, delay: 1.5, ease: "easeOut" }}
             className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl"
           >
-            The story behind the music — a testimony of grace, surrender, and
+            The story behind the music - a testimony of grace, surrender, and
             the relentless pursuit of light in the darkest places.
           </motion.p>
         </div>
@@ -55,7 +55,7 @@ export default function AboutPage() {
                 language, and translates it into something the heart can understand.
               </p>
               <p>
-                Every song is a marker on the journey — a reminder that the God who
+                Every song is a marker on the journey - a reminder that the God who
                 began a good work is faithful to complete it. The music is raw,
                 honest, and unapologetically hopeful.
               </p>

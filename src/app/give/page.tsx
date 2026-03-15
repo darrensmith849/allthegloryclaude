@@ -27,7 +27,7 @@ export default function GivePage() {
         >
           <h1 className="text-3xl md:text-4xl font-semibold text-white">Give</h1>
           <p className="mt-4 text-white/70">
-            The album is free — but if it blessed you, your giving helps fund what's next.
+            The album is free - but if it blessed you, your giving helps fund what's next.
           </p>
         </motion.div>
 

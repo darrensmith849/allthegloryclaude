@@ -59,7 +59,7 @@ export default function VideosPage() {
           <div className="mt-4 flex items-center justify-between">
             <div>
               <div className="text-base md:text-lg font-semibold text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
-                All The Glory — YouTube
+                All The Glory - YouTube
               </div>
               <div className="mt-1 text-xs text-white/50">
                 Subscribe for upcoming music videos

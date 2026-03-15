@@ -7,12 +7,12 @@ export type GalleryItem = {
 export const homeGallery: GalleryItem[] = [
   {
     src: "/media/cover.jpg",
-    alt: "Light breaking into darkness — Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
+    alt: "Light breaking into darkness - Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
     caption: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   },
   {
     src: "/media/dad.jpg",
-    alt: "Father and son — the story behind the music",
+    alt: "Father and son - the story behind the music",
     caption: "Where it all began",
   },
 ];

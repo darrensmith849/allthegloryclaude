@@ -173,7 +173,7 @@ export default function AlbumPage() {
               </div>
 
               <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-sm mx-auto">
-                I didn't want to put a price on worship — this is an offering unto the Lord.
+                I didn't want to put a price on worship - this is an offering unto the Lord.
                 If you feel led to support the work, your gift goes directly into recording,
                 production, and releasing more music.
               </p>

@@ -1,6 +1,6 @@
 export const site = {
   name: "All The Glory",
-  description: "From Darkness To Light — a testimony of truth and freedom in Jesus.",
+  description: "From Darkness To Light - a testimony of truth and freedom in Jesus.",
   socials: {
     instagram: "https://www.instagram.com/allthe_glory/",
     youtube: "https://www.youtube.com/@Allthe_glory",

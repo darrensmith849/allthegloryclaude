@@ -60,7 +60,7 @@ export default function SiteFooter() {
               className="block mt-3 text-sm not-italic uppercase tracking-widest"
               style={{ color: "var(--colour-accent-1)" }}
             >
-              &mdash; Mark 8:36
+              - Mark 8:36
             </cite>
           </motion.div>
 
