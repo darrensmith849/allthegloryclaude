@@ -13,7 +13,13 @@ export default function AboutPage() {
       {/* Dad image — large, like album art */}
       <section className="w-full pt-20 md:pt-28 pb-10">
         <div className="mx-auto max-w-xl px-6 flex flex-col items-center text-center">
-          <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[280px] md:h-[360px]">
+          <div
+            className="relative w-full h-[280px] md:h-[360px]"
+            style={{
+              maskImage: "radial-gradient(ellipse 85% 80% at 50% 45%, black 50%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(ellipse 85% 80% at 50% 45%, black 50%, transparent 100%)",
+            }}
+          >
             <Image
               src="/media/dad.jpg"
               alt="All The Glory"
@@ -21,7 +27,6 @@ export default function AboutPage() {
               sizes="(max-width: 768px) 100vw, 520px"
               className="object-cover"
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 to-black/55" />
           </div>
 
           <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl">
