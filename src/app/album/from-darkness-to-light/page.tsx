@@ -23,7 +23,7 @@ function TrackRow({
       initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 4, delay, ease: [0.12, 1, 0.25, 1] }}
-      className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
+      className="panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -62,9 +62,9 @@ function TrackRow({
 function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
   return (
     <motion.section
-      initial={{ opacity: 0, x: side === "left" ? -22 : 22 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.65, delay, ease }}
+      initial={{ opacity: 0, y: -60 }}
+      animate={{ opacity: 0.85, y: 0 }}
+      transition={{ duration: 1.2, delay, ease }}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
