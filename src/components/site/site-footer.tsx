@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { site } from "@/content/site";
 
 export default function SiteFooter() {
@@ -15,7 +18,7 @@ export default function SiteFooter() {
           className="object-cover"
           style={{
             objectPosition: "50% 20%",
-            opacity: 0.22,
+            opacity: 0.30,
           }}
         />
         {/* Top fade into page */}
@@ -42,8 +45,14 @@ export default function SiteFooter() {
       <div className="relative px-6 py-16 md:py-24">
         {/* Stacked centre — narrow panels so Jesus shows on both sides */}
         <div className="mx-auto max-w-md flex flex-col gap-6">
-          {/* Scripture */}
-          <div className="panel-scrim p-6 text-center">
+          {/* Scripture — fades in after painting is visible */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 2, delay: 3, ease: "easeOut" }}
+            className="panel-scrim p-6 text-center"
+          >
             <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
               &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
             </p>
@@ -53,10 +62,16 @@ export default function SiteFooter() {
             >
               &mdash; Mark 8:36
             </cite>
-          </div>
+          </motion.div>
 
-          {/* Nav + socials + credits */}
-          <div className="panel-scrim p-6 text-center">
+          {/* Nav + socials + credits — fades in slightly after scripture */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 2, delay: 4, ease: "easeOut" }}
+            className="panel-scrim p-6 text-center"
+          >
             {/* Social links */}
             <div className="flex items-center justify-center gap-6 mb-5">
               <a
@@ -128,7 +143,7 @@ export default function SiteFooter() {
             <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>
               &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
     </footer>
