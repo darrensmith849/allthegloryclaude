@@ -5,115 +5,124 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { album } from "@/content/album";
 
+const ease = [0.22, 1, 0.36, 1] as const;
+
 function TrackRow({
   index,
   title,
-  href,
   delay,
 }: {
   index: number;
   title: string;
-  href?: string;
   delay: number;
 }) {
   return (
-    <div className="panel-scrim rounded-xl px-3 py-2.5 md:px-4 md:py-3">
-      <div className="flex items-center justify-between gap-3">
+    <motion.div
+      initial={{ opacity: 0, x: -28 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.55, delay, ease }}
+      className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5"
+    >
+      <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.24em] text-white/40">
+          <div className="text-xs uppercase tracking-[0.24em] text-white/45">
             Track {String(index).padStart(2, "0")}
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, x: "-90vw" }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{
-              duration: 5,
-              delay,
-              ease: [0.12, 1, 0.25, 1],
-            }}
-            className="mt-0.5 relative overflow-hidden"
-          >
-            <span className="text-sm md:text-base font-semibold text-white/90 truncate block">
-              {title}
-            </span>
-
-            {/* Shimmer sweep */}
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: "200%" }}
-              transition={{
-                duration: 1.8,
-                delay: delay + 4.2,
-                ease: "easeInOut",
-              }}
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.25) 45%, rgba(255,255,255,0.18) 50%, rgba(216,178,90,0.25) 55%, transparent 70%)",
-              }}
-            />
-          </motion.div>
+          <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate">
+            {title}
+          </div>
         </div>
 
-        {href ? (
-          <a
-            href={href}
-            className="shrink-0 text-[10px] uppercase tracking-[0.26em] text-white/55 hover:text-white"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Preview ↗
-          </a>
-        ) : (
-          <span className="shrink-0 text-[10px] uppercase tracking-[0.26em] text-white/40">
-            Preview
-          </span>
-        )}
+        <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
+          Preview
+        </span>
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+function SupportCard({ delay }: { delay: number }) {
+  return (
+    <motion.aside
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay, ease }}
+      className="rounded-2xl border border-white/10 bg-white/5 p-6 md:p-7"
+    >
+      <div className="flex flex-wrap gap-3">
+        <Link href="/store" className="btn btn-primary">
+          Download free →
+        </Link>
+        <Link href="/give" className="btn btn-ghost">
+          Give →
+        </Link>
+      </div>
+
+      <p className="mt-5 text-sm text-white/65 leading-relaxed">
+        I didn't want to put a price on worship — this is an offering unto the Lord.
+      </p>
+
+      <p className="mt-3 text-xs text-white/55 leading-relaxed">
+        If you feel led to support the work, your gift goes directly into recording, production,
+        and releasing more music.
+      </p>
+    </motion.aside>
   );
 }
 
 export default function AlbumPage() {
   return (
-    <main className="bg-transparent overflow-x-clip">
-      <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
-        {/* Album title ABOVE the grid */}
-        <div className="mb-8">
+    <main className="bg-transparent">
+      <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+        {/* Header / Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease }}
+        >
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
             2025 • Album
           </div>
-          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+
+          <h1 className="mt-3 text-3xl md:text-5xl font-semibold text-white">
             {album.title}
           </h1>
-          <p className="subtitle-glyph mt-2 text-sm md:text-base text-white/65">
+
+          <p className="subtitle-glyph mt-3 text-sm md:text-base text-white/75">
             {album.subtitle}
           </p>
-        </div>
+        </motion.div>
 
-        {/* Three-column: album art | tracklist | download/give */}
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_auto] items-start">
-          {/* LEFT: album art */}
-          <motion.div
+        {/* Layout:
+           - Desktop: 3 columns (art | tracks | support)
+           - Mobile: stacked (art, support, tracks)
+        */}
+        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(320px,460px)_minmax(420px,1fr)_340px] items-start">
+          {/* ART (left) */}
+          <motion.section
             initial={{ opacity: 0, x: -22 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full"
+            transition={{ duration: 0.65, delay: 0.08, ease }}
           >
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 aspect-square">
+            <div
+              className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+              style={{
+                width: "100%",
+                maxWidth: "460px",
+                height: "min(520px, 62vh)",
+              }}
+            >
               <Image
                 src={album.coverImage}
                 alt="Album cover"
                 fill
-                sizes="(max-width: 1024px) 100vw, 40vw"
+                sizes="(max-width: 1024px) 100vw, 460px"
                 className="object-cover"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
             </div>
 
-            {/* Credit */}
-            <div className="mt-3 text-xs text-white/55">
+            <div className="mt-3 text-xs text-white/55 max-w-[460px]">
               Artwork by{" "}
               <a
                 href="https://debbieclarkart.com/"
@@ -124,64 +133,56 @@ export default function AlbumPage() {
                 Debbie Clarke
               </a>
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* MIDDLE: tracklist */}
-          <motion.div
+          {/* SUPPORT CARD (mobile) */}
+          <div className="lg:hidden">
+            <SupportCard delay={0.14} />
+          </div>
+
+          {/* TRACKLIST (middle) */}
+          <motion.section
             initial={{ opacity: 0, x: 22 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.65, delay: 0.03, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col"
+            transition={{ duration: 0.65, delay: 0.12, ease }}
           >
-            <div className="grid gap-2.5">
+            <h2 className="text-xl md:text-2xl font-semibold text-white/90">
+              Tracklist
+            </h2>
+
+            <div className="mt-6 grid gap-4">
               {album.tracks.map((t, i) => (
                 <TrackRow
                   key={t.title}
                   index={i + 1}
                   title={t.title}
-                  href={(t as any).previewUrl}
-                  delay={0.8 + i * 0.9}
+                  delay={0.18 + i * 0.06}
                 />
               ))}
             </div>
 
-            {/* Streaming links */}
-            <div className="panel-scrim mt-4 px-4 py-3 rounded-xl">
-              <div className="flex flex-wrap gap-5 text-[10px] uppercase tracking-[0.26em] text-white/50">
-                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                  Spotify ↗
-                </a>
-                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                  Apple Music ↗
-                </a>
-                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                  YouTube ↗
-                </a>
-              </div>
-            </div>
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.28, ease }}
+              className="mt-10 flex flex-wrap gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
+            >
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                Spotify ↗
+              </a>
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                Apple Music ↗
+              </a>
+              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                YouTube ↗
+              </a>
+            </motion.div>
+          </motion.section>
 
-          {/* RIGHT: download / give — vertically centered beside tracklist */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 4.5, ease: [0.22, 1, 0.36, 1] }}
-            className="panel-scrim p-5 md:p-6 rounded-2xl lg:self-center lg:w-[240px]"
-          >
-            <div className="flex gap-2">
-              <Link href="/store" className="btn btn-primary text-center flex-1">
-                Download free →
-              </Link>
-              <Link href="/give" className="btn btn-ghost text-center flex-1">
-                Give →
-              </Link>
-            </div>
-            <p className="mt-4 text-[11px] text-white/55 leading-relaxed">
-              I didn't want to put a price on worship — this is an offering unto the Lord.
-              If you feel led to support the work, your gift goes directly into recording,
-              production, and releasing more music.
-            </p>
-          </motion.div>
+          {/* SUPPORT CARD (desktop right column) */}
+          <div className="hidden lg:block">
+            <SupportCard delay={0.18} />
+          </div>
         </div>
       </div>
     </main>
