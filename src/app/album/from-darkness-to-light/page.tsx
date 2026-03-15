@@ -96,6 +96,18 @@ export default function AlbumPage() {
               </div>
             </div>
 
+            <div className="mt-3 text-xs text-white/55 max-w-[480px]">
+              Artwork by{" "}
+              <a
+                href="https://debbieclarkart.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
+              >
+                Debbie Clarke
+              </a>
+            </div>
+
             {/* CTAs under art */}
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/store" className="btn btn-primary">
