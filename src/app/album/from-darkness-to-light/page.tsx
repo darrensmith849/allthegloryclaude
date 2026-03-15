@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -13,17 +13,23 @@ function TrackRow({
   title,
   verse,
   verseUrl,
+  previewSrc,
   delay,
   fromRight,
   hoverReady,
+  isPlaying,
+  onTogglePlay,
 }: {
   index: number;
   title: string;
   verse: string;
   verseUrl: string;
+  previewSrc: string;
   delay: number;
   fromRight: boolean;
   hoverReady: boolean;
+  isPlaying: boolean;
+  onTogglePlay: () => void;
 }) {
   return (
     <motion.div
@@ -42,9 +48,14 @@ function TrackRow({
           </div>
         </div>
 
-        <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
-          Preview
-        </span>
+        <button
+          onClick={onTogglePlay}
+          className={`shrink-0 text-xs uppercase tracking-[0.26em] transition-colors duration-300 ${
+            isPlaying ? "text-[var(--colour-amber)]" : "text-white/55 hover:text-white/80"
+          }`}
+        >
+          {isPlaying ? "Pause" : "Preview"}
+        </button>
       </div>
 
       {/* Verse + read link on hover */}
@@ -122,11 +133,34 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
 
 export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Last track starts at 0.6 + 6*0.8 = 5.4s, animation is 7s, but lands visually ~4s in
     const timer = setTimeout(() => setHoverReady(true), 10000);
     return () => clearTimeout(timer);
+  }, []);
+
+  const togglePlay = useCallback((index: number, src: string) => {
+    if (playingIndex === index) {
+      audioRef.current?.pause();
+      setPlayingIndex(null);
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const audio = new Audio(src);
+    audio.addEventListener("ended", () => setPlayingIndex(null));
+    audio.play();
+    audioRef.current = audio;
+    setPlayingIndex(index);
+  }, [playingIndex]);
+
+  useEffect(() => {
+    return () => { audioRef.current?.pause(); };
   }, []);
 
   return (
@@ -188,9 +222,12 @@ export default function AlbumPage() {
                   title={t.title}
                   verse={t.verse}
                   verseUrl={t.verseUrl}
+                  previewSrc={t.previewSrc}
                   delay={0.6 + i * 0.8}
                   fromRight={i % 2 === 1}
                   hoverReady={hoverReady}
+                  isPlaying={playingIndex === i}
+                  onTogglePlay={() => togglePlay(i, t.previewSrc)}
                 />
               ))}
             </div>
