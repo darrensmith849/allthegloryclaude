@@ -46,7 +46,7 @@ function TrackRow({
 
       {/* Verse + read link on hover */}
       <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
-        <p className={`mt-3 pt-3 border-t border-white/10 italic text-white/65 leading-relaxed ${verse.length < 30 ? "text-lg md:text-xl" : "text-sm"}`}>
+        <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
           {verse}
         </p>
         <a
@@ -153,9 +153,9 @@ export default function AlbumPage() {
 
               {/* Download / Give */}
               <div className="mt-6 flex justify-center gap-3">
-                <Link href="/store" className="btn btn-primary">
+                <a href="/downloads/from-darkness-to-light.zip" className="btn btn-primary">
                   Download free →
-                </Link>
+                </a>
                 <Link href="/give" className="btn btn-ghost">
                   Give →
                 </Link>
