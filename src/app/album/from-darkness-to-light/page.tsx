@@ -29,34 +29,35 @@ function TrackRow({
       transition={{ duration: 5, delay, ease: [0.08, 1, 0.2, 1] }}
       className="group panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
     >
-      <a
-        href={verseUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="block"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="text-xs uppercase tracking-[0.24em] text-white/45">
-              Track {String(index).padStart(2, "0")}
-            </div>
-            <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate group-hover:text-[var(--colour-amber)] transition-colors duration-300">
-              {title}
-            </div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-[0.24em] text-white/45">
+            Track {String(index).padStart(2, "0")}
           </div>
-
-          <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
-            Read verse ↗
-          </span>
+          <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate group-hover:text-[var(--colour-amber)] transition-colors duration-300">
+            {title}
+          </div>
         </div>
 
-        {/* Verse tooltip on hover */}
-        <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
-          <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
-            {verse}
-          </p>
-        </div>
-      </a>
+        <span className="shrink-0 text-xs uppercase tracking-[0.26em] text-white/55">
+          Preview
+        </span>
+      </div>
+
+      {/* Verse + read link on hover */}
+      <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
+        <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
+          {verse}
+        </p>
+        <a
+          href={verseUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-block text-xs uppercase tracking-[0.24em] text-[var(--colour-amber)]/70 hover:text-[var(--colour-amber)] transition-colors duration-300"
+        >
+          Read verse ↗
+        </a>
+      </div>
 
       {/* Shimmer sweep after landing */}
       <motion.div
