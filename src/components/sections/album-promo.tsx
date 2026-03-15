@@ -39,15 +39,13 @@ export default function AlbumPromo() {
             <div className="mt-4 text-xs uppercase tracking-[0.24em] text-white/55 group-hover:text-white/80 transition-colors duration-300">
               Listen now →
             </div>
-          </div>
-          {/* Artwork credit */}
-          <div className="mt-3 panel-scrim p-3 text-center rounded-xl">
-            <span className="text-xs text-white/55">
+
+            <p className="mt-3 pt-3 border-t border-white/10 text-xs text-white/55">
               Artwork by{" "}
               <span className="text-white/75 underline decoration-white/20 underline-offset-4">
                 Debbie Clarke
               </span>
-            </span>
+            </p>
           </div>
         </Link>
       </div>
