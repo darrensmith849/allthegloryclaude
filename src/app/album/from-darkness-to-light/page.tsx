@@ -11,17 +11,19 @@ function TrackRow({
   index,
   title,
   delay,
+  fromRight,
 }: {
   index: number;
   title: string;
   delay: number;
+  fromRight: boolean;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: -28 }}
+      initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.55, delay, ease }}
-      className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5"
+      transition={{ duration: 4, delay, ease: [0.12, 1, 0.25, 1] }}
+      className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -37,6 +39,22 @@ function TrackRow({
           Preview
         </span>
       </div>
+
+      {/* Shimmer sweep after landing */}
+      <motion.div
+        initial={{ x: "-100%" }}
+        animate={{ x: "200%" }}
+        transition={{
+          duration: 1.8,
+          delay: delay + 3.2,
+          ease: "easeInOut",
+        }}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.2) 45%, rgba(255,255,255,0.15) 50%, rgba(216,178,90,0.2) 55%, transparent 70%)",
+        }}
+      />
     </motion.div>
   );
 }
@@ -82,10 +100,8 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
 
 export default function AlbumPage() {
   return (
-    <main className="bg-transparent">
+    <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
-        {/* Desktop: art | centre content | art */}
-        {/* Mobile: art, centre content */}
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
           {/* LEFT artwork */}
           <div className="hidden lg:block">
@@ -97,12 +113,12 @@ export default function AlbumPage() {
             <AlbumArt delay={0.08} side="left" />
           </div>
 
-          {/* CENTRE: album name, CTAs, worship note, tracks */}
+          {/* CENTRE: everything centred */}
           <motion.section
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.1, ease }}
-            className="flex flex-col"
+            className="flex flex-col items-center text-center"
           >
             {/* Album name */}
             <div className="text-xs uppercase tracking-[0.28em] text-white/60">
@@ -116,7 +132,7 @@ export default function AlbumPage() {
             </p>
 
             {/* Download / Give */}
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex gap-3">
               <Link href="/store" className="btn btn-primary">
                 Download free →
               </Link>
@@ -125,20 +141,21 @@ export default function AlbumPage() {
               </Link>
             </div>
 
-            <p className="mt-4 text-xs text-white/55 leading-relaxed">
+            <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-sm">
               I didn't want to put a price on worship — this is an offering unto the Lord.
               If you feel led to support the work, your gift goes directly into recording,
               production, and releasing more music.
             </p>
 
-            {/* Tracks */}
-            <div className="mt-8 grid gap-3">
+            {/* Tracks — alternating fly-in from left and right */}
+            <div className="mt-8 grid gap-3 w-full">
               {album.tracks.map((t, i) => (
                 <TrackRow
                   key={t.title}
                   index={i + 1}
                   title={t.title}
-                  delay={0.2 + i * 0.06}
+                  delay={0.6 + i * 0.8}
+                  fromRight={i % 2 === 1}
                 />
               ))}
             </div>
@@ -147,8 +164,8 @@ export default function AlbumPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.6, ease }}
-              className="mt-8 flex flex-wrap gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
+              transition={{ duration: 0.55, delay: 6.5, ease }}
+              className="mt-8 flex flex-wrap justify-center gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
             >
               <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
                 Spotify ↗
