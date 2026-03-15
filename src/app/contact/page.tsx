@@ -46,7 +46,7 @@ export default function ContactPage() {
 
   return (
     <div className="pt-24">
-      <section className="w-full py-20 md:py-28">
+      <section className="w-full pt-20 md:pt-28 pb-6 md:pb-8">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -60,7 +60,7 @@ export default function ContactPage() {
         </motion.div>
       </section>
 
-      <section className="w-full py-12 md:py-20">
+      <section className="w-full py-6 md:py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
