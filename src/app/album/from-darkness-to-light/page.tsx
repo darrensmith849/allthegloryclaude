@@ -151,7 +151,7 @@ export default function AlbumPage() {
             className="flex flex-col items-center text-center"
           >
             {/* Album header */}
-            <div className="p-6 md:p-8 w-full">
+            <div className="panel-scrim p-6 md:p-8 rounded-2xl w-full">
               <div className="text-xs uppercase tracking-[0.28em] text-white/60">
                 2025 • Album
               </div>
