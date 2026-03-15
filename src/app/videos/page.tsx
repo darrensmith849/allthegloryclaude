@@ -12,7 +12,7 @@ export default function VideosPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
-          className="text-center panel-scrim p-6 md:p-8 rounded-2xl"
+          className="text-center"
         >
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
             Videos

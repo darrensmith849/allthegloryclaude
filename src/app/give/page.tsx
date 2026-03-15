@@ -24,7 +24,7 @@ export default function GivePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
-          className="panel-scrim p-6 md:p-8 rounded-2xl text-center"
+          className="text-center"
         >
           <h1 className="text-3xl md:text-4xl font-semibold text-white">Give</h1>
           <p className="mt-4 text-white/70">
