@@ -10,22 +10,24 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="pt-24">
-      {/* Hero banner */}
-      <section className="w-full py-20 md:py-28">
+      {/* Dad image — no background, fades into page */}
+      <section className="w-full pt-20 md:pt-28 pb-10">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
-          {/* Dad image */}
-          <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-white/10 mb-8">
+          <div className="relative w-56 h-56 md:w-72 md:h-72">
             <Image
               src="/media/dad.jpg"
-              alt="About"
+              alt="All The Glory"
               fill
-              sizes="256px"
+              sizes="288px"
               className="object-cover"
+              style={{
+                maskImage: "radial-gradient(ellipse 50% 50% at 50% 45%, black 60%, transparent 100%)",
+                WebkitMaskImage: "radial-gradient(ellipse 50% 50% at 50% 45%, black 60%, transparent 100%)",
+              }}
             />
           </div>
 
-          <h1 className="modo-title text-colour-fg mb-6">About</h1>
-          <p className="text-lg md:text-xl text-colour-fg/60 max-w-2xl mx-auto">
+          <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl">
             The story behind the music — a testimony of grace, surrender, and
             the relentless pursuit of light in the darkest places.
           </p>
