@@ -17,7 +17,7 @@ function TrackRow({
   delay: number;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 md:px-4 md:py-3">
+    <div className="panel-scrim rounded-xl px-3 py-2.5 md:px-4 md:py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.24em] text-white/40">
@@ -74,8 +74,8 @@ export default function AlbumPage() {
           </p>
         </div>
 
-        {/* Two-column: art left, tracklist right — tracklist must not extend beyond art height */}
-        <div className="grid gap-8 lg:grid-cols-2 items-start">
+        {/* Two-column: bigger art left, tracklist right fits within art width */}
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] items-start">
           {/* LEFT: album art */}
           <motion.div
             initial={{ opacity: 0, x: -22 }}
@@ -108,17 +108,13 @@ export default function AlbumPage() {
             </div>
           </motion.div>
 
-          {/* RIGHT: tracklist — constrained to match album art height */}
+          {/* RIGHT: tracklist */}
           <motion.div
             initial={{ opacity: 0, x: 22 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.65, delay: 0.03, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col"
           >
-            <h2 className="text-lg font-semibold text-white/90 mb-4">
-              Tracklist
-            </h2>
-
             <div className="grid gap-2.5">
               {album.tracks.map((t, i) => (
                 <TrackRow
@@ -131,34 +127,35 @@ export default function AlbumPage() {
               ))}
             </div>
 
-            {/* Streaming links */}
-            <div className="mt-6 flex flex-wrap gap-5 text-[10px] uppercase tracking-[0.26em] text-white/50">
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                Spotify ↗
-              </a>
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                Apple Music ↗
-              </a>
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                YouTube ↗
-              </a>
-            </div>
+            {/* Streaming links + worship note — panel-scrim like about section */}
+            <div className="panel-scrim mt-6 p-5 md:p-6 rounded-2xl">
+              <div className="flex flex-wrap gap-5 text-[10px] uppercase tracking-[0.26em] text-white/50">
+                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                  Spotify ↗
+                </a>
+                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                  Apple Music ↗
+                </a>
+                <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+                  YouTube ↗
+                </a>
+              </div>
 
-            {/* CTAs */}
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/store" className="btn btn-primary">
-                Download free →
-              </Link>
-              <Link href="/give" className="btn btn-ghost">
-                Give / donate →
-              </Link>
-            </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link href="/store" className="btn btn-primary">
+                  Download free →
+                </Link>
+                <Link href="/give" className="btn btn-ghost">
+                  Give / donate →
+                </Link>
+              </div>
 
-            <p className="mt-3 text-xs text-white/50 leading-relaxed">
-              I didn't want to put a price on worship — this is an offering unto the Lord.
-              If you feel led to support the work, your gift goes directly into recording,
-              production, and releasing more music.
-            </p>
+              <p className="mt-4 text-xs text-white/55 leading-relaxed">
+                I didn't want to put a price on worship — this is an offering unto the Lord.
+                If you feel led to support the work, your gift goes directly into recording,
+                production, and releasing more music.
+              </p>
+            </div>
           </motion.div>
         </div>
       </div>
