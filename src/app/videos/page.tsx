@@ -1,17 +1,19 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import { assets } from "@/content/assets";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Videos",
-  description: "Watch videos from All The Glory.",
-};
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { assets } from "@/content/assets";
 
 export default function VideosPage() {
   return (
-    <main className="bg-transparent">
+    <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-4xl px-6 py-16 md:py-24">
-        <div className="text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
+          className="text-center"
+        >
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
             Videos
           </div>
@@ -22,14 +24,17 @@ export default function VideosPage() {
             Official music videos and visual content are on the way.
             Subscribe to be the first to see them.
           </p>
-        </div>
+        </motion.div>
 
         {/* YouTube channel link with album art */}
-        <a
+        <motion.a
           href="https://www.youtube.com/@Allthe_glory"
           target="_blank"
           rel="noreferrer"
-          className="group block mt-10 panel-scrim p-6 md:p-8"
+          initial={{ opacity: 0, y: -60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 4, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
+          className="group block mt-10"
         >
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[240px] md:h-[380px]">
             <Image
@@ -64,7 +69,7 @@ export default function VideosPage() {
               Visit channel ↗
             </span>
           </div>
-        </a>
+        </motion.a>
       </div>
     </main>
   );

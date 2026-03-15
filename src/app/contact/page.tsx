@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { motion } from "framer-motion";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -13,7 +14,6 @@ export default function ContactPage() {
     const message = formData.get("message") as string;
     const honeypot = formData.get("website") as string;
 
-    // Honeypot check
     if (honeypot) return { __bot: "true" };
 
     if (!name || name.trim().length < 2) errs.name = "Please enter your name.";
@@ -31,7 +31,6 @@ export default function ContactPage() {
     const validationErrors = validate(formData);
 
     if (validationErrors.__bot) {
-      // Silently ignore bot submissions
       setSubmitted(true);
       return;
     }
@@ -48,16 +47,26 @@ export default function ContactPage() {
   return (
     <div className="pt-24">
       <section className="w-full py-20 md:py-28">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
+          className="max-w-4xl mx-auto px-6 text-center"
+        >
           <h1 className="modo-title text-colour-fg mb-6">Contact</h1>
           <p className="text-lg md:text-xl text-colour-fg/60">
             Get in touch.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       <section className="w-full py-12 md:py-20">
-        <div className="max-w-xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 3, delay: 1, ease: [0.06, 1, 0.18, 1] }}
+          className="max-w-xl mx-auto px-6"
+        >
           {submitted ? (
             <div className="text-center py-16">
               <h2 className="text-2xl font-semibold text-colour-fg mb-4">
@@ -69,7 +78,6 @@ export default function ContactPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-              {/* Honeypot — hidden from humans */}
               <div className="absolute opacity-0 top-0 left-0 h-0 w-0 -z-10 overflow-hidden">
                 <label htmlFor="website">Website</label>
                 <input
@@ -149,7 +157,7 @@ export default function ContactPage() {
               </button>
             </form>
           )}
-        </div>
+        </motion.div>
       </section>
     </div>
   );
