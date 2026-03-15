@@ -22,11 +22,28 @@ export default function SiteFooter() {
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[var(--colour-bg)] to-transparent" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-24">
-        {/* Two-column layout: scripture left, nav right — Jesus visible in centre */}
-        <div className="grid gap-8 md:grid-cols-2 items-start max-w-none">
+      {/* Lightning video — footer only */}
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ mixBlendMode: "screen", opacity: 0.2 }}
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: "brightness(1.3) contrast(1.1)" }}
+        >
+          <source src="/media/lightning.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <div className="relative px-6 py-16 md:py-24">
+        {/* Two-column layout: far left and far right */}
+        <div className="flex flex-col md:flex-row md:justify-between gap-8">
           {/* Left — Scripture */}
-          <div className="panel-scrim p-6 md:p-8">
+          <div className="panel-scrim p-6 md:p-8 md:max-w-sm">
             <blockquote>
               <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
                 &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
@@ -84,8 +101,8 @@ export default function SiteFooter() {
           </div>
 
           {/* Right — Nav + credits */}
-          <div className="panel-scrim p-6 md:p-8">
-            <div className="flex flex-wrap gap-4 mb-6">
+          <div className="panel-scrim p-6 md:p-8 md:max-w-sm md:text-right md:ml-auto">
+            <div className="flex flex-wrap gap-4 mb-6 md:justify-end">
               {site.nav.map((item) => (
                 <Link
                   key={item.href}
