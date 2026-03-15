@@ -46,7 +46,7 @@ function TrackRow({
 
       {/* Verse + read link on hover */}
       <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
-        <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
+        <p className={`mt-3 pt-3 border-t border-white/10 italic text-white/65 leading-relaxed ${verse.length < 30 ? "text-lg md:text-xl" : "text-sm"}`}>
           {verse}
         </p>
         <a
