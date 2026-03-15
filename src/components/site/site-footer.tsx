@@ -14,8 +14,8 @@ export default function SiteFooter() {
           sizes="100vw"
           className="object-cover"
           style={{
-            objectPosition: "50% 25%",
-            opacity: 0.18,
+            objectPosition: "50% 65%",
+            opacity: 0.22,
           }}
         />
         {/* Top fade into page */}
@@ -25,18 +25,20 @@ export default function SiteFooter() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
-        {/* Scripture — Mark 8:36 */}
-        <blockquote className="mx-auto max-w-2xl text-center mb-12">
-          <p className="text-lg md:text-xl italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
-            &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
-          </p>
-          <cite
-            className="block mt-3 text-sm not-italic uppercase tracking-widest"
-            style={{ color: "var(--colour-accent-1)" }}
-          >
-            &mdash; Mark 8:36
-          </cite>
-        </blockquote>
+        {/* Scripture — Mark 8:36 — glass panel */}
+        <div className="mx-auto max-w-2xl mb-12 panel-scrim p-6 md:p-8">
+          <blockquote className="text-center">
+            <p className="text-lg md:text-xl italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
+              &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
+            </p>
+            <cite
+              className="block mt-3 text-sm not-italic uppercase tracking-widest"
+              style={{ color: "var(--colour-accent-1)" }}
+            >
+              &mdash; Mark 8:36
+            </cite>
+          </blockquote>
+        </div>
 
         {/* Social links */}
         <div className="flex items-center justify-center gap-8 mb-12">
