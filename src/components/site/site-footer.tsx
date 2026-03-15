@@ -24,7 +24,7 @@ export default function SiteFooter() {
 
       <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-24">
         {/* Two-column layout: scripture left, nav right — Jesus visible in centre */}
-        <div className="grid gap-8 md:grid-cols-2 items-start">
+        <div className="grid gap-8 md:grid-cols-2 items-start max-w-none">
           {/* Left — Scripture */}
           <div className="panel-scrim p-6 md:p-8">
             <blockquote>

@@ -60,7 +60,7 @@ export default function StickyBackdrop() {
       {/* Lightning video — subtle, slowed down, screen blended */}
       <div
         className="absolute inset-0 overflow-hidden"
-        style={{ mixBlendMode: "screen", opacity: 0.45 }}
+        style={{ mixBlendMode: "screen", opacity: 0.25 }}
       >
         <video
           autoPlay
