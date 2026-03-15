@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  /* OLD FEEL: deep inky base + blue haze */
-  --colour-bg: #09080e;
+  /* Kraken-inspired deep purple base */
+  --colour-bg: #0e0a1e;
   --colour-ink: #f4f0e8;
 
   /* Album-art accents (keep subtle; do not turn whole page warm) */
   --colour-amber: #d8b25a;
   --colour-storm: #9a938b;
-  --colour-deep: #0b1b34;
+  --colour-deep: #1a0e35;
   --colour-glow: #f1d7a6;
 
   --colour-surface: rgba(255,255,255,0.06);
@@ -18,10 +18,10 @@
   /* Tailwind compatibility aliases */
   --colour-accent-1: #d8b25a;
   --colour-accent-2: #9a938b;
-  --colour-bg-rgb: 9 8 14;
+  --colour-bg-rgb: 14 10 30;
   --colour-fg-rgb: 244 240 232;
   --colour-accent-rgb: 216 178 90;
-  --colour-surface-rgb: 18 17 26;
+  --colour-surface-rgb: 20 14 38;
 }
 
 html, body { height: 100%; }
