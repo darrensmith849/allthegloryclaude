@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ function TrackRow({
   verseUrl,
   delay,
   fromRight,
+  hoverReady,
 }: {
   index: number;
   title: string;
@@ -21,13 +23,14 @@ function TrackRow({
   verseUrl: string;
   delay: number;
   fromRight: boolean;
+  hoverReady: boolean;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 7, delay, ease: [0.06, 1, 0.18, 1] }}
-      className="group panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden"
+      className={`${hoverReady ? "group" : ""} panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -118,6 +121,14 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
 }
 
 export default function AlbumPage() {
+  const [hoverReady, setHoverReady] = useState(false);
+
+  useEffect(() => {
+    // Last track starts at 0.6 + 6*0.8 = 5.4s, animation is 7s, but lands visually ~4s in
+    const timer = setTimeout(() => setHoverReady(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
@@ -179,6 +190,7 @@ export default function AlbumPage() {
                   verseUrl={t.verseUrl}
                   delay={0.6 + i * 0.8}
                   fromRight={i % 2 === 1}
+                  hoverReady={hoverReady}
                 />
               ))}
             </div>
