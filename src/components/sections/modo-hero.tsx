@@ -9,7 +9,7 @@ export default function ModoHero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 4, delay: 0.5, ease: "easeOut" }}
+        transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
         className="absolute left-6 top-20 md:top-24 hero-corner subtitle-glyph"
       >
         Ⅎɹoɯ ᗡɐɹʞuǝss
@@ -19,7 +19,7 @@ export default function ModoHero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 4, delay: 0.5, ease: "easeOut" }}
+        transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
         className="absolute right-6 top-20 md:top-24 hero-corner subtitle-glyph text-right"
       >
         †o 𝕃Ɨ𝕘𝓱𝐓
@@ -29,7 +29,7 @@ export default function ModoHero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 4, delay: 0.5, ease: "easeOut" }}
+        transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
         className="absolute right-6 bottom-8 hero-caption hidden md:block"
       >
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
@@ -40,7 +40,7 @@ export default function ModoHero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 5, delay: 2, ease: "easeOut" }}
+          transition={{ duration: 14, delay: 2, ease: [0.25, 0.1, 0.25, 1] }}
           className="w-full max-w-[56rem] text-right"
         >
           <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">

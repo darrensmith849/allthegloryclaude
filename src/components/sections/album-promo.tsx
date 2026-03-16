@@ -5,7 +5,7 @@ import { assets } from "@/content/assets";
 export default function AlbumPromo() {
   return (
     <section className="bg-transparent">
-      <div className="mx-auto w-full max-w-xl px-6 py-10 md:py-14">
+      <div className="mx-auto w-full max-w-xl px-6 pt-0 pb-44 md:pt-0 md:pb-56">
         <Link
           href="/album/from-darkness-to-light"
           className="block group"

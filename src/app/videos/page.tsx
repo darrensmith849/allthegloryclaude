@@ -11,7 +11,7 @@ export default function VideosPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
+          transition={{ duration: 10, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
           className="text-center"
         >
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
@@ -31,9 +31,9 @@ export default function VideosPage() {
           href="https://www.youtube.com/@Allthe_glory"
           target="_blank"
           rel="noreferrer"
-          initial={{ opacity: 0, y: -60 }}
+          initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 4, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
+          transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
           className="group block mt-10"
         >
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[240px] md:h-[380px]">

@@ -95,9 +95,9 @@ function TrackRow({
 function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
   return (
     <motion.section
-      initial={{ opacity: 0, y: -80 }}
+      initial={{ opacity: 0, y: -30 }}
       animate={{ opacity: 0.85, y: 0 }}
-      transition={{ duration: 6, delay, ease: [0.06, 1, 0.18, 1] }}
+      transition={{ duration: 12, delay, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
@@ -179,13 +179,13 @@ export default function AlbumPage() {
 
           {/* CENTRE: everything centred */}
           <motion.section
-            initial={{ opacity: 0, y: -60 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 6, delay: 0.5, ease: [0.06, 1, 0.18, 1] }}
+            transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
             className="flex flex-col items-center text-center"
           >
             {/* Album header */}
-            <div className="panel-scrim p-6 md:p-8 rounded-2xl w-full">
+            <div className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
               <div className="text-xs uppercase tracking-[0.28em] text-white/60">
                 2025 • Album
               </div>
