@@ -97,7 +97,7 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
     <motion.section
       initial={{ opacity: 0, y: -30 }}
       animate={{ opacity: 0.85, y: 0 }}
-      transition={{ duration: 12, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 8, delay, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
@@ -178,14 +178,14 @@ export default function AlbumPage() {
           </div>
 
           {/* CENTRE: everything centred */}
-          <motion.section
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 12, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
-            className="flex flex-col items-center text-center"
-          >
-            {/* Album header */}
-            <div className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+          <section className="flex flex-col items-center text-center">
+            {/* Album header — animates independently and locks in place */}
+            <motion.div
+              initial={{ opacity: 0, y: -30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 8, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
+              className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+            >
               <div className="text-xs uppercase tracking-[0.28em] text-white/60">
                 2025 • Album
               </div>
@@ -211,9 +211,9 @@ export default function AlbumPage() {
                 If you feel led to support the work, your gift goes directly into recording,
                 production, and releasing more music.
               </p>
-            </div>
+            </motion.div>
 
-            {/* Tracks — alternating fly-in from left and right */}
+            {/* Tracks — animate independently, don't affect header */}
             <div className="mt-8 grid gap-3 w-full">
               {album.tracks.map((t, i) => (
                 <TrackRow
@@ -249,7 +249,7 @@ export default function AlbumPage() {
                 YouTube ↗
               </a>
             </motion.div>
-          </motion.section>
+          </section>
 
           {/* RIGHT artwork (desktop only) */}
           <div className="hidden lg:block">
