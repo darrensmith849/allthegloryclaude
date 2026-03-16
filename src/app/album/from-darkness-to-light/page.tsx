@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { album } from "@/content/album";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -12,24 +12,24 @@ function TrackRow({
   index,
   title,
   verse,
-  verseUrl,
   previewSrc,
   delay,
   fromRight,
   hoverReady,
   isPlaying,
   onTogglePlay,
+  onReadVerse,
 }: {
   index: number;
   title: string;
   verse: string;
-  verseUrl: string;
   previewSrc: string;
   delay: number;
   fromRight: boolean;
   hoverReady: boolean;
   isPlaying: boolean;
   onTogglePlay: () => void;
+  onReadVerse: () => void;
 }) {
   return (
     <motion.div
@@ -63,14 +63,12 @@ function TrackRow({
         <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
           {verse}
         </p>
-        <a
-          href={verseUrl}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          onClick={onReadVerse}
           className="mt-2 inline-block text-xs uppercase tracking-[0.24em] text-[var(--colour-amber)]/70 hover:text-[var(--colour-amber)] transition-colors duration-300"
         >
-          Read verse ↗
-        </a>
+          Read verse
+        </button>
       </div>
 
       {/* Shimmer sweep after landing */}
@@ -88,6 +86,59 @@ function TrackRow({
             "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.2) 45%, rgba(255,255,255,0.15) 50%, rgba(216,178,90,0.2) 55%, transparent 70%)",
         }}
       />
+    </motion.div>
+  );
+}
+
+function VerseModal({
+  verseRef,
+  fullVerse,
+  onClose,
+}: {
+  verseRef: string;
+  fullVerse: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 20 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="relative max-w-lg w-full panel-scrim border border-white/10 rounded-2xl px-8 py-10 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/70 mb-5">
+          {verseRef}
+        </div>
+        <p className="text-lg md:text-xl italic text-white/85 leading-relaxed">
+          &ldquo;{fullVerse}&rdquo;
+        </p>
+        <div className="mt-4 text-xs text-white/40">ESV</div>
+        <button
+          onClick={onClose}
+          className="mt-8 text-xs uppercase tracking-[0.24em] text-white/50 hover:text-white/80 transition-colors duration-300"
+        >
+          Close
+        </button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -134,6 +185,7 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
 export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -221,13 +273,13 @@ export default function AlbumPage() {
                   index={i + 1}
                   title={t.title}
                   verse={t.verse}
-                  verseUrl={t.verseUrl}
                   previewSrc={t.previewSrc}
                   delay={0.6 + i * 0.8}
                   fromRight={i % 2 === 1}
                   hoverReady={hoverReady}
                   isPlaying={playingIndex === i}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
+                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse })}
                 />
               ))}
             </div>
@@ -257,6 +309,16 @@ export default function AlbumPage() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {verseModal && (
+          <VerseModal
+            verseRef={verseModal.ref}
+            fullVerse={verseModal.fullVerse}
+            onClose={() => setVerseModal(null)}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
