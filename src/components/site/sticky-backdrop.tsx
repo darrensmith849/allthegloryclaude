@@ -3,20 +3,12 @@
 import Image from "next/image";
 import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
 import { assets } from "@/content/assets";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
-  const [ready, setReady] = useState(false);
-  const [loadedCount, setLoadedCount] = useState(0);
-
-  const onImageLoad = useCallback(() => {
-    setLoadedCount((c) => {
-      const next = c + 1;
-      if (next >= 2) setReady(true);
-      return next;
-    });
-  }, []);
+  const [starsReady, setStarsReady] = useState(false);
+  const [cloudsReady, setCloudsReady] = useState(false);
 
   const brightness = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.30, 1.55]);
   const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.04]);
@@ -33,8 +25,8 @@ export default function StickyBackdrop() {
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">
       {/* Cloud layer — subtle base underneath */}
       <div
-        className="absolute inset-0 transition-opacity duration-700 ease-out"
-        style={{ opacity: ready ? 1 : 0 }}
+        className="absolute inset-0 transition-opacity duration-[1800ms] ease-out"
+        style={{ opacity: cloudsReady ? 1 : 0 }}
       >
         <Image
           src="/media/clouds.webp"
@@ -44,7 +36,7 @@ export default function StickyBackdrop() {
           sizes="100vw"
           className="object-cover"
           quality={90}
-          onLoad={onImageLoad}
+          onLoad={() => setCloudsReady(true)}
           style={{
             filter: "brightness(0.9) contrast(1.1) blur(2px)",
             transform: "scale(1.05)",
@@ -55,7 +47,7 @@ export default function StickyBackdrop() {
       {/* Stars image — overlays the clouds with screen blend */}
       <motion.div
         className="absolute inset-0 transition-opacity duration-700 ease-out"
-        style={{ filter, mixBlendMode: "screen", opacity: ready ? 1 : 0 }}
+        style={{ filter, mixBlendMode: "screen", opacity: starsReady ? 1 : 0 }}
       >
         <Image
           src={assets.backdrop}
@@ -65,7 +57,7 @@ export default function StickyBackdrop() {
           sizes="100vw"
           className="object-cover"
           quality={100}
-          onLoad={onImageLoad}
+          onLoad={() => setStarsReady(true)}
           style={{
             objectPosition: "50% 58%",
             filter: "brightness(1.6) contrast(1.2)",
