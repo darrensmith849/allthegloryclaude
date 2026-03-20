@@ -27,6 +27,7 @@ export default function SocialDock() {
       <Item href={site.socials.youtube} label="YouTube" delay={1.3} />
       <Item href={site.socials.spotify} label="Spotify" delay={1.6} />
       <Item href={site.socials.facebook} label="Facebook" delay={1.9} />
+      <Item href={site.socials.tiktok} label="TikTok" delay={2.2} />
     </div>
   );
 }
