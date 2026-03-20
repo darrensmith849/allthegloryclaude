@@ -3,12 +3,18 @@
 import Image from "next/image";
 import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
 import { assets } from "@/content/assets";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
   const [starsReady, setStarsReady] = useState(false);
   const [cloudsReady, setCloudsReady] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+  }, []);
 
   const brightness = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.30, 1.55]);
   const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.04]);
@@ -25,8 +31,14 @@ export default function StickyBackdrop() {
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">
       {/* Cloud layer — subtle base underneath */}
       <div
-        className="absolute inset-0 transition-opacity duration-[1800ms] ease-out"
-        style={{ opacity: cloudsReady ? 1 : 0 }}
+        className="absolute inset-0"
+        style={{
+          opacity: prefersReducedMotion || cloudsReady ? 1 : 0,
+          transform: prefersReducedMotion || cloudsReady ? "scale(1.05)" : "scale(1.08)",
+          transition: prefersReducedMotion
+            ? "none"
+            : "opacity 2.4s cubic-bezier(0.16, 1, 0.3, 1), transform 3s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
         <Image
           src="/media/clouds.webp"
@@ -39,15 +51,21 @@ export default function StickyBackdrop() {
           onLoad={() => setCloudsReady(true)}
           style={{
             filter: "brightness(0.9) contrast(1.1) blur(2px)",
-            transform: "scale(1.05)",
           }}
         />
       </div>
 
       {/* Stars image — overlays the clouds with screen blend */}
       <motion.div
-        className="absolute inset-0 transition-opacity duration-700 ease-out"
-        style={{ filter, mixBlendMode: "screen", opacity: starsReady ? 1 : 0 }}
+        className="absolute inset-0"
+        style={{
+          filter,
+          mixBlendMode: "screen",
+          opacity: prefersReducedMotion || starsReady ? 1 : 0,
+          transition: prefersReducedMotion
+            ? "none"
+            : "opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
         <Image
           src={assets.backdrop}
