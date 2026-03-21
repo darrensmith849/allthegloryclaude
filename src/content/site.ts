@@ -1,5 +1,6 @@
 export const site = {
   name: "All The Glory",
+  url: "https://www.alltheglory.co.za",
   description: "From Darkness To Light - a testimony of truth and freedom in Jesus.",
   socials: {
     instagram: "https://www.instagram.com/allthe_glory",

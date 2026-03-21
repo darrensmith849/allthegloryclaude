@@ -12,11 +12,39 @@ export const metadata: Metadata = {
     template: `%s - ${site.name}`,
   },
   description: site.description,
-  metadataBase: new URL("https://example.com"),
+  metadataBase: new URL(site.url),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: site.name,
     description: site.description,
     type: "website",
+    url: site.url,
+    siteName: site.name,
+    images: [
+      {
+        url: "/og-image.jpg",
+        secureUrl: `${site.url}/og-image.jpg`,
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "All The Glory - From Darkness To Light",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: site.name,
+    description: site.description,
+    images: [
+      {
+        url: `${site.url}/og-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "All The Glory - From Darkness To Light",
+      },
+    ],
   },
 };
 
