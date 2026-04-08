@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { site } from "@/content/site";
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close mobile menu on any route change (including programmatic navigation).
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-colour-bg/80 backdrop-blur-md border-b border-white/5">
