@@ -85,14 +85,14 @@ export default function SiteFooter() {
             transition={{ duration: 2, delay: 2, ease: "easeOut" }}
             className="panel-scrim p-6 text-center"
           >
-            <p className="text-base md:text-lg italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.55 }}>
+            <p className="font-display text-xl md:text-2xl italic leading-relaxed" style={{ color: "var(--colour-ink)", opacity: 0.75 }}>
               &ldquo;What does it profit a man to gain the whole world, and forfeit his soul?&rdquo;
             </p>
             <cite
-              className="block mt-3 text-sm not-italic uppercase tracking-widest"
+              className="block mt-4 text-[11px] not-italic uppercase tracking-[0.24em]"
               style={{ color: "var(--colour-accent-1)" }}
             >
-              - Mark 8:36
+              — Mark 8:36
             </cite>
           </motion.div>
 

@@ -51,12 +51,12 @@ export default function Testimony({
             >
               {useCustomHeader ? (
                 <>
-                  <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80">
+                  <div className="eyebrow eyebrow-amber">
                     {eyebrow}
                   </div>
                   <h2
                     id={headingId}
-                    className="mt-3 text-2xl md:text-3xl font-semibold text-white"
+                    className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
                   >
                     {title}
                   </h2>
@@ -65,7 +65,7 @@ export default function Testimony({
                 <>
                   <h2
                     id={headingId}
-                    className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
+                    className="font-display text-4xl md:text-6xl lg:text-7xl font-normal tracking-tight mb-4"
                     style={{ color: "var(--colour-ink)" }}
                   >
                     {storyTitle}

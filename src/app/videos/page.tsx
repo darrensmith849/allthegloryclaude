@@ -38,10 +38,8 @@ export default function VideosPage() {
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-4xl px-6 pt-32 md:pt-40 pb-20 md:pb-28 min-h-[78vh] md:min-h-[82vh]">
         <header className="text-center">
-          <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-            Videos
-          </div>
-          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+          <div className="eyebrow">Videos</div>
+          <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
             Official YouTube channel
           </h1>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">

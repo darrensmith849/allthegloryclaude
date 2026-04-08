@@ -10,91 +10,48 @@ import { site } from "@/content/site";
 function TrackRow({
   index,
   title,
-  verse,
-  delay,
-  fromRight,
-  hoverReady,
+  verseRef,
   isPlaying,
-  reduce,
   onTogglePlay,
   onReadVerse,
 }: {
   index: number;
   title: string;
-  verse: string;
-  delay: number;
-  fromRight: boolean;
-  hoverReady: boolean;
+  verseRef: string;
   isPlaying: boolean;
-  reduce: boolean;
   onTogglePlay: () => void;
   onReadVerse: () => void;
 }) {
-  const trackTransition = reduce
-    ? { duration: 0.01 }
-    : { duration: 1.4, delay: delay * 0.4, ease: [0.06, 1, 0.18, 1] as const };
-  const shimmerTransition = reduce
-    ? { duration: 0 }
-    : { duration: 1.6, delay: delay * 0.4 + 1.6, ease: "easeInOut" as const };
-
   return (
-    <motion.div
-      initial={
-        reduce
-          ? { opacity: 0 }
-          : { opacity: 0, x: fromRight ? "30vw" : "-30vw" }
-      }
-      animate={{ opacity: 1, x: 0 }}
-      transition={trackTransition}
-      className={`${hoverReady ? "group" : ""} panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
-    >
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs uppercase tracking-[0.24em] text-white/45">
-            Track {String(index).padStart(2, "0")}
-          </div>
-          <div className="mt-1 text-base md:text-lg font-semibold text-white/90 truncate group-hover:text-[var(--colour-amber)] transition-colors duration-300">
-            {title}
-          </div>
-        </div>
+    <li className="track-row" data-playing={isPlaying || undefined}>
+      <span className="track-number" aria-hidden="true">
+        {String(index).padStart(2, "0")}
+      </span>
 
+      <div className="min-w-0">
+        <span className="track-title truncate block">{title}</span>
         <button
+          type="button"
+          onClick={onReadVerse}
+          className="track-verse-ref hover:underline underline-offset-4 focus:outline-none focus-visible:text-[var(--colour-amber)]"
+          aria-label={`Read ${verseRef} in full`}
+        >
+          {verseRef}
+        </button>
+      </div>
+
+      <div className="track-actions">
+        <button
+          type="button"
           onClick={onTogglePlay}
-          className={`shrink-0 text-xs uppercase tracking-[0.26em] transition-colors duration-300 ${
-            isPlaying ? "text-[var(--colour-amber)]" : "text-white/55 hover:text-white/80"
-          }`}
+          className="track-action"
+          data-playing={isPlaying || undefined}
+          aria-label={`${isPlaying ? "Pause" : "Preview"} ${title}`}
         >
           {isPlaying ? "Pause" : "Preview"}
         </button>
       </div>
-
-      {/* Verse + read link on hover */}
-      <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-out">
-        <p className="mt-3 pt-3 border-t border-white/10 text-sm italic text-white/65 leading-relaxed">
-          {verse}
-        </p>
-        <button
-          onClick={onReadVerse}
-          className="mt-2 inline-block text-xs uppercase tracking-[0.24em] text-[var(--colour-amber)]/70 hover:text-[var(--colour-amber)] transition-colors duration-300"
-        >
-          Read verse
-        </button>
-      </div>
-
-      {/* Shimmer sweep after landing */}
-      {!reduce && (
-        <motion.div
-          initial={{ x: "-100%" }}
-          animate={{ x: "200%" }}
-          transition={shimmerTransition}
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.2) 45%, rgba(255,255,255,0.15) 50%, rgba(216,178,90,0.2) 55%, transparent 70%)",
-          }}
-        />
-      )}
-    </motion.div>
+    </li>
   );
 }
 
@@ -221,63 +178,50 @@ function VerseModal({
   );
 }
 
-function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
+function AlbumArt() {
   const reduce = useReducedMotion();
   const transition = reduce
     ? { duration: 0.01 }
-    : { duration: 1.6, delay, ease: [0.25, 0.1, 0.25, 1] as const };
-  void side;
+    : { duration: 1.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] as const };
   return (
-    <motion.section
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
-      animate={{ opacity: 0.85, y: 0 }}
+    <motion.figure
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={transition}
+      className="relative"
     >
-      <div
-        className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
-        style={{
-          width: "100%",
-          height: "min(560px, 65vh)",
-        }}
-      >
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-[0_40px_100px_rgba(0,0,0,0.5)]">
         <Image
           src={album.coverImage}
-          alt="Album cover"
+          alt={`${album.name} — album cover`}
           fill
-          sizes="(max-width: 1024px) 100vw, 33vw"
+          priority
+          sizes="(max-width: 1024px) 100vw, 520px"
           className="object-cover"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30" />
       </div>
 
-      <div className="mt-3 text-xs text-white/55">
+      <figcaption className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/45">
         Artwork by{" "}
         <a
           href="https://debbieclarkart.com/"
           target="_blank"
           rel="noreferrer"
-          className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
+          className="text-white/70 hover:text-white transition-colors"
         >
           Debbie Clarke
         </a>
-      </div>
-    </motion.section>
+      </figcaption>
+    </motion.figure>
   );
 }
 
 export default function AlbumPage() {
-  const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const reduce = useReducedMotion();
-
-  useEffect(() => {
-    // Was 10s — now matches the actual entrance length so hover works
-    // shortly after the tracks land. Instant when reduced motion.
-    const timer = setTimeout(() => setHoverReady(true), reduce ? 0 : 3500);
-    return () => clearTimeout(timer);
-  }, [reduce]);
 
   const togglePlay = useCallback((index: number, src: string) => {
     if (playingIndex === index) {
@@ -301,114 +245,118 @@ export default function AlbumPage() {
     return () => { audioRef.current?.pause(); };
   }, []);
 
+  const headerTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const };
+  const listTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.35, ease: [0.16, 1, 0.3, 1] as const };
+  const footerTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.2, delay: 0.55, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <main className="bg-transparent overflow-x-clip">
-      <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
-        <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT artwork */}
-          <div className="hidden lg:block">
-            <AlbumArt delay={0.08} side="left" />
+      <div className="mx-auto w-full max-w-6xl px-6 pt-32 md:pt-40 pb-20 md:pb-28">
+        {/* ── Editorial album header ─────────────────────── */}
+        <motion.header
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={headerTransition}
+          className="text-center"
+        >
+          <div className="eyebrow eyebrow-amber">
+            2025 · Album
           </div>
+          <h1 className="subtitle-glyph mt-4 text-3xl md:text-5xl font-semibold text-white">
+            {album.title}
+          </h1>
+          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
+            A seven-track worship album woven through scripture. Free to
+            download, free to share.
+          </p>
+        </motion.header>
 
-          {/* Mobile artwork */}
-          <div className="lg:hidden">
-            <AlbumArt delay={0.08} side="left" />
-          </div>
+        {/* ── Two-column layout: artwork + tracklist ─────── */}
+        <div className="mt-12 md:mt-16 grid gap-10 md:gap-14 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.35fr)] items-start">
+          {/* Left — album artwork */}
+          <AlbumArt />
 
-          {/* CENTRE: everything centred */}
-          <section className="flex flex-col items-center text-center">
-            {/* Album header — animates independently and locks in place */}
-            <motion.div
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={
-                reduce
-                  ? { duration: 0.01 }
-                  : { duration: 1.6, delay: 0, ease: [0.25, 0.1, 0.25, 1] as const }
-              }
-              className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
-            >
-              <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-                2025 • Album
+          {/* Right — tracklist + actions */}
+          <motion.section
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={listTransition}
+            className="panel-scrim p-6 md:p-8"
+            aria-label="Tracklist"
+          >
+            <div className="flex items-end justify-between mb-5 md:mb-6">
+              <div className="eyebrow">Tracklist</div>
+              <div className="text-[10px] uppercase tracking-[0.22em] text-white/40">
+                {album.tracks.length} tracks
               </div>
-              <h1 className="subtitle-glyph mt-3 text-2xl md:text-4xl font-semibold text-white">
-                {album.title}
-              </h1>
-              <p className="subtitle-glyph mt-2 text-sm text-white/65">
-                {album.subtitle}
-              </p>
+            </div>
 
-              {/* Download / Give */}
-              <div className="mt-6 flex justify-center gap-3">
-                <a href="/downloads/from-darkness-to-light.zip" className="btn btn-primary">
-                  Download free →
-                </a>
-                <Link href="/give" className="btn btn-ghost">
-                  Give →
-                </Link>
-              </div>
-
-              <p className="mt-4 text-xs text-white/55 leading-relaxed max-w-sm mx-auto">
-                I didn't want to put a price on worship - this is an offering unto the Lord.
-                If you feel led to support the work, your gift goes directly into recording,
-                production, and releasing more music.
-              </p>
-            </motion.div>
-
-            {/* Tracks — animate independently, don't affect header */}
-            <div className="mt-8 grid gap-3 w-full">
+            <ol className="tracklist">
               {album.tracks.map((t, i) => (
                 <TrackRow
                   key={t.title}
                   index={i + 1}
                   title={t.title}
-                  verse={t.verse}
-                  delay={0.6 + i * 0.8}
-                  fromRight={i % 2 === 1}
-                  hoverReady={hoverReady}
+                  verseRef={t.ref}
                   isPlaying={playingIndex === i}
-                  reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
                   onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse })}
                 />
               ))}
+            </ol>
+
+            {/* Primary actions */}
+            <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <a href="/downloads/from-darkness-to-light.zip" className="btn btn-primary">
+                Download free →
+              </a>
+              <Link href="/give" className="btn btn-ghost">
+                Support the work
+              </Link>
             </div>
 
-            {/* Streaming links — only the platforms that actually exist */}
-            <motion.div
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={
-                reduce
-                  ? { duration: 0.01 }
-                  : { duration: 1.4, delay: 2.2, ease: [0.06, 1, 0.18, 1] as const }
-              }
-              className="mt-8 flex flex-wrap justify-center gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
-            >
-              <a
-                href={site.socials.spotify}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-              >
-                Spotify ↗
-              </a>
-              <a
-                href={site.socials.youtube}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-              >
-                YouTube ↗
-              </a>
-            </motion.div>
-          </section>
-
-          {/* RIGHT artwork (desktop only) */}
-          <div className="hidden lg:block">
-            <AlbumArt delay={0.14} side="right" />
-          </div>
+            <p className="mt-5 text-xs text-white/55 leading-relaxed max-w-md">
+              I didn&apos;t want to put a price on worship — this is an
+              offering unto the Lord. If you feel led to support the work,
+              your gift goes directly into recording, production, and
+              releasing more music.
+            </p>
+          </motion.section>
         </div>
+
+        {/* ── Streaming row ─────────────────────────────── */}
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={footerTransition}
+          className="mt-14 md:mt-20 text-center"
+        >
+          <div className="eyebrow mb-4">Also on</div>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs uppercase tracking-[0.24em] text-white/55">
+            <a
+              href={site.socials.spotify}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Spotify ↗
+            </a>
+            <a
+              href={site.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              YouTube ↗
+            </a>
+          </div>
+        </motion.div>
       </div>
 
       <AnimatePresence>

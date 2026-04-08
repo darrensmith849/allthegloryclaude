@@ -71,9 +71,12 @@ export default function ContactPage() {
           transition={headerTransition}
           className="max-w-4xl mx-auto px-6 text-center"
         >
-          <h1 className="modo-title text-colour-fg mb-6">Contact</h1>
-          <p className="text-lg md:text-xl text-colour-fg/60">
-            Get in touch.
+          <div className="eyebrow mb-4">Contact</div>
+          <h1 className="font-display text-4xl md:text-6xl font-normal text-white tracking-tight mb-4">
+            Get in touch
+          </h1>
+          <p className="text-sm md:text-base text-white/65 max-w-md mx-auto">
+            For booking enquiries, press, prayer requests, or a quick hello.
           </p>
         </motion.div>
       </section>

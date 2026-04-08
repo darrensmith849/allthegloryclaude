@@ -71,10 +71,8 @@ export default function GivePage() {
           transition={headerTransition}
           className="text-center"
         >
-          <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-            Give
-          </div>
-          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+          <div className="eyebrow">Give</div>
+          <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
             Sow into the work
           </h1>
           <p className="mt-4 text-sm md:text-base text-white/70 max-w-md mx-auto leading-relaxed">

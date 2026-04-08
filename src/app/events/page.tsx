@@ -26,11 +26,9 @@ export default function BookingsPage() {
           transition={headerTransition}
           className="text-center"
         >
-          <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-            Bookings & Enquiries
-          </div>
-          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
-            Live & In Person
+          <div className="eyebrow">Bookings & Enquiries</div>
+          <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
+            Live & in person
           </h1>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-lg mx-auto leading-relaxed">
             No public dates at the moment — for invitations, appearances,
@@ -48,7 +46,7 @@ export default function BookingsPage() {
         >
           <h2
             id="bookings-heading"
-            className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80"
+            className="eyebrow eyebrow-amber"
           >
             Invite Daniel
           </h2>

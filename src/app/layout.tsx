@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import "@/styles/globals.css";
 import Nav from "@/components/site/nav";
 import SiteFooter from "@/components/site/site-footer";
@@ -6,6 +7,23 @@ import SocialDock from "@/components/site/social-dock";
 import StickyBackdrop from "@/components/site/sticky-backdrop";
 import { site } from "@/content/site";
 import { album } from "@/content/album";
+
+// Premium editorial serif for display headings.
+// Fraunces is a warm, variable serif with optical sizing — feels
+// hand-set at large sizes and reads cleanly at small ones.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
+  axes: ["opsz", "SOFT"],
+});
+
+// Clean modern sans for body copy.
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 // Structured data — built from the actual content sources, no hardcoded facts.
 const structuredData = {
@@ -90,8 +108,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-transparent">
+    <html
+      lang="en"
+      className={`${fraunces.variable} ${inter.variable}`}
+    >
+      <body className="min-h-screen bg-transparent font-sans">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

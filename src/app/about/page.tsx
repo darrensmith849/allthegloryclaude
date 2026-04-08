@@ -24,13 +24,13 @@ export default function AboutPage() {
       <section className="w-full pt-32 md:pt-40 pb-12 md:pb-16">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center">
-            <div className="text-xs uppercase tracking-[0.28em] text-white/60">
+            <div className="eyebrow">
               About
             </div>
-            <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+            <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
               Daniel
             </h1>
-            <p className="mt-3 text-sm md:text-base text-white/65 max-w-md mx-auto">
+            <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto">
               Singer, songwriter, worshipper. Harare, Zimbabwe.
             </p>
           </div>
@@ -90,12 +90,12 @@ export default function AboutPage() {
             transition={missionTransition}
             className="panel-scrim p-7 md:p-10"
           >
-            <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80">
+            <div className="eyebrow eyebrow-amber">
               The Mission
             </div>
             <h2
               id="mission-heading"
-              className="mt-2 text-2xl md:text-3xl font-semibold text-white"
+              className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
             >
               All for the glory of God
             </h2>

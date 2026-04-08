@@ -40,20 +40,18 @@ export default function AlbumPromo() {
           className="block group"
         >
           {/* Glass panel with text */}
-          <div className="panel-scrim p-5 md:p-6 text-center group-hover:border-white/20 transition-colors duration-300">
-            <div className="text-xs uppercase tracking-[0.28em] text-white/70">
-              Album
-            </div>
+          <div className="panel-scrim p-6 md:p-7 text-center group-hover:border-white/20 transition-colors duration-300">
+            <div className="eyebrow eyebrow-amber">The Album</div>
 
-            <p className="subtitle-glyph mt-2 text-lg md:text-xl text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
+            <p className="subtitle-glyph mt-3 text-lg md:text-xl text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
               Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
             </p>
 
-            <p className="mt-2 text-sm text-white/70">
+            <p className="font-display mt-2 text-base md:text-lg text-white/75 italic">
               A testimony of truth and freedom
             </p>
 
-            <div className="mt-4 text-xs uppercase tracking-[0.24em] text-white/55 group-hover:text-white/80 transition-colors duration-300">
+            <div className="mt-5 text-[11px] uppercase tracking-[0.22em] text-white/55 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
               Listen now →
             </div>
           </div>
