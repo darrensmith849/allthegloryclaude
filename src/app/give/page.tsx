@@ -94,11 +94,14 @@ export default function GivePage() {
             Donation amount
           </h2>
 
-          {/* Preset chips */}
+          {/* Preset chips — quick shortcuts only, never a maximum */}
+          <div className="text-xs uppercase tracking-[0.26em] text-white/55">
+            Quick amounts
+          </div>
           <div
             role="group"
-            aria-label="Donation preset amounts in USD"
-            className="flex flex-wrap gap-2"
+            aria-label="Donation quick amounts in USD"
+            className="mt-3 flex flex-wrap gap-2"
           >
             {PRESETS.map((value) => {
               const active = activePreset === value;
@@ -116,13 +119,13 @@ export default function GivePage() {
             })}
           </div>
 
-          {/* Custom amount */}
-          <div className="mt-6">
+          {/* Custom amount — fully open-ended, any positive value */}
+          <div className="mt-7">
             <label
               htmlFor="donation-amount"
-              className="text-xs uppercase tracking-[0.28em] text-white/60"
+              className="text-xs uppercase tracking-[0.26em] text-white/60"
             >
-              Custom amount (USD)
+              Or enter any amount
             </label>
             <div className="relative mt-2">
               <span

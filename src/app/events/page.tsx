@@ -32,9 +32,10 @@ export default function BookingsPage() {
           <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
             Live & In Person
           </h1>
-          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            No public dates at the moment — for invitations, appearances, or
-            ministry enquiries, get in touch.
+          <p className="mt-4 text-sm md:text-base text-white/65 max-w-lg mx-auto leading-relaxed">
+            No public dates at the moment — for invitations, appearances,
+            ministry enquiries, or custom songs written upon request, get
+            in touch.
           </p>
         </motion.header>
 
