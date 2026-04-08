@@ -163,8 +163,7 @@ export default function AboutPage() {
               </p>
               <p>
                 Whether on stage or in the studio, the aim is the same: to point
-                beyond the art to the Artist, beyond the song to the Singer, beyond
-                the story to the Author.
+                people to Jesus, and to give God all the glory.
               </p>
             </div>
 
