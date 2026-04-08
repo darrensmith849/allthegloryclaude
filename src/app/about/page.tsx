@@ -69,26 +69,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── THE STORY (testimony body, no album-style heading) ──── */}
-      <section
-        aria-labelledby="story-heading"
-        className="w-full pb-4 md:pb-8"
-      >
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="text-center mb-8 md:mb-10">
-            <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80">
-              The Story
-            </div>
-            <h2
-              id="story-heading"
-              className="mt-2 text-2xl md:text-3xl font-semibold text-white"
-            >
-              From a heavy place to freedom
-            </h2>
-          </div>
-        </div>
-        <Testimony showHeader={false} />
-      </section>
+      {/* ── THE STORY — heading lives inside the Testimony glass panel
+           so the eyebrow, title, and body are one aligned block ──── */}
+      <Testimony
+        eyebrow="The Story"
+        title="Out of darkness into the light"
+        headingId="story-heading"
+      />
 
       {/* ── THE MISSION ─────────────────────────────────────────── */}
       <section

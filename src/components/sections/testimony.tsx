@@ -4,12 +4,24 @@ import { motion, useReducedMotion } from "framer-motion";
 import { storyTitle, storyKicker, storyParagraphs } from "@/content/story";
 
 type TestimonyProps = {
-  /** Hide the album-style "From Darkness To Light" heading.
-   *  Use this when the parent page already provides its own page heading. */
+  /** Hide the heading entirely. Use when the parent page provides its own. */
   showHeader?: boolean;
+  /** Optional custom eyebrow rendered inside the glass panel, above the title.
+   *  When provided together with `title`, an editorial section-style header is
+   *  rendered instead of the default album-style header. */
+  eyebrow?: string;
+  /** Optional custom section title. See `eyebrow`. */
+  title?: string;
+  /** Optional id for the rendered heading, for aria-labelledby linking. */
+  headingId?: string;
 };
 
-export default function Testimony({ showHeader = true }: TestimonyProps) {
+export default function Testimony({
+  showHeader = true,
+  eyebrow,
+  title,
+  headingId,
+}: TestimonyProps) {
   const reduce = useReducedMotion();
   const headerTransition = reduce
     ? { duration: 0.01 }
@@ -18,6 +30,8 @@ export default function Testimony({ showHeader = true }: TestimonyProps) {
     reduce
       ? { duration: 0.01 }
       : { duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const };
+
+  const useCustomHeader = Boolean(eyebrow && title);
 
   return (
     <section className="bg-transparent">
@@ -29,20 +43,41 @@ export default function Testimony({ showHeader = true }: TestimonyProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={headerTransition}
-              className="text-center mb-12 md:mb-16"
+              className={
+                useCustomHeader
+                  ? "text-center mb-8 md:mb-10"
+                  : "text-center mb-12 md:mb-16"
+              }
             >
-              <h2
-                className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
-                style={{ color: "var(--colour-ink)" }}
-              >
-                {storyTitle}
-              </h2>
-              <p
-                className="text-lg md:text-xl"
-                style={{ color: "var(--colour-accent-1)" }}
-              >
-                {storyKicker}
-              </p>
+              {useCustomHeader ? (
+                <>
+                  <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80">
+                    {eyebrow}
+                  </div>
+                  <h2
+                    id={headingId}
+                    className="mt-3 text-2xl md:text-3xl font-semibold text-white"
+                  >
+                    {title}
+                  </h2>
+                </>
+              ) : (
+                <>
+                  <h2
+                    id={headingId}
+                    className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
+                    style={{ color: "var(--colour-ink)" }}
+                  >
+                    {storyTitle}
+                  </h2>
+                  <p
+                    className="text-lg md:text-xl"
+                    style={{ color: "var(--colour-accent-1)" }}
+                  >
+                    {storyKicker}
+                  </p>
+                </>
+              )}
             </motion.div>
           )}
 
