@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const reduce = useReducedMotion();
 
   function validate(formData: FormData) {
     const errs: Record<string, string> = {};
@@ -37,6 +38,16 @@ export default function ContactPage() {
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      // Move focus to the first invalid field for accessibility
+      const firstInvalid =
+        validationErrors.name
+          ? "name"
+          : validationErrors.email
+          ? "email"
+          : "message";
+      requestAnimationFrame(() => {
+        document.getElementById(firstInvalid)?.focus();
+      });
       return;
     }
 
@@ -44,13 +55,20 @@ export default function ContactPage() {
     setSubmitted(true);
   }
 
+  const headerTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.6, delay: 0.1, ease: "easeOut" as const };
+  const formTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.4, ease: [0.06, 1, 0.18, 1] as const };
+
   return (
     <div className="pt-24">
       <section className="w-full pt-20 md:pt-28 pb-6 md:pb-8">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
+          transition={headerTransition}
           className="max-w-4xl mx-auto px-6 text-center"
         >
           <h1 className="modo-title text-colour-fg mb-6">Contact</h1>
@@ -64,7 +82,7 @@ export default function ContactPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 3, delay: 1, ease: [0.06, 1, 0.18, 1] }}
+          transition={formTransition}
           className="max-w-xl mx-auto px-6"
         >
           {submitted ? (
@@ -101,11 +119,20 @@ export default function ContactPage() {
                   name="name"
                   id="name"
                   required
+                  aria-invalid={errors.name ? true : undefined}
+                  aria-describedby={errors.name ? "name-error" : undefined}
                   className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
                   placeholder="Your name"
                 />
                 {errors.name && (
-                  <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+                  <p
+                    id="name-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="mt-1 text-sm text-red-400"
+                  >
+                    {errors.name}
+                  </p>
                 )}
               </div>
 
@@ -121,11 +148,20 @@ export default function ContactPage() {
                   name="email"
                   id="email"
                   required
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
                   placeholder="you@example.com"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                  <p
+                    id="email-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="mt-1 text-sm text-red-400"
+                  >
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
@@ -141,11 +177,20 @@ export default function ContactPage() {
                   id="message"
                   required
                   rows={6}
+                  aria-invalid={errors.message ? true : undefined}
+                  aria-describedby={errors.message ? "message-error" : undefined}
                   className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors resize-none"
                   placeholder="Your message..."
                 />
                 {errors.message && (
-                  <p className="mt-1 text-sm text-red-400">{errors.message}</p>
+                  <p
+                    id="message-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="mt-1 text-sm text-red-400"
+                  >
+                    {errors.message}
+                  </p>
                 )}
               </div>
 

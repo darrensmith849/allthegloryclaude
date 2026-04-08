@@ -3,39 +3,49 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
-
-const ease = [0.22, 1, 0.36, 1] as const;
+import { site } from "@/content/site";
 
 function TrackRow({
   index,
   title,
   verse,
-  previewSrc,
   delay,
   fromRight,
   hoverReady,
   isPlaying,
+  reduce,
   onTogglePlay,
   onReadVerse,
 }: {
   index: number;
   title: string;
   verse: string;
-  previewSrc: string;
   delay: number;
   fromRight: boolean;
   hoverReady: boolean;
   isPlaying: boolean;
+  reduce: boolean;
   onTogglePlay: () => void;
   onReadVerse: () => void;
 }) {
+  const trackTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: delay * 0.4, ease: [0.06, 1, 0.18, 1] as const };
+  const shimmerTransition = reduce
+    ? { duration: 0 }
+    : { duration: 1.6, delay: delay * 0.4 + 1.6, ease: "easeInOut" as const };
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: fromRight ? "80vw" : "-80vw" }}
+      initial={
+        reduce
+          ? { opacity: 0 }
+          : { opacity: 0, x: fromRight ? "30vw" : "-30vw" }
+      }
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 7, delay, ease: [0.06, 1, 0.18, 1] }}
+      transition={trackTransition}
       className={`${hoverReady ? "group" : ""} panel-scrim px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
     >
       <div className="flex items-center justify-between gap-4">
@@ -72,20 +82,18 @@ function TrackRow({
       </div>
 
       {/* Shimmer sweep after landing */}
-      <motion.div
-        initial={{ x: "-100%" }}
-        animate={{ x: "200%" }}
-        transition={{
-          duration: 1.8,
-          delay: delay + 3.2,
-          ease: "easeInOut",
-        }}
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.2) 45%, rgba(255,255,255,0.15) 50%, rgba(216,178,90,0.2) 55%, transparent 70%)",
-        }}
-      />
+      {!reduce && (
+        <motion.div
+          initial={{ x: "-100%" }}
+          animate={{ x: "200%" }}
+          transition={shimmerTransition}
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(105deg, transparent 30%, rgba(216,178,90,0.2) 45%, rgba(255,255,255,0.15) 50%, rgba(216,178,90,0.2) 55%, transparent 70%)",
+          }}
+        />
+      )}
     </motion.div>
   );
 }
@@ -99,33 +107,102 @@ function VerseModal({
   fullVerse: string;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const reduce = useReducedMotion();
+
   useEffect(() => {
+    // Capture previously focused element so we can restore on close
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Focus the dialog itself once mounted
+    const raf = requestAnimationFrame(() => {
+      dialogRef.current?.focus();
+    });
+
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusables = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter(
+          (el) => !el.hasAttribute("disabled") && el.offsetParent !== null
+        );
+        if (focusables.length === 0) {
+          e.preventDefault();
+          dialogRef.current.focus();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || active === dialogRef.current)) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && active === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
     };
     document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", handleKey);
+      // Restore focus to whatever opened the modal
+      previousFocusRef.current?.focus?.();
+    };
   }, [onClose]);
+
+  const overlayTransition = reduce ? { duration: 0.01 } : { duration: 0.3 };
+  const dialogTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={overlayTransition}
       className="fixed inset-0 z-50 flex items-center justify-center px-6"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 20 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="relative max-w-lg w-full panel-scrim border border-white/10 rounded-2xl px-8 py-10 text-center"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="verse-modal-title"
+        tabIndex={-1}
+        initial={
+          reduce
+            ? { opacity: 0 }
+            : { opacity: 0, scale: 0.92, y: 20 }
+        }
+        animate={
+          reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }
+        }
+        exit={
+          reduce
+            ? { opacity: 0 }
+            : { opacity: 0, scale: 0.92, y: 20 }
+        }
+        transition={dialogTransition}
+        className="relative max-w-lg w-full panel-scrim border border-white/10 rounded-2xl px-8 py-10 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--colour-amber)]/50"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/70 mb-5">
+        <div
+          id="verse-modal-title"
+          className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/70 mb-5"
+        >
           {verseRef}
         </div>
         <p className="text-lg md:text-xl italic text-white/85 leading-relaxed">
@@ -133,6 +210,7 @@ function VerseModal({
         </p>
         <div className="mt-4 text-xs text-white/40">ESV</div>
         <button
+          type="button"
           onClick={onClose}
           className="mt-8 text-xs uppercase tracking-[0.24em] text-white/50 hover:text-white/80 transition-colors duration-300"
         >
@@ -144,11 +222,16 @@ function VerseModal({
 }
 
 function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
+  const reduce = useReducedMotion();
+  const transition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.6, delay, ease: [0.25, 0.1, 0.25, 1] as const };
+  void side;
   return (
     <motion.section
-      initial={{ opacity: 0, y: -30 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
       animate={{ opacity: 0.85, y: 0 }}
-      transition={{ duration: 8, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={transition}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
@@ -187,11 +270,14 @@ export default function AlbumPage() {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
-    const timer = setTimeout(() => setHoverReady(true), 10000);
+    // Was 10s — now matches the actual entrance length so hover works
+    // shortly after the tracks land. Instant when reduced motion.
+    const timer = setTimeout(() => setHoverReady(true), reduce ? 0 : 3500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [reduce]);
 
   const togglePlay = useCallback((index: number, src: string) => {
     if (playingIndex === index) {
@@ -233,9 +319,13 @@ export default function AlbumPage() {
           <section className="flex flex-col items-center text-center">
             {/* Album header — animates independently and locks in place */}
             <motion.div
-              initial={{ opacity: 0, y: -30 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 8, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={
+                reduce
+                  ? { duration: 0.01 }
+                  : { duration: 1.6, delay: 0, ease: [0.25, 0.1, 0.25, 1] as const }
+              }
               className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             >
               <div className="text-xs uppercase tracking-[0.28em] text-white/60">
@@ -273,31 +363,42 @@ export default function AlbumPage() {
                   index={i + 1}
                   title={t.title}
                   verse={t.verse}
-                  previewSrc={t.previewSrc}
                   delay={0.6 + i * 0.8}
                   fromRight={i % 2 === 1}
                   hoverReady={hoverReady}
                   isPlaying={playingIndex === i}
+                  reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
                   onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse })}
                 />
               ))}
             </div>
 
-            {/* Streaming links */}
+            {/* Streaming links — only the platforms that actually exist */}
             <motion.div
-              initial={{ opacity: 0, y: -30 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 5, delay: 7, ease: [0.06, 1, 0.18, 1] }}
+              transition={
+                reduce
+                  ? { duration: 0.01 }
+                  : { duration: 1.4, delay: 2.2, ease: [0.06, 1, 0.18, 1] as const }
+              }
               className="mt-8 flex flex-wrap justify-center gap-6 text-xs uppercase tracking-[0.26em] text-white/55"
             >
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+              <a
+                href={site.socials.spotify}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
                 Spotify ↗
               </a>
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
-                Apple Music ↗
-              </a>
-              <a className="hover:text-white" href="#" onClick={(e) => e.preventDefault()}>
+              <a
+                href={site.socials.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
                 YouTube ↗
               </a>
             </motion.div>
