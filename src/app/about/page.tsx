@@ -14,9 +14,6 @@ export default function AboutPage() {
   const heroTextTransition = reduce
     ? { duration: 0.01 }
     : { duration: 1.4, delay: 0.45, ease: [0.16, 1, 0.3, 1] as const };
-  const memoryTransition = reduce
-    ? { duration: 0.01 }
-    : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const };
   const missionTransition = reduce
     ? { duration: 0.01 }
     : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const };
@@ -38,26 +35,27 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Premium lead image — Daniel as the artist */}
-          <motion.div
+          {/* Lead image — the dad photo, treated as the rightful
+              opening visual. Natural 3:2 fit for the source frame. */}
+          <motion.figure
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={heroImageTransition}
-            className="relative mx-auto mt-10 md:mt-14 max-w-4xl"
+            className="relative mx-auto mt-10 md:mt-14 max-w-3xl"
           >
-            <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 panel-scrim aspect-[16/9]">
+            <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 panel-scrim aspect-[3/2]">
               <Image
-                src="/media/guitar.jpg"
-                alt="Daniel with his guitar"
+                src="/media/dad.jpg"
+                alt="Daniel as a child with his dad"
                 fill
                 priority
-                sizes="(max-width: 1024px) 100vw, 960px"
+                sizes="(max-width: 1024px) 100vw, 820px"
                 className="object-cover"
-                style={{ objectPosition: "50% 35%" }}
+                style={{ objectPosition: "50% 40%" }}
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/55" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/45" />
             </div>
-          </motion.div>
+          </motion.figure>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -90,40 +88,6 @@ export default function AboutPage() {
           </div>
         </div>
         <Testimony showHeader={false} />
-      </section>
-
-      {/* ── WHERE IT BEGAN: smaller framed memory image ─────────── */}
-      <section className="w-full py-14 md:py-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={memoryTransition}
-            className="panel-scrim p-6 md:p-8 grid gap-6 md:gap-8 md:grid-cols-[200px_1fr] md:items-center"
-          >
-            <div className="relative w-full mx-auto md:mx-0 max-w-[220px] aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/20">
-              <Image
-                src="/media/dad.jpg"
-                alt="Daniel as a child with family"
-                fill
-                sizes="(max-width: 768px) 60vw, 200px"
-                className="object-cover"
-                style={{ objectPosition: "50% 40%" }}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/0 to-black/35" />
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-[0.26em] text-[var(--colour-amber)]/80">
-                Where it began
-              </div>
-              <p className="mt-3 text-sm md:text-base text-white/75 leading-relaxed">
-                Before the music, there was a family in Harare. A kid,
-                a childhood, and no idea yet what any of it would become.
-              </p>
-            </div>
-          </motion.div>
-        </div>
       </section>
 
       {/* ── THE MISSION ─────────────────────────────────────────── */}
