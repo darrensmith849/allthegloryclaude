@@ -148,7 +148,7 @@ export default function AboutPage() {
               id="mission-heading"
               className="mt-2 text-2xl md:text-3xl font-semibold text-white"
             >
-              Point beyond the art to the Artist
+              All for the glory of God
             </h2>
             <div className="mt-6 space-y-5 text-base md:text-lg text-white/75 leading-relaxed">
               <p>

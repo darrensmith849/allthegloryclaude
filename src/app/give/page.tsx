@@ -119,8 +119,13 @@ export default function GivePage() {
             })}
           </div>
 
+          {/* Bridge helper — explicitly tells users they aren't capped at $50 */}
+          <p className="mt-4 text-xs text-white/55">
+            Or enter your own amount below.
+          </p>
+
           {/* Custom amount — fully open-ended, any positive value */}
-          <div className="mt-7">
+          <div className="mt-5">
             <label
               htmlFor="donation-amount"
               className="text-xs uppercase tracking-[0.26em] text-white/60"
