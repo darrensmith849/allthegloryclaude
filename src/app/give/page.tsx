@@ -125,7 +125,7 @@ export default function GivePage() {
               htmlFor="donation-amount"
               className="text-xs uppercase tracking-[0.26em] text-white/60"
             >
-              Or enter any amount
+              Custom amount — enter any amount
             </label>
             <div className="relative mt-2">
               <span
