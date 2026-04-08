@@ -5,6 +5,46 @@ import SiteFooter from "@/components/site/site-footer";
 import SocialDock from "@/components/site/social-dock";
 import StickyBackdrop from "@/components/site/sticky-backdrop";
 import { site } from "@/content/site";
+import { album } from "@/content/album";
+
+// Structured data — built from the actual content sources, no hardcoded facts.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "MusicGroup",
+      "@id": `${site.url}#artist`,
+      name: site.name,
+      url: site.url,
+      sameAs: Object.values(site.socials),
+      image: `${site.url}/og-image.jpg`,
+    },
+    {
+      "@type": "MusicAlbum",
+      "@id": `${site.url}${album.path}#album`,
+      name: album.name,
+      url: `${site.url}${album.path}`,
+      image: `${site.url}${album.coverImage}`,
+      datePublished: String(album.releaseYear),
+      numTracks: album.tracks.length,
+      byArtist: { "@id": `${site.url}#artist` },
+      track: album.tracks.map((t, i) => ({
+        "@type": "MusicRecording",
+        position: i + 1,
+        name: t.title,
+        byArtist: { "@id": `${site.url}#artist` },
+      })),
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${site.url}#website`,
+      url: site.url,
+      name: site.name,
+      description: site.description,
+      publisher: { "@id": `${site.url}#artist` },
+    },
+  ],
+};
 
 export const metadata: Metadata = {
   title: {
@@ -52,6 +92,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-transparent">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
         <StickyBackdrop />
         <div className="relative z-10">
           <Nav />

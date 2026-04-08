@@ -1,8 +1,13 @@
 /** Hero-level album data (used by modo-hero + album page) */
 export const album = {
+  /** Readable name (used by SEO / structured data). */
+  name: "From Darkness To Light",
+  /** Stylized display title used in the visual hero. */
   title: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   subtitle: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   coverImage: "/media/ocean.jpg",
+  releaseYear: 2025,
+  path: "/album/from-darkness-to-light",
   ctas: [
     { label: "Listen", href: "/album/from-darkness-to-light" },
     { label: "Watch", href: "/videos" },
