@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+const PRESETS = [5, 10, 20, 50] as const;
+
 export default function GivePage() {
   const [amount, setAmount] = useState("10");
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +18,11 @@ export default function GivePage() {
     if (!Number.isFinite(n)) return "Please enter a valid number.";
     if (n <= 0) return "Amount must be greater than zero.";
     return null;
+  }
+
+  function selectPreset(value: number) {
+    setAmount(String(value));
+    if (error) setError(null);
   }
 
   async function donate() {
@@ -52,72 +59,124 @@ export default function GivePage() {
     ? { duration: 0.01 }
     : { duration: 1.4, delay: 0.3, ease: [0.06, 1, 0.18, 1] as const };
 
+  // Selected preset = the chip whose value matches the current amount.
+  const activePreset = PRESETS.find((p) => String(p) === amount.trim());
+
   return (
-    <main className="bg-transparent">
-      <div className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 pb-16">
-        <motion.div
+    <main className="bg-transparent overflow-x-clip">
+      <div className="mx-auto w-full max-w-2xl px-6 pt-32 md:pt-40 pb-20 md:pb-28 min-h-[78vh] md:min-h-[82vh] flex flex-col">
+        <motion.header
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={headerTransition}
           className="text-center"
         >
-          <h1 className="text-3xl md:text-4xl font-semibold text-white">Give</h1>
-          <p className="mt-4 text-white/70">
-            The album is free - but if it blessed you, your giving helps fund what's next.
+          <div className="text-xs uppercase tracking-[0.28em] text-white/60">
+            Give
+          </div>
+          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+            Sow into the work
+          </h1>
+          <p className="mt-4 text-sm md:text-base text-white/70 max-w-md mx-auto leading-relaxed">
+            The album is free. If it blessed you, your giving helps fund
+            recording, production, and the next release.
           </p>
-        </motion.div>
+        </motion.header>
 
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={cardTransition}
-          className="mt-8 panel-scrim p-6"
+          className="mt-10 md:mt-14 panel-scrim p-7 md:p-9"
+          aria-labelledby="give-heading"
         >
-          <label
-            htmlFor="donation-amount"
-            className="text-xs uppercase tracking-[0.28em] text-white/60"
+          <h2 id="give-heading" className="sr-only">
+            Donation amount
+          </h2>
+
+          {/* Preset chips */}
+          <div
+            role="group"
+            aria-label="Donation preset amounts in USD"
+            className="flex flex-wrap gap-2"
           >
-            Amount (USD)
-          </label>
-          <input
-            id="donation-amount"
-            type="number"
-            inputMode="decimal"
-            min="1"
-            step="1"
-            value={amount}
-            onChange={(e) => {
-              setAmount(e.target.value);
-              if (error) setError(null);
-            }}
-            aria-label="Donation amount in USD"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "donation-error" : "donation-help"}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/90 outline-none focus:border-[var(--colour-amber)]/60"
-          />
-          {error && (
-            <p
-              id="donation-error"
-              role="alert"
-              aria-live="polite"
-              className="mt-2 text-xs text-red-300"
+            {PRESETS.map((value) => {
+              const active = activePreset === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => selectPreset(value)}
+                  aria-pressed={active}
+                  className={`chip ${active ? "chip-active" : ""}`}
+                >
+                  ${value}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom amount */}
+          <div className="mt-6">
+            <label
+              htmlFor="donation-amount"
+              className="text-xs uppercase tracking-[0.28em] text-white/60"
             >
-              {error}
-            </p>
-          )}
+              Custom amount (USD)
+            </label>
+            <div className="relative mt-2">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/45"
+              >
+                $
+              </span>
+              <input
+                id="donation-amount"
+                type="number"
+                inputMode="decimal"
+                min="1"
+                step="1"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  if (error) setError(null);
+                }}
+                aria-label="Donation amount in USD"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "donation-error" : "donation-help"}
+                className="w-full rounded-xl border border-white/10 bg-white/5 pl-8 pr-4 py-3 text-base text-white outline-none focus:border-[var(--colour-amber)]/60 transition-colors"
+              />
+            </div>
+            {error && (
+              <p
+                id="donation-error"
+                role="alert"
+                aria-live="polite"
+                className="mt-2 text-xs text-red-300"
+              >
+                {error}
+              </p>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={donate}
             disabled={submitting}
-            className="mt-5 btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-7 btn btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {submitting ? "Redirecting…" : "Donate →"}
+            {submitting ? "Redirecting…" : "Donate now →"}
           </button>
 
-          <p id="donation-help" className="mt-4 text-xs text-white/55">
-            Every gift goes straight into recording, production, and releasing new music.
+          <p
+            id="donation-help"
+            className="mt-5 text-xs text-white/55 leading-relaxed"
+          >
+            Secure checkout via Stripe. Every gift goes directly into
+            recording, production, and releasing new music.
           </p>
-        </motion.div>
+        </motion.section>
       </div>
     </main>
   );

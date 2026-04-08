@@ -63,7 +63,7 @@ export default function ContactPage() {
     : { duration: 1.4, delay: 0.4, ease: [0.06, 1, 0.18, 1] as const };
 
   return (
-    <div className="pt-24">
+    <main className="bg-transparent overflow-x-clip min-h-[88vh] md:min-h-[90vh] flex flex-col pt-24">
       <section className="w-full pt-20 md:pt-28 pb-6 md:pb-8">
         <motion.div
           initial={{ opacity: 0 }}
@@ -204,6 +204,6 @@ export default function ContactPage() {
           )}
         </motion.div>
       </section>
-    </div>
+    </main>
   );
 }

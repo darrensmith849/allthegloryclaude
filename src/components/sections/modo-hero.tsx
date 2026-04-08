@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 
 export default function ModoHero() {
@@ -14,6 +15,9 @@ export default function ModoHero() {
   const titleTransition = reduce
     ? { duration: 0.01, delay: 0 }
     : { duration: 3.2, delay: 0.6, ease };
+  const ctaTransition = reduce
+    ? { duration: 0.01, delay: 0 }
+    : { duration: 1.8, delay: 1.6, ease };
 
   return (
     <section className="relative min-h-[92vh] w-full overflow-x-clip">
@@ -47,19 +51,44 @@ export default function ModoHero() {
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
       </motion.div>
 
-      {/* "All The Glory" — settles in slightly after the corners */}
-      <div className="mx-auto w-full max-w-6xl px-6 pt-28 pb-16 md:pt-36 md:pb-20 flex justify-end">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={titleTransition}
-          className="w-full max-w-[56rem] text-right"
-        >
-          <h1 className="modo-title modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
-            <span className="block">All The</span>
-            <span className="block">Glory</span>
-          </h1>
-        </motion.div>
+      {/* "All The Glory" — title + primary action cluster, right-aligned */}
+      <div className="mx-auto w-full max-w-6xl px-6 pt-28 pb-20 md:pt-32 md:pb-24 flex justify-end">
+        <div className="w-full max-w-[52rem] flex flex-col items-end">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={titleTransition}
+            className="w-full text-right"
+          >
+            <h1 className="modo-title modo-title-tight modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
+              <span className="block">All The</span>
+              <span className="block">Glory</span>
+            </h1>
+          </motion.div>
+
+          {/* CTA cluster — fades in after the title settles */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={ctaTransition}
+            className="mt-7 md:mt-9 flex items-center gap-3 md:gap-4"
+          >
+            <Link
+              href="/album/from-darkness-to-light"
+              className="btn btn-primary"
+              aria-label="Listen to the album From Darkness To Light"
+            >
+              Listen now →
+            </Link>
+            <Link
+              href="/videos"
+              className="btn btn-ghost"
+              aria-label="Watch on YouTube"
+            >
+              Watch ↗
+            </Link>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

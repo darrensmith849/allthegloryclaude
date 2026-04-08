@@ -1,87 +1,162 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import { eventsConfig } from "@/content/events";
+import { site } from "@/content/site";
 
-export default function EventsPage() {
+export default function BookingsPage() {
+  const reduce = useReducedMotion();
+  const headerTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.1, ease: "easeOut" as const };
+  const cardTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.35, ease: [0.06, 1, 0.18, 1] as const };
+  const secondaryTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.55, ease: [0.06, 1, 0.18, 1] as const };
+
   return (
-    <div className="pt-24">
-      <section className="w-full py-20 md:py-28">
-        <motion.div
+    <main className="bg-transparent overflow-x-clip">
+      <div className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 pb-20 md:pb-28 min-h-[78vh] md:min-h-[82vh] flex flex-col">
+        <motion.header
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 3, delay: 0.3, ease: "easeOut" }}
-          className="max-w-4xl mx-auto px-6 text-center"
+          transition={headerTransition}
+          className="text-center"
         >
-          <h1 className="modo-title text-colour-fg mb-6">Events</h1>
-          <p className="text-lg md:text-xl text-colour-fg/60">
-            Upcoming live performances and appearances.
+          <div className="text-xs uppercase tracking-[0.28em] text-white/60">
+            Bookings & Enquiries
+          </div>
+          <h1 className="subtitle-glyph mt-3 text-3xl md:text-5xl font-semibold text-white">
+            Live & In Person
+          </h1>
+          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
+            No public dates at the moment — for invitations, appearances, or
+            ministry enquiries, get in touch.
           </p>
-        </motion.div>
-      </section>
+        </motion.header>
 
-      <section className="w-full py-12 md:py-20">
-        <div className="max-w-3xl mx-auto px-6 space-y-6">
-          {eventsConfig.length === 0 ? (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 3, delay: 1, ease: "easeOut" }}
-              className="text-center text-colour-fg/50 text-lg"
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={cardTransition}
+          className="mt-10 md:mt-14 panel-scrim p-7 md:p-10"
+          aria-labelledby="bookings-heading"
+        >
+          <h2
+            id="bookings-heading"
+            className="text-xs uppercase tracking-[0.28em] text-[var(--colour-amber)]/80"
+          >
+            Invite Daniel
+          </h2>
+          <p className="mt-4 text-base md:text-lg text-white/80 leading-relaxed">
+            Daniel is available for worship nights, church services, conferences,
+            and intimate gatherings. Whether across Zimbabwe or further afield,
+            every invitation is prayed over and considered carefully.
+          </p>
+
+          <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <Link href="/contact" className="btn btn-primary">
+              Enquire about a booking →
+            </Link>
+            <a
+              href={site.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
             >
-              No upcoming events. Check back soon.
-            </motion.p>
-          ) : (
-            eventsConfig.map((event, i) => {
-              const date = new Date(event.date);
-              const month = date.toLocaleDateString("en-GB", {
-                month: "short",
-              });
-              const day = date.getDate();
+              Watch online ↗
+            </a>
+          </div>
+        </motion.section>
 
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 3, delay: 1 + i * 0.3, ease: [0.06, 1, 0.18, 1] }}
-                  className="flex gap-6 p-6 bg-colour-surface rounded-lg hover:bg-colour-fg/5 transition-colors"
-                >
-                  {/* Date block */}
-                  <div className="flex-shrink-0 w-16 text-center">
-                    <p className="text-sm text-colour-accent uppercase tracking-widest">
-                      {month}
-                    </p>
-                    <p className="text-3xl font-bold text-colour-fg">{day}</p>
-                  </div>
+        <motion.aside
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={secondaryTransition}
+          className="mt-8 text-center"
+        >
+          <p className="text-xs uppercase tracking-[0.26em] text-white/45">
+            Stay connected
+          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-[0.22em] text-white/55">
+            <a
+              href={site.socials.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Instagram ↗
+            </a>
+            <a
+              href={site.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              YouTube ↗
+            </a>
+            <a
+              href={site.socials.spotify}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Spotify ↗
+            </a>
+          </div>
+        </motion.aside>
 
-                  {/* Event details */}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-semibold text-colour-fg truncate">
-                      {event.title}
-                    </h2>
-                    <p className="text-sm text-colour-fg/50 mt-1">
-                      {event.venue} &middot; {event.location}
-                    </p>
-                  </div>
-
-                  {/* Ticket link */}
-                  {event.ticketUrl && (
-                    <div className="flex-shrink-0 self-center">
+        {/* Future-ready: when real public dates are added to events.ts,
+            they'll render below the bookings card automatically. */}
+        {eventsConfig.length > 0 && (
+          <section className="mt-12 md:mt-16">
+            <h2 className="text-xs uppercase tracking-[0.26em] text-white/60 text-center">
+              Upcoming dates
+            </h2>
+            <div className="mt-6 space-y-3">
+              {eventsConfig.map((event, i) => {
+                const date = new Date(event.date);
+                const month = date.toLocaleDateString("en-GB", { month: "short" });
+                const day = date.getDate();
+                return (
+                  <div
+                    key={i}
+                    className="panel-scrim flex items-center gap-5 px-5 py-4"
+                  >
+                    <div className="flex-shrink-0 w-14 text-center">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--colour-amber)]">
+                        {month}
+                      </p>
+                      <p className="text-2xl font-semibold text-white">{day}</p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-white truncate">
+                        {event.title}
+                      </h3>
+                      <p className="text-xs text-white/55 mt-1">
+                        {event.venue} · {event.location}
+                      </p>
+                    </div>
+                    {event.ticketUrl && (
                       <a
                         href={event.ticketUrl}
-                        className="px-5 py-2 text-sm font-semibold uppercase tracking-widest border border-colour-accent text-colour-accent hover:bg-colour-accent hover:text-colour-bg transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs uppercase tracking-[0.22em] text-[var(--colour-amber)] hover:text-white transition-colors"
                       >
-                        Tickets
+                        Tickets ↗
                       </a>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })
-          )}
-        </div>
-      </section>
-    </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+    </main>
   );
 }

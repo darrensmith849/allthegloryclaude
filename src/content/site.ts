@@ -13,7 +13,7 @@ export const site = {
     { label: "Home", href: "/" },
     { label: "Music", href: "/album/from-darkness-to-light" },
     { label: "Videos", href: "/videos" },
-    { label: "Events", href: "/events" },
+    { label: "Bookings", href: "/events" },
     { label: "Give", href: "/give" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },

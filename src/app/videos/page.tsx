@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 export default function VideosPage() {
   return (
     <main className="bg-transparent overflow-x-clip">
-      <div className="mx-auto w-full max-w-4xl px-6 pt-32 md:pt-40 pb-20 md:pb-28">
+      <div className="mx-auto w-full max-w-4xl px-6 pt-32 md:pt-40 pb-20 md:pb-28 min-h-[78vh] md:min-h-[82vh]">
         <header className="text-center">
           <div className="text-xs uppercase tracking-[0.28em] text-white/60">
             Videos

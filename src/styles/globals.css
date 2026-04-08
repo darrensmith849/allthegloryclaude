@@ -65,6 +65,13 @@ body { background: transparent; color: var(--colour-ink); }
   text-shadow: 0 24px 90px rgba(0, 0, 0, 0.62);
 }
 
+/* Slightly tighter scale for the homepage hero so the composition
+   breathes a bit and leaves room for the CTA cluster underneath. */
+.modo-title-tight {
+  font-size: clamp(2.6rem, 6.4vw, 5.8rem);
+  letter-spacing: 0.18em;
+}
+
 /* Prevent awkward breaking ("Glor / y") */
 .modo-wrap {
   max-width: 28ch;
@@ -214,26 +221,63 @@ body { background: transparent; color: var(--colour-ink); }
 
 /* Buttons */
 .btn {
-  display: inline-block;
-  padding: 10px 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 22px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-radius: 10px;
-  transition: opacity 180ms ease, border-color 180ms ease;
+  transition: opacity 180ms ease, border-color 180ms ease, transform 180ms ease, background 180ms ease;
   text-decoration: none;
+  white-space: nowrap;
 }
 .btn-primary {
   background: var(--colour-amber);
   color: var(--colour-bg);
+  box-shadow: 0 12px 32px rgba(216,178,90,0.18);
 }
-.btn-primary:hover { opacity: 0.88; }
+.btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
 .btn-ghost {
   border: 1px solid rgba(255,255,255,0.18);
   color: rgba(244,240,232,0.80);
+  background: rgba(255,255,255,0.02);
 }
-.btn-ghost:hover { border-color: rgba(255,255,255,0.38); }
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.38);
+  color: rgba(244,240,232,0.95);
+  background: rgba(255,255,255,0.05);
+}
+
+/* Donation preset chips — used by /give */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(244,240,232,0.78);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.chip:hover {
+  border-color: rgba(255,255,255,0.28);
+  color: rgba(244,240,232,0.95);
+  background: rgba(255,255,255,0.07);
+}
+.chip-active {
+  border-color: var(--colour-amber);
+  background: rgba(216,178,90,0.12);
+  color: var(--colour-glow);
+}
 
 /* ── Scrollbar ───────────────────────────────────────── */
 ::-webkit-scrollbar {
