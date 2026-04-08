@@ -118,10 +118,8 @@ export default function AboutPage() {
                 Where it began
               </div>
               <p className="mt-3 text-sm md:text-base text-white/75 leading-relaxed">
-                Long before the music, before the stage, before any of it — there
-                was a kid in Harare being shaped by the people who loved him,
-                planted in soil he didn&apos;t choose, learning to listen for a voice
-                bigger than his own.
+                Before the music, there was a family in Harare. A kid,
+                a childhood, and no idea yet what any of it would become.
               </p>
             </div>
           </motion.div>
