@@ -66,12 +66,12 @@ export default function ModoHero() {
             </h1>
           </motion.div>
 
-          {/* CTA cluster — fades in after the title settles */}
+          {/* Single primary CTA — fades in after the title settles */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={ctaTransition}
-            className="mt-7 md:mt-9 flex items-center gap-3 md:gap-4"
+            className="mt-7 md:mt-9"
           >
             <Link
               href="/album/from-darkness-to-light"
@@ -79,13 +79,6 @@ export default function ModoHero() {
               aria-label="Listen to the album From Darkness To Light"
             >
               Listen now →
-            </Link>
-            <Link
-              href="/videos"
-              className="btn btn-ghost"
-              aria-label="Watch on YouTube"
-            >
-              Watch ↗
             </Link>
           </motion.div>
         </div>
