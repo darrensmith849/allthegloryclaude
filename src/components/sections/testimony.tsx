@@ -1,9 +1,18 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { storyTitle, storyKicker, storyParagraphs } from "@/content/story";
 
 export default function Testimony() {
+  const reduce = useReducedMotion();
+  const headerTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
+  const paragraphTransition = (i: number) =>
+    reduce
+      ? { duration: 0.01 }
+      : { duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <section className="bg-transparent">
       <div className="mx-auto w-full max-w-4xl px-6 py-14 md:py-20">
@@ -12,7 +21,7 @@ export default function Testimony() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={headerTransition}
           className="text-center mb-16"
         >
           <h2
@@ -36,11 +45,7 @@ export default function Testimony() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-30px" }}
-              transition={{
-                duration: 0.7,
-                delay: i * 0.1,
-                ease: [0.16, 1, 0.3, 1],
-              }}
+              transition={paragraphTransition(i)}
               className="text-lg md:text-xl leading-relaxed"
               style={{ color: "var(--colour-ink)", opacity: 0.7 }}
             >
