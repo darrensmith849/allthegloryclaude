@@ -31,9 +31,8 @@ export default function BookingsPage() {
             Live & in person
           </h1>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-lg mx-auto leading-relaxed">
-            No public dates at the moment — for invitations, appearances,
-            ministry enquiries, or custom songs written upon request, get
-            in touch.
+            For invitations, appearances, ministry enquiries, or custom
+            songs written upon request, get in touch.
           </p>
         </motion.header>
 
@@ -51,9 +50,11 @@ export default function BookingsPage() {
             Invite Daniel
           </h2>
           <p className="mt-4 text-base md:text-lg text-white/80 leading-relaxed">
-            Daniel is available for worship nights, church services, conferences,
-            and intimate gatherings. Whether across Zimbabwe or further afield,
-            every invitation is prayed over and considered carefully.
+            Daniel leads worship at church services, conferences, worship
+            nights, and intimate gatherings — across Zimbabwe and beyond.
+            He also accepts select commissions for original songs, written
+            and recorded to carry a specific message, ministry, or milestone.
+            Every invitation is received prayerfully and considered with care.
           </p>
 
           <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

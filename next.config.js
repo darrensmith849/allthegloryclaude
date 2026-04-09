@@ -8,6 +8,15 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
   },
+  async redirects() {
+    return [
+      {
+        source: '/give',
+        destination: '/sow',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

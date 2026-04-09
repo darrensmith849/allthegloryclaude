@@ -97,7 +97,7 @@ export default function AboutPage() {
               id="mission-heading"
               className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
             >
-              All for the glory of God
+              All for the Glory of God
             </h2>
             <div className="mt-6 space-y-5 text-base md:text-lg text-white/75 leading-relaxed">
               <p>

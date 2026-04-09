@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 
 const PRESETS = [5, 10, 20, 50] as const;
 
-export default function GivePage() {
+export default function SowPage() {
   const [amount, setAmount] = useState("10");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +71,7 @@ export default function GivePage() {
           transition={headerTransition}
           className="text-center"
         >
-          <div className="eyebrow">Give</div>
+          <div className="eyebrow">Sow</div>
           <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
             Sow into the work
           </h1>

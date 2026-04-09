@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { site } from "@/content/site";
+import { videos } from "@/content/videos";
+import FeaturedVideoHero from "./FeaturedVideoHero";
 
 const channelUrl = site.socials.youtube;
 
@@ -48,48 +49,10 @@ export default function VideosPage() {
           </p>
         </header>
 
-        {/* Channel feature banner — premium destination art, NOT a fake player.
-            No play glyph, no click-everything wrapper, no embedded-video framing. */}
-        <figure className="relative mt-12 md:mt-14 overflow-hidden rounded-2xl border border-white/10 panel-scrim aspect-[16/9] md:aspect-[21/9]">
-          <Image
-            src="/media/videos-cover.webp"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 960px"
-            className="object-cover"
-          />
-
-          {/* Soft gradient at the bottom only, for legibility of the overlay text */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
-
-          {/* Subtle YouTube wordmark — top-right, small and decorative */}
-          <div className="absolute top-4 right-4 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md border border-white/10">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="white"
-              aria-hidden="true"
-            >
-              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
-              <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="#09080e" />
-            </svg>
-            <span className="text-[9px] uppercase tracking-[0.22em] text-white/85 font-semibold">
-              YouTube
-            </span>
-          </div>
-
-          {/* Channel handle — bottom-left, treated as channel banner art */}
-          <figcaption className="absolute bottom-5 left-5 right-5 md:bottom-7 md:left-7">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-white/65">
-              Official Channel
-            </p>
-            <p className="mt-1.5 text-lg md:text-2xl font-semibold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)]">
-              @Allthe_glory
-            </p>
-          </figcaption>
-        </figure>
+        {/* Channel feature — silent, looping trailer when a video ID is set,
+            otherwise falls back to the static cover art. Both states share the
+            same frame, overlay chrome, and dimensions (no layout shift). */}
+        <FeaturedVideoHero videoId={videos.featuredId} />
 
         {/* Real action area, distinct from the banner */}
         <div className="mt-9 md:mt-11 flex flex-col items-center gap-3">
@@ -104,7 +67,7 @@ export default function VideosPage() {
             <ExternalLinkIcon />
           </a>
           <p className="text-xs uppercase tracking-[0.24em] text-white/55">
-            Subscribe for upcoming releases
+            New releases drop on the channel first
           </p>
         </div>
       </div>

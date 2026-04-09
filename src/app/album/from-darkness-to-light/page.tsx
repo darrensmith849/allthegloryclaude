@@ -338,13 +338,13 @@ export default function AlbumPage() {
                 {album.subtitle}
               </p>
 
-              {/* Download / Give */}
+              {/* Download / Sow */}
               <div className="mt-6 flex justify-center gap-3">
                 <a href="/downloads/from-darkness-to-light.zip" className="btn btn-primary">
                   Download free →
                 </a>
-                <Link href="/give" className="btn btn-ghost">
-                  Give →
+                <Link href="/sow" className="btn btn-ghost">
+                  Sow →
                 </Link>
               </div>
 
@@ -394,6 +394,16 @@ export default function AlbumPage() {
               >
                 Spotify ↗
               </a>
+              {site.socials.appleMusic && (
+                <a
+                  href={site.socials.appleMusic}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  Apple Music ↗
+                </a>
+              )}
               <a
                 href={site.socials.youtube}
                 target="_blank"
