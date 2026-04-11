@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "The story behind All The Glory — a testimony of grace, surrender, and the relentless pursuit of light in the darkest places.",
+    "The story behind Daniel Jenkins — worship leader, songwriter, and recording artist from Harare, Zimbabwe.",
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "About — All The Glory",
+    title: "About — Daniel Jenkins",
     description:
-      "The story behind All The Glory — a testimony of grace, surrender, and the pursuit of light.",
+      "The story behind Daniel Jenkins — worship leader, songwriter, and recording artist from Harare, Zimbabwe.",
     url: "/about",
   },
 };

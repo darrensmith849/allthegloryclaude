@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Get in touch with All The Glory.",
+  description: "Get in touch with Daniel Jenkins.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Contact — All The Glory",
-    description: "Get in touch with All The Glory.",
+    title: "Contact — Daniel Jenkins",
+    description: "Get in touch with Daniel Jenkins.",
     url: "/contact",
   },
 };

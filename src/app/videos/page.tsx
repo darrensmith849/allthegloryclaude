@@ -8,12 +8,12 @@ const channelUrl = site.socials.youtube;
 export const metadata: Metadata = {
   title: "Videos",
   description:
-    "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
+    "Watch Daniel Jenkins on YouTube — official music videos, worship sessions, and live content.",
   alternates: { canonical: "/videos" },
   openGraph: {
-    title: "Videos — All The Glory",
+    title: "Videos — Daniel Jenkins",
     description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
+      "Watch Daniel Jenkins on YouTube — official music videos, worship sessions, and live content.",
     url: "/videos",
     type: "website",
     images: [
@@ -21,15 +21,15 @@ export const metadata: Metadata = {
         url: "/media/videos-cover.jpg",
         width: 1200,
         height: 630,
-        alt: "All The Glory on YouTube",
+        alt: "Daniel Jenkins on YouTube",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Videos — All The Glory",
+    title: "Videos — Daniel Jenkins",
     description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
+      "Watch Daniel Jenkins on YouTube — official music videos, worship sessions, and live content.",
     images: ["/media/videos-cover.jpg"],
   },
 };
@@ -61,7 +61,7 @@ export default function VideosPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary inline-flex items-center gap-2"
-            aria-label="Watch All The Glory on YouTube (opens in a new tab)"
+            aria-label="Watch Daniel Jenkins on YouTube (opens in a new tab)"
           >
             Watch on YouTube
             <ExternalLinkIcon />

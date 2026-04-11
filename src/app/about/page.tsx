@@ -63,8 +63,8 @@ export default function AboutPage() {
             transition={heroTextTransition}
             className="mt-8 md:mt-10 text-center text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
           >
-            The story behind the music — a testimony of grace, surrender, and the
-            relentless pursuit of light in the darkest places.
+            Worship leader, songwriter, and recording artist — rooted in faith,
+            shaped by grace, and driven to create music that points to Jesus.
           </motion.p>
         </div>
       </section>
@@ -101,18 +101,18 @@ export default function AboutPage() {
             </h2>
             <div className="mt-6 space-y-5 text-base md:text-lg text-white/75 leading-relaxed">
               <p>
-                All The Glory exists to create music that speaks into the silence,
-                that reaches into the dark corners where hope feels like a foreign
-                language, and translates it into something the heart can understand.
+                Every song, every session, every moment on stage begins and ends
+                with one aim — to honour God and serve people through music.
               </p>
               <p>
-                Every song is a marker on the journey — a reminder that the God who
-                began a good work is faithful to complete it. The music is raw,
-                honest, and unapologetically hopeful.
+                Daniel writes from lived experience: the struggle, the surrender,
+                the freedom. His music doesn&apos;t shy away from hard questions,
+                but it always points to real hope.
               </p>
               <p>
-                Whether on stage or in the studio, the aim is the same: to point
-                people to Jesus, and to give God all the glory.
+                Whether leading worship at a church service, writing a commissioned
+                piece for a milestone, or recording in the studio, the heart behind
+                the work remains the same.
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export default function AboutPage() {
                 href="/album/from-darkness-to-light"
                 className="btn btn-primary"
               >
-                Listen to the album →
+                Hear the music →
               </Link>
               <Link href="/contact" className="btn btn-ghost">
                 Get in touch

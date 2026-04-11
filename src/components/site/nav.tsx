@@ -26,7 +26,7 @@ export default function Nav() {
         <Link
           href="/"
           className="font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
-          aria-label="All The Glory — home"
+          aria-label="Daniel Jenkins — home"
         >
           {site.name}
         </Link>
