@@ -1,7 +1,7 @@
 export const site = {
-  name: "Daniel Jenkins",
+  name: "All The Glory",
   url: "https://www.alltheglory.co.za",
-  description: "Worship leader, songwriter, and recording artist from Harare, Zimbabwe.",
+  description: "From Darkness To Light - a testimony of truth and freedom in Jesus.",
   socials: {
     instagram: "https://www.instagram.com/allthe_glory",
     youtube: "https://www.youtube.com/@Allthe_glory",
@@ -14,7 +14,7 @@ export const site = {
     { label: "Home", href: "/" },
     { label: "Music", href: "/album/from-darkness-to-light" },
     { label: "Videos", href: "/videos" },
-    { label: "Commission", href: "/events" },
+    { label: "Bookings", href: "/events" },
     { label: "Sow", href: "/sow" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },

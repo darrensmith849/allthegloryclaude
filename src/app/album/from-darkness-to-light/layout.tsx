@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: `${album.name} — a 7-track worship album woven through scripture. Free to download.`,
   alternates: { canonical: album.path },
   openGraph: {
-    title: `${album.name} — Daniel Jenkins`,
+    title: `${album.name} — All The Glory`,
     description: `${album.name} — a 7-track worship album woven through scripture. Free to download.`,
     url: album.path,
     type: "music.album",

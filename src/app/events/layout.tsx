@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Commission",
+  title: "Bookings",
   description:
-    "Commissioned songs by Daniel Jenkins — original music written and recorded for personal stories, weddings, testimonies, and meaningful moments.",
+    "Bookings and ministry enquiries for All The Glory — worship nights, church services, conferences, and intimate gatherings.",
   alternates: { canonical: "/events" },
   openGraph: {
-    title: "Commission — Daniel Jenkins",
+    title: "Bookings — All The Glory",
     description:
-      "Commissioned songs by Daniel Jenkins — original music written and recorded for meaningful moments.",
+      "Bookings and ministry enquiries for All The Glory — worship nights, church services, conferences, and intimate gatherings.",
     url: "/events",
   },
 };

@@ -32,7 +32,7 @@ export default function FeaturedVideoHero({ videoId }: Props) {
       {showVideo ? (
         <iframe
           src={embedSrc}
-          title="Daniel Jenkins — album trailer"
+          title="All The Glory — album trailer"
           allow="autoplay; encrypted-media; picture-in-picture"
           loading="lazy"
           aria-hidden="true"
