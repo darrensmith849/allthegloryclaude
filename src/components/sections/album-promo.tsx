@@ -1,10 +1,24 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import { assets } from "@/content/assets";
 
 export default function AlbumPromo() {
+  const reduce = useReducedMotion();
+
   return (
-    <section className="bg-transparent">
+    <motion.section
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{
+        duration: reduce ? 0.01 : 1.1,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="bg-transparent"
+    >
       <div className="mx-auto w-full max-w-xl px-6 pt-0 pb-44 md:pt-0 md:pb-56">
         <Link
           href="/album/from-darkness-to-light"
@@ -57,6 +71,6 @@ export default function AlbumPromo() {
           </div>
         </Link>
       </div>
-    </section>
+    </motion.section>
   );
 }

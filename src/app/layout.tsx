@@ -5,6 +5,8 @@ import Nav from "@/components/site/nav";
 import SiteFooter from "@/components/site/site-footer";
 import SocialDock from "@/components/site/social-dock";
 import StickyBackdrop from "@/components/site/sticky-backdrop";
+import PageTransition from "@/components/site/page-transition";
+import CommandPalette from "@/components/ui/command-palette";
 import { site } from "@/content/site";
 import { album } from "@/content/album";
 
@@ -123,9 +125,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="relative z-10">
           <Nav />
           <SocialDock />
-          {children}
+          <PageTransition>{children}</PageTransition>
           <SiteFooter />
         </div>
+        <CommandPalette />
         <div className="grain-overlay" aria-hidden="true" />
       </body>
     </html>

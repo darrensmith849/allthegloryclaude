@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { site } from "@/content/site";
+import NewsletterSignup from "@/components/ui/newsletter-signup";
 
 export default function SiteFooter() {
   const pathname = usePathname();
@@ -97,6 +98,18 @@ export default function SiteFooter() {
             </cite>
           </motion.div>
 
+          {/* Newsletter — fades in between scripture and nav panels */}
+          <motion.div
+            key={`newsletter-${pathname}`}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 2, delay: 2.5, ease: "easeOut" }}
+            className="panel-scrim p-6"
+          >
+            <NewsletterSignup />
+          </motion.div>
+
           {/* Nav + socials + credits — fades in slightly after scripture */}
           <motion.div
             key={`nav-${pathname}`}
@@ -185,6 +198,13 @@ export default function SiteFooter() {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                href="/press"
+                className="text-xs uppercase tracking-widest transition-colors hover:opacity-80"
+                style={{ color: "var(--colour-ink)", opacity: 0.40 }}
+              >
+                Press
+              </Link>
             </div>
 
             <p className="text-xs mb-1" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
