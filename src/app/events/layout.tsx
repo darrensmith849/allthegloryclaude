@@ -10,6 +10,14 @@ export const metadata: Metadata = {
     description:
       "Bookings and ministry enquiries for All The Glory — worship nights, church services, conferences, and intimate gatherings.",
     url: "/events",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "All The Glory — From Darkness To Light",
+      },
+    ],
   },
 };
 

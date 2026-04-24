@@ -8,6 +8,14 @@ export const metadata: Metadata = {
     title: "Contact — All The Glory",
     description: "Get in touch with All The Glory.",
     url: "/contact",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "All The Glory — From Darkness To Light",
+      },
+    ],
   },
 };
 

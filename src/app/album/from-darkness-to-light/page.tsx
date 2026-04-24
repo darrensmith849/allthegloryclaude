@@ -15,6 +15,7 @@ function TrackRow({
   fromRight,
   hoverReady,
   isPlaying,
+  isLoading,
   reduce,
   onTogglePlay,
   onReadVerse,
@@ -26,6 +27,7 @@ function TrackRow({
   fromRight: boolean;
   hoverReady: boolean;
   isPlaying: boolean;
+  isLoading: boolean;
   reduce: boolean;
   onTogglePlay: () => void;
   onReadVerse: () => void;
@@ -60,11 +62,19 @@ function TrackRow({
 
         <button
           onClick={onTogglePlay}
+          aria-label={
+            isPlaying
+              ? `Pause preview of ${title}`
+              : isLoading
+                ? `Loading preview of ${title}`
+                : `Play preview of ${title}`
+          }
+          aria-pressed={isPlaying}
           className={`shrink-0 text-[11px] font-semibold uppercase tracking-[0.26em] transition-colors duration-300 ${
             isPlaying ? "text-[var(--colour-amber)]" : "text-white/55 hover:text-white/85"
           }`}
         >
-          {isPlaying ? "Pause" : "Preview"}
+          {isPlaying ? "Pause" : isLoading ? "Loading…" : "Preview"}
         </button>
       </div>
 
@@ -268,8 +278,14 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
 export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track which audio element owns the current "ended" listener so we can
+  // detach it cleanly when the user switches tracks — otherwise a late-firing
+  // ended event on the previous track could flip a newly-started track back
+  // to "Preview".
+  const endedHandlerRef = useRef<(() => void) | null>(null);
   const reduce = useReducedMotion();
 
   useEffect(() => {
@@ -279,27 +295,58 @@ export default function AlbumPage() {
     return () => clearTimeout(timer);
   }, [reduce]);
 
+  const detachAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      if (endedHandlerRef.current) {
+        audio.removeEventListener("ended", endedHandlerRef.current);
+        endedHandlerRef.current = null;
+      }
+    }
+  }, []);
+
   const togglePlay = useCallback((index: number, src: string) => {
     if (playingIndex === index) {
-      audioRef.current?.pause();
+      detachAudio();
       setPlayingIndex(null);
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    // Switching to a new track — tear down the previous one completely
+    // before we start the new one.
+    detachAudio();
 
     const audio = new Audio(src);
-    audio.addEventListener("ended", () => setPlayingIndex(null));
-    audio.play();
+    audio.preload = "auto";
+    const onEnded = () => setPlayingIndex(null);
+    endedHandlerRef.current = onEnded;
+    audio.addEventListener("ended", onEnded);
     audioRef.current = audio;
-    setPlayingIndex(index);
-  }, [playingIndex]);
+
+    setLoadingIndex(index);
+    const clearLoading = () => {
+      // Only clear if this is still the track the user is waiting on.
+      setLoadingIndex((current) => (current === index ? null : current));
+    };
+
+    audio
+      .play()
+      .then(() => {
+        clearLoading();
+        setPlayingIndex(index);
+      })
+      .catch(() => {
+        // Playback was blocked (autoplay policy) or aborted by a newer click.
+        clearLoading();
+      });
+  }, [playingIndex, detachAudio]);
 
   useEffect(() => {
-    return () => { audioRef.current?.pause(); };
-  }, []);
+    return () => {
+      detachAudio();
+    };
+  }, [detachAudio]);
 
   return (
     <main className="bg-transparent overflow-x-clip">
@@ -368,6 +415,7 @@ export default function AlbumPage() {
                   fromRight={i % 2 === 1}
                   hoverReady={hoverReady}
                   isPlaying={playingIndex === i}
+                  isLoading={loadingIndex === i && playingIndex !== i}
                   reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
                   onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse })}
