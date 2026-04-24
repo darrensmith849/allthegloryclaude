@@ -66,6 +66,7 @@ export default function SiteFooter() {
           loop
           muted
           playsInline
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover"
           style={{ filter: "brightness(1.3) contrast(1.1)" }}
         >

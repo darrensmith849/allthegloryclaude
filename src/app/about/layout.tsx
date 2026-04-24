@@ -10,6 +10,14 @@ export const metadata: Metadata = {
     description:
       "The story behind All The Glory — a testimony of grace, surrender, and the pursuit of light.",
     url: "/about",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "All The Glory — From Darkness To Light",
+      },
+    ],
   },
 };
 
