@@ -1,6 +1,10 @@
 export const videos = {
-  // TODO: paste the YouTube video ID of the "From Darkness To Light" album trailer here.
-  // Example: if the URL is https://youtu.be/aBc123Xyz, set this to "aBc123Xyz".
-  // While empty, the Videos page falls back to the static cover art so nothing breaks.
-  featuredId: "",
+  /** YouTube video ID of the currently-featured video.
+   *  Drives the silent, looping "cinematic art" hero on the Videos page.
+   *  Leave empty to fall back to the static cover image. */
+  featuredId: "sxcoxQZ8kRM",
+  /** Canonical watch URL for the featured video — used by the primary
+   *  CTA so one click takes visitors straight to the video (rather than
+   *  dropping them on the channel and making them hunt for it). */
+  featuredWatchUrl: "https://www.youtube.com/watch?v=sxcoxQZ8kRM",
 };

@@ -54,18 +54,35 @@ export default function VideosPage() {
             same frame, overlay chrome, and dimensions (no layout shift). */}
         <FeaturedVideoHero videoId={videos.featuredId} />
 
-        {/* Real action area, distinct from the banner */}
-        <div className="mt-9 md:mt-11 flex flex-col items-center gap-3">
-          <a
-            href={channelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary inline-flex items-center gap-2"
-            aria-label="Watch All The Glory on YouTube (opens in a new tab)"
-          >
-            Watch on YouTube
-            <ExternalLinkIcon />
-          </a>
+        {/* Real action area, distinct from the banner.
+            Primary CTA links straight to the featured video; secondary
+            CTA goes to the wider channel. Falls back to a single
+            channel CTA if no featured video is set. */}
+        <div className="mt-9 md:mt-11 flex flex-col items-center gap-4">
+          <div className="flex flex-wrap justify-center gap-3">
+            {videos.featuredWatchUrl && (
+              <a
+                href={videos.featuredWatchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary inline-flex items-center gap-2"
+                aria-label="Watch the featured video on YouTube (opens in a new tab)"
+              >
+                Watch the video
+                <ExternalLinkIcon />
+              </a>
+            )}
+            <a
+              href={channelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${videos.featuredWatchUrl ? "btn btn-ghost" : "btn btn-primary"} inline-flex items-center gap-2`}
+              aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
+            >
+              {videos.featuredWatchUrl ? "Visit the channel" : "Watch on YouTube"}
+              <ExternalLinkIcon />
+            </a>
+          </div>
           <p className="text-xs uppercase tracking-[0.24em] text-white/55">
             New releases drop on the channel first
           </p>
