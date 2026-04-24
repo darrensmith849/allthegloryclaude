@@ -1,7 +1,22 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
 export default function VerseMarquee() {
+  const reduce = useReducedMotion();
+
   return (
     <section className="bg-transparent">
-      <div className="mx-auto w-full max-w-6xl px-6 py-10 md:py-14">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{
+          duration: reduce ? 0.01 : 1.1,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="mx-auto w-full max-w-6xl px-6 py-10 md:py-14"
+      >
         <div className="panel-soft relative overflow-hidden">
           <div className="marquee-single">
             <div className="marquee-single-track">
@@ -18,7 +33,7 @@ export default function VerseMarquee() {
           <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/45 to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-black/45 to-transparent" />
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
