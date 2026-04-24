@@ -115,8 +115,8 @@ export default function BookingsPage() {
             <Link href="/contact" className="btn btn-primary">
               Start a conversation →
             </Link>
-            <Link href="/press" className="btn btn-ghost">
-              Press kit →
+            <Link href="/about" className="btn btn-ghost">
+              About →
             </Link>
           </div>
         </div>
