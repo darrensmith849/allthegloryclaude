@@ -198,13 +198,6 @@ export default function SiteFooter() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/press"
-                className="text-xs uppercase tracking-widest transition-colors hover:opacity-80"
-                style={{ color: "var(--colour-ink)", opacity: 0.40 }}
-              >
-                Press
-              </Link>
             </div>
 
             <p className="text-xs mb-1" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
