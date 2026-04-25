@@ -1,7 +1,12 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { storyTitle, storyKicker, storyParagraphs } from "@/content/story";
+import {
+  storyTitle,
+  storyKicker,
+  storyParagraphs,
+  storyBenediction,
+} from "@/content/story";
 
 type TestimonyProps = {
   /** Hide the heading entirely. Use when the parent page provides its own. */
@@ -96,6 +101,28 @@ export default function Testimony({
               </motion.p>
             ))}
           </div>
+
+          {/* Closing benediction — set apart with a soft amber hairline,
+              centred italic Fraunces, slightly larger than the body. Gives
+              the prayer the visual weight a benediction deserves without
+              feeling disconnected from the body above. */}
+          {storyBenediction && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-30px" }}
+              transition={paragraphTransition(storyParagraphs.length)}
+              className="mt-10 md:mt-12 pt-8 md:pt-10 text-center"
+            >
+              <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
+              <p
+                className="font-display mt-7 text-lg md:text-xl italic leading-relaxed"
+                style={{ color: "var(--colour-ink)", opacity: 0.88 }}
+              >
+                {storyBenediction}
+              </p>
+            </motion.div>
+          )}
         </div>
       </div>
     </section>
