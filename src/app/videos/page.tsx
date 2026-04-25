@@ -1,137 +1,254 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { site } from "@/content/site";
 import { videos } from "@/content/videos";
 import FeaturedVideoHero from "./FeaturedVideoHero";
+import VideoRow from "./VideoRow";
 
 const channelUrl = site.socials.youtube;
 
-export const metadata: Metadata = {
-  title: "Videos",
-  description:
-    "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-  alternates: { canonical: "/videos" },
-  openGraph: {
-    title: "Videos — All The Glory",
-    description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-    url: "/videos",
-    type: "website",
-    images: [
-      {
-        url: "/media/videos-cover.jpg",
-        width: 1200,
-        height: 630,
-        alt: "All The Glory on YouTube",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Videos — All The Glory",
-    description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-    images: ["/media/videos-cover.jpg"],
-  },
-};
-
 export default function VideosPage() {
+  const reduce = useReducedMotion();
+  const [hoverReady, setHoverReady] = useState(false);
+
+  // Match the Music page: hold off on hover affordances until the
+  // entrance animation has settled, so the rows don't react to a
+  // cursor passing through during their fly-in.
+  useEffect(() => {
+    const t = setTimeout(() => setHoverReady(true), reduce ? 0 : 1800);
+    return () => clearTimeout(t);
+  }, [reduce]);
+
+  // Hide collection entries that don't have a real YouTube id yet —
+  // makes it safe to keep TODO placeholder rows in the data file.
+  const collection = videos.collection.filter((v) => v.youtubeId);
+
+  const heroTextTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.2, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const };
+  const heroMediaTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] as const };
+  const sectionHeaderTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.0, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <main className="bg-transparent overflow-x-clip">
-      {/* Hero header — editorial, tight */}
-      <section className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 text-center">
-        <div className="eyebrow">Videos</div>
-        <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
-          Songs in{" "}
-          <span className="italic text-[var(--colour-amber)]">motion</span>
-        </h1>
-        <p className="mt-5 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
-          Music videos, worship sessions, and the moments behind the songs.
-        </p>
-      </section>
+      {/* ── HERO ──────────────────────────────────────────────────────
+          Asymmetric, editorial. Text-left / video-right composition is
+          a deliberate sibling-not-clone of the Music page's flanking-
+          artwork grid. */}
+      <section
+        aria-labelledby="videos-hero-heading"
+        className="mx-auto w-full max-w-7xl px-6 pt-32 md:pt-40 pb-10 md:pb-16"
+      >
+        <div className="grid gap-10 md:gap-14 lg:grid-cols-[1fr_minmax(420px,1.1fr)] lg:items-center">
+          {/* LEFT — text */}
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={heroTextTransition}
+            className="text-center lg:text-left"
+          >
+            <div className="eyebrow">Featured Worship Film</div>
+            <h1
+              id="videos-hero-heading"
+              className="font-display mt-4 text-4xl md:text-5xl lg:text-6xl font-normal text-white tracking-tight leading-[1.05]"
+            >
+              Worship in{" "}
+              <span className="italic text-[var(--colour-amber)]">motion</span>
+            </h1>
 
-      {/* Featured video — wider, more cinematic. Wraps to a 6xl container so
-          the iframe gets real screen presence instead of feeling boxed. */}
-      <section className="mx-auto w-full max-w-6xl px-4 md:px-6 mt-10 md:mt-14">
-        <FeaturedVideoHero videoId={videos.featuredId} />
-      </section>
+            {/* Italic Fraunces microcopy — mirrors the album page's
+                "I didn't want to put a price on worship..." line so the
+                two pages share a voice. */}
+            <p className="font-display mt-6 text-base md:text-lg italic text-white/75 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Songs were never meant to live only in the studio — they
+              breathe in the moments where light breaks through.
+            </p>
 
-      {/* Action row — primary watch CTA + secondary channel link */}
-      <section className="mx-auto w-full max-w-3xl px-6 mt-9 md:mt-12">
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex flex-wrap justify-center gap-3">
-            {videos.featuredWatchUrl && (
+            <p className="mt-5 text-sm md:text-base text-white/60 leading-relaxed max-w-md mx-auto lg:mx-0">
+              {videos.featuredDescription}
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-3">
               <a
                 href={videos.featuredWatchUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary inline-flex items-center gap-2"
-                aria-label="Watch the featured video on YouTube (opens in a new tab)"
+                className="btn btn-primary"
+                aria-label="Watch the featured film on YouTube (opens in a new tab)"
               >
-                Watch the video
-                <ExternalLinkIcon />
+                Watch now →
               </a>
-            )}
-            <a
-              href={channelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${videos.featuredWatchUrl ? "btn btn-ghost" : "btn btn-primary"} inline-flex items-center gap-2`}
-              aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
-            >
-              {videos.featuredWatchUrl ? "Visit the channel" : "Watch on YouTube"}
-              <ExternalLinkIcon />
-            </a>
-          </div>
+              <a
+                href={channelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost"
+                aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
+              >
+                Visit the channel ↗
+              </a>
+            </div>
+
+            {/* Featured details strip — feels editorial, not metadata-y. */}
+            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-white/45">
+              <span className="text-[var(--colour-amber)]/85">
+                {videos.featuredKind}
+              </span>
+              <span className="text-white/20">·</span>
+              <span>{videos.featuredTitle}</span>
+              {videos.featuredDuration && (
+                <>
+                  <span className="text-white/20">·</span>
+                  <span className="tabular-nums">
+                    {videos.featuredDuration}
+                  </span>
+                </>
+              )}
+            </div>
+          </motion.div>
+
+          {/* RIGHT — featured video, beautifully framed */}
+          <motion.div
+            initial={
+              reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 16 }
+            }
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={heroMediaTransition}
+            className="relative"
+          >
+            {/* Soft amber glow behind the player — anchors the media in the
+                page atmosphere instead of having it sit on top of the page. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-6 md:-inset-10 -z-10 rounded-[32px] opacity-60"
+              style={{
+                background:
+                  "radial-gradient(60% 60% at 50% 40%, rgba(216,178,90,0.18), transparent 70%)",
+              }}
+            />
+            <FeaturedVideoHero videoId={videos.featuredId} />
+          </motion.div>
         </div>
       </section>
 
-      {/* Subscribe panel — premium editorial card with the channel handle.
-          Pulls double duty as the closing CTA so users don't have to scroll
-          back up to take action. */}
-      <section className="mx-auto w-full max-w-3xl px-6 mt-16 md:mt-24 pb-24 md:pb-32">
-        <div className="panel-scrim p-7 md:p-10 text-center">
+      {/* ── CURATED COLLECTION ──────────────────────────────────────────
+          Stacked editorial rows. Mirrors the Music page's track list
+          rhythm — same alternating-side entrance, same shimmer, same
+          hover-to-reveal pattern. */}
+      {collection.length > 0 && (
+        <section
+          aria-labelledby="videos-collection-heading"
+          className="mx-auto w-full max-w-3xl px-6 mt-16 md:mt-24"
+        >
+          <motion.header
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={sectionHeaderTransition}
+            className="text-center"
+          >
+            <div className="eyebrow eyebrow-amber">The Collection</div>
+            <h2
+              id="videos-collection-heading"
+              className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
+            >
+              Recent films &amp; sessions
+            </h2>
+            <p className="mt-4 text-sm md:text-base text-white/55 max-w-md mx-auto leading-relaxed">
+              A curated set of moments. New entries land here as they
+              release.
+            </p>
+          </motion.header>
+
+          <div className="mt-10 md:mt-12 grid gap-3">
+            {collection.map((item, i) => (
+              <VideoRow
+                key={item.id}
+                item={item}
+                index={i}
+                hoverReady={hoverReady}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── SCRIPTURAL MOMENT ───────────────────────────────────────────
+          One quiet, restrained interlude between the collection and
+          the closing channel card. Hairlines + Fraunces italic — the
+          same visual language as the Music page's verse modal. */}
+      <section
+        aria-label="Scripture"
+        className="mx-auto w-full max-w-2xl px-6 mt-20 md:mt-28"
+      >
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={sectionHeaderTransition}
+          className="text-center"
+        >
+          <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/35" />
+          <p className="font-display mt-7 text-xl md:text-2xl italic text-white/85 leading-relaxed">
+            &ldquo;Sing to the Lord a new song; sing to the Lord, all the
+            earth.&rdquo;
+          </p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.32em] text-[var(--colour-amber)]/85">
+            Psalm 96:1
+          </p>
+          <div className="mx-auto mt-7 h-px w-12 bg-[var(--colour-amber)]/35" />
+        </motion.div>
+      </section>
+
+      {/* ── CHANNEL / SUBSCRIBE ─────────────────────────────────────────
+          Closing editorial card — mirrors the Music page's bottom rhythm.
+          Pulls double duty as the closing CTA so visitors don't have to
+          scroll back up. */}
+      <section
+        aria-labelledby="videos-channel-heading"
+        className="mx-auto w-full max-w-3xl px-6 mt-16 md:mt-24 pb-24 md:pb-32"
+      >
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={
+            reduce
+              ? { duration: 0.01 }
+              : { duration: 1.4, ease: [0.16, 1, 0.3, 1] as const }
+          }
+          className="panel-scrim p-7 md:p-10 text-center"
+        >
           <div className="eyebrow eyebrow-amber">Official Channel</div>
-          <h2 className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight">
+          <h3
+            id="videos-channel-heading"
+            className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
+          >
             @Allthe_glory
-          </h2>
+          </h3>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            New releases drop on the channel first. Subscribe to catch every
-            video the moment it goes live.
+            New films and worship sessions release here first. Subscribe so
+            the next one finds you.
           </p>
           <div className="mt-7 flex justify-center">
             <a
               href={channelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary inline-flex items-center gap-2"
+              className="btn btn-primary"
               aria-label="Subscribe to the All The Glory YouTube channel (opens in a new tab)"
             >
-              Subscribe on YouTube
-              <ExternalLinkIcon />
+              Subscribe on YouTube ↗
             </a>
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
   );
 }
