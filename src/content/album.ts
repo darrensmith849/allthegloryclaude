@@ -13,7 +13,7 @@ export const album = {
   title: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   subtitle: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
   coverImage: "/media/ocean.jpg",
-  releaseYear: 2025,
+  releaseYear: 2026,
   path: "/album/from-darkness-to-light",
 
   /** Pre-built zip with all 7 full songs already named
