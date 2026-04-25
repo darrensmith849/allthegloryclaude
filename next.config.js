@@ -16,7 +16,12 @@ const nextConfig = {
     return [
       {
         source: '/give',
-        destination: '/sow',
+        destination: '/donate',
+        permanent: true,
+      },
+      {
+        source: '/sow',
+        destination: '/donate',
         permanent: true,
       },
     ];

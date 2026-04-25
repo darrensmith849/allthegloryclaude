@@ -156,7 +156,7 @@ export default function DownloadModal({ onClose }: Props) {
         </a>
 
         <p className="mt-4 text-[11px] text-white/45 leading-relaxed">
-          Free. The album is yours. If it blesses you, sowing into the work
+          Free. The album is yours. If it blesses you, your donation
           helps fund what&apos;s next.
         </p>
 
