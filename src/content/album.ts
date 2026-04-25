@@ -11,7 +11,7 @@ export const album = {
   name: "From Darkness To Light",
   /** Stylized display title used in the visual hero. */
   title: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
-  subtitle: "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓",
+  subtitle: "All The Glory",
   coverImage: "/media/ocean.jpg",
   releaseYear: 2026,
   path: "/album/from-darkness-to-light",
