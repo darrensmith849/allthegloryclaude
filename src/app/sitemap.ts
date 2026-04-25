@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/album/from-darkness-to-light",
     "/videos",
     "/events",
-    "/sow",
+    "/donate",
     "/contact",
   ];
 

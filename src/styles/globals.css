@@ -232,7 +232,7 @@ body {
   background: rgba(255,255,255,0.05);
 }
 
-/* Donation preset chips — used by /sow */
+/* Donation preset chips — used by /donate */
 .chip {
   display: inline-flex;
   align-items: center;

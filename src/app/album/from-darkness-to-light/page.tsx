@@ -387,7 +387,7 @@ export default function AlbumPage() {
                 {album.subtitle}
               </p>
 
-              {/* Download / Sow */}
+              {/* Download / Donate */}
               <div className="mt-6 flex justify-center gap-3">
                 <button
                   type="button"
@@ -396,8 +396,8 @@ export default function AlbumPage() {
                 >
                   Download free →
                 </button>
-                <Link href="/sow" className="btn btn-ghost">
-                  Sow →
+                <Link href="/donate" className="btn btn-ghost">
+                  Donate →
                 </Link>
               </div>
 
