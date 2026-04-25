@@ -37,28 +37,27 @@ export const metadata: Metadata = {
 export default function VideosPage() {
   return (
     <main className="bg-transparent overflow-x-clip">
-      <div className="mx-auto w-full max-w-4xl px-6 pt-32 md:pt-40 pb-20 md:pb-28 min-h-[78vh] md:min-h-[82vh]">
-        <header className="text-center">
-          <div className="eyebrow">Videos</div>
-          <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
-            Official YouTube channel
-          </h1>
-          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            Music videos, worship sessions, and future live content — all on
-            YouTube.
-          </p>
-        </header>
+      {/* Hero header — editorial, tight */}
+      <section className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 text-center">
+        <div className="eyebrow">Videos</div>
+        <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
+          Songs in{" "}
+          <span className="italic text-[var(--colour-amber)]">motion</span>
+        </h1>
+        <p className="mt-5 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
+          Music videos, worship sessions, and the moments behind the songs.
+        </p>
+      </section>
 
-        {/* Channel feature — silent, looping trailer when a video ID is set,
-            otherwise falls back to the static cover art. Both states share the
-            same frame, overlay chrome, and dimensions (no layout shift). */}
+      {/* Featured video — wider, more cinematic. Wraps to a 6xl container so
+          the iframe gets real screen presence instead of feeling boxed. */}
+      <section className="mx-auto w-full max-w-6xl px-4 md:px-6 mt-10 md:mt-14">
         <FeaturedVideoHero videoId={videos.featuredId} />
+      </section>
 
-        {/* Real action area, distinct from the banner.
-            Primary CTA links straight to the featured video; secondary
-            CTA goes to the wider channel. Falls back to a single
-            channel CTA if no featured video is set. */}
-        <div className="mt-9 md:mt-11 flex flex-col items-center gap-4">
+      {/* Action row — primary watch CTA + secondary channel link */}
+      <section className="mx-auto w-full max-w-3xl px-6 mt-9 md:mt-12">
+        <div className="flex flex-col items-center gap-4">
           <div className="flex flex-wrap justify-center gap-3">
             {videos.featuredWatchUrl && (
               <a
@@ -83,11 +82,36 @@ export default function VideosPage() {
               <ExternalLinkIcon />
             </a>
           </div>
-          <p className="text-xs uppercase tracking-[0.24em] text-white/55">
-            New releases drop on the channel first
-          </p>
         </div>
-      </div>
+      </section>
+
+      {/* Subscribe panel — premium editorial card with the channel handle.
+          Pulls double duty as the closing CTA so users don't have to scroll
+          back up to take action. */}
+      <section className="mx-auto w-full max-w-3xl px-6 mt-16 md:mt-24 pb-24 md:pb-32">
+        <div className="panel-scrim p-7 md:p-10 text-center">
+          <div className="eyebrow eyebrow-amber">Official Channel</div>
+          <h2 className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight">
+            @Allthe_glory
+          </h2>
+          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
+            New releases drop on the channel first. Subscribe to catch every
+            video the moment it goes live.
+          </p>
+          <div className="mt-7 flex justify-center">
+            <a
+              href={channelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary inline-flex items-center gap-2"
+              aria-label="Subscribe to the All The Glory YouTube channel (opens in a new tab)"
+            >
+              Subscribe on YouTube
+              <ExternalLinkIcon />
+            </a>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
