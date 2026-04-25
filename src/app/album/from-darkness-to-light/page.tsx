@@ -378,7 +378,7 @@ export default function AlbumPage() {
               className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             >
               <div className="eyebrow eyebrow-amber">
-                2025 · Album
+                2026 · Album
               </div>
               <h1 className="subtitle-glyph mt-3 text-2xl md:text-4xl font-semibold text-white">
                 {album.title}
