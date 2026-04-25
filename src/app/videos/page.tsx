@@ -38,103 +38,100 @@ export default function VideosPage() {
   return (
     <main className="bg-transparent overflow-x-clip">
       {/* ── HERO ──────────────────────────────────────────────────────
-          Asymmetric, editorial. Text-left / video-right composition is
-          a deliberate sibling-not-clone of the Music page's flanking-
-          artwork grid. */}
+          Stacked, editorial. Text on top, featured video below — every
+          path leads to YouTube. */}
       <section
         aria-labelledby="videos-hero-heading"
-        className="mx-auto w-full max-w-7xl px-6 pt-32 md:pt-40 pb-10 md:pb-16"
+        className="mx-auto w-full max-w-5xl px-6 pt-32 md:pt-40 pb-10 md:pb-16"
       >
-        <div className="grid gap-10 md:gap-14 lg:grid-cols-[1fr_minmax(420px,1.1fr)] lg:items-center">
-          {/* LEFT — text */}
-          <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={heroTextTransition}
-            className="text-center lg:text-left"
+        {/* Text block — centered, intimate */}
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={heroTextTransition}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <div className="eyebrow">Featured</div>
+          <h1
+            id="videos-hero-heading"
+            className="font-display mt-4 text-4xl md:text-5xl lg:text-6xl font-normal text-white tracking-tight leading-[1.05]"
           >
-            <div className="eyebrow">Featured Worship Film</div>
-            <h1
-              id="videos-hero-heading"
-              className="font-display mt-4 text-4xl md:text-5xl lg:text-6xl font-normal text-white tracking-tight leading-[1.05]"
+            Worship in{" "}
+            <span className="italic text-[var(--colour-amber)]">motion</span>
+          </h1>
+
+          {/* Italic Fraunces microcopy — mirrors the album page's
+              "I didn't want to put a price on worship..." line so the
+              two pages share a voice. */}
+          <p className="font-display mt-6 text-base md:text-lg italic text-white/75 leading-relaxed max-w-xl mx-auto">
+            The songs were always meant to leave the studio. Here&apos;s
+            where they live.
+          </p>
+
+          <p className="mt-5 text-sm md:text-base text-white/60 leading-relaxed max-w-md mx-auto">
+            {videos.featuredDescription}
+          </p>
+
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <a
+              href={videos.featuredWatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              aria-label="Watch the featured video on YouTube (opens in a new tab)"
             >
-              Worship in{" "}
-              <span className="italic text-[var(--colour-amber)]">motion</span>
-            </h1>
+              Watch on YouTube ↗
+            </a>
+            <a
+              href={channelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+              aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
+            >
+              Visit the channel ↗
+            </a>
+          </div>
 
-            {/* Italic Fraunces microcopy — mirrors the album page's
-                "I didn't want to put a price on worship..." line so the
-                two pages share a voice. */}
-            <p className="font-display mt-6 text-base md:text-lg italic text-white/75 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Songs were never meant to live only in the studio — they
-              breathe in the moments where light breaks through.
-            </p>
+          {/* Featured details strip — feels editorial, not metadata-y. */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-white/45">
+            <span className="text-[var(--colour-amber)]/85">
+              {videos.featuredKind}
+            </span>
+            <span className="text-white/20">·</span>
+            <span>{videos.featuredTitle}</span>
+            {videos.featuredDuration && (
+              <>
+                <span className="text-white/20">·</span>
+                <span className="tabular-nums">
+                  {videos.featuredDuration}
+                </span>
+              </>
+            )}
+          </div>
+        </motion.div>
 
-            <p className="mt-5 text-sm md:text-base text-white/60 leading-relaxed max-w-md mx-auto lg:mx-0">
-              {videos.featuredDescription}
-            </p>
-
-            <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-3">
-              <a
-                href={videos.featuredWatchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary"
-                aria-label="Watch the featured film on YouTube (opens in a new tab)"
-              >
-                Watch now →
-              </a>
-              <a
-                href={channelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-ghost"
-                aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
-              >
-                Visit the channel ↗
-              </a>
-            </div>
-
-            {/* Featured details strip — feels editorial, not metadata-y. */}
-            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-white/45">
-              <span className="text-[var(--colour-amber)]/85">
-                {videos.featuredKind}
-              </span>
-              <span className="text-white/20">·</span>
-              <span>{videos.featuredTitle}</span>
-              {videos.featuredDuration && (
-                <>
-                  <span className="text-white/20">·</span>
-                  <span className="tabular-nums">
-                    {videos.featuredDuration}
-                  </span>
-                </>
-              )}
-            </div>
-          </motion.div>
-
-          {/* RIGHT — featured video, beautifully framed */}
-          <motion.div
-            initial={
-              reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 16 }
-            }
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={heroMediaTransition}
-            className="relative"
-          >
-            {/* Soft amber glow behind the player — anchors the media in the
-                page atmosphere instead of having it sit on top of the page. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-6 md:-inset-10 -z-10 rounded-[32px] opacity-60"
-              style={{
-                background:
-                  "radial-gradient(60% 60% at 50% 40%, rgba(216,178,90,0.18), transparent 70%)",
-              }}
-            />
-            <FeaturedVideoHero videoId={videos.featuredId} />
-          </motion.div>
-        </div>
+        {/* Featured video — sits beneath the text block as a wide,
+            cinematic banner. Soft amber glow anchors it in the page
+            atmosphere instead of having it sit on top of the page. */}
+        <motion.div
+          initial={
+            reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 18 }
+          }
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={heroMediaTransition}
+          className="relative mt-12 md:mt-16"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-6 md:-inset-10 -z-10 rounded-[32px] opacity-60"
+            style={{
+              background:
+                "radial-gradient(50% 60% at 50% 40%, rgba(216,178,90,0.18), transparent 70%)",
+            }}
+          />
+          <FeaturedVideoHero videoId={videos.featuredId} />
+        </motion.div>
       </section>
 
       {/* ── CURATED COLLECTION ──────────────────────────────────────────
@@ -158,11 +155,11 @@ export default function VideosPage() {
               id="videos-collection-heading"
               className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
             >
-              Recent films &amp; sessions
+              Recent worship &amp; videos
             </h2>
             <p className="mt-4 text-sm md:text-base text-white/55 max-w-md mx-auto leading-relaxed">
-              A curated set of moments. New entries land here as they
-              release.
+              A curated set of moments. Each one links straight through
+              to YouTube.
             </p>
           </motion.header>
 
@@ -233,8 +230,8 @@ export default function VideosPage() {
             @Allthe_glory
           </h3>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            New films and worship sessions release here first. Subscribe so
-            the next one finds you.
+            Live worship and new music videos release here first. Subscribe
+            so the next one finds you.
           </p>
           <div className="mt-7 flex justify-center">
             <a

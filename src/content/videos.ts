@@ -40,10 +40,10 @@ export const videos = {
   /** Featured video — drives the hero film section. */
   featuredId: "sxcoxQZ8kRM",
   featuredWatchUrl: "https://www.youtube.com/watch?v=sxcoxQZ8kRM",
-  featuredKind: "Worship Film" as VideoKind,
+  featuredKind: "Music Video" as VideoKind,
   featuredTitle: "From Darkness To Light",
   featuredDescription:
-    "The opening film of the worship project — visuals shaped around the heart of the album. A short, cinematic offering that lets the songs breathe.",
+    "Live worship, performances, and music videos — shared as they release on the channel.",
   /** Optional duration label. Leave empty to hide. */
   featuredDuration: "",
 
@@ -62,9 +62,9 @@ export const videos = {
       youtubeId: "sxcoxQZ8kRM",
       watchUrl: "https://www.youtube.com/watch?v=sxcoxQZ8kRM",
       title: "From Darkness To Light",
-      kind: "Worship Film",
+      kind: "Music Video",
       description:
-        "Visuals woven through the heart of the album — the cry of \u201CIt is finished\u201D set to image.",
+        "The official video for the album\u2019s closing thread — visuals woven through the heart of the project.",
       duration: "",
     },
     // TODO: add more videos as they release. Pattern:
