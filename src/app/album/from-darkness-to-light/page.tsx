@@ -429,6 +429,28 @@ export default function AlbumPage() {
               ))}
             </div>
 
+            {/* Primary download CTA — sits between the track list and the
+                streaming row so listeners always have a clear path to take
+                the album with them. */}
+            <motion.div
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={
+                reduce
+                  ? { duration: 0.01 }
+                  : { duration: 1.2, delay: 2.0, ease: [0.06, 1, 0.18, 1] as const }
+              }
+              className="mt-10 flex justify-center"
+            >
+              <button
+                type="button"
+                onClick={() => setDownloadOpen(true)}
+                className="btn btn-primary"
+              >
+                Download free →
+              </button>
+            </motion.div>
+
             {/* Streaming links — only the platforms that actually exist */}
             <motion.div
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
@@ -436,14 +458,14 @@ export default function AlbumPage() {
               transition={
                 reduce
                   ? { duration: 0.01 }
-                  : { duration: 1.4, delay: 2.2, ease: [0.06, 1, 0.18, 1] as const }
+                  : { duration: 1.4, delay: 2.4, ease: [0.06, 1, 0.18, 1] as const }
               }
-              className="mt-10 flex flex-wrap justify-center gap-8 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/55"
+              className="mt-8 flex flex-wrap justify-center gap-8 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/55"
             >
               <button
                 type="button"
                 onClick={() => setDownloadOpen(true)}
-                className="text-[var(--colour-amber)]/85 hover:text-[var(--colour-amber)] transition-colors"
+                className="hover:text-white transition-colors"
               >
                 Download ↓
               </button>

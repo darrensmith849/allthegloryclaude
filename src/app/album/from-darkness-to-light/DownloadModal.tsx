@@ -118,7 +118,7 @@ export default function DownloadModal({ onClose }: Props) {
           />
         </div>
 
-        <div className="eyebrow eyebrow-amber mt-6">2025 · Album</div>
+        <div className="eyebrow eyebrow-amber mt-6">All The Glory</div>
         <h2
           id="download-modal-title"
           className="font-display mt-2 text-2xl md:text-3xl font-normal text-white tracking-tight"
