@@ -112,10 +112,12 @@ function TrackRow({
 function VerseModal({
   verseRef,
   fullVerse,
+  reflection,
   onClose,
 }: {
   verseRef: string;
   fullVerse: string;
+  reflection?: string;
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -220,6 +222,16 @@ function VerseModal({
           &ldquo;{fullVerse}&rdquo;
         </p>
         <div className="mt-4 text-[10px] uppercase tracking-[0.26em] text-white/40">ESV</div>
+
+        {reflection && (
+          <>
+            <div className="mt-7 mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
+            <p className="mt-6 text-sm md:text-base text-white/65 leading-relaxed max-w-md mx-auto">
+              {reflection}
+            </p>
+          </>
+        )}
+
         <button
           type="button"
           onClick={onClose}
@@ -280,7 +292,7 @@ export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
-  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
+  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string } | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
@@ -424,7 +436,7 @@ export default function AlbumPage() {
                   isLoading={loadingIndex === i && playingIndex !== i}
                   reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
-                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse })}
+                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection })}
                 />
               ))}
             </div>
@@ -503,6 +515,7 @@ export default function AlbumPage() {
           <VerseModal
             verseRef={verseModal.ref}
             fullVerse={verseModal.fullVerse}
+            reflection={verseModal.reflection}
             onClose={() => setVerseModal(null)}
           />
         )}
