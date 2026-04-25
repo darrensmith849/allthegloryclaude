@@ -1,137 +1,101 @@
-import type { Metadata } from "next";
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import { site } from "@/content/site";
 import { videos } from "@/content/videos";
 import FeaturedVideoHero from "./FeaturedVideoHero";
 
 const channelUrl = site.socials.youtube;
 
-export const metadata: Metadata = {
-  title: "Videos",
-  description:
-    "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-  alternates: { canonical: "/videos" },
-  openGraph: {
-    title: "Videos — All The Glory",
-    description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-    url: "/videos",
-    type: "website",
-    images: [
-      {
-        url: "/media/videos-cover.jpg",
-        width: 1200,
-        height: 630,
-        alt: "All The Glory on YouTube",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Videos — All The Glory",
-    description:
-      "Watch All The Glory on YouTube — official music videos, worship sessions, and live content.",
-    images: ["/media/videos-cover.jpg"],
-  },
-};
-
+/**
+ * Minimal Videos page — every path leads to YouTube.
+ *
+ *   eyebrow → headline → one-line description → two CTAs → featured video.
+ *
+ * No collection, no scripture interlude, no subscribe panel below the
+ * video. Deliberately spare; the channel is the destination.
+ */
 export default function VideosPage() {
+  const reduce = useReducedMotion();
+
+  const heroTextTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.2, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const };
+  const heroMediaTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <main className="bg-transparent overflow-x-clip">
-      {/* Hero header — editorial, tight */}
-      <section className="mx-auto w-full max-w-3xl px-6 pt-32 md:pt-40 text-center">
-        <div className="eyebrow">Videos</div>
-        <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
-          Songs in{" "}
-          <span className="italic text-[var(--colour-amber)]">motion</span>
-        </h1>
-        <p className="mt-5 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
-          Music videos, worship sessions, and the moments behind the songs.
-        </p>
-      </section>
+      <section
+        aria-labelledby="videos-hero-heading"
+        className="mx-auto w-full max-w-5xl px-6 pt-32 md:pt-40 pb-24 md:pb-32"
+      >
+        {/* Text block */}
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={heroTextTransition}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <div className="eyebrow">Featured</div>
+          <h1
+            id="videos-hero-heading"
+            className="font-display mt-4 text-4xl md:text-5xl lg:text-6xl font-normal text-white tracking-tight leading-[1.05]"
+          >
+            Worship in{" "}
+            <span className="italic text-[var(--colour-amber)]">motion</span>
+          </h1>
 
-      {/* Featured video — wider, more cinematic. Wraps to a 6xl container so
-          the iframe gets real screen presence instead of feeling boxed. */}
-      <section className="mx-auto w-full max-w-6xl px-4 md:px-6 mt-10 md:mt-14">
-        <FeaturedVideoHero videoId={videos.featuredId} />
-      </section>
+          <p className="mt-6 text-sm md:text-base text-white/65 leading-relaxed max-w-md mx-auto">
+            Live worship, performances, and music videos — shared as they
+            release on the channel.
+          </p>
 
-      {/* Action row — primary watch CTA + secondary channel link */}
-      <section className="mx-auto w-full max-w-3xl px-6 mt-9 md:mt-12">
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex flex-wrap justify-center gap-3">
-            {videos.featuredWatchUrl && (
-              <a
-                href={videos.featuredWatchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary inline-flex items-center gap-2"
-                aria-label="Watch the featured video on YouTube (opens in a new tab)"
-              >
-                Watch the video
-                <ExternalLinkIcon />
-              </a>
-            )}
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <a
+              href={videos.featuredWatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              aria-label="Watch the featured video on YouTube (opens in a new tab)"
+            >
+              Watch on YouTube ↗
+            </a>
             <a
               href={channelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${videos.featuredWatchUrl ? "btn btn-ghost" : "btn btn-primary"} inline-flex items-center gap-2`}
+              className="btn btn-ghost"
               aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
             >
-              {videos.featuredWatchUrl ? "Visit the channel" : "Watch on YouTube"}
-              <ExternalLinkIcon />
+              Visit the channel ↗
             </a>
           </div>
-        </div>
-      </section>
+        </motion.div>
 
-      {/* Subscribe panel — premium editorial card with the channel handle.
-          Pulls double duty as the closing CTA so users don't have to scroll
-          back up to take action. */}
-      <section className="mx-auto w-full max-w-3xl px-6 mt-16 md:mt-24 pb-24 md:pb-32">
-        <div className="panel-scrim p-7 md:p-10 text-center">
-          <div className="eyebrow eyebrow-amber">Official Channel</div>
-          <h2 className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight">
-            @Allthe_glory
-          </h2>
-          <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            New releases drop on the channel first. Subscribe to catch every
-            video the moment it goes live.
-          </p>
-          <div className="mt-7 flex justify-center">
-            <a
-              href={channelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary inline-flex items-center gap-2"
-              aria-label="Subscribe to the All The Glory YouTube channel (opens in a new tab)"
-            >
-              Subscribe on YouTube
-              <ExternalLinkIcon />
-            </a>
-          </div>
-        </div>
+        {/* Featured video — sits below the text block as a wide,
+            cinematic banner. Soft amber glow anchors it in the page
+            atmosphere instead of having it sit on top of the page. */}
+        <motion.div
+          initial={
+            reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 18 }
+          }
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={heroMediaTransition}
+          className="relative mt-12 md:mt-16"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-6 md:-inset-10 -z-10 rounded-[32px] opacity-60"
+            style={{
+              background:
+                "radial-gradient(50% 60% at 50% 40%, rgba(216,178,90,0.18), transparent 70%)",
+            }}
+          />
+          <FeaturedVideoHero videoId={videos.featuredId} />
+        </motion.div>
       </section>
     </main>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
   );
 }

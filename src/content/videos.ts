@@ -1,10 +1,13 @@
+/**
+ * Featured video data for the /videos page.
+ *
+ * The page is deliberately minimal — one featured video that links out
+ * to YouTube. Update `featuredId` and `featuredWatchUrl` when a new
+ * video should take the spotlight.
+ */
 export const videos = {
-  /** YouTube video ID of the currently-featured video.
-   *  Drives the silent, looping "cinematic art" hero on the Videos page.
-   *  Leave empty to fall back to the static cover image. */
+  /** YouTube video ID — the 11-char string from the YouTube URL. */
   featuredId: "sxcoxQZ8kRM",
-  /** Canonical watch URL for the featured video — used by the primary
-   *  CTA so one click takes visitors straight to the video (rather than
-   *  dropping them on the channel and making them hunt for it). */
+  /** Canonical watch URL — used by the primary "Watch on YouTube" CTA. */
   featuredWatchUrl: "https://www.youtube.com/watch?v=sxcoxQZ8kRM",
 };
