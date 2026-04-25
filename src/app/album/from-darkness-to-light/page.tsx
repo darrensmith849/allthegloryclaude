@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
 import { site } from "@/content/site";
+import DownloadModal from "./DownloadModal";
 
 function TrackRow({
   index,
@@ -280,6 +281,7 @@ export default function AlbumPage() {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string } | null>(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
   // detach it cleanly when the user switches tracks — otherwise a late-firing
@@ -387,9 +389,13 @@ export default function AlbumPage() {
 
               {/* Download / Sow */}
               <div className="mt-6 flex justify-center gap-3">
-                <a href="/downloads/from-darkness-to-light.zip" className="btn btn-primary">
+                <button
+                  type="button"
+                  onClick={() => setDownloadOpen(true)}
+                  className="btn btn-primary"
+                >
                   Download free →
-                </a>
+                </button>
                 <Link href="/sow" className="btn btn-ghost">
                   Sow →
                 </Link>
@@ -434,6 +440,13 @@ export default function AlbumPage() {
               }
               className="mt-10 flex flex-wrap justify-center gap-8 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/55"
             >
+              <button
+                type="button"
+                onClick={() => setDownloadOpen(true)}
+                className="text-[var(--colour-amber)]/85 hover:text-[var(--colour-amber)] transition-colors"
+              >
+                Download ↓
+              </button>
               <a
                 href={site.socials.spotify}
                 target="_blank"
@@ -477,6 +490,12 @@ export default function AlbumPage() {
             fullVerse={verseModal.fullVerse}
             onClose={() => setVerseModal(null)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {downloadOpen && (
+          <DownloadModal onClose={() => setDownloadOpen(false)} />
         )}
       </AnimatePresence>
     </main>

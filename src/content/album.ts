@@ -1,5 +1,11 @@
 /** Album data — single source of truth for the album page, the
  *  homepage hero, and the JSON-LD structured data in the layout. */
+
+/** Worship artist name — used in the download zip filename so the
+ *  listener sees "All The Glory - From Darkness To Light.zip" in
+ *  their downloads folder. */
+export const ARTIST_NAME = "All The Glory";
+
 export const album = {
   /** Readable name (used by SEO / structured data). */
   name: "From Darkness To Light",
@@ -9,6 +15,14 @@ export const album = {
   coverImage: "/media/ocean.jpg",
   releaseYear: 2025,
   path: "/album/from-darkness-to-light",
+
+  /** Pre-built zip with all 7 full songs already named
+   *  "NN - All The Glory - <track>.mp3" inside it, so they extract
+   *  in album order in any music app or file browser. */
+  downloadZipSrc: "/downloads/from-darkness-to-light.zip",
+  /** Filename the browser shows when the user downloads the zip. */
+  downloadZipFilename: "All The Glory - From Darkness To Light.zip",
+
   tracks: [
     { title: "John 19 vs 30", verse: "\u201CIt is finished.\u201D", ref: "John 19:30", fullVerse: "When Jesus had received the sour wine, he said, \u201CIt is finished,\u201D and he bowed his head and gave up his spirit.", previewSrc: "/audio/previews/01-john-19-vs-30.mp3" },
     { title: "Matthew 14 vs 31", verse: "\u201CO you of little faith, why did you doubt?\u201D", ref: "Matthew 14:31", fullVerse: "Jesus immediately reached out his hand and took hold of him, saying to him, \u201CO you of little faith, why did you doubt?\u201D", previewSrc: "/audio/previews/02-matthew-14-vs-31.mp3" },
