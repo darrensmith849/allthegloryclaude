@@ -73,11 +73,17 @@ export default function DonatePage() {
         >
           <div className="eyebrow">Donate</div>
           <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
-            Support the work
+            An offering
           </h1>
-          <p className="mt-4 text-sm md:text-base text-white/70 max-w-md mx-auto leading-relaxed">
-            The album is free. If it blessed you, your giving helps fund
-            recording, production, and the next release.
+          <p className="font-display mt-5 text-base md:text-lg italic text-white/75 max-w-xl mx-auto leading-relaxed">
+            I didn&apos;t want to put a price on worship — this is an
+            offering unto the Lord.
+          </p>
+          <p className="mt-4 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
+            If you feel led to support the work, your gift goes directly
+            into recording, production, and releasing more music. A portion
+            of every gift also goes toward causes close to my heart —
+            helping others, beyond the music.
           </p>
         </motion.header>
 
