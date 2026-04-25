@@ -462,13 +462,6 @@ export default function AlbumPage() {
               }
               className="mt-8 flex flex-wrap justify-center gap-8 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/55"
             >
-              <button
-                type="button"
-                onClick={() => setDownloadOpen(true)}
-                className="hover:text-white transition-colors"
-              >
-                Download ↓
-              </button>
               <a
                 href={site.socials.spotify}
                 target="_blank"
