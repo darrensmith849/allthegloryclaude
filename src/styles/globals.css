@@ -137,15 +137,24 @@ body {
   background-size: 220px 220px;
 }
 
-/* Bottom-left socials (no box, no pill) */
+/* Bottom-left socials (no box, no pill).
+ * Desktop only — at narrower widths the centred page content can run
+ * under the fixed dock and read awkwardly. Mobile users still see the
+ * full social row in the footer. */
 .social-dock-bottom {
-  position: fixed;
-  left: 18px;
-  bottom: 18px;
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .social-dock-bottom {
+    position: fixed;
+    left: 18px;
+    bottom: 18px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 }
 
 .social-link {
