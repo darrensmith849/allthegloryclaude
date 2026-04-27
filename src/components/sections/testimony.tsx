@@ -112,11 +112,11 @@ export default function Testimony({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-30px" }}
               transition={paragraphTransition(storyParagraphs.length)}
-              className="mt-10 md:mt-12 pt-8 md:pt-10 text-center"
+              className="mt-3 md:mt-5 pt-5 md:pt-6 text-center"
             >
               <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
               <p
-                className="font-display mt-7 text-lg md:text-xl italic leading-relaxed"
+                className="font-display mt-5 md:mt-6 text-lg md:text-xl italic leading-relaxed"
                 style={{ color: "var(--colour-ink)", opacity: 0.88 }}
               >
                 {storyBenediction}
