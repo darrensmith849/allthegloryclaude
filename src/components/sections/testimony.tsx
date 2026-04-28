@@ -29,20 +29,24 @@ export default function Testimony({
 }: TestimonyProps) {
   const reduce = useReducedMotion();
 
-  // Smooth scroll-triggered fades. Each paragraph triggers on its own
-  // viewport entry — scroll position is the natural stagger, so we
-  // don't pile artificial delays on top.
+  // Each paragraph fades in independently as the user scrolls it into
+  // reading position. We hold the trigger until the line is solidly in
+  // the middle band of the viewport (not the moment its top edge first
+  // peeks), which means scroll speed is the natural stagger and the
+  // result feels like the words are appearing as you arrive at them
+  // rather than popping in batches.
   const headerTransition = reduce
     ? { duration: 0.01 }
-    : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const };
+    : { duration: 1.4, ease: [0.16, 1, 0.3, 1] as const };
   const paragraphTransition = reduce
     ? { duration: 0.01 }
-    : { duration: 1.0, ease: [0.16, 1, 0.3, 1] as const };
+    : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const };
 
-  // Trigger once each paragraph is meaningfully into the viewport,
-  // not the moment its top edge first peeks. Feels like the line is
-  // fading in as you read into it.
-  const paragraphViewport = { once: true, margin: "-15% 0px -15% 0px" };
+  // Trigger band: shrink the viewport by 25% top + 25% bottom, so a
+  // paragraph only counts as "in view" once its top is in the centre
+  // 50% of the screen — i.e. once you can comfortably read it.
+  const paragraphViewport = { once: true, margin: "-25% 0px -25% 0px" };
+  const headerViewport = { once: true, margin: "-15% 0px -15% 0px" };
 
   const useCustomHeader = Boolean(eyebrow && title);
 
@@ -52,9 +56,9 @@ export default function Testimony({
         <div className="panel-scrim p-7 md:p-10">
           {showHeader && (
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-10% 0px" }}
+              viewport={headerViewport}
               transition={headerTransition}
               className={
                 useCustomHeader
@@ -64,9 +68,7 @@ export default function Testimony({
             >
               {useCustomHeader ? (
                 <>
-                  <div className="eyebrow eyebrow-amber">
-                    {eyebrow}
-                  </div>
+                  <div className="eyebrow eyebrow-amber">{eyebrow}</div>
                   <h2
                     id={headingId}
                     className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
@@ -98,7 +100,7 @@ export default function Testimony({
             {storyParagraphs.map((paragraph, i) => (
               <motion.p
                 key={i}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={paragraphViewport}
                 transition={paragraphTransition}
@@ -116,7 +118,7 @@ export default function Testimony({
               feeling disconnected from the body above. */}
           {storyBenediction && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={paragraphViewport}
               transition={paragraphTransition}
