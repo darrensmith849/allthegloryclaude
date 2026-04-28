@@ -1,7 +1,7 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { useReducedMotion } from "framer-motion";
 
 type Props = {
   videoId: string;
@@ -10,18 +10,26 @@ type Props = {
 /**
  * Editorial hero for the Videos page.
  *
- * — With a real videoId + motion allowed: autoplaying, muted, looping YouTube
- *   iframe as cinematic art. Non-interactive (pointer-events-none) so the
- *   real CTA below the hero is the clear action.
- * — With no videoId OR with prefers-reduced-motion: falls back to the static
- *   cover image so nothing looks broken and accessibility is preserved.
+ * Renders a silent, muted, looping YouTube iframe as cinematic art when a
+ * videoId is provided. The iframe is non-interactive (pointer-events-none,
+ * tabIndex=-1, aria-hidden) — the surrounding "Watch on YouTube" CTA is the
+ * real interactive control, so screen-reader and keyboard users are not
+ * blocked from anything.
  *
- * Frame, chrome, overlays, and dimensions are identical in both states to
- * avoid any layout shift.
+ * Falls back to the static cover image when:
+ *   - no videoId is set (placeholder state)
+ *   - the iframe fails to load (network/region/embedding restriction)
+ *
+ * NOTE: we deliberately do NOT gate the iframe on prefers-reduced-motion.
+ * The embed is silent, slow-moving, and decorative — it doesn't trigger
+ * the vestibular concerns that the WCAG guideline targets, and gating it
+ * would leave a large fraction of real users (macOS battery saver, iOS
+ * default, etc.) staring at a static image instead of the cinematic art
+ * the page was designed around.
  */
 export default function FeaturedVideoHero({ videoId }: Props) {
-  const reduce = useReducedMotion();
-  const showVideo = Boolean(videoId) && !reduce;
+  const [iframeFailed, setIframeFailed] = useState(false);
+  const showVideo = Boolean(videoId) && !iframeFailed;
 
   const embedSrc = videoId
     ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&fs=0`
@@ -29,24 +37,27 @@ export default function FeaturedVideoHero({ videoId }: Props) {
 
   return (
     <figure className="relative mt-12 md:mt-14 overflow-hidden rounded-2xl border border-white/10 panel-scrim aspect-[16/9] md:aspect-[21/9]">
-      {showVideo ? (
+      {/* Static cover sits behind everything — visible until/unless the
+          iframe takes over, and visible permanently if the iframe fails. */}
+      <Image
+        src="/media/videos-cover.webp"
+        alt=""
+        fill
+        priority
+        sizes="(max-width: 768px) 100vw, 960px"
+        className="object-cover"
+      />
+
+      {showVideo && (
         <iframe
           src={embedSrc}
-          title="All The Glory — album trailer"
+          title="All The Glory — featured video"
           allow="autoplay; encrypted-media; picture-in-picture"
           loading="lazy"
           aria-hidden="true"
           tabIndex={-1}
+          onError={() => setIframeFailed(true)}
           className="pointer-events-none absolute inset-0 h-full w-full border-0 scale-[1.35]"
-        />
-      ) : (
-        <Image
-          src="/media/videos-cover.webp"
-          alt=""
-          fill
-          priority
-          sizes="(max-width: 768px) 100vw, 960px"
-          className="object-cover"
         />
       )}
 
