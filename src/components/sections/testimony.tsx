@@ -28,13 +28,21 @@ export default function Testimony({
   headingId,
 }: TestimonyProps) {
   const reduce = useReducedMotion();
+
+  // Smooth scroll-triggered fades. Each paragraph triggers on its own
+  // viewport entry — scroll position is the natural stagger, so we
+  // don't pile artificial delays on top.
   const headerTransition = reduce
     ? { duration: 0.01 }
-    : { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
-  const paragraphTransition = (i: number) =>
-    reduce
-      ? { duration: 0.01 }
-      : { duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const };
+    : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const };
+  const paragraphTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 1.0, ease: [0.16, 1, 0.3, 1] as const };
+
+  // Trigger once each paragraph is meaningfully into the viewport,
+  // not the moment its top edge first peeks. Feels like the line is
+  // fading in as you read into it.
+  const paragraphViewport = { once: true, margin: "-15% 0px -15% 0px" };
 
   const useCustomHeader = Boolean(eyebrow && title);
 
@@ -44,9 +52,9 @@ export default function Testimony({
         <div className="panel-scrim p-7 md:p-10">
           {showHeader && (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-10% 0px" }}
               transition={headerTransition}
               className={
                 useCustomHeader
@@ -90,10 +98,10 @@ export default function Testimony({
             {storyParagraphs.map((paragraph, i) => (
               <motion.p
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={paragraphTransition(i)}
+                viewport={paragraphViewport}
+                transition={paragraphTransition}
                 className="text-base md:text-lg leading-relaxed"
                 style={{ color: "var(--colour-ink)", opacity: 0.78 }}
               >
@@ -108,10 +116,10 @@ export default function Testimony({
               feeling disconnected from the body above. */}
           {storyBenediction && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-30px" }}
-              transition={paragraphTransition(storyParagraphs.length)}
+              viewport={paragraphViewport}
+              transition={paragraphTransition}
               className="mt-3 md:mt-5 pt-5 md:pt-6 text-center"
             >
               <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
