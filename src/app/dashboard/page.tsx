@@ -87,6 +87,22 @@ export default function DashboardHome() {
     });
   }
 
+  // ── End-of-day commit: lock the day's data with a timestamp. ──────
+  // Once sealed, the progress card swaps to a recap; everything stays
+  // editable but "Reopen day" makes the intent explicit.
+  const dayCompletedAt = state.dayCompleted?.[today] ?? null;
+  function completeDay() {
+    update((draft) => {
+      if (!draft.dayCompleted) draft.dayCompleted = {};
+      draft.dayCompleted[today] = new Date().toISOString();
+    });
+  }
+  function reopenDay() {
+    update((draft) => {
+      if (draft.dayCompleted) delete draft.dayCompleted[today];
+    });
+  }
+
   // Inline "+ Add block" form state and handler — adds a row to the user's
   // editable schedule so any time of day can be tracked, not just the presets.
   const [addOpen, setAddOpen] = useState(false);
@@ -189,35 +205,65 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Daily completion bar — fills as you tick boxes through the day */}
-      <div className="dash-progress-card">
+      {/* Daily completion bar — fills as you tick boxes through the day.
+          When the day is sealed via Complete the day, swaps to a recap. */}
+      <div className={`dash-progress-card ${dayCompletedAt ? "is-completed" : ""}`}>
         <div className="dash-progress-head">
           <div>
-            <div className="eyebrow eyebrow-amber">Today&apos;s progress</div>
+            <div className="eyebrow eyebrow-amber">
+              {dayCompletedAt ? "Day complete" : "Today's progress"}
+            </div>
             <div className="dash-progress-stat">
               <span className="font-display">{completion.pct}%</span>
               <span className="text-[12.5px] text-[var(--colour-ink-quiet)] ml-2">
                 {completion.done} / {completion.total} done
               </span>
+              {dayCompletedAt && (
+                <span className="text-[12px] text-[var(--colour-amber-soft)] ml-3">
+                  ✓ saved {new Date(dayCompletedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap justify-end">
-            <button
-              type="button"
-              className="dash-btn dash-btn-primary"
-              style={{ padding: "7px 14px", fontSize: 11 }}
-              onClick={markAllDone}
-            >
-              ✓ Mark all done
-            </button>
-            <button
-              type="button"
-              className="dash-btn dash-btn-ghost"
-              style={{ padding: "7px 14px", fontSize: 11 }}
-              onClick={clearAll}
-            >
-              Clear all
-            </button>
+            {dayCompletedAt ? (
+              <button
+                type="button"
+                className="dash-btn dash-btn-ghost"
+                style={{ padding: "7px 14px", fontSize: 11 }}
+                onClick={reopenDay}
+              >
+                Reopen day
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="dash-btn"
+                  style={{ padding: "7px 14px", fontSize: 11 }}
+                  onClick={markAllDone}
+                >
+                  ✓ Mark all done
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost"
+                  style={{ padding: "7px 14px", fontSize: 11 }}
+                  onClick={clearAll}
+                >
+                  Clear all
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-primary"
+                  style={{ padding: "7px 14px", fontSize: 11 }}
+                  onClick={completeDay}
+                  title="Save and lock today's data with a timestamp"
+                >
+                  ✦ Complete the day
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="dash-progress-bar">

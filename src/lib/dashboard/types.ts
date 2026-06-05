@@ -136,8 +136,52 @@ export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
   { id: "u-16", section: "2", sectionTitle: "Chords & Practice", number: 16, title: "Common Chord Progressions", minutes: 5, hasResources: true, status: "done" },
   { id: "u-17", section: "2", sectionTitle: "Chords & Practice", number: 17, title: "PLAY-ALONG I vi IV V", minutes: 2, status: "done" },
   { id: "u-18", section: "2", sectionTitle: "Chords & Practice", number: 18, title: "PLAY-ALONG - I iii IV V", minutes: 2, status: "done" },
-  // Lessons 19+ will be added as the user shows them (Section 2 has 28 total,
-  // so 10 more from section 2 plus everything in section 3+).
+  // Section 2 continued — Practice tracks, triads, triad applications
+  { id: "u-19", section: "2", sectionTitle: "Chords & Practice", number: 19, title: "Practice Track - I vi IV V", minutes: 3, hasResources: true, status: "done" },
+  { id: "u-20", section: "2", sectionTitle: "Chords & Practice", number: 20, title: "Practice Track - I iii IV V", minutes: 3, hasResources: true, status: "done" },
+  { id: "u-21", section: "2", sectionTitle: "Chords & Practice", number: 21, title: "An Introduction to Triads", minutes: 5, hasResources: true, status: "done" },
+  { id: "u-22", section: "2", sectionTitle: "Chords & Practice", number: 22, title: "Major Triads - 1st & 2nd String Sets", minutes: 6, hasResources: true, status: "done" },
+  { id: "u-23", section: "2", sectionTitle: "Chords & Practice", number: 23, title: "Major Triads - 3rd & 4th String Sets", minutes: 5, status: "done" },
+  { id: "u-24", section: "2", sectionTitle: "Chords & Practice", number: 24, title: "Minor Triads", minutes: 3, status: "done" },
+  { id: "u-25", section: "2", sectionTitle: "Chords & Practice", number: 25, title: "Diminished Triads", minutes: 3, status: "done" },
+  { id: "u-26", section: "2", sectionTitle: "Chords & Practice", number: 26, title: "Augmented Triads", minutes: 5, hasResources: true, status: "done" },
+  { id: "u-27", section: "2", sectionTitle: "Chords & Practice", number: 27, title: "Dominant 7th Triads", minutes: 4, status: "done" },
+  { id: "u-28", section: "2", sectionTitle: "Chords & Practice", number: 28, title: "Circle of 4th's - How to Practice Triads", minutes: 6, hasResources: true, status: "done" },
+  { id: "u-29", section: "2", sectionTitle: "Chords & Practice", number: 29, title: "PLAY-ALONG Circle of 4th's Major Triads", minutes: 2, status: "done" },
+  { id: "u-30", section: "2", sectionTitle: "Chords & Practice", number: 30, title: "PLAY-ALONG Circle of 4th's Minor Triads", minutes: 3, status: "done" },
+  { id: "u-31", section: "2", sectionTitle: "Chords & Practice", number: 31, title: "PLAY-ALONG Circle of 4th's Dominant 7th Triads", minutes: 2, status: "todo" },
+  { id: "u-32", section: "2", sectionTitle: "Chords & Practice", number: 32, title: "PLAY-ALONG Circle of 4th's Diminished Triads", minutes: 3, status: "todo" },
+  { id: "u-33", section: "2", sectionTitle: "Chords & Practice", number: 33, title: "What about Augmented Triads?", minutes: 2, status: "todo" },
+  { id: "u-34", section: "2", sectionTitle: "Chords & Practice", number: 34, title: "Triad Application Pt. I - Major & Minor", minutes: 4, hasResources: true, status: "done" },
+  { id: "u-35", section: "2", sectionTitle: "Chords & Practice", number: 35, title: "Triad Application Pt. II - Diminished & Augmented", minutes: 7, hasResources: true, status: "todo" },
+  { id: "u-36", section: "2", sectionTitle: "Chords & Practice", number: 36, title: "Triad Application Pt. III - Another Approach", minutes: 9, status: "todo" },
+  { id: "u-37", section: "2", sectionTitle: "Chords & Practice", number: 37, title: "Triad Application Pt. IV - Larger Chords", minutes: 3, hasResources: true, status: "todo" },
+  // Section 3 — Scales and Improvisation (25 lessons, 1hr 36min, 0 done so far)
+  { id: "u-38", section: "3", sectionTitle: "Scales & Improvisation", number: 38, title: "How Most Guitarists Are Taught Scales", minutes: 3, status: "todo" },
+  { id: "u-39", section: "3", sectionTitle: "Scales & Improvisation", number: 39, title: "7 Positions of The Major Scale", minutes: 5, hasResources: true, status: "todo" },
+  { id: "u-40", section: "3", sectionTitle: "Scales & Improvisation", number: 40, title: "PLAY-ALONG 7 Positions of The Major Scale", minutes: 2, status: "todo" },
+  { id: "u-41", section: "3", sectionTitle: "Scales & Improvisation", number: 41, title: "Circle of 4th's - How to Practice Scales", minutes: 3, hasResources: true, status: "todo" },
+  { id: "u-42", section: "3", sectionTitle: "Scales & Improvisation", number: 42, title: "Circle of 4th's - The Major Scale Pt. I", minutes: 5, hasResources: true, status: "todo" },
+  { id: "u-43", section: "3", sectionTitle: "Scales & Improvisation", number: 43, title: "Circle of 4th's - The Major Scale Pt. II", minutes: 4, status: "todo" },
+  { id: "u-44", section: "3", sectionTitle: "Scales & Improvisation", number: 44, title: "PLAY-ALONG Circle of 4th's - The Major Scale", minutes: 1, status: "todo" },
+  { id: "u-45", section: "3", sectionTitle: "Scales & Improvisation", number: 45, title: "The Natural Minor Scale & the Relative Minor", minutes: 6, hasResources: true, status: "todo" },
+  { id: "u-46", section: "3", sectionTitle: "Scales & Improvisation", number: 46, title: "The Minor Pentatonic Scale - 5 Positions", minutes: 4, hasResources: true, status: "todo" },
+  { id: "u-47", section: "3", sectionTitle: "Scales & Improvisation", number: 47, title: "PLAY-ALONG - 5 Positions of the Minor Pentatonic Scale", minutes: 1, status: "todo" },
+  { id: "u-48", section: "3", sectionTitle: "Scales & Improvisation", number: 48, title: "Circle of 4th's - The Minor Pentatonic Scale", minutes: 5, status: "todo" },
+  { id: "u-49", section: "3", sectionTitle: "Scales & Improvisation", number: 49, title: "PLAY-ALONG Circle of 4th's - The Minor Pentatonic Scale", minutes: 1, status: "todo" },
+  { id: "u-50", section: "3", sectionTitle: "Scales & Improvisation", number: 50, title: "The Blues Scale", minutes: 4, status: "todo" },
+  { id: "u-51", section: "3", sectionTitle: "Scales & Improvisation", number: 51, title: "Practice Track - A Minor Vamp", minutes: 4, hasResources: true, status: "todo" },
+  { id: "u-52", section: "3", sectionTitle: "Scales & Improvisation", number: 52, title: "The Major Pentatonic Scale", minutes: 4, hasResources: true, status: "todo" },
+  { id: "u-53", section: "3", sectionTitle: "Scales & Improvisation", number: 53, title: "Transitioning Between Major and Minor Pentatonic", minutes: 9, hasResources: true, status: "todo" },
+  { id: "u-54", section: "3", sectionTitle: "Scales & Improvisation", number: 54, title: "Practice Track - E Major", minutes: 2, hasResources: true, status: "todo" },
+  { id: "u-55", section: "3", sectionTitle: "Scales & Improvisation", number: 55, title: "Intervals in Improvisation Pt. I - Introduction", minutes: 3, hasResources: true, status: "todo" },
+  { id: "u-56", section: "3", sectionTitle: "Scales & Improvisation", number: 56, title: "Intervals in Improvisation Pt. II - PLAY-ALONG", minutes: 3, status: "todo" },
+  { id: "u-57", section: "3", sectionTitle: "Scales & Improvisation", number: 57, title: "Intervals in Improvisation Pt. III - Starter Licks", minutes: 6, status: "todo" },
+  { id: "u-58", section: "3", sectionTitle: "Scales & Improvisation", number: 58, title: "Practice Track - A Major Progression", minutes: 3, hasResources: true, status: "todo" },
+  { id: "u-59", section: "3", sectionTitle: "Scales & Improvisation", number: 59, title: "Triads in Solos", minutes: 8, hasResources: true, status: "todo" },
+  { id: "u-60", section: "3", sectionTitle: "Scales & Improvisation", number: 60, title: "Motifs in Improvisation", minutes: 5, hasResources: true, status: "todo" },
+  { id: "u-61", section: "3", sectionTitle: "Scales & Improvisation", number: 61, title: "Practice Track - Blues Shuffle in A", minutes: 4, hasResources: true, status: "todo" },
+  { id: "u-62", section: "3", sectionTitle: "Scales & Improvisation", number: 62, title: "Well Done!", minutes: 1, status: "todo" },
 ];
 
 export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
@@ -273,6 +317,11 @@ export interface DashboardState {
   // counted toward the daily progress bar.
   scheduleChecks: Record<ISODate, Record<string, boolean>>;
   bibleLogs: Record<ISODate, BibleDayLog>;
+  // When the user clicks "Complete the day" we stamp this map with the ISO
+  // timestamp it was sealed at. A day key in here means the day is "closed"
+  // — Today shows a recap instead of the action buttons, and the calendar
+  // marks it as completed. Reopening the day removes the key.
+  dayCompleted: Record<ISODate, string>;
   guitar: GuitarSession[];
   book: { meta: BookMeta; sessions: BookSession[] };
   settings: Settings;
@@ -285,6 +334,7 @@ export function emptyState(): DashboardState {
     habits: {},
     scheduleChecks: {},
     bibleLogs: {},
+    dayCompleted: {},
     guitar: [],
     book: {
       meta: {
