@@ -29,7 +29,7 @@ export default function RemindersPage() {
                 src={todayReminder.src}
                 alt={todayReminder.short}
                 fill
-                sizes="(min-width: 900px) 1100px, 100vw"
+                sizes="(min-width: 900px) 600px, 95vw"
                 className="object-cover object-center"
                 priority
               />
@@ -44,8 +44,9 @@ export default function RemindersPage() {
                 src={r.src}
                 alt={r.short}
                 fill
-                sizes="(min-width: 900px) 540px, 100vw"
+                sizes="(min-width: 900px) 340px, 92vw"
                 className="object-cover object-center"
+                loading="lazy"
               />
               {r.id === todayReminder.id && (
                 <div className="dash-reminder-badge">

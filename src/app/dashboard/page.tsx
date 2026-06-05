@@ -130,7 +130,7 @@ export default function DashboardHome() {
                 src={reminder.src}
                 alt={reminder.short}
                 fill
-                sizes="(min-width: 900px) 360px, 80vw"
+                sizes="280px"
                 className="object-contain"
                 priority
               />

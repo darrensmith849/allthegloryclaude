@@ -12,39 +12,14 @@
   min-height: 100vh;
   gap: 0;
   color: var(--colour-ink);
-  isolation: isolate;
-}
-
-/* Animated aurora behind everything — the source of light the glass refracts. */
-.dash-root::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
+  /* Static gradient warmth — no animation, no second layer.
+   * The animated aurora + grain pseudo-elements that lived here pegged the
+   * compositor (animating a fixed-position layer behind 8+ backdrop-filter
+   * surfaces per page was the source of the slowness). */
   background:
-    radial-gradient(900px 600px at 10% -10%, rgba(216, 178, 90, 0.14) 0%, transparent 65%),
-    radial-gradient(1100px 700px at 110% 110%, rgba(154, 147, 139, 0.10) 0%, transparent 65%),
-    radial-gradient(700px 500px at 80% -20%, rgba(241, 215, 166, 0.06) 0%, transparent 60%),
+    radial-gradient(900px 600px at 10% -10%, rgba(216, 178, 90, 0.10) 0%, transparent 65%),
+    radial-gradient(1100px 700px at 110% 110%, rgba(154, 147, 139, 0.08) 0%, transparent 65%),
     linear-gradient(180deg, #0a0810 0%, #060410 100%);
-  animation: dashAurora 36s ease-in-out infinite alternate;
-}
-.dash-root::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-  background-size: 220px 220px;
-}
-@keyframes dashAurora {
-  0%   { transform: translate3d(0, 0, 0) scale(1); filter: hue-rotate(-2deg); }
-  50%  { transform: translate3d(-2%, 1%, 0) scale(1.04); filter: hue-rotate(2deg); }
-  100% { transform: translate3d(1%, -1%, 0) scale(1.02); filter: hue-rotate(-1deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dash-root::before { animation: none; }
 }
 
 @media (max-width: 900px) {
@@ -174,37 +149,21 @@
   }
 }
 
-/* Panels — premium frosted glass.
-   Layered fills + inner highlight + soft amber rim give each panel a real
-   "behind the glass" feel against the aurora behind dash-root. */
+/* Panels — frosted glass.
+ * Cheaper than the original: single fill, single shadow, single light blur.
+ * The ::before highlight pseudo-element was painted on every panel and was
+ * a noticeable cost — dropped. */
 .dash-panel {
   position: relative;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%),
-    radial-gradient(120% 140% at -10% -20%, rgba(216, 178, 90, 0.06) 0%, transparent 55%);
-  backdrop-filter: blur(22px) saturate(125%);
-  -webkit-backdrop-filter: blur(22px) saturate(125%);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.36),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+    0 18px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
-}
-.dash-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    transparent 35%,
-    transparent 100%
-  );
-  opacity: 0.6;
 }
 
 .dash-panel-head {
@@ -224,17 +183,14 @@
   padding: 18px 20px 22px;
 }
 
-/* Stat tiles — same glass family as panels, slightly tighter. */
+/* Stat tiles — match the panel glass at a smaller scale. No backdrop-filter
+ * here (four stat tiles on every page added up to a real cost). */
 .dash-stat {
   padding: 16px 18px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.015) 100%);
-  backdrop-filter: blur(18px) saturate(120%);
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
-  box-shadow:
-    0 14px 40px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .dash-stat-value {
   font-size: 28px;
@@ -592,17 +548,14 @@
   display: block;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  background:
-    radial-gradient(60% 80% at 50% 0%, rgba(216, 178, 90, 0.10) 0%, transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.36),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 18px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   padding: 14px 18px 22px;
-  transition: transform 240ms ease, border-color 240ms ease;
-  isolation: isolate;
+  transition: border-color 200ms ease;
 }
 .dash-reminder-frame:hover {
   transform: translateY(-1px);
