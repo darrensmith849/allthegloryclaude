@@ -105,6 +105,13 @@ export default function GuitarPage() {
       d.settings.guitarCourse = c.map((l) => (l.id === id ? { ...l, status } : l));
     });
   }
+  function restartCourse() {
+    if (!confirm("Reset every lesson back to todo? You'll start the course from #1.")) return;
+    update((d) => {
+      const c = d.settings.guitarCourse ?? course;
+      d.settings.guitarCourse = c.map((l) => ({ ...l, status: "todo" as const }));
+    });
+  }
 
   // ── Inline "+ Add lesson" form (so the user can extend the course
   //    without touching Settings each time the screenshots arrive). ──
@@ -160,49 +167,8 @@ export default function GuitarPage() {
           <Stat label="Sessions logged" value={state.guitar.length} tone="ok" />
         </div>
 
-        <div className="dash-col-8">
-          <Panel eyebrow="The plan" title="Weekly rotation">
-            <div className="flex flex-col gap-2">
-              {WEEK_PLAN.map((p, i) => {
-                const d = week[i];
-                const minutesOnDay = sessionsByDate[d] || 0;
-                const isToday = d === today;
-                return (
-                  <div
-                    key={i}
-                    className={`grid gap-3 p-3 rounded-md border ${
-                      isToday
-                        ? "border-[rgba(216,178,90,0.42)] bg-[rgba(216,178,90,0.06)]"
-                        : "border-white/6 bg-white/[0.02]"
-                    }`}
-                    style={{ gridTemplateColumns: "70px 1fr auto" }}
-                  >
-                    <div>
-                      <div className="font-display text-[16px] text-[var(--colour-amber-soft)]">
-                        {p.day}
-                      </div>
-                      <div className="text-[11px] text-[var(--colour-ink-quiet)]">{formatShort(d)}</div>
-                    </div>
-                    <div>
-                      <div className="text-[14px] text-[var(--colour-ink-strong)]">{p.focus}</div>
-                      <div className="text-[12.5px] text-[var(--colour-ink-soft)] mt-1 leading-relaxed">
-                        {p.drill}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-display text-[20px] text-[var(--colour-glow)]">
-                        {minutesOnDay || 0}
-                      </div>
-                      <div className="text-[11px] text-[var(--colour-ink-quiet)]">
-                        / {p.minutes} min
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Panel>
-        </div>
+        {/* Weekly rotation panel removed per user request — the Udemy course
+            plan below handles the weekly cadence now. */}
 
         {/* ─── Udemy course tracker ─── */}
         <div className="dash-col-12">
@@ -211,6 +177,15 @@ export default function GuitarPage() {
             title="This week's lessons"
             action={
               <div className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost"
+                  style={{ padding: "6px 12px", fontSize: 11 }}
+                  onClick={restartCourse}
+                  title="Reset every lesson to todo"
+                >
+                  ↻ Restart course
+                </button>
                 <button
                   type="button"
                   className="dash-btn dash-btn-primary"
