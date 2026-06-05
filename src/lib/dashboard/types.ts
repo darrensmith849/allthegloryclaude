@@ -218,6 +218,12 @@ export function resolveGuitarWeek(settings: Settings): GuitarWeekRow[] {
 export interface DashboardState {
   tasks: Task[];
   habits: Record<ISODate, DayHabits>;
+  // Per-day "is this schedule row done?" checks, keyed by row id.
+  // Schedule rows linked to a habit don't need this — their habit field
+  // already encodes their done state. This map covers the ones that don't
+  // (e.g. "Coffee break", "Lunch") so every row can be ticked off and
+  // counted toward the daily progress bar.
+  scheduleChecks: Record<ISODate, Record<string, boolean>>;
   bibleLogs: Record<ISODate, BibleDayLog>;
   guitar: GuitarSession[];
   book: { meta: BookMeta; sessions: BookSession[] };
@@ -229,6 +235,7 @@ export function emptyState(): DashboardState {
   return {
     tasks: [],
     habits: {},
+    scheduleChecks: {},
     bibleLogs: {},
     guitar: [],
     book: {

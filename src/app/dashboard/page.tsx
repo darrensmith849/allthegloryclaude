@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
@@ -35,6 +35,7 @@ export default function DashboardHome() {
   const today = todayISO();
   const currentHour = useCurrentHour();
   const habits = state.habits[today] ?? emptyHabits();
+  const rowChecks = state.scheduleChecks?.[today] ?? {};
   const planDay = planDayFor(today, state.settings.startDate, state.settings.startPlanDay);
   const plan = planForWithOverride(planDay, state.settings.planOverrides);
   const bibleStreak = currentStreak(state, habitOn("bibleRead"));
@@ -58,6 +59,7 @@ export default function DashboardHome() {
     (t) => t.done && t.completedAt?.slice(0, 10) === today,
   ).length;
 
+  // ── Per-row + per-habit toggles ────────────────────────────────
   function toggleHabit(key: string) {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
@@ -65,6 +67,40 @@ export default function DashboardHome() {
       draft.habits[today] = h;
     });
   }
+  function toggleScheduleRow(rowId: string, habitId?: string) {
+    // If the row is linked to a habit, the habit IS the source of truth.
+    if (habitId) {
+      toggleHabit(habitId);
+      return;
+    }
+    update((draft) => {
+      if (!draft.scheduleChecks) draft.scheduleChecks = {};
+      const day = draft.scheduleChecks[today] ?? {};
+      day[rowId] = !day[rowId];
+      draft.scheduleChecks[today] = day;
+    });
+  }
+  function rowDone(rowId: string, habitId?: string): boolean {
+    if (habitId) return Boolean(habits[habitId]);
+    return Boolean(rowChecks[rowId]);
+  }
+
+  // ── Daily completion percentage ───────────────────────────────
+  // Score = every schedule row that's done +
+  //         every tracked habit that's done AND not already counted as
+  //         a schedule row (i.e. surfaced only in the Habits panel).
+  // Total = schedule rows + un-surfaced habits.
+  // That way each visible checkbox contributes exactly 1 to the count.
+  const completion = useMemo(() => {
+    const scheduleHabitIds = new Set(schedule.map((r) => r.habitId).filter(Boolean));
+    const habitsNotOnSchedule = tracked.filter((h) => !scheduleHabitIds.has(h.id));
+    const total = schedule.length + habitsNotOnSchedule.length;
+    let done = 0;
+    for (const r of schedule) if (rowDone(r.id, r.habitId)) done++;
+    for (const h of habitsNotOnSchedule) if (habits[h.id]) done++;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    return { done, total, pct };
+  }, [schedule, tracked, habits, rowChecks]);
 
   if (!ready) return null;
 
@@ -82,6 +118,27 @@ export default function DashboardHome() {
           <Link className="dash-btn" href="/dashboard/bible">
             Open today&apos;s reading →
           </Link>
+        </div>
+      </div>
+
+      {/* Daily completion bar — fills as you tick boxes through the day */}
+      <div className="dash-progress-card">
+        <div className="dash-progress-head">
+          <div>
+            <div className="eyebrow eyebrow-amber">Today&apos;s progress</div>
+            <div className="dash-progress-stat">
+              <span className="font-display">{completion.pct}%</span>
+              <span className="text-[12.5px] text-[var(--colour-ink-quiet)] ml-2">
+                {completion.done} / {completion.total} done
+              </span>
+            </div>
+          </div>
+          <div className="text-[11.5px] text-[var(--colour-ink-quiet)] max-w-[260px] text-right hidden md:block">
+            Every checkbox below counts. Tick what&apos;s done; the bar fills.
+          </div>
+        </div>
+        <div className="dash-progress-bar">
+          <span style={{ width: `${completion.pct}%` }} />
         </div>
       </div>
 
@@ -113,8 +170,7 @@ export default function DashboardHome() {
           />
         </div>
 
-        {/* Reminder card — the quote is baked into the portrait image.
-            Show it at its native 9:16 aspect, centered in a wide glass panel. */}
+        {/* Reminder card */}
         <div className="dash-col-12">
           <Link
             href="/dashboard/reminders"
@@ -138,7 +194,7 @@ export default function DashboardHome() {
           </Link>
         </div>
 
-        {/* Daily schedule */}
+        {/* Daily schedule — every row checkable */}
         <div className="dash-col-8">
           <Panel
             eyebrow="Daily rhythm"
@@ -152,27 +208,31 @@ export default function DashboardHome() {
             <div className="dash-schedule">
               {schedule.map((row, i) => {
                 const isNow = i === currentRowIndex;
-                const done = row.habitId ? Boolean(habits[row.habitId]) : false;
+                const done = rowDone(row.id, row.habitId);
                 return (
-                  <div key={row.id} className={`dash-schedule-row ${isNow ? "is-now" : ""}`}>
+                  <div
+                    key={row.id}
+                    className={`dash-schedule-row ${isNow ? "is-now" : ""} ${
+                      done ? "is-done" : ""
+                    }`}
+                  >
                     <div className="dash-schedule-time">{row.time}</div>
                     <div>
                       <div className="dash-schedule-title">{row.title}</div>
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
-                    {row.habitId && (
-                      <button
-                        type="button"
-                        className={`dash-check ${done ? "is-on" : ""}`}
-                        style={{ minWidth: 110 }}
-                        onClick={() => toggleHabit(row.habitId!)}
-                      >
-                        <span className="dash-check-dot">{done ? "✓" : ""}</span>
-                        <span className="dash-check-label" style={{ fontSize: 12 }}>
-                          {done ? "Done" : "Mark"}
-                        </span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={`dash-check ${done ? "is-on" : ""}`}
+                      style={{ minWidth: 110 }}
+                      onClick={() => toggleScheduleRow(row.id, row.habitId)}
+                      aria-pressed={done}
+                    >
+                      <span className="dash-check-dot">{done ? "✓" : ""}</span>
+                      <span className="dash-check-label" style={{ fontSize: 12 }}>
+                        {done ? "Done" : "Mark"}
+                      </span>
+                    </button>
                   </div>
                 );
               })}

@@ -52,7 +52,7 @@ function dayScore(h: DayHabits | undefined): number {
 }
 
 export default function CalendarPage() {
-  const { state, ready } = useDashboard();
+  const { state, update, ready } = useDashboard();
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState(() => startOfMonth(todayISO()));
   const [selected, setSelected] = useState<string>(() => todayISO());
@@ -94,6 +94,22 @@ export default function CalendarPage() {
     tasksDueThatDay.length > 0 ||
     guitarThatDay.length > 0 ||
     bookThatDay.length > 0;
+
+  // Inline-edit helpers — save journal fields straight into state from the calendar panel.
+  function patchLog(patch: Partial<typeof selectedLog>) {
+    update((d) => {
+      const planDayLocal = planDayFor(selected, d.settings.startDate, d.settings.startPlanDay);
+      const prev = d.bibleLogs[selected] ?? { planDay: planDayLocal };
+      d.bibleLogs[selected] = { ...prev, ...patch, planDay: planDayLocal };
+    });
+  }
+  function toggleHabitForSelected(habitId: string) {
+    update((d) => {
+      const h = d.habits[selected] ?? emptyHabits();
+      h[habitId] = !h[habitId];
+      d.habits[selected] = h;
+    });
+  }
 
   // Views
   const grid = useMemo(() => monthGrid(cursor), [cursor]);
@@ -271,84 +287,112 @@ export default function CalendarPage() {
           >
             <div className="text-[12.5px] text-[var(--colour-ink-quiet)] mb-3">{plan.passage}</div>
 
-            {!hasAnything ? (
-              <div className="dash-empty p-3">
-                Nothing logged for this day yet.
-                <div className="mt-2">
-                  <Link
-                    href={`/dashboard/bible?date=${selected}`}
-                    className="dash-btn dash-btn-primary"
-                    style={{ padding: "7px 14px", fontSize: 11 }}
-                  >
-                    Start the journal
-                  </Link>
+            <div className="flex flex-col gap-4">
+              {/* Habits — every one toggleable, not just the kept ones */}
+              <section>
+                <div className="eyebrow mb-2">Disciplines</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {habitDefs.map((h) => {
+                    const on = Boolean(selectedHabits[h.id]);
+                    return (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => toggleHabitForSelected(h.id)}
+                        className="dash-tag"
+                        style={{
+                          cursor: "pointer",
+                          background: on ? "rgba(216,178,90,0.16)" : "transparent",
+                          color: on ? "var(--colour-glow)" : "var(--colour-ink-quiet)",
+                          borderColor: on
+                            ? "rgba(216,178,90,0.45)"
+                            : "rgba(255,255,255,0.10)",
+                        }}
+                      >
+                        {on ? "✓ " : ""}
+                        {h.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {/* Habits kept */}
-                {habitsKeptThatDay.length > 0 && (
-                  <section>
-                    <div className="eyebrow mb-2">Disciplines kept</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {habitsKeptThatDay.map((h) => (
-                        <span
-                          key={h.id}
-                          className="dash-tag"
-                          style={{
-                            background: "rgba(216,178,90,0.12)",
-                            color: "var(--colour-glow)",
-                            borderColor: "rgba(216,178,90,0.35)",
-                          }}
-                        >
-                          {h.label}
-                        </span>
-                      ))}
-                    </div>
-                  </section>
-                )}
+              </section>
 
-                {/* Bible journal — the meat */}
-                {selectedLog && (
-                  <section>
-                    <div className="eyebrow eyebrow-amber mb-2">Bible journal</div>
-                    {selectedLog.passage && (
-                      <div className="text-[13px] text-[var(--colour-ink-soft)] mb-1">
-                        Read: <span className="text-[var(--colour-ink-strong)]">{selectedLog.passage}</span>
-                        {selectedLog.minutes ? ` · ${selectedLog.minutes} min` : ""}
-                      </div>
-                    )}
-                    {selectedLog.verseOfTheDay && (
-                      <p className="dash-verse text-[15px] leading-snug mb-2">
-                        “{selectedLog.verseOfTheDay}”
-                      </p>
-                    )}
-                    {selectedLog.learned && (
-                      <div className="mb-2">
-                        <div className="text-[10.5px] eyebrow">What I learnt</div>
-                        <p className="text-[13px] text-[var(--colour-ink-soft)] leading-relaxed">
-                          {selectedLog.learned}
-                        </p>
-                      </div>
-                    )}
-                    {selectedLog.notes && (
-                      <div className="mb-2">
-                        <div className="text-[10.5px] eyebrow">Journal</div>
-                        <p className="text-[12.5px] text-[var(--colour-ink-soft)] whitespace-pre-wrap leading-relaxed">
-                          {selectedLog.notes}
-                        </p>
-                      </div>
-                    )}
-                    {selectedLog.prayer && (
-                      <div>
-                        <div className="text-[10.5px] eyebrow">Prayer</div>
-                        <p className="text-[12.5px] text-[var(--colour-ink-soft)] whitespace-pre-wrap leading-relaxed">
-                          {selectedLog.prayer}
-                        </p>
-                      </div>
-                    )}
-                  </section>
-                )}
+              {/* Bible journal — fully inline-editable, even if empty */}
+              <section>
+                <div className="eyebrow eyebrow-amber mb-2">Bible journal</div>
+                <label className="dash-label" style={{ marginTop: 6 }}>
+                  What I read
+                </label>
+                <input
+                  className="dash-input"
+                  placeholder={plan.passage}
+                  value={selectedLog?.passage ?? ""}
+                  onChange={(e) => patchLog({ passage: e.target.value })}
+                />
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="dash-label">Minutes</label>
+                    <input
+                      type="number"
+                      className="dash-input"
+                      placeholder="e.g. 30"
+                      value={selectedLog?.minutes ?? ""}
+                      onChange={(e) =>
+                        patchLog({ minutes: Number(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="dash-label">Verse</label>
+                    <input
+                      className="dash-input"
+                      placeholder="e.g. Numbers 21:8"
+                      value={selectedLog?.verseOfTheDay ?? ""}
+                      onChange={(e) => patchLog({ verseOfTheDay: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <label className="dash-label" style={{ marginTop: 10 }}>
+                  What I learnt
+                </label>
+                <textarea
+                  className="dash-textarea"
+                  placeholder="One sentence is enough."
+                  style={{ minHeight: 64 }}
+                  value={selectedLog?.learned ?? ""}
+                  onChange={(e) => patchLog({ learned: e.target.value })}
+                />
+                <label className="dash-label" style={{ marginTop: 10 }}>
+                  Journal
+                </label>
+                <textarea
+                  className="dash-textarea"
+                  placeholder="Wrestle, marvel, lament, give thanks."
+                  style={{ minHeight: 90 }}
+                  value={selectedLog?.notes ?? ""}
+                  onChange={(e) => patchLog({ notes: e.target.value })}
+                />
+                <label className="dash-label" style={{ marginTop: 10 }}>
+                  Prayer
+                </label>
+                <textarea
+                  className="dash-textarea"
+                  placeholder="What I'm asking God for."
+                  style={{ minHeight: 64 }}
+                  value={selectedLog?.prayer ?? ""}
+                  onChange={(e) => patchLog({ prayer: e.target.value })}
+                />
+                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-2">
+                  Saves as you type. Click another day to switch.
+                </div>
+              </section>
+
+              {!hasAnything && (
+                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] -mt-2">
+                  Tip — clicking any past or future day works the same. The fields
+                  above belong to <strong>{formatHuman(selected)}</strong>.
+                </div>
+              )}
 
                 {/* Tasks */}
                 {(tasksCompletedThatDay.length > 0 || tasksDueThatDay.length > 0 || tasksCreatedThatDay.length > 0) && (
@@ -443,17 +487,16 @@ export default function CalendarPage() {
                   </section>
                 )}
 
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Link
-                    href={`/dashboard/bible?date=${selected}`}
-                    className="dash-btn dash-btn-primary"
-                    style={{ padding: "8px 14px", fontSize: 11 }}
-                  >
-                    Open / edit journal
-                  </Link>
-                </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Link
+                  href={`/dashboard/bible?date=${selected}`}
+                  className="dash-btn"
+                  style={{ padding: "8px 14px", fontSize: 11 }}
+                >
+                  Open full journal page →
+                </Link>
               </div>
-            )}
+            </div>
           </Panel>
         </div>
       </div>

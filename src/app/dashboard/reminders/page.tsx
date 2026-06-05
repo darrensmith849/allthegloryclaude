@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Panel } from "@/components/dashboard/panel";
 import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
-import { todayISO } from "@/lib/dashboard/dates";
+import { todayISO, formatHuman } from "@/lib/dashboard/dates";
 
 export default function RemindersPage() {
   const today = todayISO();
@@ -13,48 +12,35 @@ export default function RemindersPage() {
     <>
       <div className="dash-pagehead">
         <div>
-          <div className="eyebrow eyebrow-amber">Daily images</div>
+          <div className="eyebrow eyebrow-amber">{formatHuman(today)}</div>
           <h1 className="dash-title mt-1">Reminders</h1>
           <div className="dash-subtitle">
-            Things to remember while the day moves. One rotates onto the Today page each morning.
+            All five together. One rotates onto the Today page each morning — the rest stay here.
           </div>
         </div>
       </div>
 
-      <div className="dash-grid">
-        <div className="dash-col-12">
-          <Panel eyebrow={`Today · ${todayReminder.short}`} title="Pinned reminder">
-            <div className="dash-reminder-hero">
-              <Image
-                src={todayReminder.src}
-                alt={todayReminder.short}
-                fill
-                sizes="(min-width: 900px) 600px, 95vw"
-                className="object-cover object-center"
-                priority
-              />
-            </div>
-          </Panel>
-        </div>
-
+      <div className="dash-reminders-grid">
         {REMINDERS.map((r) => (
-          <div key={r.id} className="dash-col-6">
-            <article className={`dash-reminder-tile ${r.id === todayReminder.id ? "is-today" : ""}`}>
-              <Image
-                src={r.src}
-                alt={r.short}
-                fill
-                sizes="(min-width: 900px) 340px, 92vw"
-                className="object-cover object-center"
-                loading="lazy"
-              />
-              {r.id === todayReminder.id && (
-                <div className="dash-reminder-badge">
-                  <span className="eyebrow eyebrow-amber">Today</span>
-                </div>
-              )}
-            </article>
-          </div>
+          <article
+            key={r.id}
+            className={`dash-reminder-tile ${r.id === todayReminder.id ? "is-today" : ""}`}
+          >
+            <Image
+              src={r.src}
+              alt={r.short}
+              fill
+              sizes="(min-width: 1100px) 320px, (min-width: 700px) 45vw, 90vw"
+              className="object-cover object-center"
+              loading={r.id === todayReminder.id ? "eager" : "lazy"}
+              priority={r.id === todayReminder.id}
+            />
+            {r.id === todayReminder.id && (
+              <div className="dash-reminder-badge">
+                <span className="eyebrow eyebrow-amber">Today</span>
+              </div>
+            )}
+          </article>
         ))}
       </div>
     </>
