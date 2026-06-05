@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { IDENTITY_STATEMENTS } from "@/lib/dashboard/identity";
-import { reminderForDate } from "@/lib/dashboard/reminders";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
 
 export default function WhoAmIPage() {
   const today = todayISO();
-  const backdrop = reminderForDate(today);
   const total = IDENTITY_STATEMENTS.length;
 
   const [index, setIndex] = useState(0);
@@ -55,19 +52,6 @@ export default function WhoAmIPage() {
 
   return (
     <div className="dash-welcome-full">
-      {/* Backdrop */}
-      <div className="dash-welcome-bg">
-        <Image
-          src={backdrop.src}
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover object-center"
-          priority
-        />
-        <div className="dash-welcome-bg-veil" />
-      </div>
-
       {/* Persistent top-right CTA — accessible at any point */}
       <Link href="/dashboard/today" className="dash-welcome-skip">
         Open Dashboard →

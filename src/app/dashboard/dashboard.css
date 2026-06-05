@@ -566,10 +566,15 @@
  * Lives at /dashboard. The wrapping layout-shell detects this route and
  * skips the sidebar, so this owns the entire viewport.
  */
+/* No backdrop image — the welcome page uses the site palette only.
+ * Soft amber + storm gradients on top of the ink base, no images. */
 .dash-welcome-root {
   position: relative;
   min-height: 100vh;
-  background: var(--colour-bg);
+  background:
+    radial-gradient(900px 600px at 12% -10%, rgba(216, 178, 90, 0.10) 0%, transparent 65%),
+    radial-gradient(1100px 700px at 110% 110%, rgba(154, 147, 139, 0.08) 0%, transparent 65%),
+    linear-gradient(180deg, #0a0810 0%, #060410 100%);
   isolation: isolate;
 }
 .dash-welcome-full {
@@ -581,20 +586,6 @@
   justify-content: center;
   padding: 56px 24px 80px;
   isolation: isolate;
-}
-
-/* Backdrop image + dark veil */
-.dash-welcome-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-}
-.dash-welcome-bg-veil {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(60% 60% at 50% 35%, rgba(7,5,14,0.35) 0%, rgba(7,5,14,0.85) 100%),
-    linear-gradient(180deg, rgba(7,5,14,0.55) 0%, rgba(7,5,14,0.78) 100%);
 }
 
 /* Persistent Open Dashboard link, top-right */
