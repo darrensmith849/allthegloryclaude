@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
-  { href: "/dashboard", label: "Today", glyph: "✦" },
+  { href: "/dashboard", label: "Who am I?", glyph: "✶" },
+  { href: "/dashboard/today", label: "Today", glyph: "✦" },
   { href: "/dashboard/bible", label: "Bible Reading", glyph: "✠" },
   { href: "/dashboard/word-study", label: "Word Study", glyph: "α" },
   { href: "/dashboard/habits", label: "Habits & Streaks", glyph: "△" },

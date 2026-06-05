@@ -78,6 +78,8 @@ export default function GuitarPage() {
 
   // 5-day-a-week plan: Mon/Wed/Fri = new lesson, Tue/Thu = consolidate.
   // We pick the next 3 not-yet-done lessons; in-progress ones come first.
+  // Each card is tagged with the ACTUAL date for that day of this week so
+  // the user sees Mon · 1 Jun, Fri · 5 Jun, etc., and today's card lights up.
   const lessonPlan = useMemo(() => {
     const undone = course.filter((l) => l.status !== "done");
     const order = [...undone].sort((a, b) => {
@@ -85,19 +87,21 @@ export default function GuitarPage() {
       return a.status === "in-progress" ? -1 : 1;
     });
     const picks = order.slice(0, 3);
-    return [
-      { day: "Mon", role: "New lesson", lesson: picks[0] ?? null },
-      { day: "Tue", role: "Consolidate yesterday", lesson: picks[0] ?? null, consolidate: true },
-      { day: "Wed", role: "New lesson", lesson: picks[1] ?? null },
-      { day: "Thu", role: "Consolidate yesterday", lesson: picks[1] ?? null, consolidate: true },
-      { day: "Fri", role: "New lesson", lesson: picks[2] ?? null },
-    ] as {
-      day: string;
+    const days = [
+      { name: "Mon", date: week[0], role: "New lesson", lesson: picks[0] ?? null, consolidate: false },
+      { name: "Tue", date: week[1], role: "Consolidate", lesson: picks[0] ?? null, consolidate: true },
+      { name: "Wed", date: week[2], role: "New lesson", lesson: picks[1] ?? null, consolidate: false },
+      { name: "Thu", date: week[3], role: "Consolidate", lesson: picks[1] ?? null, consolidate: true },
+      { name: "Fri", date: week[4], role: "New lesson", lesson: picks[2] ?? null, consolidate: false },
+    ];
+    return days as {
+      name: string;
+      date: string;
       role: string;
       lesson: CourseLesson | null;
-      consolidate?: boolean;
+      consolidate: boolean;
     }[];
-  }, [course]);
+  }, [course, week]);
 
   function setLessonStatus(id: string, status: CourseLesson["status"]) {
     update((d) => {
@@ -237,18 +241,25 @@ export default function GuitarPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-              {lessonPlan.map((p, i) => (
+              {lessonPlan.map((p, i) => {
+                const isToday = p.date === today;
+                return (
                 <div
                   key={i}
                   className={`p-3 rounded-md border ${
-                    p.consolidate
+                    isToday
+                      ? "border-[rgba(216,178,90,0.55)] bg-[rgba(216,178,90,0.10)]"
+                      : p.consolidate
                       ? "border-white/6 bg-white/[0.015]"
                       : "border-[rgba(216,178,90,0.32)] bg-[rgba(216,178,90,0.05)]"
                   }`}
                 >
                   <div className="flex items-baseline justify-between">
                     <span className="font-display text-[14px] text-[var(--colour-amber-soft)]">
-                      {p.day}
+                      {p.name} · {formatShort(p.date)}
+                      {isToday && (
+                        <span className="ml-2 text-[10px] eyebrow eyebrow-amber">TODAY</span>
+                      )}
                     </span>
                     <span className="text-[10px] text-[var(--colour-ink-quiet)] eyebrow">
                       {p.role}
@@ -262,31 +273,40 @@ export default function GuitarPage() {
                       <div className="text-[11px] text-[var(--colour-ink-quiet)] mt-1">
                         {p.lesson.minutes} min{p.lesson.hasResources ? " · resources" : ""}
                       </div>
-                      {!p.consolidate && (
-                        <div className="flex gap-1 mt-2">
-                          {p.lesson.status !== "in-progress" && (
-                            <button
-                              type="button"
-                              onClick={() => setLessonStatus(p.lesson!.id, "in-progress")}
-                              className="dash-btn dash-btn-ghost"
-                              style={{ padding: "4px 8px", fontSize: 10 }}
-                            >
-                              Start
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setLessonStatus(p.lesson!.id, "done")}
-                            className="dash-btn dash-btn-primary"
-                            style={{ padding: "4px 8px", fontSize: 10 }}
-                          >
-                            ✓ Done
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-1 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setLessonStatus(p.lesson!.id, "in-progress")}
+                          className={`dash-btn ${
+                            p.lesson.status === "in-progress"
+                              ? "dash-btn-primary"
+                              : "dash-btn-ghost"
+                          }`}
+                          style={{ padding: "4px 8px", fontSize: 10 }}
+                        >
+                          Start
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLessonStatus(p.lesson!.id, "done")}
+                          className={`dash-btn ${
+                            p.lesson.status === "done"
+                              ? "dash-btn-primary"
+                              : "dash-btn-ghost"
+                          }`}
+                          style={{ padding: "4px 8px", fontSize: 10 }}
+                        >
+                          ✓ Done
+                        </button>
+                      </div>
                       {p.lesson.status === "in-progress" && (
                         <div className="text-[10px] mt-1 text-[var(--colour-amber-soft)]">
                           in progress
+                        </div>
+                      )}
+                      {p.lesson.status === "done" && (
+                        <div className="text-[10px] mt-1 text-[var(--colour-amber-soft)]">
+                          ✓ done
                         </div>
                       )}
                     </>
@@ -296,7 +316,8 @@ export default function GuitarPage() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </Panel>
         </div>
