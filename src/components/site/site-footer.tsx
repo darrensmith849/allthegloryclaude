@@ -14,6 +14,9 @@ export default function SiteFooter() {
   const footerRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
+  // The private dashboard ships its own layout — skip the marketing footer there.
+  const isDashboard = pathname?.startsWith("/dashboard") ?? false;
+
   useEffect(() => {
     setInView(false);
     if (videoRef.current) {
@@ -54,6 +57,8 @@ export default function SiteFooter() {
     obs.observe(footer);
     return () => obs.disconnect();
   }, [pathname, inView]);
+
+  if (isDashboard) return null;
 
   return (
     <footer ref={footerRef} className="relative w-full overflow-hidden">

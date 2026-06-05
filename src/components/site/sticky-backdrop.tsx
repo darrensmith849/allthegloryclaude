@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { assets } from "@/content/assets";
 import { useState, useEffect } from "react";
 
 export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
+  const pathname = usePathname();
+  const isDashboard = pathname?.startsWith("/dashboard");
   const [starsReady, setStarsReady] = useState(false);
   const [cloudsReady, setCloudsReady] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -26,6 +29,8 @@ export default function StickyBackdrop() {
   const glowOpacity = useTransform(scrollYProgress, [0, 0.4, 1], [0, 0.12, 0.28]);
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
+
+  if (isDashboard) return <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]" />;
 
   return (
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">

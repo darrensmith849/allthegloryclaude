@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { site } from "@/content/site";
 
 function Item({ href, label, delay }: { href?: string; label: string; delay: number }) {
@@ -21,6 +22,8 @@ function Item({ href, label, delay }: { href?: string; label: string; delay: num
 }
 
 export default function SocialDock() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/dashboard")) return null;
   return (
     <div className="social-dock-bottom">
       <Item href={site.socials.instagram} label="Instagram" delay={1} />
