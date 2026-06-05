@@ -22,21 +22,51 @@ const greek = (lex as { greek: Record<string, LexEntry> }).greek;
 const hebrew = (lex as { hebrew: Record<string, LexEntry> }).hebrew;
 
 function toEntry(num: string, e: LexEntry, lang: "greek" | "hebrew"): StrongsEntry {
-  // The Strong's def often starts with " " and uses ";" between senses.
-  const def = (e.d ?? "").trim();
-  const firstPhrase = def.split(/[;.]/)[0].trim();
+  // Strong's definitions arrive with quirky whitespace and a habit of starting
+  // with "{ ... }" for cross-references. Strip those wrappers up front.
+  const rawDef = (e.d ?? "").trim().replace(/^[{(]+|[}.)]+$/g, "").trim();
+
+  // KJV translations clean-up: split on common separators, drop punctuation-
+  // only fragments, strip stray dashes ("-uously" -> "uously"), keep at most 6.
   const english = (e.k ?? "")
     .split(/[,;()[\]/]/)
-    .map((s) => s.trim())
-    .filter((s) => s && !/^\W+$/.test(s))
-    .slice(0, 8);
+    .map((s) =>
+      s
+        .trim()
+        .replace(/^[-\s]+|[-\s.]+$/g, "")
+        .replace(/^\[?idiom\]?\s*/i, ""),
+    )
+    .filter((s) => s.length > 1 && /[a-zA-Z]/.test(s) && !/^\W+$/.test(s))
+    .slice(0, 6);
+
+  // First sense becomes the gloss; the rest (if substantively different)
+  // becomes the pastoral usage note. If the def is one short phrase, we
+  // skip the usage entirely so we don't render the same sentence twice.
+  let gloss = "";
+  let usage = "";
+  if (rawDef) {
+    const firstSep = rawDef.search(/[;.](\s|$)/);
+    if (firstSep > 4 && firstSep < rawDef.length - 4) {
+      gloss = rawDef.slice(0, firstSep).trim();
+      usage = rawDef.slice(firstSep + 1).trim().replace(/^[,.;\s]+/, "");
+    } else {
+      gloss = rawDef;
+    }
+  } else if (english.length) {
+    // No definition available (cross-reference entry like G1848). Build a
+    // human-readable gloss from the KJV glosses so the card isn't empty.
+    gloss = `To ${english[0]}`;
+    if (english.length > 1) usage = `Also rendered: ${english.slice(1).join(", ")}.`;
+  }
+  if (gloss) gloss = gloss.charAt(0).toUpperCase() + gloss.slice(1);
+
   return {
     number: num,
     language: lang,
     translit: e.t,
     original: e.l,
-    gloss: firstPhrase || def.slice(0, 70),
-    usage: def || "(no expanded definition in source)",
+    gloss,
+    usage,
     english,
     examples: [],
   };

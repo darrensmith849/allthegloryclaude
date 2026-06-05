@@ -178,15 +178,19 @@ export default function WordStudyPage() {
                         )}
                       </div>
                     </div>
-                    <div className="mt-3 text-[14.5px] text-[var(--colour-ink-strong)] italic font-display">
-                      {e.gloss}
-                    </div>
-                    <p className="mt-3 text-[13.5px] text-[var(--colour-ink-soft)] leading-relaxed">
-                      {e.usage}
-                    </p>
-                    {e.english?.length > 0 && (
+                    {e.gloss && (
+                      <div className="mt-3 text-[14.5px] text-[var(--colour-ink-strong)] italic font-display">
+                        {e.gloss}
+                      </div>
+                    )}
+                    {e.usage && e.usage.trim() && e.usage.trim() !== e.gloss?.trim() && (
+                      <p className="mt-3 text-[13.5px] text-[var(--colour-ink-soft)] leading-relaxed">
+                        {e.usage}
+                      </p>
+                    )}
+                    {e.english?.length > 1 && (
                       <div className="mt-3 text-[12px] text-[var(--colour-ink-quiet)]">
-                        <span className="eyebrow mr-2">Translates as</span>
+                        <span className="eyebrow mr-2">Also translates as</span>
                         {e.english.join(" · ")}
                       </div>
                     )}

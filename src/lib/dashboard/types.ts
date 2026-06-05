@@ -98,6 +98,48 @@ export interface GuitarWeekRow {
   minutes: number;
 }
 
+// ─── Guitar course (Udemy lessons) ────────────────────────────────
+export interface CourseLesson {
+  id: string;
+  section: string; // section identifier — "1", "2", etc.
+  sectionTitle?: string;
+  number: number; // running lesson number across the whole course
+  title: string;
+  minutes: number;
+  hasResources?: boolean;
+  status: "todo" | "in-progress" | "done";
+  notes?: string;
+}
+
+// Seeded from the lessons the user has been showing — sections 1 & 2 so far.
+// All marked done because the user's Udemy UI shows ✓ on every one.
+// New lessons can be added in Settings; the plan generator picks the next
+// undone ones.
+export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
+  // Section 1 — intro / theory foundation (33 min)
+  { id: "u-1", section: "1", sectionTitle: "Foundations", number: 1, title: "There Are 12 Notes In Western Music", minutes: 3, status: "done" },
+  { id: "u-2", section: "1", sectionTitle: "Foundations", number: 2, title: "Introduction to Intervals", minutes: 2, status: "done" },
+  { id: "u-3", section: "1", sectionTitle: "Foundations", number: 3, title: "Intervals on the Guitar", minutes: 6, status: "done" },
+  { id: "u-4", section: "1", sectionTitle: "Foundations", number: 4, title: "Different Terminology", minutes: 2, hasResources: true, status: "done" },
+  { id: "u-5", section: "1", sectionTitle: "Foundations", number: 5, title: "An Introduction to the Major Scale", minutes: 3, hasResources: true, status: "done" },
+  { id: "u-6", section: "1", sectionTitle: "Foundations", number: 6, title: "The Circle of 4th's", minutes: 3, hasResources: true, status: "done" },
+  { id: "u-7", section: "1", sectionTitle: "Foundations", number: 7, title: "Fretboard Memorisation Pt. I", minutes: 7, status: "done" },
+  { id: "u-8", section: "1", sectionTitle: "Foundations", number: 8, title: "Fretboard Memorisation Pt. II", minutes: 5, hasResources: true, status: "done" },
+  { id: "u-9", section: "1", sectionTitle: "Foundations", number: 9, title: "PLAY-ALONG Circle of 4th's", minutes: 2, status: "done" },
+  // Section 2 — Chords and How to Practice Them (2hr 1min, 22/28 lessons watched)
+  { id: "u-10", section: "2", sectionTitle: "Chords & Practice", number: 10, title: "Diatonic Harmony Pt. I", minutes: 5, status: "done" },
+  { id: "u-11", section: "2", sectionTitle: "Chords & Practice", number: 11, title: "Diatonic Harmony Pt. II", minutes: 10, status: "done" },
+  { id: "u-12", section: "2", sectionTitle: "Chords & Practice", number: 12, title: "7th Chords - Root on 6th String", minutes: 9, status: "done" },
+  { id: "u-13", section: "2", sectionTitle: "Chords & Practice", number: 13, title: "7th Chords - Root on 5th String", minutes: 7, status: "done" },
+  { id: "u-14", section: "2", sectionTitle: "Chords & Practice", number: 14, title: "PLAY-ALONG 7th Chords - Root on 6th String", minutes: 2, status: "done" },
+  { id: "u-15", section: "2", sectionTitle: "Chords & Practice", number: 15, title: "PLAY-ALONG 7th Chords - Root on 5th String", minutes: 2, status: "done" },
+  { id: "u-16", section: "2", sectionTitle: "Chords & Practice", number: 16, title: "Common Chord Progressions", minutes: 5, hasResources: true, status: "done" },
+  { id: "u-17", section: "2", sectionTitle: "Chords & Practice", number: 17, title: "PLAY-ALONG I vi IV V", minutes: 2, status: "done" },
+  { id: "u-18", section: "2", sectionTitle: "Chords & Practice", number: 18, title: "PLAY-ALONG - I iii IV V", minutes: 2, status: "done" },
+  // Lessons 19+ will be added as the user shows them (Section 2 has 28 total,
+  // so 10 more from section 2 plus everything in section 3+).
+];
+
 export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
   { id: "gw-mon", day: "Mon", focus: "Open chords + clean transitions", drill: "G-C-D-Em loop, 4 strums each, then 2, then 1. Metronome 80 -> 100.", minutes: 25 },
   { id: "gw-tue", day: "Tue", focus: "Worship rhythm - strumming patterns", drill: "D-DU-UDU on a I-V-vi-IV in G. Sing while playing.", minutes: 30 },
@@ -156,6 +198,7 @@ export interface Settings {
   schedule: ScheduleRow[];
   habits: HabitDef[];
   guitarWeek: GuitarWeekRow[];
+  guitarCourse: CourseLesson[];
   taskTags: TaskTag[]; // user-added; concatenated with DEFAULT_TASK_TAGS
   planOverrides: Record<number, string>; // planDay -> passage override
   goals: {
@@ -178,6 +221,7 @@ export function defaultSettings(): Settings {
     schedule: DEFAULT_SCHEDULE,
     habits: DEFAULT_HABITS,
     guitarWeek: DEFAULT_GUITAR_WEEK,
+    guitarCourse: DEFAULT_GUITAR_COURSE,
     taskTags: [],
     planOverrides: {},
     goals: {
@@ -212,6 +256,10 @@ export function resolveSchedule(settings: Settings): ScheduleRow[] {
 
 export function resolveGuitarWeek(settings: Settings): GuitarWeekRow[] {
   return settings.guitarWeek?.length ? settings.guitarWeek : DEFAULT_GUITAR_WEEK;
+}
+
+export function resolveCourse(settings: Settings): CourseLesson[] {
+  return settings.guitarCourse?.length ? settings.guitarCourse : DEFAULT_GUITAR_COURSE;
 }
 
 // ─── Root state ───────────────────────────────────────────────────
