@@ -562,112 +562,227 @@
   transition: width 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ── "Who am I?" welcome page ────────────────────────────────────
- * The landing page before Today. Hero photo + 25 identity glass tiles.
+/* ── "Who am I?" welcome page — full-bleed carousel, no sidebar ──
+ * Lives at /dashboard. The wrapping layout-shell detects this route and
+ * skips the sidebar, so this owns the entire viewport.
  */
-.dash-welcome {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-.dash-welcome-hero {
+.dash-welcome-root {
   position: relative;
-  border-radius: 22px;
-  overflow: hidden;
-  min-height: 360px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.36);
+  min-height: 100vh;
+  background: var(--colour-bg);
   isolation: isolate;
 }
-.dash-welcome-hero-image {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.dash-welcome-hero-veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(7,5,14,0.45) 0%, rgba(7,5,14,0.75) 100%),
-    linear-gradient(90deg, rgba(7,5,14,0.78) 0%, rgba(7,5,14,0.40) 50%, rgba(7,5,14,0.18) 100%);
-}
-.dash-welcome-hero-body {
+.dash-welcome-full {
   position: relative;
-  z-index: 1;
-  padding: 56px clamp(24px, 5vw, 64px);
-  max-width: 720px;
-}
-.dash-welcome-title {
-  font-size: clamp(48px, 6vw, 84px);
-  line-height: 1;
-  letter-spacing: -0.025em;
-  margin-top: 10px;
-  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
-}
-.dash-welcome-lead {
-  margin-top: 18px;
-  font-size: clamp(15px, 1.5vw, 17px);
-  line-height: 1.55;
-  color: rgba(244, 240, 232, 0.86);
-  max-width: 520px;
-}
-.dash-welcome-cta {
-  margin-top: 24px;
-  padding: 14px 26px !important;
-  font-size: 13px !important;
-}
-
-.dash-identity-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-.dash-identity-card {
-  padding: 22px 22px 24px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.015) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow:
-    0 14px 40px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: border-color 200ms ease, transform 200ms ease;
-}
-.dash-identity-card:hover {
-  border-color: rgba(216, 178, 90, 0.32);
-  transform: translateY(-1px);
-}
-.dash-identity-ref {
-  font-size: 10.5px;
-}
-.dash-identity-text {
-  font-size: 16px;
-  line-height: 1.45;
-  color: rgba(244, 240, 232, 0.94);
-  font-style: italic;
-}
-
-.dash-welcome-foot {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 22px 0 32px;
+  justify-content: center;
+  padding: 56px 24px 80px;
+  isolation: isolate;
 }
-.dash-welcome-foot-tip {
+
+/* Backdrop image + dark veil */
+.dash-welcome-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+.dash-welcome-bg-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 60% at 50% 35%, rgba(7,5,14,0.35) 0%, rgba(7,5,14,0.85) 100%),
+    linear-gradient(180deg, rgba(7,5,14,0.55) 0%, rgba(7,5,14,0.78) 100%);
+}
+
+/* Persistent Open Dashboard link, top-right */
+.dash-welcome-skip {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 10;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(7, 5, 14, 0.55);
+  border: 1px solid rgba(216, 178, 90, 0.35);
+  color: var(--colour-glow);
   font-size: 12px;
-  color: var(--colour-ink-quiet);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  transition: background 180ms ease, border-color 180ms ease;
 }
-.dash-welcome-foot-tip code {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 1px 6px;
-  border-radius: 4px;
+.dash-welcome-skip:hover {
+  background: rgba(216, 178, 90, 0.18);
+  border-color: rgba(216, 178, 90, 0.7);
+}
+
+/* Centerpiece */
+.dash-welcome-stage {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.dash-welcome-eyebrow {
   font-size: 11px;
+  letter-spacing: 0.32em;
+}
+.dash-welcome-h1 {
+  font-size: clamp(56px, 8vw, 110px);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  margin-top: 18px;
+  text-shadow: 0 6px 36px rgba(0, 0, 0, 0.55);
+}
+.dash-welcome-sub {
+  margin-top: 12px;
+  font-size: clamp(13px, 1.4vw, 16px);
+  color: rgba(244, 240, 232, 0.74);
+  max-width: 460px;
+}
+
+/* Carousel — large glass card centered, arrows on the sides */
+.dash-carousel {
+  position: relative;
+  margin-top: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.dash-carousel-card {
+  flex: 1;
+  min-height: 280px;
+  max-width: 580px;
+  padding: 44px 40px 36px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+  animation: dashCardIn 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes dashCardIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dash-carousel-ref {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+}
+.dash-carousel-text {
+  font-style: italic;
+  font-size: clamp(20px, 2.5vw, 28px);
+  line-height: 1.4;
+  color: rgba(244, 240, 232, 0.96);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+  max-width: 520px;
+}
+.dash-carousel-counter {
+  margin-top: auto;
+  font-family: var(--font-display), serif;
+  font-size: 14px;
+  color: var(--colour-amber-soft);
+}
+.dash-carousel-counter span {
+  color: var(--colour-ink-quiet);
+  margin-left: 4px;
+}
+
+.dash-carousel-arrow {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(7, 5, 14, 0.55);
+  color: var(--colour-glow);
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 180ms ease, border-color 180ms ease, transform 120ms ease;
+}
+.dash-carousel-arrow:hover {
+  background: rgba(216, 178, 90, 0.18);
+  border-color: rgba(216, 178, 90, 0.5);
+}
+.dash-carousel-arrow:active {
+  transform: scale(0.95);
+}
+@media (max-width: 720px) {
+  .dash-carousel { gap: 8px; }
+  .dash-carousel-arrow { width: 44px; height: 44px; font-size: 24px; }
+  .dash-carousel-card { padding: 32px 22px 28px; min-height: 240px; }
+}
+
+/* Dot indicators */
+.dash-carousel-dots {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: 520px;
+}
+.dash-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.dash-carousel-dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+.dash-carousel-dot.is-on {
+  background: var(--colour-amber);
+  transform: scale(1.3);
+}
+
+.dash-welcome-cta-big {
+  margin-top: 28px;
+  padding: 16px 32px;
+  border-radius: 999px;
+  background: var(--colour-amber);
+  color: var(--colour-bg);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 18px 50px rgba(216, 178, 90, 0.32);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.dash-welcome-cta-big:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 60px rgba(216, 178, 90, 0.45);
+}
+
+.dash-welcome-hint {
+  margin-top: 22px;
+  font-size: 11.5px;
+  color: rgba(244, 240, 232, 0.45);
+  letter-spacing: 0.08em;
 }
 
 /* Sealed-day visual: warmer wash + amber rim so it's obvious the day is locked. */

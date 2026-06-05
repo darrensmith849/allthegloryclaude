@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import DashboardSidebar from "@/components/dashboard/sidebar";
+import LayoutShell from "./layout-shell";
 import "./dashboard.css";
 
 export const metadata: Metadata = {
@@ -9,10 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="dash-root">
-      <DashboardSidebar />
-      <main className="dash-main">{children}</main>
-    </div>
-  );
+  return <LayoutShell>{children}</LayoutShell>;
 }
