@@ -28,11 +28,11 @@ export default function RewardsPage() {
   const today = todayISO();
 
   // Points: a clean, fair tally over all-time data.
-  const bibleDays = Object.values(state.habits).filter((h) => h.bibleRead).length;
-  const cleanDays = Object.values(state.habits).filter((h) => h.noPorn).length;
+  const bibleDays = Object.values(state.habits).filter((h) => h["bibleRead"]).length;
+  const cleanDays = Object.values(state.habits).filter((h) => h["noPorn"]).length;
   const tasksDone = state.tasks.filter((t) => t.done).length;
-  const workoutDays = Object.values(state.habits).filter((h) => h.gym).length;
-  const worshipDays = Object.values(state.habits).filter((h) => h.worship).length;
+  const workoutDays = Object.values(state.habits).filter((h) => h["gym"]).length;
+  const worshipDays = Object.values(state.habits).filter((h) => h["worship"]).length;
   const guitarSessions = state.guitar.length;
   const bookWords = state.book.sessions.reduce((s, x) => s + (x.words || 0), 0);
 
@@ -52,10 +52,10 @@ export default function RewardsPage() {
     points >= 400 ? "Apprentice" :
     points >= 100 ? "Seeking" : "Beginning";
 
-  const cleanStreakNow = currentStreak(state, (h) => h.noPorn);
-  const bibleStreakNow = currentStreak(state, (h) => h.bibleRead);
-  const longestBible = longestStreak(state, (h) => h.bibleRead);
-  const longestClean = longestStreak(state, (h) => h.noPorn);
+  const cleanStreakNow = currentStreak(state, (h) => Boolean(h["noPorn"]));
+  const bibleStreakNow = currentStreak(state, (h) => Boolean(h["bibleRead"]));
+  const longestBible = longestStreak(state, (h) => Boolean(h["bibleRead"]));
+  const longestClean = longestStreak(state, (h) => Boolean(h["noPorn"]));
 
   const milestones: Milestone[] = [
     {
@@ -113,7 +113,7 @@ export default function RewardsPage() {
       blurb: "Reach Day 183 of the chronological plan.",
       points: 200,
       progress: () => ({
-        current: countInLastN(state, 366, (h) => h.bibleRead),
+        current: countInLastN(state, 366, (h) => Boolean(h["bibleRead"])),
         target: 183,
       }),
     },

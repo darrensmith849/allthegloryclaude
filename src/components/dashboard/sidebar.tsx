@@ -12,7 +12,9 @@ const NAV = [
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },
   { href: "/dashboard/guitar", label: "Guitar", glyph: "♪" },
   { href: "/dashboard/book", label: "Book", glyph: "❦" },
+  { href: "/dashboard/reminders", label: "Reminders", glyph: "☼" },
   { href: "/dashboard/rewards", label: "Rewards", glyph: "✧" },
+  { href: "/dashboard/settings", label: "Settings", glyph: "⚙" },
 ];
 
 export default function DashboardSidebar() {

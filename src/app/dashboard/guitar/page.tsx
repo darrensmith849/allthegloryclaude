@@ -4,48 +4,8 @@ import { useMemo, useState } from "react";
 import { Panel, Stat } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { formatShort, startOfWeek, todayISO, weekdayShort, addDays } from "@/lib/dashboard/dates";
-import { GuitarSession } from "@/lib/dashboard/types";
-
-// A balanced 7-day rotation. The focus rotates so no skill area atrophies.
-const WEEK_PLAN: { day: string; focus: string; drill: string; minutes: number }[] = [
-  {
-    day: "Mon",
-    focus: "Open chords + clean transitions",
-    drill: "G–C–D–Em loop, 4 strums each, then 2, then 1. Metronome 80 → 100.",
-    minutes: 25,
-  },
-  {
-    day: "Tue",
-    focus: "Worship rhythm — strumming patterns",
-    drill: "D-DU-UDU on a I-V-vi-IV in G. Sing while playing.",
-    minutes: 30,
-  },
-  {
-    day: "Wed",
-    focus: "Scales — E minor pentatonic",
-    drill: "Box 1 ascending/descending, alternate picking, 60 → 90 bpm.",
-    minutes: 25,
-  },
-  {
-    day: "Thu",
-    focus: "Songs — All The Glory set",
-    drill: "Play three songs from the album front to back without a chart.",
-    minutes: 35,
-  },
-  {
-    day: "Fri",
-    focus: "Theory & ear",
-    drill: "Major/minor by ear, intervals on the 6th string, name the chord.",
-    minutes: 20,
-  },
-  {
-    day: "Sat",
-    focus: "Writing — riff / hook",
-    drill: "30 minutes of capture — no editing. Voice-memo every idea.",
-    minutes: 40,
-  },
-  { day: "Sun", focus: "Rest / worship", drill: "Quiet play. No metronome, just worship.", minutes: 20 },
-];
+import Link from "next/link";
+import { GuitarSession, resolveGuitarWeek, emptyHabits } from "@/lib/dashboard/types";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -56,9 +16,11 @@ export default function GuitarPage() {
   const today = todayISO();
   const weekStart = startOfWeek(today);
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const WEEK_PLAN = resolveGuitarWeek(state.settings);
+  const todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
   const [minutes, setMinutes] = useState<number>(25);
-  const [focus, setFocus] = useState<string>(WEEK_PLAN[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1].focus);
+  const [focus, setFocus] = useState<string>(WEEK_PLAN[todayIdx]?.focus ?? "");
   const [notes, setNotes] = useState("");
 
   function addSession(e?: React.FormEvent) {
@@ -73,19 +35,9 @@ export default function GuitarPage() {
     };
     update((d) => {
       d.guitar.unshift(s);
-      // Also mark habit
-      if (!d.habits[today]) d.habits[today] = {
-        bibleRead: false,
-        noPorn: false,
-        noSocialMedia: false,
-        noTradingCharts: false,
-        gym: false,
-        worship: false,
-        phoneOffAt7: false,
-        guitar: true,
-        bookWriting: false,
-      };
-      else d.habits[today].guitar = true;
+      const h = d.habits[today] ?? emptyHabits();
+      h["guitar"] = true;
+      d.habits[today] = h;
     });
     setNotes("");
   }

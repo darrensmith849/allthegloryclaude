@@ -384,6 +384,19 @@ export function planFor(day: number): PlanDay {
   return CHRONO_PLAN[clamped - 1];
 }
 
+// Resolve the active plan entry for a day, applying any user override
+// from Settings → planOverrides. The override is just a passage string;
+// the theme stays from the canonical plan so the user keeps the context.
+export function planForWithOverride(
+  day: number,
+  overrides: Record<number, string> | undefined,
+): PlanDay {
+  const base = planFor(day);
+  const override = overrides?.[day];
+  if (override && override.trim()) return { ...base, passage: override.trim() };
+  return base;
+}
+
 // Convert calendar date → plan day, using the user's start anchor.
 // startDate is a date string when they were on startPlanDay.
 export function planDayFor(

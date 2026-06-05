@@ -11,14 +11,40 @@
   grid-template-columns: 248px 1fr;
   min-height: 100vh;
   gap: 0;
-  background: radial-gradient(
-      1200px 700px at 12% -10%,
-      rgba(216, 178, 90, 0.06) 0%,
-      transparent 60%
-    ),
-    radial-gradient(900px 500px at 100% 110%, rgba(154, 147, 139, 0.05) 0%, transparent 60%),
-    var(--colour-bg);
   color: var(--colour-ink);
+  isolation: isolate;
+}
+
+/* Animated aurora behind everything — the source of light the glass refracts. */
+.dash-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(900px 600px at 10% -10%, rgba(216, 178, 90, 0.14) 0%, transparent 65%),
+    radial-gradient(1100px 700px at 110% 110%, rgba(154, 147, 139, 0.10) 0%, transparent 65%),
+    radial-gradient(700px 500px at 80% -20%, rgba(241, 215, 166, 0.06) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0810 0%, #060410 100%);
+  animation: dashAurora 36s ease-in-out infinite alternate;
+}
+.dash-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+@keyframes dashAurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); filter: hue-rotate(-2deg); }
+  50%  { transform: translate3d(-2%, 1%, 0) scale(1.04); filter: hue-rotate(2deg); }
+  100% { transform: translate3d(1%, -1%, 0) scale(1.02); filter: hue-rotate(-1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-root::before { animation: none; }
 }
 
 @media (max-width: 900px) {
@@ -148,23 +174,42 @@
   }
 }
 
-/* Panels */
+/* Panels — premium frosted glass.
+   Layered fills + inner highlight + soft amber rim give each panel a real
+   "behind the glass" feel against the aurora behind dash-root. */
 .dash-panel {
   position: relative;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.045) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(12px);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 100%),
+    radial-gradient(120% 140% at -10% -20%, rgba(216, 178, 90, 0.06) 0%, transparent 55%);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
   overflow: hidden;
+}
+.dash-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 35%,
+    transparent 100%
+  );
+  opacity: 0.6;
 }
 
 .dash-panel-head {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -174,15 +219,22 @@
 }
 
 .dash-panel-body {
+  position: relative;
+  z-index: 1;
   padding: 18px 20px 22px;
 }
 
-/* Stat tiles */
+/* Stat tiles — same glass family as panels, slightly tighter. */
 .dash-stat {
   padding: 16px 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.015) 100%);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .dash-stat-value {
   font-size: 28px;
@@ -507,4 +559,293 @@
   text-align: center;
   color: var(--colour-ink-quiet);
   font-size: 13.5px;
+}
+
+/* ── Reminder cards ─────────────────────────────────────────────
+ * Today: a wide, low-height card with the image as a bg + a quote on top.
+ * Gallery: same anatomy at tile size.
+ */
+.dash-reminder-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  min-height: 170px;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  isolation: isolate;
+  transition: transform 240ms ease, border-color 240ms ease;
+}
+/* Variant when the card is a full-bleed image (text baked in). */
+.dash-reminder-card-image {
+  aspect-ratio: 16 / 5.2;
+  min-height: 0;
+}
+@media (max-width: 900px) {
+  .dash-reminder-card-image { aspect-ratio: 16 / 7; }
+}
+
+/* Today's-reminder frame — wide glass panel with the portrait image centred. */
+.dash-reminder-frame {
+  position: relative;
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background:
+    radial-gradient(60% 80% at 50% 0%, rgba(216, 178, 90, 0.10) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 14px 18px 22px;
+  transition: transform 240ms ease, border-color 240ms ease;
+  isolation: isolate;
+}
+.dash-reminder-frame:hover {
+  transform: translateY(-1px);
+  border-color: rgba(216, 178, 90, 0.30);
+}
+.dash-reminder-frame-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 14px;
+}
+.dash-reminder-frame-image {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  aspect-ratio: 9 / 16;
+  max-width: 280px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.dash-reminder-badge {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  left: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(7, 5, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+.dash-reminder-badge-arrow {
+  color: var(--colour-amber-soft);
+  font-size: 13px;
+}
+.dash-reminder-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(216, 178, 90, 0.32);
+}
+.dash-reminder-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 5, 14, 0.92) 0%, rgba(7, 5, 14, 0.55) 50%, rgba(7, 5, 14, 0.30) 100%),
+    linear-gradient(180deg, rgba(7, 5, 14, 0.18) 0%, rgba(7, 5, 14, 0.55) 100%);
+}
+.dash-reminder-body {
+  position: relative;
+  z-index: 1;
+  padding: 26px 32px;
+  max-width: 72%;
+}
+.dash-reminder-quote {
+  font-style: italic;
+  font-size: clamp(15px, 1.6vw, 19px);
+  line-height: 1.5;
+  color: rgba(244, 240, 232, 0.96);
+  margin-top: 8px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+.dash-reminder-sub {
+  margin-top: 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--colour-amber-soft);
+}
+
+/* Big hero for the Reminders page — same aspect as the source images. */
+.dash-reminder-hero {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
+  max-height: 70vh;
+  margin: 0 auto;
+  isolation: isolate;
+}
+/* On wider screens, switch the hero to a wider letterbox so it fits the panel. */
+@media (min-width: 900px) {
+  .dash-reminder-hero {
+    aspect-ratio: 16 / 9;
+    max-height: 600px;
+    width: 100%;
+  }
+}
+.dash-reminder-hero-body {
+  position: relative;
+  z-index: 1;
+  padding: 48px 56px;
+  max-width: 78%;
+}
+.dash-reminder-quote-big {
+  font-style: italic;
+  font-size: clamp(20px, 2.6vw, 30px);
+  line-height: 1.45;
+  color: rgba(244, 240, 232, 0.98);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* Gallery tile — keep the 9:16 portrait aspect of the source. */
+.dash-reminder-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  aspect-ratio: 9 / 16;
+  max-height: 520px;
+  isolation: isolate;
+  transition: transform 240ms ease, border-color 240ms ease;
+}
+.dash-reminder-tile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(216, 178, 90, 0.32);
+}
+.dash-reminder-tile.is-today {
+  border-color: rgba(216, 178, 90, 0.5);
+  box-shadow: 0 0 0 1px rgba(216, 178, 90, 0.18) inset;
+}
+.dash-reminder-tile-body {
+  position: relative;
+  z-index: 1;
+  padding: 22px 26px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* ── Calendar — quarter + year views ──────────────────────────── */
+.dash-cal-mini {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dash-cal-mini-head {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colour-ink-faint);
+  padding: 2px 0;
+  text-align: center;
+}
+.dash-cal-mini-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.015);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--colour-ink-quiet);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.dash-cal-mini-cell:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(216, 178, 90, 0.3);
+}
+.dash-cal-mini-cell.is-other { opacity: 0.18; }
+.dash-cal-mini-cell.is-today {
+  border-color: rgba(216, 178, 90, 0.55);
+  background: rgba(216, 178, 90, 0.10);
+}
+.dash-cal-mini-cell.is-selected {
+  background: rgba(216, 178, 90, 0.22);
+  border-color: rgba(216, 178, 90, 0.7);
+}
+.dash-cal-mini-cell.has-data {
+  background: rgba(216, 178, 90, 0.16);
+  color: var(--colour-glow);
+}
+
+.dash-year-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .dash-year-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .dash-year-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .dash-year-grid { grid-template-columns: 1fr; }
+}
+.dash-mini-month {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+.dash-mini-month-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.dash-mini-month-name {
+  font-family: var(--font-display), serif;
+  font-size: 13px;
+  color: var(--colour-ink-strong);
+  letter-spacing: -0.01em;
+}
+.dash-mini-month-count {
+  font-size: 10.5px;
+  color: var(--colour-amber-soft);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* View toggle pill */
+.dash-toggle {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 3px;
+  gap: 2px;
+}
+.dash-toggle button {
+  padding: 6px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  color: var(--colour-ink-quiet);
+  background: transparent;
+  transition: all 140ms ease;
+}
+.dash-toggle button.is-on {
+  background: rgba(216, 178, 90, 0.18);
+  color: var(--colour-glow);
+}
+.dash-toggle button:hover {
+  color: var(--colour-ink-strong);
 }

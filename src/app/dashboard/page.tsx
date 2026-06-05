@@ -1,38 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
-import { planDayFor, planFor } from "@/lib/dashboard/plan";
+import { planDayFor, planForWithOverride } from "@/lib/dashboard/plan";
 import {
   emptyHabits,
-  HABIT_FIELDS,
-  TASK_TAGS,
-  DayHabits,
+  resolveHabits,
+  resolveSchedule,
+  resolveTaskTags,
 } from "@/lib/dashboard/types";
-import { currentStreak } from "@/lib/dashboard/streaks";
-
-interface ScheduleItem {
-  time: string;
-  hour: number; // 24h start
-  title: string;
-  sub: string;
-  habitKey?: keyof DayHabits;
-}
-
-const SCHEDULE: ScheduleItem[] = [
-  { time: "7:00", hour: 7, title: "The Word", sub: "Chronological reading — coffee + journal", habitKey: "bibleRead" },
-  { time: "9:00", hour: 9, title: "2KO with Darren", sub: "Deep work block — see Tasks → 2KO" },
-  { time: "10:00", hour: 10, title: "Coffee break", sub: "Stand up, water, breathe" },
-  { time: "12:00", hour: 12, title: "Lunch", sub: "Eat away from the screen" },
-  { time: "13:00", hour: 13, title: "Afternoon work", sub: "2KO continued — focus on shipping" },
-  { time: "15:00", hour: 15, title: "Gym", sub: "Train hard. Body is the temple.", habitKey: "gym" },
-  { time: "17:00", hour: 17, title: "Guitar / writing", sub: "Practice or book session", habitKey: "guitar" },
-  { time: "18:30", hour: 18.5, title: "Evening worship", sub: "Worship before phone off", habitKey: "worship" },
-  { time: "19:00", hour: 19, title: "Phone off", sub: "No screens until tomorrow", habitKey: "phoneOffAt7" },
-];
+import { currentStreak, habitOn } from "@/lib/dashboard/streaks";
+import { reminderForDate } from "@/lib/dashboard/reminders";
 
 function useCurrentHour() {
   const [hour, setHour] = useState<number | null>(null);
@@ -54,15 +36,19 @@ export default function DashboardHome() {
   const currentHour = useCurrentHour();
   const habits = state.habits[today] ?? emptyHabits();
   const planDay = planDayFor(today, state.settings.startDate, state.settings.startPlanDay);
-  const plan = planFor(planDay);
-  const bibleStreak = currentStreak(state, (h) => h.bibleRead);
-  const cleanStreak = currentStreak(state, (h) => h.noPorn);
+  const plan = planForWithOverride(planDay, state.settings.planOverrides);
+  const bibleStreak = currentStreak(state, habitOn("bibleRead"));
+  const cleanStreak = currentStreak(state, habitOn("noPorn"));
 
-  // Find which schedule row is the "current" one
+  const schedule = resolveSchedule(state.settings);
+  const tracked = resolveHabits(state.settings);
+  const TAGS = resolveTaskTags(state.settings);
+  const reminder = reminderForDate(today);
+
   const currentRowIndex = (() => {
     if (currentHour == null) return -1;
-    for (let i = SCHEDULE.length - 1; i >= 0; i--) {
-      if (currentHour >= SCHEDULE[i].hour) return i;
+    for (let i = schedule.length - 1; i >= 0; i--) {
+      if (currentHour >= schedule[i].hour) return i;
     }
     return -1;
   })();
@@ -72,11 +58,10 @@ export default function DashboardHome() {
     (t) => t.done && t.completedAt?.slice(0, 10) === today,
   ).length;
 
-  function toggleHabit(key: keyof DayHabits) {
+  function toggleHabit(key: string) {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
-      // booleans only
-      (h[key] as boolean) = !h[key];
+      h[key] = !h[key];
       draft.habits[today] = h;
     });
   }
@@ -88,7 +73,7 @@ export default function DashboardHome() {
       <div className="dash-pagehead">
         <div>
           <div className="eyebrow eyebrow-amber">{formatHuman(today)}</div>
-          <h1 className="dash-title mt-1">Good morning, Daniel</h1>
+          <h1 className="dash-title mt-1">Good morning, {state.settings.greetingName || "friend"}</h1>
           <div className="dash-subtitle">
             Day {planDay} of 365 in the chronological plan · {plan.passage}
           </div>
@@ -101,7 +86,6 @@ export default function DashboardHome() {
       </div>
 
       <div className="dash-grid">
-        {/* Stats row */}
         <div className="dash-col-3">
           <Stat label="Word streak" value={`${bibleStreak} days`} hint="Bible read consecutively" />
         </div>
@@ -129,26 +113,59 @@ export default function DashboardHome() {
           />
         </div>
 
+        {/* Reminder card — the quote is baked into the portrait image.
+            Show it at its native 9:16 aspect, centered in a wide glass panel. */}
+        <div className="dash-col-12">
+          <Link
+            href="/dashboard/reminders"
+            className="dash-reminder-frame block"
+            aria-label="See all reminders"
+          >
+            <div className="dash-reminder-frame-eyebrow">
+              <span className="eyebrow eyebrow-amber">Today&apos;s reminder</span>
+              <span className="dash-reminder-badge-arrow">See all →</span>
+            </div>
+            <div className="dash-reminder-frame-image">
+              <Image
+                src={reminder.src}
+                alt={reminder.short}
+                fill
+                sizes="(min-width: 900px) 360px, 80vw"
+                className="object-contain"
+                priority
+              />
+            </div>
+          </Link>
+        </div>
+
         {/* Daily schedule */}
         <div className="dash-col-8">
-          <Panel eyebrow="Daily rhythm" title="Today's schedule">
+          <Panel
+            eyebrow="Daily rhythm"
+            title="Today's schedule"
+            action={
+              <Link href="/dashboard/settings#schedule" className="text-[12px] eyebrow">
+                Edit →
+              </Link>
+            }
+          >
             <div className="dash-schedule">
-              {SCHEDULE.map((row, i) => {
+              {schedule.map((row, i) => {
                 const isNow = i === currentRowIndex;
-                const done = row.habitKey ? habits[row.habitKey] : false;
+                const done = row.habitId ? Boolean(habits[row.habitId]) : false;
                 return (
-                  <div key={i} className={`dash-schedule-row ${isNow ? "is-now" : ""}`}>
+                  <div key={row.id} className={`dash-schedule-row ${isNow ? "is-now" : ""}`}>
                     <div className="dash-schedule-time">{row.time}</div>
                     <div>
                       <div className="dash-schedule-title">{row.title}</div>
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
-                    {row.habitKey && (
+                    {row.habitId && (
                       <button
                         type="button"
                         className={`dash-check ${done ? "is-on" : ""}`}
                         style={{ minWidth: 110 }}
-                        onClick={() => toggleHabit(row.habitKey!)}
+                        onClick={() => toggleHabit(row.habitId!)}
                       >
                         <span className="dash-check-dot">{done ? "✓" : ""}</span>
                         <span className="dash-check-label" style={{ fontSize: 12 }}>
@@ -165,10 +182,18 @@ export default function DashboardHome() {
 
         {/* Today's habits */}
         <div className="dash-col-4">
-          <Panel eyebrow="Disciplines" title="Today's habits">
+          <Panel
+            eyebrow="Disciplines"
+            title="Today's habits"
+            action={
+              <Link href="/dashboard/settings#habits" className="text-[12px] eyebrow">
+                Edit →
+              </Link>
+            }
+          >
             <div className="flex flex-col gap-2">
-              {HABIT_FIELDS.map((h) => {
-                const on = habits[h.id];
+              {tracked.map((h) => {
+                const on = Boolean(habits[h.id]);
                 return (
                   <button
                     key={h.id}
@@ -225,7 +250,7 @@ export default function DashboardHome() {
             ) : (
               <div className="flex flex-col gap-2">
                 {todayTasks.map((t) => {
-                  const tag = TASK_TAGS.find((x) => x.id === t.tag) ?? TASK_TAGS[0];
+                  const tag = TAGS.find((x) => x.id === t.tag) ?? TAGS[0];
                   return (
                     <div key={t.id} className="dash-task">
                       <button

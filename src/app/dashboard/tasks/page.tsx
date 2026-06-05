@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
-import { Task, TASK_TAGS, TaskTag } from "@/lib/dashboard/types";
+import { Task, resolveTaskTags } from "@/lib/dashboard/types";
 import { formatShort, todayISO } from "@/lib/dashboard/dates";
 
 function uid() {
@@ -12,10 +12,12 @@ function uid() {
 
 export default function TasksPage() {
   const { state, update, ready } = useDashboard();
-  const [filter, setFilter] = useState<TaskTag | "all" | "open" | "done">("open");
+  const [filter, setFilter] = useState<string>("open");
   const [title, setTitle] = useState("");
-  const [tag, setTag] = useState<TaskTag>("personal");
+  const [tag, setTag] = useState<string>("personal");
   const [due, setDue] = useState("");
+
+  const TAGS = resolveTaskTags(state.settings);
 
   const tasks = useMemo(() => {
     return [...state.tasks]
@@ -75,7 +77,7 @@ export default function TasksPage() {
     (t) => t.done && t.completedAt?.slice(0, 10) === today,
   ).length;
 
-  const byTag = TASK_TAGS.map((tg) => ({
+  const byTag = TAGS.map((tg) => ({
     ...tg,
     count: state.tasks.filter((t) => t.tag === tg.id && !t.done).length,
   }));
@@ -123,9 +125,9 @@ export default function TasksPage() {
                 <select
                   className="dash-select"
                   value={tag}
-                  onChange={(e) => setTag(e.target.value as TaskTag)}
+                  onChange={(e) => setTag(e.target.value)}
                 >
-                  {TASK_TAGS.map((t) => (
+                  {TAGS.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
                     </option>
@@ -182,7 +184,7 @@ export default function TasksPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {tasks.map((t) => {
-                  const tg = TASK_TAGS.find((x) => x.id === t.tag) ?? TASK_TAGS[0];
+                  const tg = TAGS.find((x) => x.id === t.tag) ?? TAGS[0];
                   const overdue = !t.done && t.due && t.due < today;
                   return (
                     <div key={t.id} className={`dash-task ${t.done ? "is-done" : ""}`}>

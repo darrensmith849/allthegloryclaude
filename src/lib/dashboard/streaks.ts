@@ -66,3 +66,6 @@ export function countInLastN(
   }
   return count;
 }
+
+// Convenience: predicate "is habit X marked done?" — works with the new string-keyed map.
+export const habitOn = (id: string) => (h: DayHabits) => Boolean(h[id]);

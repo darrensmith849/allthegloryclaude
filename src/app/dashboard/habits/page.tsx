@@ -10,12 +10,8 @@ import {
   todayISO,
   weekdayShort,
 } from "@/lib/dashboard/dates";
-import {
-  DayHabits,
-  HABIT_FIELDS,
-  emptyHabits,
-} from "@/lib/dashboard/types";
-import { countInLastN, currentStreak, longestStreak } from "@/lib/dashboard/streaks";
+import { DayHabits, emptyHabits, resolveHabits } from "@/lib/dashboard/types";
+import { countInLastN, currentStreak, longestStreak, habitOn } from "@/lib/dashboard/streaks";
 
 const DAYS_BACK = 30;
 
@@ -29,16 +25,15 @@ export default function HabitsPage() {
     return state.habits[date] ?? emptyHabits();
   }
 
-  function toggle(date: string, key: keyof DayHabits) {
+  function toggle(date: string, key: string) {
     update((d) => {
       const h = d.habits[date] ?? emptyHabits();
-      (h[key] as boolean) = !h[key];
+      h[key] = !h[key];
       d.habits[date] = h;
     });
   }
 
   // Allowed-day quotas for the week / month
-  const startOfMonthIso = today.slice(0, 7) + "-01";
   const socialThisWeek = days.filter((d) => get(d).socialMediaAllowed).length;
   const tradingThisMonth = Object.entries(state.habits).filter(
     ([k, v]) => k.startsWith(today.slice(0, 7)) && v.tradingChartsAllowed,
@@ -49,13 +44,13 @@ export default function HabitsPage() {
       const h = d.habits[date] ?? emptyHabits();
       h[kind] = !h[kind];
       // If marked as an "allowed" day, treat it as not breaking the discipline.
-      if (kind === "socialMediaAllowed" && h[kind]) h.noSocialMedia = true;
-      if (kind === "tradingChartsAllowed" && h[kind]) h.noTradingCharts = true;
+      if (kind === "socialMediaAllowed" && h[kind]) h["noSocialMedia"] = true;
+      if (kind === "tradingChartsAllowed" && h[kind]) h["noTradingCharts"] = true;
       d.habits[date] = h;
     });
   }
 
-  const trackedHabits = HABIT_FIELDS;
+  const trackedHabits = resolveHabits(state.settings);
 
   if (!ready) return null;
 
@@ -75,14 +70,14 @@ export default function HabitsPage() {
         <div className="dash-col-3">
           <Stat
             label="Word streak"
-            value={`${currentStreak(state, (h) => h.bibleRead)} d`}
-            hint={`Best: ${longestStreak(state, (h) => h.bibleRead)} d`}
+            value={`${currentStreak(state, habitOn("bibleRead"))} d`}
+            hint={`Best: ${longestStreak(state, habitOn("bibleRead"))} d`}
           />
         </div>
         <div className="dash-col-3">
           <Stat
             label="Clean streak"
-            value={`${currentStreak(state, (h) => h.noPorn)} d`}
+            value={`${currentStreak(state, habitOn("noPorn"))} d`}
             hint={`Goal: ${state.settings.goals.cleanStreakTarget} d`}
             tone="ok"
           />

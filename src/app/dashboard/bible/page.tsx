@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Panel, Stat } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { addDays, formatHuman, formatShort, todayISO } from "@/lib/dashboard/dates";
-import { CHRONO_PLAN, planDayFor, planFor } from "@/lib/dashboard/plan";
+import { CHRONO_PLAN, planDayFor, planFor, planForWithOverride } from "@/lib/dashboard/plan";
 import { BibleDayLog, emptyHabits } from "@/lib/dashboard/types";
-import { currentStreak, countInLastN, longestStreak } from "@/lib/dashboard/streaks";
+import { currentStreak, countInLastN, longestStreak, habitOn } from "@/lib/dashboard/streaks";
 
 export default function BibleReadingPage() {
   const { state, update, ready } = useDashboard();
@@ -17,12 +17,24 @@ export default function BibleReadingPage() {
     () => planDayFor(activeDate, state.settings.startDate, state.settings.startPlanDay),
     [activeDate, state.settings.startDate, state.settings.startPlanDay],
   );
-  const plan = planFor(planDay);
+  const plan = planForWithOverride(planDay, state.settings.planOverrides);
   const log: BibleDayLog = state.bibleLogs[activeDate] ?? { planDay };
+  const overrideActive = Boolean(state.settings.planOverrides?.[planDay]);
 
-  const bibleStreak = currentStreak(state, (h) => h.bibleRead);
-  const longest = longestStreak(state, (h) => h.bibleRead);
-  const last30 = countInLastN(state, 30, (h) => h.bibleRead);
+  const bibleStreak = currentStreak(state, habitOn("bibleRead"));
+  const longest = longestStreak(state, habitOn("bibleRead"));
+  const last30 = countInLastN(state, 30, habitOn("bibleRead"));
+
+  function setPlanOverride(text: string | null) {
+    update((d) => {
+      if (!d.settings.planOverrides) d.settings.planOverrides = {};
+      if (text == null || text.trim() === "" || text.trim() === planFor(planDay).passage) {
+        delete d.settings.planOverrides[planDay];
+      } else {
+        d.settings.planOverrides[planDay] = text.trim();
+      }
+    });
+  }
 
   function setLog(patch: Partial<BibleDayLog>) {
     update((d) => {
@@ -34,7 +46,7 @@ export default function BibleReadingPage() {
   function markRead(value: boolean) {
     update((d) => {
       const h = d.habits[activeDate] ?? emptyHabits();
-      h.bibleRead = value;
+      h["bibleRead"] = value;
       d.habits[activeDate] = h;
     });
   }
@@ -48,7 +60,7 @@ export default function BibleReadingPage() {
 
   if (!ready) return null;
 
-  const habitOn = state.habits[activeDate]?.bibleRead ?? false;
+  const readToday = Boolean(state.habits[activeDate]?.["bibleRead"]);
 
   return (
     <>
@@ -102,12 +114,12 @@ export default function BibleReadingPage() {
             title={plan.passage}
             action={
               <button
-                className={`dash-check ${habitOn ? "is-on" : ""}`}
-                onClick={() => markRead(!habitOn)}
+                className={`dash-check ${readToday ? "is-on" : ""}`}
+                onClick={() => markRead(!readToday)}
                 style={{ minWidth: 150 }}
               >
-                <span className="dash-check-dot">{habitOn ? "✓" : ""}</span>
-                <span className="dash-check-label">{habitOn ? "Read today" : "Mark read"}</span>
+                <span className="dash-check-dot">{readToday ? "✓" : ""}</span>
+                <span className="dash-check-label">{readToday ? "Read today" : "Mark read"}</span>
               </button>
             }
           >
@@ -116,6 +128,31 @@ export default function BibleReadingPage() {
                 “{plan.theme}”
               </p>
             )}
+
+            <div className="mt-4">
+              <div className="flex items-baseline justify-between">
+                <label className="dash-label">This day&apos;s passage</label>
+                {overrideActive && (
+                  <button
+                    className="text-[11px] eyebrow text-[var(--colour-amber-soft)] hover:text-[var(--colour-glow)]"
+                    onClick={() => setPlanOverride(null)}
+                  >
+                    Reset to default ({planFor(planDay).passage})
+                  </button>
+                )}
+              </div>
+              <input
+                className="dash-input"
+                value={plan.passage}
+                onChange={(e) => setPlanOverride(e.target.value)}
+                placeholder={planFor(planDay).passage}
+              />
+              <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
+                {overrideActive
+                  ? "Your override for this day. The default is restored when you clear it."
+                  : "Edit if your chronological plan is different — your version sticks."}
+              </div>
+            </div>
 
             <div className="dash-divider" />
 

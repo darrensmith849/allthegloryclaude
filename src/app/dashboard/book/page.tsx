@@ -46,8 +46,9 @@ export default function BookPage() {
       d.book.sessions.unshift(s);
       const ch = d.book.meta.chapters.find((c) => c.id === chapter);
       if (ch) ch.words = (ch.words ?? 0) + words;
-      if (!d.habits[today]) d.habits[today] = { ...emptyHabits(), bookWriting: true };
-      else d.habits[today].bookWriting = true;
+      const h = d.habits[today] ?? emptyHabits();
+      h["bookWriting"] = true;
+      d.habits[today] = h;
     });
     setNotes("");
   }
