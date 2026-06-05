@@ -631,6 +631,54 @@
   border-radius: 14px;
   overflow: hidden;
 }
+
+/* Strip of five thumbnails on the Today page. Today's pick is amber-rimmed. */
+.dash-reminder-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1280px) {
+  .dash-reminder-strip { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+}
+@media (max-width: 900px) {
+  .dash-reminder-strip { grid-template-columns: repeat(3, 1fr); }
+  .dash-reminder-strip-tile:nth-child(n+4) { display: none; }
+}
+@media (max-width: 520px) {
+  .dash-reminder-strip { grid-template-columns: repeat(2, 1fr); }
+  .dash-reminder-strip-tile:nth-child(n+3) { display: none; }
+}
+
+.dash-reminder-strip-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  aspect-ratio: 9 / 16;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.dash-reminder-strip-tile:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+.dash-reminder-strip-tile.is-today {
+  border-color: rgba(216, 178, 90, 0.55);
+  box-shadow: 0 0 0 1px rgba(216, 178, 90, 0.22) inset, 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+.dash-reminder-strip-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(7, 5, 14, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
 .dash-reminder-badge {
   position: absolute;
   z-index: 2;

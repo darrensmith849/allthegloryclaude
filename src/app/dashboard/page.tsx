@@ -14,7 +14,7 @@ import {
   resolveTaskTags,
 } from "@/lib/dashboard/types";
 import { currentStreak, habitOn } from "@/lib/dashboard/streaks";
-import { reminderForDate } from "@/lib/dashboard/reminders";
+import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
 
 function useCurrentHour() {
   const [hour, setHour] = useState<number | null>(null);
@@ -170,28 +170,48 @@ export default function DashboardHome() {
           />
         </div>
 
-        {/* Reminder card */}
+        {/* Reminders card — all five in a row, today's highlighted. */}
         <div className="dash-col-12">
-          <Link
-            href="/dashboard/reminders"
-            className="dash-reminder-frame block"
-            aria-label="See all reminders"
-          >
+          <div className="dash-reminder-frame">
             <div className="dash-reminder-frame-eyebrow">
-              <span className="eyebrow eyebrow-amber">Today&apos;s reminder</span>
-              <span className="dash-reminder-badge-arrow">See all →</span>
+              <span className="eyebrow eyebrow-amber">Reminders · all five</span>
+              <Link
+                href="/dashboard/reminders"
+                className="dash-reminder-badge-arrow"
+                style={{ textDecoration: "none" }}
+              >
+                Open page →
+              </Link>
             </div>
-            <div className="dash-reminder-frame-image">
-              <Image
-                src={reminder.src}
-                alt={reminder.short}
-                fill
-                sizes="280px"
-                className="object-contain"
-                priority
-              />
+            <div className="dash-reminder-strip">
+              {REMINDERS.map((r) => {
+                const isToday = r.id === reminder.id;
+                return (
+                  <Link
+                    key={r.id}
+                    href="/dashboard/reminders"
+                    className={`dash-reminder-strip-tile ${isToday ? "is-today" : ""}`}
+                    aria-label={r.short}
+                  >
+                    <Image
+                      src={r.src}
+                      alt={r.short}
+                      fill
+                      sizes="(min-width: 1280px) 230px, (min-width: 720px) 22vw, 50vw"
+                      className="object-cover object-center"
+                      priority={isToday}
+                      loading={isToday ? "eager" : "lazy"}
+                    />
+                    {isToday && (
+                      <span className="dash-reminder-strip-badge">
+                        <span className="eyebrow eyebrow-amber">Today</span>
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Daily schedule — every row checkable */}
