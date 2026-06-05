@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Panel, Stat } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { addDays, formatHuman, formatShort, todayISO } from "@/lib/dashboard/dates";
@@ -9,9 +10,33 @@ import { CHRONO_PLAN, planDayFor, planFor, planForWithOverride } from "@/lib/das
 import { BibleDayLog, emptyHabits } from "@/lib/dashboard/types";
 import { currentStreak, countInLastN, longestStreak, habitOn } from "@/lib/dashboard/streaks";
 
+// useSearchParams must sit under a Suspense boundary in App Router; wrap here
+// rather than push the boundary down into every consumer.
 export default function BibleReadingPage() {
+  return (
+    <Suspense fallback={null}>
+      <BibleReadingInner />
+    </Suspense>
+  );
+}
+
+function BibleReadingInner() {
   const { state, update, ready } = useDashboard();
-  const [activeDate, setActiveDate] = useState(() => todayISO());
+  const search = useSearchParams();
+  // Allow ?date=YYYY-MM-DD to drop in on a specific day (used by the calendar's
+  // "Open journal" link). Falls back to today.
+  const initialDate = (() => {
+    const d = search?.get("date");
+    return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : todayISO();
+  })();
+  const [activeDate, setActiveDate] = useState(initialDate);
+
+  // If the user navigates to ?date=... while the page is mounted, follow it.
+  useEffect(() => {
+    const d = search?.get("date");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== activeDate) setActiveDate(d);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const planDay = useMemo(
     () => planDayFor(activeDate, state.settings.startDate, state.settings.startPlanDay),
@@ -72,13 +97,25 @@ export default function BibleReadingPage() {
             {formatHuman(activeDate)} · Day {planDay} of 365
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
           <button
             className="dash-btn dash-btn-ghost"
             onClick={() => setActiveDate(addDays(activeDate, -1))}
           >
             ← {formatShort(addDays(activeDate, -1))}
           </button>
+          <input
+            type="date"
+            className="dash-input"
+            style={{ width: 160, padding: "9px 10px" }}
+            value={activeDate}
+            onChange={(e) => {
+              if (e.target.value && /^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) {
+                setActiveDate(e.target.value);
+              }
+            }}
+            title="Jump to any date"
+          />
           <button
             className="dash-btn dash-btn-ghost"
             onClick={() => setActiveDate(todayISO())}
