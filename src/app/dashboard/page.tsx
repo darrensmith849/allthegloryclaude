@@ -12,7 +12,12 @@ import {
   resolveHabits,
   resolveSchedule,
   resolveTaskTags,
+  ScheduleRow,
 } from "@/lib/dashboard/types";
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
 import { currentStreak, habitOn } from "@/lib/dashboard/streaks";
 import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
 
@@ -79,6 +84,32 @@ export default function DashboardHome() {
       day[rowId] = !day[rowId];
       draft.scheduleChecks[today] = day;
     });
+  }
+
+  // Inline "+ Add block" form state and handler — adds a row to the user's
+  // editable schedule so any time of day can be tracked, not just the presets.
+  const [addOpen, setAddOpen] = useState(false);
+  const [addTime, setAddTime] = useState("11:00");
+  const [addTitle, setAddTitle] = useState("");
+  function addCustomBlock(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!addTime.trim() || !addTitle.trim()) return;
+    const [hh, mm] = addTime.split(":").map(Number);
+    const hour = (hh || 0) + (mm || 0) / 60;
+    const row: ScheduleRow = {
+      id: `s-${uid()}`,
+      time: addTime,
+      hour,
+      title: addTitle.trim(),
+      sub: "",
+    };
+    update((draft) => {
+      // Persist into settings.schedule so the row sticks across days.
+      const rows = [...(draft.settings.schedule ?? []), row].sort((a, b) => a.hour - b.hour);
+      draft.settings.schedule = rows;
+    });
+    setAddTitle("");
+    setAddOpen(false);
   }
   function rowDone(rowId: string, habitId?: string): boolean {
     if (habitId) return Boolean(habits[habitId]);
@@ -214,46 +245,78 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Daily schedule — every row checkable */}
+        {/* Daily schedule — every row is a button. Click anywhere on a row to tick it. */}
         <div className="dash-col-8">
           <Panel
             eyebrow="Daily rhythm"
             title="Today's schedule"
             action={
-              <Link href="/dashboard/settings#schedule" className="text-[12px] eyebrow">
-                Edit →
-              </Link>
+              <div className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-primary"
+                  style={{ padding: "6px 12px", fontSize: 11 }}
+                  onClick={() => setAddOpen((v) => !v)}
+                >
+                  {addOpen ? "Close" : "+ Add block"}
+                </button>
+                <Link href="/dashboard/settings#schedule" className="text-[12px] eyebrow">
+                  Edit all →
+                </Link>
+              </div>
             }
           >
+            {addOpen && (
+              <form onSubmit={addCustomBlock} className="dash-add-block">
+                <input
+                  type="time"
+                  className="dash-input"
+                  value={addTime}
+                  onChange={(e) => setAddTime(e.target.value)}
+                  style={{ width: 110 }}
+                  required
+                />
+                <input
+                  className="dash-input"
+                  placeholder="What's at this time?"
+                  value={addTitle}
+                  onChange={(e) => setAddTitle(e.target.value)}
+                  style={{ flex: 1 }}
+                  autoFocus
+                  required
+                />
+                <button type="submit" className="dash-btn dash-btn-primary">
+                  Add
+                </button>
+              </form>
+            )}
+
             <div className="dash-schedule">
               {schedule.map((row, i) => {
                 const isNow = i === currentRowIndex;
                 const done = rowDone(row.id, row.habitId);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={row.id}
-                    className={`dash-schedule-row ${isNow ? "is-now" : ""} ${
-                      done ? "is-done" : ""
-                    }`}
+                    onClick={() => toggleScheduleRow(row.id, row.habitId)}
+                    aria-pressed={done}
+                    className={`dash-schedule-row dash-schedule-row-btn ${
+                      isNow ? "is-now" : ""
+                    } ${done ? "is-done" : ""}`}
                   >
                     <div className="dash-schedule-time">{row.time}</div>
-                    <div>
-                      <div className="dash-schedule-title">{row.title}</div>
+                    <div className="text-left">
+                      <div className="dash-schedule-title">
+                        {row.title}
+                        {isNow && <span className="dash-now-badge">NOW</span>}
+                      </div>
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
-                    <button
-                      type="button"
-                      className={`dash-check ${done ? "is-on" : ""}`}
-                      style={{ minWidth: 110 }}
-                      onClick={() => toggleScheduleRow(row.id, row.habitId)}
-                      aria-pressed={done}
-                    >
-                      <span className="dash-check-dot">{done ? "✓" : ""}</span>
-                      <span className="dash-check-label" style={{ fontSize: 12 }}>
-                        {done ? "Done" : "Mark"}
-                      </span>
-                    </button>
-                  </div>
+                    <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
+                      {done ? "✓" : ""}
+                    </span>
+                  </button>
                 );
               })}
             </div>

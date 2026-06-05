@@ -17,10 +17,16 @@ import {
 import {
   emptyHabits,
   resolveHabits,
+  resolveSchedule,
   resolveTaskTags,
   DayHabits,
+  Task,
 } from "@/lib/dashboard/types";
 import { planDayFor, planForWithOverride } from "@/lib/dashboard/plan";
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
 
 const HEAD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MINI_HEAD = ["M", "T", "W", "T", "F", "S", "S"];
@@ -58,11 +64,32 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState<string>(() => todayISO());
 
   const selectedHabits = state.habits[selected] ?? emptyHabits();
+  const selectedRowChecks = state.scheduleChecks?.[selected] ?? {};
   const selectedLog = state.bibleLogs[selected];
   const planDay = planDayFor(selected, state.settings.startDate, state.settings.startPlanDay);
   const plan = planForWithOverride(planDay, state.settings.planOverrides);
   const habitDefs = resolveHabits(state.settings);
+  const schedule = resolveSchedule(state.settings);
   const TAGS = resolveTaskTags(state.settings);
+
+  // Per-day completion percentage (mirrors the Today progress bar logic, but
+  // for whatever day the user picked).
+  const scheduleHabitIds = new Set(schedule.map((r) => r.habitId).filter(Boolean));
+  const habitsNotOnSchedule = habitDefs.filter((h) => !scheduleHabitIds.has(h.id));
+  const rowDoneForSelected = (rowId: string, habitId?: string): boolean => {
+    if (habitId) return Boolean(selectedHabits[habitId]);
+    return Boolean(selectedRowChecks[rowId]);
+  };
+  const completionDone =
+    schedule.filter((r) => rowDoneForSelected(r.id, r.habitId)).length +
+    habitsNotOnSchedule.filter((h) => selectedHabits[h.id]).length;
+  const completionTotal = schedule.length + habitsNotOnSchedule.length;
+  const completionPct =
+    completionTotal === 0 ? 0 : Math.round((completionDone / completionTotal) * 100);
+
+  // Quick-add task for the selected day
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskTag, setNewTaskTag] = useState<string>("personal");
 
   // Day-review data — everything logged for the selected day, across all modules.
   const tasksCompletedThatDay = useMemo(
@@ -108,6 +135,42 @@ export default function CalendarPage() {
       const h = d.habits[selected] ?? emptyHabits();
       h[habitId] = !h[habitId];
       d.habits[selected] = h;
+    });
+  }
+  function toggleScheduleRowForSelected(rowId: string, habitId?: string) {
+    if (habitId) {
+      toggleHabitForSelected(habitId);
+      return;
+    }
+    update((d) => {
+      if (!d.scheduleChecks) d.scheduleChecks = {};
+      const day = d.scheduleChecks[selected] ?? {};
+      day[rowId] = !day[rowId];
+      d.scheduleChecks[selected] = day;
+    });
+  }
+  function addTaskForSelected(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    const t: Task = {
+      id: uid(),
+      title: newTaskTitle.trim(),
+      tag: newTaskTag,
+      done: false,
+      createdAt: new Date().toISOString(),
+      due: selected,
+    };
+    update((d) => {
+      d.tasks.unshift(t);
+    });
+    setNewTaskTitle("");
+  }
+  function toggleTaskDone(taskId: string) {
+    update((d) => {
+      const t = d.tasks.find((x) => x.id === taskId);
+      if (!t) return;
+      t.done = !t.done;
+      t.completedAt = t.done ? new Date().toISOString() : undefined;
     });
   }
 
@@ -287,7 +350,47 @@ export default function CalendarPage() {
           >
             <div className="text-[12.5px] text-[var(--colour-ink-quiet)] mb-3">{plan.passage}</div>
 
-            <div className="flex flex-col gap-4">
+            {/* Per-day completion bar — fills as you tick blocks + habits */}
+            <div className="dash-mini-progress">
+              <div className="dash-mini-progress-head">
+                <span className="eyebrow eyebrow-amber">Day progress</span>
+                <span className="text-[12.5px]">
+                  <span className="font-display text-[var(--colour-glow)]">{completionPct}%</span>
+                  <span className="text-[var(--colour-ink-quiet)] ml-2">
+                    {completionDone}/{completionTotal}
+                  </span>
+                </span>
+              </div>
+              <div className="dash-progress-bar">
+                <span style={{ width: `${completionPct}%` }} />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 mt-4">
+              {/* Daily schedule for this day — every row checkable */}
+              <section>
+                <div className="eyebrow mb-2">Daily schedule</div>
+                <div className="flex flex-col gap-1.5">
+                  {schedule.map((row) => {
+                    const done = rowDoneForSelected(row.id, row.habitId);
+                    return (
+                      <button
+                        key={row.id}
+                        type="button"
+                        onClick={() => toggleScheduleRowForSelected(row.id, row.habitId)}
+                        className={`dash-mini-row ${done ? "is-done" : ""}`}
+                      >
+                        <span className="dash-mini-row-time">{row.time}</span>
+                        <span className="dash-mini-row-title">{row.title}</span>
+                        <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
+                          {done ? "✓" : ""}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
               {/* Habits — every one toggleable, not just the kept ones */}
               <section>
                 <div className="eyebrow mb-2">Disciplines</div>
@@ -394,30 +497,68 @@ export default function CalendarPage() {
                 </div>
               )}
 
-                {/* Tasks */}
-                {(tasksCompletedThatDay.length > 0 || tasksDueThatDay.length > 0 || tasksCreatedThatDay.length > 0) && (
-                  <section>
-                    <div className="eyebrow mb-2">Tasks</div>
+                {/* Tasks — quick-add for this day + clickable existing ones */}
+                <section>
+                  <div className="eyebrow mb-2">Tasks for this day</div>
+                  <form onSubmit={addTaskForSelected} className="flex gap-2 mb-2">
+                    <input
+                      className="dash-input"
+                      placeholder="Add a task for this day…"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <select
+                      className="dash-select"
+                      value={newTaskTag}
+                      onChange={(e) => setNewTaskTag(e.target.value)}
+                      style={{ width: 120 }}
+                    >
+                      {TAGS.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="submit"
+                      className="dash-btn dash-btn-primary"
+                      style={{ padding: "8px 14px", fontSize: 11 }}
+                    >
+                      Add
+                    </button>
+                  </form>
+                  {(tasksCompletedThatDay.length > 0 || tasksDueThatDay.length > 0 || tasksCreatedThatDay.length > 0) && (
                     <div className="flex flex-col gap-1.5">
                       {tasksCompletedThatDay.map((t) => {
                         const tg = TAGS.find((x) => x.id === t.tag) ?? TAGS[0];
                         return (
-                          <div key={t.id} className="flex items-center gap-2 text-[13px]">
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => toggleTaskDone(t.id)}
+                            className="flex items-center gap-2 text-[13px] text-left w-full hover:bg-white/5 rounded px-1.5 py-1 transition"
+                          >
                             <span style={{ color: "var(--colour-glow)" }}>✓</span>
-                            <span className="line-through opacity-70">{t.title}</span>
+                            <span className="line-through opacity-70 flex-1">{t.title}</span>
                             <Tag tone={tg.tone}>{tg.label}</Tag>
-                          </div>
+                          </button>
                         );
                       })}
                       {tasksDueThatDay.map((t) => {
                         const tg = TAGS.find((x) => x.id === t.tag) ?? TAGS[0];
                         return (
-                          <div key={t.id} className="flex items-center gap-2 text-[13px]">
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => toggleTaskDone(t.id)}
+                            className="flex items-center gap-2 text-[13px] text-left w-full hover:bg-white/5 rounded px-1.5 py-1 transition"
+                          >
                             <span style={{ color: "var(--colour-ink-faint)" }}>○</span>
-                            <span>{t.title}</span>
+                            <span className="flex-1">{t.title}</span>
                             <Tag tone={tg.tone}>{tg.label}</Tag>
                             <span className="text-[10.5px] text-[#f1a07d]">due</span>
-                          </div>
+                          </button>
                         );
                       })}
                       {tasksCreatedThatDay
@@ -428,17 +569,22 @@ export default function CalendarPage() {
                         .map((t) => {
                           const tg = TAGS.find((x) => x.id === t.tag) ?? TAGS[0];
                           return (
-                            <div key={t.id} className="flex items-center gap-2 text-[12.5px] opacity-75">
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => toggleTaskDone(t.id)}
+                              className="flex items-center gap-2 text-[12.5px] opacity-75 text-left w-full hover:bg-white/5 rounded px-1.5 py-1 transition"
+                            >
                               <span style={{ color: "var(--colour-ink-faint)" }}>+</span>
-                              <span>{t.title}</span>
+                              <span className="flex-1">{t.title}</span>
                               <Tag tone={tg.tone}>{tg.label}</Tag>
                               <span className="text-[10.5px] text-[var(--colour-ink-quiet)]">added</span>
-                            </div>
+                            </button>
                           );
                         })}
                     </div>
-                  </section>
-                )}
+                  )}
+                </section>
 
                 {/* Guitar */}
                 {guitarThatDay.length > 0 && (
