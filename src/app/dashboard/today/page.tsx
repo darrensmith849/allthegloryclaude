@@ -346,7 +346,7 @@ export default function DashboardHome() {
         {/* Daily schedule — every row is a button. Click anywhere on a row to tick it. */}
         <div className="dash-col-8">
           <Panel
-            eyebrow="Daily rhythm · double-click any row to edit"
+            eyebrow="Daily rhythm · click ✎ to edit times"
             title="Today's schedule"
             action={
               <button
@@ -451,30 +451,48 @@ export default function DashboardHome() {
                   );
                 }
                 return (
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     key={row.id}
                     onClick={() => toggleScheduleRow(row.id, row.habitId)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleScheduleRow(row.id, row.habitId);
+                      }
+                    }}
                     onDoubleClick={(e) => {
                       e.preventDefault();
-                      // Cancel the toggle effect of the double-click: the
-                      // 1st click toggled it, the 2nd toggled it back to its
-                      // original state, so net = no change. Just open editor.
                       startEditing(row);
                     }}
                     aria-pressed={done}
                     className={`dash-schedule-row dash-schedule-row-btn ${done ? "is-done" : ""}`}
-                    title="Click to mark done · Double-click to edit"
+                    title="Click to mark done · Double-click or ✎ to edit"
                   >
                     <div className="dash-schedule-time">{row.time}</div>
                     <div className="text-left">
                       <div className="dash-schedule-title">{row.title}</div>
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
-                    <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
-                      {done ? "✓" : ""}
-                    </span>
-                  </button>
+                    <div className="dash-schedule-actions">
+                      <button
+                        type="button"
+                        className="dash-row-edit-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditing(row);
+                        }}
+                        title="Edit time, title, subtitle"
+                        aria-label="Edit this row"
+                      >
+                        ✎
+                      </button>
+                      <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
+                        {done ? "✓" : ""}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>

@@ -725,6 +725,31 @@
   border-color: var(--colour-amber);
 }
 
+/* Right-side action group: edit pencil + checkbox dot, kept together. */
+.dash-schedule-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-row-edit-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--colour-ink-soft);
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.dash-row-edit-btn:hover {
+  background: rgba(216, 178, 90, 0.14);
+  border-color: rgba(216, 178, 90, 0.5);
+  color: var(--colour-glow);
+}
+
 /* NOW badge — explicit "this is the current block" indicator that doesn't
  * read as the only-clickable row. */
 .dash-now-badge {
