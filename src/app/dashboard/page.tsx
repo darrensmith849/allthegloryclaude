@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
@@ -21,24 +21,9 @@ function uid() {
 import { currentStreak, habitOn } from "@/lib/dashboard/streaks";
 import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
 
-function useCurrentHour() {
-  const [hour, setHour] = useState<number | null>(null);
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      setHour(d.getHours() + d.getMinutes() / 60);
-    };
-    tick();
-    const id = setInterval(tick, 60_000);
-    return () => clearInterval(id);
-  }, []);
-  return hour;
-}
-
 export default function DashboardHome() {
   const { state, update, ready } = useDashboard();
   const today = todayISO();
-  const currentHour = useCurrentHour();
   const habits = state.habits[today] ?? emptyHabits();
   const rowChecks = state.scheduleChecks?.[today] ?? {};
   const planDay = planDayFor(today, state.settings.startDate, state.settings.startPlanDay);
@@ -50,14 +35,6 @@ export default function DashboardHome() {
   const tracked = resolveHabits(state.settings);
   const TAGS = resolveTaskTags(state.settings);
   const reminder = reminderForDate(today);
-
-  const currentRowIndex = (() => {
-    if (currentHour == null) return -1;
-    for (let i = schedule.length - 1; i >= 0; i--) {
-      if (currentHour >= schedule[i].hour) return i;
-    }
-    return -1;
-  })();
 
   const todayTasks = state.tasks.filter((t) => !t.done).slice(0, 6);
   const completedToday = state.tasks.filter(
@@ -86,6 +63,30 @@ export default function DashboardHome() {
     });
   }
 
+  // Bulk operations — flip every visible checkbox in a single click.
+  function markAllDone() {
+    update((draft) => {
+      const h = draft.habits[today] ?? emptyHabits();
+      for (const habit of tracked) h[habit.id] = true;
+      draft.habits[today] = h;
+      if (!draft.scheduleChecks) draft.scheduleChecks = {};
+      const day = draft.scheduleChecks[today] ?? {};
+      for (const row of schedule) {
+        if (!row.habitId) day[row.id] = true;
+      }
+      draft.scheduleChecks[today] = day;
+    });
+  }
+  function clearAll() {
+    update((draft) => {
+      const h = draft.habits[today] ?? emptyHabits();
+      for (const habit of tracked) h[habit.id] = false;
+      draft.habits[today] = h;
+      if (!draft.scheduleChecks) draft.scheduleChecks = {};
+      draft.scheduleChecks[today] = {};
+    });
+  }
+
   // Inline "+ Add block" form state and handler — adds a row to the user's
   // editable schedule so any time of day can be tracked, not just the presets.
   const [addOpen, setAddOpen] = useState(false);
@@ -110,6 +111,42 @@ export default function DashboardHome() {
     });
     setAddTitle("");
     setAddOpen(false);
+  }
+
+  // ── Inline-edit a schedule row right on the Today page (double-click) ──
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editTime, setEditTime] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editSub, setEditSub] = useState("");
+  function startEditing(row: ScheduleRow) {
+    setEditingRowId(row.id);
+    setEditTime(row.time);
+    setEditTitle(row.title);
+    setEditSub(row.sub);
+  }
+  function saveEditing() {
+    if (!editingRowId) return;
+    const [hh, mm] = editTime.split(":").map(Number);
+    const hour = (hh || 0) + (mm || 0) / 60;
+    update((draft) => {
+      const rows = (draft.settings.schedule ?? []).map((r) =>
+        r.id === editingRowId
+          ? { ...r, time: editTime, hour, title: editTitle.trim() || r.title, sub: editSub }
+          : r,
+      );
+      rows.sort((a, b) => a.hour - b.hour);
+      draft.settings.schedule = rows;
+    });
+    setEditingRowId(null);
+  }
+  function deleteEditing() {
+    if (!editingRowId) return;
+    update((draft) => {
+      draft.settings.schedule = (draft.settings.schedule ?? []).filter(
+        (r) => r.id !== editingRowId,
+      );
+    });
+    setEditingRowId(null);
   }
   function rowDone(rowId: string, habitId?: string): boolean {
     if (habitId) return Boolean(habits[habitId]);
@@ -164,8 +201,23 @@ export default function DashboardHome() {
               </span>
             </div>
           </div>
-          <div className="text-[11.5px] text-[var(--colour-ink-quiet)] max-w-[260px] text-right hidden md:block">
-            Every checkbox below counts. Tick what&apos;s done; the bar fills.
+          <div className="flex gap-2 items-center flex-wrap justify-end">
+            <button
+              type="button"
+              className="dash-btn dash-btn-primary"
+              style={{ padding: "7px 14px", fontSize: 11 }}
+              onClick={markAllDone}
+            >
+              ✓ Mark all done
+            </button>
+            <button
+              type="button"
+              className="dash-btn dash-btn-ghost"
+              style={{ padding: "7px 14px", fontSize: 11 }}
+              onClick={clearAll}
+            >
+              Clear all
+            </button>
           </div>
         </div>
         <div className="dash-progress-bar">
@@ -248,22 +300,17 @@ export default function DashboardHome() {
         {/* Daily schedule — every row is a button. Click anywhere on a row to tick it. */}
         <div className="dash-col-8">
           <Panel
-            eyebrow="Daily rhythm"
+            eyebrow="Daily rhythm · double-click any row to edit"
             title="Today's schedule"
             action={
-              <div className="flex gap-2 items-center">
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-primary"
-                  style={{ padding: "6px 12px", fontSize: 11 }}
-                  onClick={() => setAddOpen((v) => !v)}
-                >
-                  {addOpen ? "Close" : "+ Add block"}
-                </button>
-                <Link href="/dashboard/settings#schedule" className="text-[12px] eyebrow">
-                  Edit all →
-                </Link>
-              </div>
+              <button
+                type="button"
+                className="dash-btn dash-btn-primary"
+                style={{ padding: "6px 12px", fontSize: 11 }}
+                onClick={() => setAddOpen((v) => !v)}
+              >
+                {addOpen ? "Close" : "+ Add block"}
+              </button>
             }
           >
             {addOpen && (
@@ -292,25 +339,90 @@ export default function DashboardHome() {
             )}
 
             <div className="dash-schedule">
-              {schedule.map((row, i) => {
-                const isNow = i === currentRowIndex;
+              {schedule.map((row) => {
                 const done = rowDone(row.id, row.habitId);
+                if (editingRowId === row.id) {
+                  return (
+                    <div key={row.id} className="dash-schedule-row dash-schedule-row-edit">
+                      <input
+                        type="time"
+                        className="dash-input"
+                        style={{ width: 110 }}
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                      />
+                      <div className="flex flex-col gap-1 flex-1">
+                        <input
+                          className="dash-input"
+                          placeholder="Title"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEditing();
+                            if (e.key === "Escape") setEditingRowId(null);
+                          }}
+                        />
+                        <input
+                          className="dash-input"
+                          placeholder="Subtitle"
+                          value={editSub}
+                          onChange={(e) => setEditSub(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEditing();
+                            if (e.key === "Escape") setEditingRowId(null);
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          className="dash-btn dash-btn-primary"
+                          style={{ padding: "6px 12px", fontSize: 11 }}
+                          onClick={saveEditing}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="dash-btn dash-btn-ghost"
+                          style={{ padding: "6px 12px", fontSize: 11 }}
+                          onClick={() => setEditingRowId(null)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="dash-btn dash-btn-danger"
+                          style={{ padding: "6px 12px", fontSize: 11 }}
+                          onClick={deleteEditing}
+                          title="Delete this block"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <button
                     type="button"
                     key={row.id}
                     onClick={() => toggleScheduleRow(row.id, row.habitId)}
+                    onDoubleClick={(e) => {
+                      e.preventDefault();
+                      // Cancel the toggle effect of the double-click: the
+                      // 1st click toggled it, the 2nd toggled it back to its
+                      // original state, so net = no change. Just open editor.
+                      startEditing(row);
+                    }}
                     aria-pressed={done}
-                    className={`dash-schedule-row dash-schedule-row-btn ${
-                      isNow ? "is-now" : ""
-                    } ${done ? "is-done" : ""}`}
+                    className={`dash-schedule-row dash-schedule-row-btn ${done ? "is-done" : ""}`}
+                    title="Click to mark done · Double-click to edit"
                   >
                     <div className="dash-schedule-time">{row.time}</div>
                     <div className="text-left">
-                      <div className="dash-schedule-title">
-                        {row.title}
-                        {isNow && <span className="dash-now-badge">NOW</span>}
-                      </div>
+                      <div className="dash-schedule-title">{row.title}</div>
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
                     <span className={`dash-check-dot ${done ? "is-on" : ""}`}>

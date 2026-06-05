@@ -634,6 +634,18 @@
   background: rgba(216, 178, 90, 0.04);
 }
 
+/* Inline-edit a schedule row in place */
+.dash-schedule-row-edit {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(216, 178, 90, 0.45);
+  background: rgba(216, 178, 90, 0.05);
+}
+
 /* Mini per-day progress in the calendar panel */
 .dash-mini-progress {
   padding: 10px 12px;
