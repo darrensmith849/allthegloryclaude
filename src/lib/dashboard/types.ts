@@ -243,6 +243,10 @@ export interface Settings {
   habits: HabitDef[];
   guitarWeek: GuitarWeekRow[];
   guitarCourse: CourseLesson[];
+  // The Monday the user starts the course. The "This week" panel anchors
+  // its date labels to max(this, this calendar week's Monday) so the plan
+  // shows the future start week until the user actually reaches it.
+  guitarCourseStartDate: ISODate;
   taskTags: TaskTag[]; // user-added; concatenated with DEFAULT_TASK_TAGS
   planOverrides: Record<number, string>; // planDay -> passage override
   goals: {
@@ -251,6 +255,22 @@ export interface Settings {
     bookWordTarget: number;
     guitarMinutesPerWeek: number;
   };
+}
+
+// Returns the upcoming Monday (or today if today IS Monday).
+// Used as the default guitar-course start so the plan shows the user's
+// "first real week" instead of the current part-week.
+function computeNextMonday(): ISODate {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
+  // If today is Monday → still advance 7 days so "next Monday" is genuinely
+  // next; otherwise advance to the upcoming Monday.
+  const offset = day === 1 ? 7 : ((8 - day) % 7) || 7;
+  d.setDate(d.getDate() + offset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 export function defaultSettings(): Settings {
@@ -266,6 +286,7 @@ export function defaultSettings(): Settings {
     habits: DEFAULT_HABITS,
     guitarWeek: DEFAULT_GUITAR_WEEK,
     guitarCourse: DEFAULT_GUITAR_COURSE,
+    guitarCourseStartDate: computeNextMonday(),
     taskTags: [],
     planOverrides: {},
     goals: {

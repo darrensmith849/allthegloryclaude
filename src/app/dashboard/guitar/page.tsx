@@ -76,10 +76,20 @@ export default function GuitarPage() {
     return [...map.entries()].map(([key, v]) => ({ key, ...v }));
   }, [course]);
 
+  // Plan week is anchored to settings.guitarCourseStartDate (defaults to
+  // next Monday on first load). Until the calendar catches up to that
+  // Monday, the cards show the FUTURE start week instead of the current one.
+  const planWeekStart = useMemo(() => {
+    const start = state.settings.guitarCourseStartDate ?? weekStart;
+    return start > weekStart ? start : weekStart;
+  }, [state.settings.guitarCourseStartDate, weekStart]);
+  const planWeek = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => addDays(planWeekStart, i)),
+    [planWeekStart],
+  );
+
   // 5-day-a-week plan: Mon/Wed/Fri = new lesson, Tue/Thu = consolidate.
   // We pick the next 3 not-yet-done lessons; in-progress ones come first.
-  // Each card is tagged with the ACTUAL date for that day of this week so
-  // the user sees Mon · 1 Jun, Fri · 5 Jun, etc., and today's card lights up.
   const lessonPlan = useMemo(() => {
     const undone = course.filter((l) => l.status !== "done");
     const order = [...undone].sort((a, b) => {
@@ -88,11 +98,11 @@ export default function GuitarPage() {
     });
     const picks = order.slice(0, 3);
     const days = [
-      { name: "Mon", date: week[0], role: "New lesson", lesson: picks[0] ?? null, consolidate: false },
-      { name: "Tue", date: week[1], role: "Consolidate", lesson: picks[0] ?? null, consolidate: true },
-      { name: "Wed", date: week[2], role: "New lesson", lesson: picks[1] ?? null, consolidate: false },
-      { name: "Thu", date: week[3], role: "Consolidate", lesson: picks[1] ?? null, consolidate: true },
-      { name: "Fri", date: week[4], role: "New lesson", lesson: picks[2] ?? null, consolidate: false },
+      { name: "Mon", date: planWeek[0], role: "New lesson", lesson: picks[0] ?? null, consolidate: false },
+      { name: "Tue", date: planWeek[1], role: "Consolidate", lesson: picks[0] ?? null, consolidate: true },
+      { name: "Wed", date: planWeek[2], role: "New lesson", lesson: picks[1] ?? null, consolidate: false },
+      { name: "Thu", date: planWeek[3], role: "Consolidate", lesson: picks[1] ?? null, consolidate: true },
+      { name: "Fri", date: planWeek[4], role: "New lesson", lesson: picks[2] ?? null, consolidate: false },
     ];
     return days as {
       name: string;
@@ -101,7 +111,7 @@ export default function GuitarPage() {
       lesson: CourseLesson | null;
       consolidate: boolean;
     }[];
-  }, [course, week]);
+  }, [course, planWeek]);
 
   function setLessonStatus(id: string, status: CourseLesson["status"]) {
     update((d) => {
@@ -273,7 +283,7 @@ export default function GuitarPage() {
                       <div className="text-[11px] text-[var(--colour-ink-quiet)] mt-1">
                         {p.lesson.minutes} min{p.lesson.hasResources ? " · resources" : ""}
                       </div>
-                      <div className="flex gap-1 mt-2">
+                      <div className="flex gap-1 mt-2 flex-wrap">
                         <button
                           type="button"
                           onClick={() => setLessonStatus(p.lesson!.id, "in-progress")}
@@ -298,6 +308,17 @@ export default function GuitarPage() {
                         >
                           ✓ Done
                         </button>
+                        {p.lesson.status !== "todo" && (
+                          <button
+                            type="button"
+                            onClick={() => setLessonStatus(p.lesson!.id, "todo")}
+                            className="dash-btn dash-btn-ghost"
+                            style={{ padding: "4px 8px", fontSize: 10 }}
+                            title="Reset this lesson back to todo"
+                          >
+                            ↶ Undo
+                          </button>
+                        )}
                       </div>
                       {p.lesson.status === "in-progress" && (
                         <div className="text-[10px] mt-1 text-[var(--colour-amber-soft)]">

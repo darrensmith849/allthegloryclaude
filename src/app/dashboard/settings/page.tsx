@@ -466,6 +466,30 @@ export default function SettingsPage() {
           </Panel>
         </div>
 
+        {/* ── Guitar course start date ────────────────── */}
+        <div className="dash-col-12" id="guitar-course">
+          <Panel eyebrow="Guitar course" title="Start date">
+            <p className="text-[12.5px] text-[var(--colour-ink-soft)] mb-3">
+              The &ldquo;This week&apos;s lessons&rdquo; panel anchors to this Monday. Set it forward
+              if you want to delay the start; the dates on the cards (Mon · 8 Jun etc.)
+              update accordingly.
+            </p>
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div>
+                <label className="dash-label">Course start (a Monday)</label>
+                <input
+                  type="date"
+                  className="dash-input"
+                  value={s.guitarCourseStartDate ?? ""}
+                  onChange={(e) =>
+                    patchSettings({ guitarCourseStartDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+          </Panel>
+        </div>
+
         {/* ── Guitar week editor ────────────────────── */}
         <div className="dash-col-12" id="guitar">
           <Panel
