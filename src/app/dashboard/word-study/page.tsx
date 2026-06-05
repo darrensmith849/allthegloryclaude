@@ -5,7 +5,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { searchStrongs, StrongsEntry, getAllStrongs } from "@/lib/dashboard/strongs";
 
 interface StudyResult extends StrongsEntry {
-  source?: "curated" | "ai";
+  source?: "curated" | "lexicon" | "ai";
 }
 
 interface Verse {
@@ -164,6 +164,16 @@ export default function WordStudyPage() {
                         {e.source === "ai" && (
                           <div className="text-[10.5px] mt-1 text-[var(--colour-amber-soft)]">
                             via Claude
+                          </div>
+                        )}
+                        {e.source === "lexicon" && (
+                          <div className="text-[10.5px] mt-1 text-[var(--colour-ink-quiet)]">
+                            Strong&apos;s lexicon
+                          </div>
+                        )}
+                        {e.source === "curated" && (
+                          <div className="text-[10.5px] mt-1 text-[var(--colour-amber-soft)]">
+                            Pastoral note
                           </div>
                         )}
                       </div>
