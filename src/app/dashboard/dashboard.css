@@ -566,16 +566,33 @@
  * Lives at /dashboard. The wrapping layout-shell detects this route and
  * skips the sidebar, so this owns the entire viewport.
  */
-/* No backdrop image — the welcome page uses the site palette only.
- * Soft amber + storm gradients on top of the ink base, no images. */
+/* Welcome page root — base ink with the Jesus painting layered behind. */
 .dash-welcome-root {
   position: relative;
   min-height: 100vh;
-  background:
-    radial-gradient(900px 600px at 12% -10%, rgba(216, 178, 90, 0.10) 0%, transparent 65%),
-    radial-gradient(1100px 700px at 110% 110%, rgba(154, 147, 139, 0.08) 0%, transparent 65%),
-    linear-gradient(180deg, #0a0810 0%, #060410 100%);
+  background: #060410;
   isolation: isolate;
+}
+.dash-welcome-bg-art {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+.dash-welcome-bg-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Dark amber veil + radial vignette so the carousel text reads cleanly
+     against the painting. */
+  background:
+    radial-gradient(60% 70% at 50% 40%, rgba(7,5,14,0.25) 0%, rgba(7,5,14,0.80) 100%),
+    linear-gradient(180deg, rgba(7,5,14,0.45) 0%, rgba(7,5,14,0.65) 100%);
+}
+.dash-welcome-bg-veil {
+  position: absolute;
+  inset: 0;
+  /* Extra subtle amber wash to tie the painting into the site palette. */
+  background: radial-gradient(50% 50% at 50% 45%, rgba(216,178,90,0.05) 0%, transparent 75%);
 }
 .dash-welcome-full {
   position: relative;
@@ -895,6 +912,64 @@
   border-radius: 12px;
   border: 1px solid rgba(216, 178, 90, 0.45);
   background: rgba(216, 178, 90, 0.05);
+}
+
+/* Up/down reorder buttons — small chevrons on each row */
+.dash-row-move {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--colour-ink-soft);
+  font-size: 12px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.dash-row-move:hover {
+  background: rgba(216, 178, 90, 0.14);
+  border-color: rgba(216, 178, 90, 0.5);
+  color: var(--colour-glow);
+}
+.dash-row-move:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Clean-streak heatmap — 13 rows of 7 cells each. */
+.dash-clean-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-clean-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.dash-clean-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: transform 120ms ease, background 140ms ease, border-color 140ms ease;
+}
+.dash-clean-cell:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.dash-clean-cell.is-clean {
+  background: linear-gradient(135deg, rgba(216, 178, 90, 0.65) 0%, rgba(241, 215, 166, 0.45) 100%);
+  border-color: rgba(216, 178, 90, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.dash-clean-cell.is-today {
+  outline: 1px solid rgba(216, 178, 90, 0.85);
+  outline-offset: 1px;
 }
 
 /* Mini per-day progress in the calendar panel */

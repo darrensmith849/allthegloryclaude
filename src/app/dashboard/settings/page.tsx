@@ -49,6 +49,15 @@ export default function SettingsPage() {
   function updateScheduleRow(id: string, patch: Partial<ScheduleRow>) {
     patchSchedule(schedule.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
+  function moveScheduleRow(id: string, dir: -1 | 1) {
+    const rows = [...schedule];
+    const i = rows.findIndex((r) => r.id === id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= rows.length) return;
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    patchSchedule(rows);
+  }
   function resetSchedule() {
     patchSchedule(DEFAULT_SCHEDULE);
   }
@@ -295,12 +304,32 @@ export default function SettingsPage() {
             }
           >
             <div className="flex flex-col gap-2">
-              {schedule.map((row) => (
+              {schedule.map((row, idx) => (
                 <div
                   key={row.id}
                   className="grid items-center gap-2 p-2.5 rounded-md border border-white/8 bg-white/[0.02]"
-                  style={{ gridTemplateColumns: "70px 70px 1fr 1.4fr 140px 30px" }}
+                  style={{ gridTemplateColumns: "50px 70px 70px 1fr 1.4fr 140px 30px" }}
                 >
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      className="dash-row-move"
+                      onClick={() => moveScheduleRow(row.id, -1)}
+                      disabled={idx === 0}
+                      title="Move up"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      className="dash-row-move"
+                      onClick={() => moveScheduleRow(row.id, 1)}
+                      disabled={idx === schedule.length - 1}
+                      title="Move down"
+                    >
+                      ▼
+                    </button>
+                  </div>
                   <input
                     className="dash-input"
                     value={row.time}

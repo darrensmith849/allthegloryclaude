@@ -122,7 +122,8 @@ export default function DashboardHome() {
     };
     update((draft) => {
       // Persist into settings.schedule so the row sticks across days.
-      const rows = [...(draft.settings.schedule ?? []), row].sort((a, b) => a.hour - b.hour);
+      // Append to the end — user can manually reorder via the up/down arrows.
+      const rows = [...(draft.settings.schedule ?? []), row];
       draft.settings.schedule = rows;
     });
     setAddTitle("");
@@ -150,7 +151,7 @@ export default function DashboardHome() {
           ? { ...r, time: editTime, hour, title: editTitle.trim() || r.title, sub: editSub }
           : r,
       );
-      rows.sort((a, b) => a.hour - b.hour);
+      // Keep manual order; user can reorder with the up/down arrows.
       draft.settings.schedule = rows;
     });
     setEditingRowId(null);
@@ -163,6 +164,20 @@ export default function DashboardHome() {
       );
     });
     setEditingRowId(null);
+  }
+
+  // Move a schedule row up or down. Times no longer auto-sort the list, so
+  // the user's chosen order sticks — even if it ignores chronology.
+  function moveRow(rowId: string, dir: -1 | 1) {
+    update((draft) => {
+      const rows = [...(draft.settings.schedule ?? [])];
+      const i = rows.findIndex((r) => r.id === rowId);
+      if (i < 0) return;
+      const j = i + dir;
+      if (j < 0 || j >= rows.length) return;
+      [rows[i], rows[j]] = [rows[j], rows[i]];
+      draft.settings.schedule = rows;
+    });
   }
   function rowDone(rowId: string, habitId?: string): boolean {
     if (habitId) return Boolean(habits[habitId]);
@@ -476,6 +491,34 @@ export default function DashboardHome() {
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
                     <div className="dash-schedule-actions">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          className="dash-row-move"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveRow(row.id, -1);
+                          }}
+                          disabled={schedule[0]?.id === row.id}
+                          title="Move up"
+                          aria-label="Move row up"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          className="dash-row-move"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveRow(row.id, 1);
+                          }}
+                          disabled={schedule[schedule.length - 1]?.id === row.id}
+                          title="Move down"
+                          aria-label="Move row down"
+                        >
+                          ▼
+                        </button>
+                      </div>
                       <button
                         type="button"
                         className="dash-row-edit-btn"

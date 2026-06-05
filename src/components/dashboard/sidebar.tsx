@@ -9,6 +9,7 @@ const NAV = [
   { href: "/dashboard/bible", label: "Bible Reading", glyph: "✠" },
   { href: "/dashboard/word-study", label: "Word Study", glyph: "α" },
   { href: "/dashboard/habits", label: "Habits & Streaks", glyph: "△" },
+  { href: "/dashboard/self-control", label: "Self-Control", glyph: "⌬" },
   { href: "/dashboard/calendar", label: "Calendar", glyph: "▦" },
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },
   { href: "/dashboard/guitar", label: "Guitar", glyph: "♪" },

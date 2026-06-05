@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { IDENTITY_STATEMENTS } from "@/lib/dashboard/identity";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
@@ -52,6 +53,19 @@ export default function WhoAmIPage() {
 
   return (
     <div className="dash-welcome-full">
+      {/* Backdrop — the Jesus painting sits softly behind everything */}
+      <div className="dash-welcome-bg-art">
+        <Image
+          src="/atg-welcome/jesus.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+          priority
+        />
+        <div className="dash-welcome-bg-veil" />
+      </div>
+
       {/* Persistent top-right CTA — accessible at any point */}
       <Link href="/dashboard/today" className="dash-welcome-skip">
         Open Dashboard →
