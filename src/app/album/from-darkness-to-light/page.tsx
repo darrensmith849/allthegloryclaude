@@ -286,22 +286,30 @@ function AlbumArt({
   cardSrc,
   cardAlt,
   onClick,
+  onHoverChange,
 }: {
   delay: number;
   side: "left" | "right";
   showCredit?: boolean;
-  /** Optional lyric-card image to render in place of the album cover. */
+  /** Optional lyric-card image to render in place of the album cover.
+   *  When this prop changes, the panel crossfades to the new card. */
   cardSrc?: string;
   /** Accessible label for the lyric card variant. */
   cardAlt?: string;
   /** Click handler - when set, the whole panel becomes a button that opens
    *  the verse modal for the linked track. */
   onClick?: () => void;
+  /** Notifies the parent when the panel is hovered/focused so the parent
+   *  can pause an auto-rotation while the visitor is reading. */
+  onHoverChange?: (hovered: boolean) => void;
 }) {
   const reduce = useReducedMotion();
   const transition = reduce
     ? { duration: 0.01 }
     : { duration: 1.6, delay, ease: [0.25, 0.1, 0.25, 1] as const };
+  const crossfade = reduce
+    ? { duration: 0.01 }
+    : { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const };
   void side;
   const isCard = Boolean(cardSrc);
 
@@ -318,19 +326,49 @@ function AlbumArt({
           : { width: "100%", height: "min(560px, 65vh)" }
       }
     >
-      <Image
-        src={isCard ? cardSrc! : album.coverImage}
-        alt={isCard ? cardAlt ?? "Lyric card" : "Album cover"}
-        fill
-        sizes="(max-width: 1024px) 100vw, 33vw"
-        className={isCard ? "object-cover" : "object-cover"}
-        priority={isCard}
-      />
-      {!isCard && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
+      {isCard ? (
+        <AnimatePresence initial={false} mode="sync">
+          <motion.div
+            key={cardSrc}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={crossfade}
+            className="absolute inset-0"
+          >
+            <Image
+              src={cardSrc!}
+              alt={cardAlt ?? "Lyric card"}
+              fill
+              sizes="(max-width: 1024px) 100vw, 33vw"
+              className="object-cover"
+              priority
+            />
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        <>
+          <Image
+            src={album.coverImage}
+            alt="Album cover"
+            fill
+            sizes="(max-width: 1024px) 100vw, 33vw"
+            className="object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
+        </>
       )}
     </div>
   );
+
+  const hoverProps = onHoverChange
+    ? {
+        onMouseEnter: () => onHoverChange(true),
+        onMouseLeave: () => onHoverChange(false),
+        onFocus: () => onHoverChange(true),
+        onBlur: () => onHoverChange(false),
+      }
+    : {};
 
   return (
     <motion.section
@@ -342,6 +380,7 @@ function AlbumArt({
         <button
           type="button"
           onClick={onClick}
+          {...hoverProps}
           className="group block w-full text-left focus:outline-none rounded-2xl"
           aria-label={cardAlt ?? "Open lyrics"}
         >
@@ -388,6 +427,54 @@ export default function AlbumPage() {
     const timer = setTimeout(() => setHoverReady(true), reduce ? 0 : 3500);
     return () => clearTimeout(timer);
   }, [reduce]);
+
+  // --- Rotating side lyric cards ---------------------------------------------
+  // Both side panels show cards from the same track and advance together
+  // every 9 seconds. Paused while the visitor hovers/focuses either panel
+  // so they have time to read. Reduced-motion users see only the first
+  // track and no rotation.
+  const [featuredTrackIdx, setFeaturedTrackIdx] = useState(0);
+  const [rotationPaused, setRotationPaused] = useState(false);
+  // Refs let the always-on interval read the latest values without
+  // re-creating itself on every state change - otherwise React's strict-
+  // mode double-mount + the useReducedMotion null->false transition would
+  // tear the interval down before its 9-second tick fires.
+  const reduceRef = useRef(reduce);
+  const pausedRef = useRef(rotationPaused);
+  useEffect(() => { reduceRef.current = reduce; }, [reduce]);
+  useEffect(() => { pausedRef.current = rotationPaused; }, [rotationPaused]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (cancelled) return;
+      if (!reduceRef.current && !pausedRef.current) {
+        setFeaturedTrackIdx((i) => (i + 1) % album.tracks.length);
+      }
+      timeoutId = setTimeout(tick, 9000);
+    };
+    timeoutId = setTimeout(tick, 9000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const featuredTrack = album.tracks[featuredTrackIdx];
+  const featuredLeftCard = featuredTrack.lyricCards?.[0];
+  const featuredRightCard =
+    featuredTrack.lyricCards?.[1] ?? featuredTrack.lyricCards?.[0];
+
+  const openFeaturedModal = useCallback(() => {
+    setVerseModal({
+      ref: featuredTrack.ref,
+      fullVerse: featuredTrack.fullVerse,
+      reflection: featuredTrack.reflection,
+      lyricCards: featuredTrack.lyricCards,
+      lyricCardsPdf: featuredTrack.lyricCardsPdf,
+    });
+  }, [featuredTrack]);
 
   const detachAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -446,26 +533,18 @@ export default function AlbumPage() {
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT - lyric card 01 from John 19 vs 30 (verse). Sticky so it
-              follows the tracks; click opens the John 19 vs 30 modal. The
-              "Artwork by Debbie Clarke" credit lives at the bottom of the
-              centre column now so it doesn't collide with the social dock. */}
+          {/* LEFT - verse card from the currently-featured track. Both side
+              panels auto-rotate through all 7 tracks together. Click opens
+              the verse modal for whichever track is showing right now. */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt
               delay={0.08}
               side="left"
               showCredit={false}
-              cardSrc={album.tracks[0].lyricCards?.[0]}
-              cardAlt={`${album.tracks[0].ref} lyric card 1 - opens lyrics`}
-              onClick={() =>
-                setVerseModal({
-                  ref: album.tracks[0].ref,
-                  fullVerse: album.tracks[0].fullVerse,
-                  reflection: album.tracks[0].reflection,
-                  lyricCards: album.tracks[0].lyricCards,
-                  lyricCardsPdf: album.tracks[0].lyricCardsPdf,
-                })
-              }
+              cardSrc={featuredLeftCard}
+              cardAlt={`${featuredTrack.ref} - opens lyrics`}
+              onClick={openFeaturedModal}
+              onHoverChange={setRotationPaused}
             />
           </div>
 
@@ -612,27 +691,75 @@ export default function AlbumPage() {
                 Debbie Clarke
               </a>
             </p>
+
+            {/* Inline social column - same arrow style as the bottom-left
+                dock the rest of the site uses, but only loads when the
+                visitor has scrolled to the foot of the album page. This
+                avoids overlapping the sticky lyric cards above. */}
+            <motion.div
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-10% 0px" }}
+              transition={
+                reduce
+                  ? { duration: 0.01 }
+                  : { duration: 1.2, ease: [0.16, 1, 0.3, 1] as const }
+              }
+              className="mt-10 flex flex-col items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55"
+            >
+              <a
+                href={site.socials.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/90 transition-colors"
+              >
+                Instagram ↗
+              </a>
+              <a
+                href={site.socials.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/90 transition-colors"
+              >
+                Facebook ↗
+              </a>
+              <a
+                href={site.socials.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/90 transition-colors"
+              >
+                YouTube ↗
+              </a>
+              <a
+                href={site.socials.spotify}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/90 transition-colors"
+              >
+                Spotify ↗
+              </a>
+              <a
+                href={site.socials.tiktok}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/90 transition-colors"
+              >
+                TikTok ↗
+              </a>
+            </motion.div>
           </section>
 
-          {/* RIGHT - lyric card 02 from John 19 vs 30 (chorus). Sticky;
-              click opens the same modal as the left card. Credit suppressed
-              here too; the centre column carries it. */}
+          {/* RIGHT - chorus card from the currently-featured track. */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt
               delay={0.14}
               side="right"
               showCredit={false}
-              cardSrc={album.tracks[0].lyricCards?.[1]}
-              cardAlt={`${album.tracks[0].ref} lyric card 2 - opens lyrics`}
-              onClick={() =>
-                setVerseModal({
-                  ref: album.tracks[0].ref,
-                  fullVerse: album.tracks[0].fullVerse,
-                  reflection: album.tracks[0].reflection,
-                  lyricCards: album.tracks[0].lyricCards,
-                  lyricCardsPdf: album.tracks[0].lyricCardsPdf,
-                })
-              }
+              cardSrc={featuredRightCard}
+              cardAlt={`${featuredTrack.ref} - opens lyrics`}
+              onClick={openFeaturedModal}
+              onHoverChange={setRotationPaused}
             />
           </div>
         </div>
