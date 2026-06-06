@@ -23,7 +23,11 @@ function Item({ href, label, delay }: { href?: string; label: string; delay: num
 
 export default function SocialDock() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/dashboard")) return null;
+  // Hidden on /dashboard (private app chrome) and /album (music page -
+  // the artist asked not to show socials there).
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/album")) {
+    return null;
+  }
   return (
     <div className="social-dock-bottom">
       <Item href={site.socials.instagram} label="Instagram" delay={1} />
