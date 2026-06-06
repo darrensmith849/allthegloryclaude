@@ -372,30 +372,7 @@ export default function AlbumPage() {
   }, [detachAudio]);
 
   return (
-    <main className="relative bg-transparent overflow-x-clip">
-      {/* Full-bleed BTS studio video sitting behind the entire top banner -
-          behind the left artwork, the album header card, and the right
-          artwork. Fades into the page background before the track list so
-          the rest of the page stays calm. Skipped under reduced-motion. */}
-      {!reduce && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] md:h-[720px] overflow-hidden"
-        >
-          <video
-            src="/media/music-bts.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            tabIndex={-1}
-            className="absolute inset-0 h-full w-full object-cover opacity-55"
-          />
-          {/* Legibility + fade-to-bg scrim */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-[var(--colour-bg)]" />
-        </div>
-      )}
+    <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
           {/* LEFT artwork - sticky so it follows the tracks as they scroll.
