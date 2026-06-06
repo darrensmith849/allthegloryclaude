@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Numbered process visualisation — the 1 → 2 → 3 → 4 ribbon you see
+ * Numbered process visualisation - the 1 → 2 → 3 → 4 ribbon you see
  * on Opus/Vercel landing pages. Horizontal on desktop, vertical on mobile.
  * Steps fade in as the section enters view.
  */

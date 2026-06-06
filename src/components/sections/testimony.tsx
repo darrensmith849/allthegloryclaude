@@ -30,11 +30,11 @@ type TestimonyProps = {
  * motion v12 has a known SSR/client divergence on `motion` components where
  * the server emits `style="opacity:0"` (number) and the client emits
  * `style="opacity:0"` (string). React 18 logs a hydration mismatch and
- * refuses to patch up the DOM — which can leave the animation stuck and
+ * refuses to patch up the DOM - which can leave the animation stuck and
  * cause the bug we were debugging ("motion graphics still static").
  *
  * This component uses identical inline styles on server + client and only
- * toggles a single piece of state on intersection — no hydration issue,
+ * toggles a single piece of state on intersection - no hydration issue,
  * no stuck animations, works reliably in Chrome, Safari, and mobile.
  *
  * Respects prefers-reduced-motion: skips the transform + transition and
@@ -188,7 +188,7 @@ export default function Testimony({
             ))}
           </div>
 
-          {/* Closing benediction — set apart with a soft amber hairline,
+          {/* Closing benediction - set apart with a soft amber hairline,
               centred italic Fraunces, slightly larger than the body. Gives
               the prayer the visual weight a benediction deserves without
               feeling disconnected from the body above. */}

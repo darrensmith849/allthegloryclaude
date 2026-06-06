@@ -62,7 +62,7 @@ function BibleReadingInner() {
 
       // Auto-prefill the NEXT day's passage with "Book endChapter" so the user
       // can extend it (e.g. typing "-22" turns "Numbers 19" into "Numbers 19-22").
-      // We only do this when the next day has no override yet — never overwrite
+      // We only do this when the next day has no override yet - never overwrite
       // a deliberate edit the user has already made.
       const nextDay = planDay + 1;
       if (nextDay <= 365 && !d.settings.planOverrides[nextDay]) {
@@ -198,7 +198,7 @@ function BibleReadingInner() {
               <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
                 {overrideActive
                   ? "Your override for this day. The default is restored when you clear it."
-                  : "Edit if your chronological plan is different — your version sticks."}
+                  : "Edit if your chronological plan is different - your version sticks."}
               </div>
             </div>
 
@@ -259,7 +259,7 @@ function BibleReadingInner() {
               <label className="dash-label">A verse that struck me</label>
               <input
                 className="dash-input"
-                placeholder="e.g. Numbers 21:8 — Make a fiery serpent and set it on a pole"
+                placeholder="e.g. Numbers 21:8 - Make a fiery serpent and set it on a pole"
                 value={log.verseOfTheDay ?? ""}
                 onChange={(e) => setLog({ verseOfTheDay: e.target.value })}
               />
@@ -407,7 +407,7 @@ function BibleReadingInner() {
 
 // ── Inline passage reader ────────────────────────────────────────
 // Lazy-fetches today's passage via the existing /api/verse proxy (bible-api.com,
-// World English Bible by default — no API key needed). Toggled open so we
+// World English Bible by default - no API key needed). Toggled open so we
 // don't fetch on every page load.
 interface Verse {
   ref: string;
@@ -450,7 +450,7 @@ function ReadHere({ passage }: { passage: string }) {
         if (tooMany && !fallback) {
           const fc = firstChapter(ref);
           if (fc !== ref) {
-            setTruncated(`Showing ${fc} only — full reading spans multiple chapters.`);
+            setTruncated(`Showing ${fc} only - full reading spans multiple chapters.`);
             return tryFetch(fc, true);
           }
         }
@@ -518,7 +518,7 @@ function ReadHere({ passage }: { passage: string }) {
 //   "Numbers 16-19"        → { book: "Numbers", chapter: 19 }
 //   "Numbers 19"           → { book: "Numbers", chapter: 19 }
 //   "1 Peter 1:5-2:10"     → { book: "1 Peter", chapter: 2 }
-//   "Genesis 1-3; Job 1"   → null (multi-book — skip auto-prefill)
+//   "Genesis 1-3; Job 1"   → null (multi-book - skip auto-prefill)
 function parseEndOfPassage(
   passage: string,
 ): { book: string; chapter: number } | null {

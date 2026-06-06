@@ -23,7 +23,7 @@ export default function WhoAmIPage() {
     [total],
   );
 
-  // Keyboard navigation — arrows scroll, Enter on last opens the dashboard.
+  // Keyboard navigation - arrows scroll, Enter on last opens the dashboard.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Ignore when typing into an input
@@ -40,7 +40,7 @@ export default function WhoAmIPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
-  // Swipe / drag — basic touch support so it works one-handed on phone.
+  // Swipe / drag - basic touch support so it works one-handed on phone.
   const [dragStart, setDragStart] = useState<number | null>(null);
   const onTouchStart = (e: React.TouchEvent) => setDragStart(e.touches[0].clientX);
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -53,7 +53,7 @@ export default function WhoAmIPage() {
 
   return (
     <div className="dash-welcome-full">
-      {/* Backdrop — the Jesus painting sits softly behind everything */}
+      {/* Backdrop - the Jesus painting sits softly behind everything */}
       <div className="dash-welcome-bg-art">
         <Image
           src="/atg-welcome/jesus.jpg"
@@ -66,12 +66,12 @@ export default function WhoAmIPage() {
         <div className="dash-welcome-bg-veil" />
       </div>
 
-      {/* Persistent top-right CTA — accessible at any point */}
+      {/* Persistent top-right CTA - accessible at any point */}
       <Link href="/dashboard/today" className="dash-welcome-skip">
         Open Dashboard →
       </Link>
 
-      {/* Centerpiece — heading, counter, card, controls */}
+      {/* Centerpiece - heading, counter, card, controls */}
       <div className="dash-welcome-stage">
         <div className="dash-welcome-eyebrow eyebrow eyebrow-amber">{formatHuman(today)}</div>
         <h1 className="dash-welcome-h1 font-display">Who am I?</h1>
@@ -111,7 +111,7 @@ export default function WhoAmIPage() {
           </button>
         </div>
 
-        {/* Dot indicators — click any to jump */}
+        {/* Dot indicators - click any to jump */}
         <div className="dash-carousel-dots" role="tablist" aria-label="Identity statements">
           {IDENTITY_STATEMENTS.map((_, i) => (
             <button
@@ -126,7 +126,7 @@ export default function WhoAmIPage() {
           ))}
         </div>
 
-        {/* End-of-list CTA — only when on the last card */}
+        {/* End-of-list CTA - only when on the last card */}
         {isLast && (
           <Link href="/dashboard/today" className="dash-welcome-cta-big">
             ✦ Open Dashboard

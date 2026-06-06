@@ -92,7 +92,7 @@ export default function CalendarPage() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskTag, setNewTaskTag] = useState<string>("personal");
 
-  // Day-review data — everything logged for the selected day, across all modules.
+  // Day-review data - everything logged for the selected day, across all modules.
   const tasksCompletedThatDay = useMemo(
     () => state.tasks.filter((t) => t.done && t.completedAt?.slice(0, 10) === selected),
     [state.tasks, selected],
@@ -123,7 +123,7 @@ export default function CalendarPage() {
     guitarThatDay.length > 0 ||
     bookThatDay.length > 0;
 
-  // Inline-edit helpers — save journal fields straight into state from the calendar panel.
+  // Inline-edit helpers - save journal fields straight into state from the calendar panel.
   function patchLog(patch: Partial<typeof selectedLog>) {
     update((d) => {
       const planDayLocal = planDayFor(selected, d.settings.startDate, d.settings.startPlanDay);
@@ -150,7 +150,7 @@ export default function CalendarPage() {
       d.scheduleChecks[selected] = day;
     });
   }
-  // Per-date schedule additions — only visible on the selected day.
+  // Per-date schedule additions - only visible on the selected day.
   const [extraTime, setExtraTime] = useState("");
   const [extraTitle, setExtraTitle] = useState("");
   function addScheduleExtraForSelected(e?: React.FormEvent) {
@@ -180,7 +180,7 @@ export default function CalendarPage() {
       );
     });
   }
-  // Delete from the global settings.schedule — removes the row from every
+  // Delete from the global settings.schedule - removes the row from every
   // day it would have appeared on. Confirms first so it's never accidental.
   function removeGlobalScheduleRow(rowId: string, title: string) {
     const ok = confirm(
@@ -268,7 +268,7 @@ export default function CalendarPage() {
           <div className="eyebrow eyebrow-amber">{view} view</div>
           <h1 className="dash-title mt-1">Calendar</h1>
           <div className="dash-subtitle">
-            Click any day to see everything you logged — readings, habits, tasks, sessions.
+            Click any day to see everything you logged - readings, habits, tasks, sessions.
           </div>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
@@ -400,7 +400,7 @@ export default function CalendarPage() {
           >
             <div className="text-[12.5px] text-[var(--colour-ink-quiet)] mb-3">{plan.passage}</div>
 
-            {/* Per-day completion bar — fills as you tick blocks + habits */}
+            {/* Per-day completion bar - fills as you tick blocks + habits */}
             <div className="dash-mini-progress">
               <div className="dash-mini-progress-head">
                 <span className="eyebrow eyebrow-amber">Day progress</span>
@@ -417,7 +417,7 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex flex-col gap-4 mt-4">
-              {/* Daily schedule for this day — every row checkable.
+              {/* Daily schedule for this day - every row checkable.
                   Filtered by day-of-week, with per-date extras at the end. */}
               <section>
                 <div className="eyebrow mb-2">Daily schedule</div>
@@ -491,11 +491,11 @@ export default function CalendarPage() {
                   </button>
                 </form>
                 <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
-                  This addition only lives on {formatHuman(selected)} — perfect for weekends.
+                  This addition only lives on {formatHuman(selected)} - perfect for weekends.
                 </div>
               </section>
 
-              {/* Habits — every one toggleable, not just the kept ones */}
+              {/* Habits - every one toggleable, not just the kept ones */}
               <section>
                 <div className="eyebrow mb-2">Disciplines</div>
                 <div className="flex flex-wrap gap-1.5">
@@ -524,7 +524,7 @@ export default function CalendarPage() {
                 </div>
               </section>
 
-              {/* Bible journal — fully inline-editable, even if empty */}
+              {/* Bible journal - fully inline-editable, even if empty */}
               <section>
                 <div className="eyebrow eyebrow-amber mb-2">Bible journal</div>
                 <label className="dash-label" style={{ marginTop: 6 }}>
@@ -596,12 +596,12 @@ export default function CalendarPage() {
 
               {!hasAnything && (
                 <div className="text-[11.5px] text-[var(--colour-ink-quiet)] -mt-2">
-                  Tip — clicking any past or future day works the same. The fields
+                  Tip - clicking any past or future day works the same. The fields
                   above belong to <strong>{formatHuman(selected)}</strong>.
                 </div>
               )}
 
-                {/* Tasks — quick-add for this day + clickable existing ones */}
+                {/* Tasks - quick-add for this day + clickable existing ones */}
                 <section>
                   <div className="eyebrow mb-2">Tasks for this day</div>
                   <form onSubmit={addTaskForSelected} className="flex gap-2 mb-2">
@@ -721,7 +721,7 @@ export default function CalendarPage() {
                           <div key={s.id} className="text-[13px]">
                             <div className="flex items-baseline justify-between">
                               <span className="text-[var(--colour-ink-strong)]">
-                                {ch?.title ?? "—"}
+                                {ch?.title ?? "-"}
                               </span>
                               <span className="text-[var(--colour-amber-soft)]">
                                 {s.words} words · {s.minutes} min

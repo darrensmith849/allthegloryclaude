@@ -1,4 +1,4 @@
-// Private-dashboard gate — currently disabled.
+// Private-dashboard gate - currently disabled.
 //
 // The route is still excluded from search engines via `robots: { index: false,
 // follow: false }` in src/app/dashboard/layout.tsx. Anyone who knows the URL

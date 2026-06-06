@@ -10,10 +10,10 @@ type Props = {
 };
 
 /**
- * Clean download view — opens when the user clicks "Download free".
+ * Clean download view - opens when the user clicks "Download free".
  *
  * No bible verses, no extra commentary. Just the album cover, the title
- * "From Darkness To Light", the track list (display only — for context),
+ * "From Darkness To Light", the track list (display only - for context),
  * and a single primary action: Download all (.zip).
  *
  * The zip already has its files numbered "01 - …" → "07 - …" so they
@@ -107,7 +107,7 @@ export default function DownloadModal({ onClose }: Props) {
         className="relative w-full max-w-md panel-scrim border border-white/10 rounded-2xl p-7 md:p-9 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--colour-amber)]/50"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Album cover — small, premium */}
+        {/* Album cover - small, premium */}
         <div className="mx-auto relative w-32 h-32 md:w-36 md:h-36 overflow-hidden rounded-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           <Image
             src={album.coverImage}
@@ -129,7 +129,7 @@ export default function DownloadModal({ onClose }: Props) {
           7 tracks · {album.releaseYear}
         </p>
 
-        {/* Track list — display only, for context */}
+        {/* Track list - display only, for context */}
         <ol className="mt-6 text-left text-sm text-white/70 space-y-1.5">
           {album.tracks.map((t, i) => (
             <li key={t.title} className="flex gap-3">

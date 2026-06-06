@@ -1,4 +1,4 @@
-// Curated Strong's lexicon — common Greek (G) and Hebrew (H) words a believer
+// Curated Strong's lexicon - common Greek (G) and Hebrew (H) words a believer
 // is most likely to study. Not exhaustive; intended as an offline-first answer
 // that the AI route deepens. Each entry includes the Strong's number,
 // transliteration, the original-language word, one-line gloss, and a fuller
@@ -24,7 +24,7 @@ const RAW: StrongsEntry[] = [
     original: "ἀγάπη",
     gloss: "self-giving, covenant love",
     usage:
-      "The love that originates in God, sets its affection on its object before any merit, and gives without expecting return. Not primarily emotion — primarily decision and action. Used of God's love for the world (John 3:16) and of the love the Spirit pours into the heart (Rom 5:5).",
+      "The love that originates in God, sets its affection on its object before any merit, and gives without expecting return. Not primarily emotion - primarily decision and action. Used of God's love for the world (John 3:16) and of the love the Spirit pours into the heart (Rom 5:5).",
     english: ["love", "charity"],
     examples: [
       { ref: "1 John 4:8", quote: "God is love." },
@@ -39,7 +39,7 @@ const RAW: StrongsEntry[] = [
     original: "χάρις",
     gloss: "grace; unmerited favour",
     usage:
-      "God's freely given favour that saves and sustains. Source of both salvation (Eph 2:8) and the strength to live the Christian life (2 Cor 12:9). Carries the older sense of 'beauty' / 'pleasing' — God's grace is not only powerful, it is winsome.",
+      "God's freely given favour that saves and sustains. Source of both salvation (Eph 2:8) and the strength to live the Christian life (2 Cor 12:9). Carries the older sense of 'beauty' / 'pleasing' - God's grace is not only powerful, it is winsome.",
     english: ["grace", "favour", "thanks"],
     examples: [
       { ref: "Ephesians 2:8" },
@@ -54,7 +54,7 @@ const RAW: StrongsEntry[] = [
     original: "πνεῦμα",
     gloss: "spirit, breath, wind",
     usage:
-      "The Spirit of God, the human spirit, or breath/wind, depending on context. Jesus uses the same root for both 'wind' and 'Spirit' in John 3:8 — the Spirit moves where He wills.",
+      "The Spirit of God, the human spirit, or breath/wind, depending on context. Jesus uses the same root for both 'wind' and 'Spirit' in John 3:8 - the Spirit moves where He wills.",
     english: ["spirit", "Spirit", "wind", "breath"],
     examples: [
       { ref: "John 3:8" },
@@ -69,7 +69,7 @@ const RAW: StrongsEntry[] = [
     original: "πίστις",
     gloss: "faith; trustful reliance",
     usage:
-      "Not bare intellectual assent — pistis is a trust that acts. In Hebrews 11 it is the substance and conviction by which the saints move. Carries the active sense of 'faithfulness' as well as 'belief'.",
+      "Not bare intellectual assent - pistis is a trust that acts. In Hebrews 11 it is the substance and conviction by which the saints move. Carries the active sense of 'faithfulness' as well as 'belief'.",
     english: ["faith", "belief", "faithfulness"],
     examples: [
       { ref: "Hebrews 11:1" },
@@ -98,7 +98,7 @@ const RAW: StrongsEntry[] = [
     original: "δύναμις",
     gloss: "power, ability, miraculous power",
     usage:
-      "Inherent power — the root of 'dynamite' and 'dynamic'. Used of the gospel (Rom 1:16) and the Spirit (Acts 1:8). Not flashy force, but God's effective ability working through people.",
+      "Inherent power - the root of 'dynamite' and 'dynamic'. Used of the gospel (Rom 1:16) and the Spirit (Acts 1:8). Not flashy force, but God's effective ability working through people.",
     english: ["power", "might", "ability", "miracle"],
     examples: [
       { ref: "Acts 1:8" },
@@ -112,7 +112,7 @@ const RAW: StrongsEntry[] = [
     original: "λόγος",
     gloss: "word; rational account; the Word",
     usage:
-      "Speech, message, or principle of reason. John 1:1 names Christ the Logos — the eternal divine self-expression who became flesh. In ordinary use it can mean a saying, an account, or a sermon.",
+      "Speech, message, or principle of reason. John 1:1 names Christ the Logos - the eternal divine self-expression who became flesh. In ordinary use it can mean a saying, an account, or a sermon.",
     english: ["word", "saying", "message", "account"],
     examples: [
       { ref: "John 1:1" },
@@ -126,7 +126,7 @@ const RAW: StrongsEntry[] = [
     original: "ῥῆμα",
     gloss: "spoken word, utterance",
     usage:
-      "A specific spoken word — the now-word of God to a moment. Often contrasted (gently) with logos as the broader written Word vs. the Spirit-applied living word that pierces today (Eph 6:17).",
+      "A specific spoken word - the now-word of God to a moment. Often contrasted (gently) with logos as the broader written Word vs. the Spirit-applied living word that pierces today (Eph 6:17).",
     english: ["word", "saying"],
     examples: [
       { ref: "Ephesians 6:17", quote: "the sword of the Spirit, which is the word (rhēma) of God" },
@@ -140,7 +140,7 @@ const RAW: StrongsEntry[] = [
     original: "δόξα",
     gloss: "glory, splendour, weight",
     usage:
-      "The visible weight of God's worth — His radiance and reputation. From the verb 'to think well of'. In Christ we behold the doxa of God (2 Cor 4:6), and we are being transformed from glory to glory (2 Cor 3:18).",
+      "The visible weight of God's worth - His radiance and reputation. From the verb 'to think well of'. In Christ we behold the doxa of God (2 Cor 4:6), and we are being transformed from glory to glory (2 Cor 3:18).",
     english: ["glory", "honour", "praise"],
     examples: [
       { ref: "John 1:14" },
@@ -155,7 +155,7 @@ const RAW: StrongsEntry[] = [
     original: "ἅγιος",
     gloss: "holy, set apart",
     usage:
-      "Set apart for God. Used of God Himself, of the Spirit, of believers ('saints' = hagioi), of the temple. Not first a moral category but a positional one — being God's — which then trains moral character.",
+      "Set apart for God. Used of God Himself, of the Spirit, of believers ('saints' = hagioi), of the temple. Not first a moral category but a positional one - being God's - which then trains moral character.",
     english: ["holy", "saint"],
     examples: [
       { ref: "1 Peter 1:16", quote: "Be holy, for I am holy." },
@@ -167,7 +167,7 @@ const RAW: StrongsEntry[] = [
     language: "greek",
     translit: "zōē",
     original: "ζωή",
-    gloss: "life — the divine kind",
+    gloss: "life - the divine kind",
     usage:
       "The life of God Himself, given to those in Christ (John 10:10). Often distinguished from bios (biological life). Eternal zoē begins now and continues forever (John 17:3).",
     english: ["life"],
@@ -183,7 +183,7 @@ const RAW: StrongsEntry[] = [
     original: "Χριστός",
     gloss: "Christ, Anointed One",
     usage:
-      "The Greek for Hebrew Mashiach — the Anointed. Title before name: 'Jesus the Christ'. Carries every messianic expectation of the Old Testament — King, Priest, Prophet.",
+      "The Greek for Hebrew Mashiach - the Anointed. Title before name: 'Jesus the Christ'. Carries every messianic expectation of the Old Testament - King, Priest, Prophet.",
     english: ["Christ", "Messiah"],
     examples: [
       { ref: "Matthew 16:16" },
@@ -195,9 +195,9 @@ const RAW: StrongsEntry[] = [
     language: "greek",
     translit: "Iēsous",
     original: "Ἰησοῦς",
-    gloss: "Jesus — 'Yahweh saves'",
+    gloss: "Jesus - 'Yahweh saves'",
     usage:
-      "The Greek transliteration of Yeshua / Joshua — 'the LORD is salvation'. Named by angel before birth, because He will save His people from their sins (Matt 1:21).",
+      "The Greek transliteration of Yeshua / Joshua - 'the LORD is salvation'. Named by angel before birth, because He will save His people from their sins (Matt 1:21).",
     english: ["Jesus"],
     examples: [
       { ref: "Matthew 1:21" },
@@ -225,7 +225,7 @@ const RAW: StrongsEntry[] = [
     original: "εὐαγγέλιον",
     gloss: "good news, gospel",
     usage:
-      "Originally a herald's announcement of victory or accession. The 'gospel' is the news that Jesus is risen King — and through Him sinners are reconciled to God.",
+      "Originally a herald's announcement of victory or accession. The 'gospel' is the news that Jesus is risen King - and through Him sinners are reconciled to God.",
     english: ["gospel", "good news"],
     examples: [
       { ref: "Romans 1:16" },
@@ -239,7 +239,7 @@ const RAW: StrongsEntry[] = [
     original: "ἐκκλησία",
     gloss: "church; called-out assembly",
     usage:
-      "Not a building — the gathered people called out by God. In Greek civic life a town assembly; in the NT, the global and local people of Jesus.",
+      "Not a building - the gathered people called out by God. In Greek civic life a town assembly; in the NT, the global and local people of Jesus.",
     english: ["church", "assembly"],
     examples: [
       { ref: "Matthew 16:18" },
@@ -253,7 +253,7 @@ const RAW: StrongsEntry[] = [
     original: "μετανοέω",
     gloss: "to repent; to change one's mind",
     usage:
-      "A turning of the inner life — the mind, will, and direction — toward God. More than emotion ('I feel bad'); a re-orientation that produces fruit (Matt 3:8).",
+      "A turning of the inner life - the mind, will, and direction - toward God. More than emotion ('I feel bad'); a re-orientation that produces fruit (Matt 3:8).",
     english: ["repent", "change of mind"],
     examples: [
       { ref: "Matthew 4:17" },
@@ -267,7 +267,7 @@ const RAW: StrongsEntry[] = [
     original: "δίκαιος",
     gloss: "righteous, just",
     usage:
-      "Right standing before God, by faith. Paul builds Romans 1-4 on this — 'the just shall live by faith' — that God's righteousness is gift, not earned status.",
+      "Right standing before God, by faith. Paul builds Romans 1-4 on this - 'the just shall live by faith' - that God's righteousness is gift, not earned status.",
     english: ["righteous", "just"],
     examples: [
       { ref: "Romans 1:17" },
@@ -281,7 +281,7 @@ const RAW: StrongsEntry[] = [
     original: "ἁμαρτία",
     gloss: "sin; missing the mark",
     usage:
-      "An archery term — to miss the target. Sin is both failure to hit God's standard and a power that enslaves until Christ liberates (Rom 6).",
+      "An archery term - to miss the target. Sin is both failure to hit God's standard and a power that enslaves until Christ liberates (Rom 6).",
     english: ["sin"],
     examples: [
       { ref: "Romans 3:23" },
@@ -295,7 +295,7 @@ const RAW: StrongsEntry[] = [
     original: "εἰρήνη",
     gloss: "peace; wholeness (= Heb. shalom)",
     usage:
-      "More than absence of conflict — God's wholeness. Paul opens nearly every letter with grace and peace; the peace that guards the heart (Phil 4:7).",
+      "More than absence of conflict - God's wholeness. Paul opens nearly every letter with grace and peace; the peace that guards the heart (Phil 4:7).",
     english: ["peace"],
     examples: [
       { ref: "John 14:27" },
@@ -309,7 +309,7 @@ const RAW: StrongsEntry[] = [
     original: "παρακαλέω",
     gloss: "to call alongside; comfort, encourage, exhort",
     usage:
-      "The verb behind 'Paraclete' (John 14-16). Used both of urgent appeal and gentle comfort — God calls us alongside Himself and sends us alongside others.",
+      "The verb behind 'Paraclete' (John 14-16). Used both of urgent appeal and gentle comfort - God calls us alongside Himself and sends us alongside others.",
     english: ["comfort", "encourage", "exhort", "urge"],
     examples: [
       { ref: "2 Corinthians 1:3-4" },
@@ -322,7 +322,7 @@ const RAW: StrongsEntry[] = [
     language: "hebrew",
     translit: "YHWH",
     original: "יְהוָה",
-    gloss: "the LORD — the personal name of God",
+    gloss: "the LORD - the personal name of God",
     usage:
       "The covenant name revealed at the burning bush (Ex 3:14). Traditionally read aloud as 'Adonai'. Most English Bibles render it 'LORD' in small caps. The name speaks of God's self-existence and faithfulness.",
     english: ["LORD", "Yahweh", "Jehovah"],
@@ -338,7 +338,7 @@ const RAW: StrongsEntry[] = [
     original: "אֱלֹהִים",
     gloss: "God; mighty ones (plural of majesty)",
     usage:
-      "The plural noun used for the one true God — opens Genesis 1:1. The plural form does not imply many gods but the fullness and majesty of the One.",
+      "The plural noun used for the one true God - opens Genesis 1:1. The plural form does not imply many gods but the fullness and majesty of the One.",
     english: ["God", "god", "judges"],
     examples: [
       { ref: "Genesis 1:1" },
@@ -352,7 +352,7 @@ const RAW: StrongsEntry[] = [
     original: "אֲדֹנָי",
     gloss: "Lord, Master",
     usage:
-      "'My Lord' — the reverent substitute spoken when reading YHWH aloud. Isaiah 6 — 'I saw the Adonai sitting on a throne'.",
+      "'My Lord' - the reverent substitute spoken when reading YHWH aloud. Isaiah 6 - 'I saw the Adonai sitting on a throne'.",
     english: ["Lord"],
     examples: [
       { ref: "Isaiah 6:1" },
@@ -366,7 +366,7 @@ const RAW: StrongsEntry[] = [
     original: "חֶסֶד",
     gloss: "steadfast love; covenant loyalty",
     usage:
-      "One of the great Hebrew words — God's loyal love that keeps covenant even when His people break it. Psalm 136 says it 'endures forever' twenty-six times in a row.",
+      "One of the great Hebrew words - God's loyal love that keeps covenant even when His people break it. Psalm 136 says it 'endures forever' twenty-six times in a row.",
     english: ["lovingkindness", "steadfast love", "mercy", "kindness"],
     examples: [
       { ref: "Psalm 136" },
@@ -409,7 +409,7 @@ const RAW: StrongsEntry[] = [
     original: "אָמַן",
     gloss: "to confirm, to support, to believe",
     usage:
-      "The root of 'amen'. Originally the leaning of a parent on a child or a wall on a foundation — to lean one's full weight. To believe God is to lean on Him.",
+      "The root of 'amen'. Originally the leaning of a parent on a child or a wall on a foundation - to lean one's full weight. To believe God is to lean on Him.",
     english: ["believe", "amen", "faithful", "trust"],
     examples: [
       { ref: "Genesis 15:6" },
@@ -437,7 +437,7 @@ const RAW: StrongsEntry[] = [
     original: "יָדָה",
     gloss: "to thank, to praise (with extended hands)",
     usage:
-      "Literally 'to throw' or 'cast forth'. Carries the picture of lifting the hands — open, empty, receiving. Behind many of the Psalms' calls to give thanks.",
+      "Literally 'to throw' or 'cast forth'. Carries the picture of lifting the hands - open, empty, receiving. Behind many of the Psalms' calls to give thanks.",
     english: ["praise", "thank", "give thanks"],
     examples: [
       { ref: "Psalm 100:4" },
@@ -451,7 +451,7 @@ const RAW: StrongsEntry[] = [
     original: "הָלַל",
     gloss: "to praise, to boast, to be clamorous",
     usage:
-      "Loud, exuberant praise — the root of Hallelujah ('praise Yah'). Often associated with celebration that is not quiet.",
+      "Loud, exuberant praise - the root of Hallelujah ('praise Yah'). Often associated with celebration that is not quiet.",
     english: ["praise", "boast", "celebrate"],
     examples: [
       { ref: "Psalm 150" },
@@ -465,7 +465,7 @@ const RAW: StrongsEntry[] = [
     original: "רֵאשִׁית",
     gloss: "beginning, firstfruits, chief",
     usage:
-      "Genesis opens with bereshit — 'in the beginning'. Same root as 'firstfruits' and 'first/chief'. God claims the first of everything — time, harvest, sons.",
+      "Genesis opens with bereshit - 'in the beginning'. Same root as 'firstfruits' and 'first/chief'. God claims the first of everything - time, harvest, sons.",
     english: ["beginning", "first", "firstfruits"],
     examples: [
       { ref: "Genesis 1:1" },
@@ -479,7 +479,7 @@ const RAW: StrongsEntry[] = [
     original: "כָּבוֹד",
     gloss: "glory; weight, heaviness",
     usage:
-      "Literally 'weight'. God's kavod is His weighty presence — what filled the tabernacle (Ex 40) and the temple (1 Kgs 8). Doxa is the Greek counterpart.",
+      "Literally 'weight'. God's kavod is His weighty presence - what filled the tabernacle (Ex 40) and the temple (1 Kgs 8). Doxa is the Greek counterpart.",
     english: ["glory", "honour", "weight"],
     examples: [
       { ref: "Exodus 33:18" },
@@ -493,7 +493,7 @@ const RAW: StrongsEntry[] = [
     original: "קֹדֶשׁ",
     gloss: "holiness; set apart",
     usage:
-      "Used of God, ground, days, garments, and the people themselves. 'Holy holy holy' (Isa 6:3) — qadosh qadosh qadosh — is the only attribute repeated three times of God in scripture.",
+      "Used of God, ground, days, garments, and the people themselves. 'Holy holy holy' (Isa 6:3) - qadosh qadosh qadosh - is the only attribute repeated three times of God in scripture.",
     english: ["holy", "holiness", "sanctuary"],
     examples: [
       { ref: "Isaiah 6:3" },
@@ -507,7 +507,7 @@ const RAW: StrongsEntry[] = [
     original: "יָשַׁע",
     gloss: "to save, to deliver",
     usage:
-      "The verb behind Yeshua/Joshua and Hoshana ('save now'). The cry of Israel before deliverance — at the Red Sea, at the cross, at the second coming.",
+      "The verb behind Yeshua/Joshua and Hoshana ('save now'). The cry of Israel before deliverance - at the Red Sea, at the cross, at the second coming.",
     english: ["save", "deliver", "rescue"],
     examples: [
       { ref: "Exodus 14:13" },
@@ -549,7 +549,7 @@ const RAW: StrongsEntry[] = [
     original: "רָצוֹן",
     gloss: "favour, acceptance, good pleasure",
     usage:
-      "God's favour — the smile of heaven. The year of the LORD's ratson (Isa 61:2) is the year of His grace, which Jesus claimed in Luke 4.",
+      "God's favour - the smile of heaven. The year of the LORD's ratson (Isa 61:2) is the year of His grace, which Jesus claimed in Luke 4.",
     english: ["favour", "will", "pleasure", "acceptance"],
     examples: [
       { ref: "Isaiah 61:2" },
@@ -563,7 +563,7 @@ const RAW: StrongsEntry[] = [
     original: "אוֹת",
     gloss: "sign, token, mark",
     usage:
-      "The rainbow (Gen 9:13), circumcision (Gen 17:11), the sabbath (Ex 31:13) — all are 'oth' — covenant signs that point back to God.",
+      "The rainbow (Gen 9:13), circumcision (Gen 17:11), the sabbath (Ex 31:13) - all are 'oth' - covenant signs that point back to God.",
     english: ["sign", "token"],
     examples: [
       { ref: "Genesis 9:13" },
@@ -586,7 +586,7 @@ const RAW: StrongsEntry[] = [
   },
 ];
 
-// Build flexible search index — by number, translit, English, or substring.
+// Build flexible search index - by number, translit, English, or substring.
 const norm = (s: string) =>
   s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 

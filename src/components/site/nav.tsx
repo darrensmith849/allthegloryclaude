@@ -20,7 +20,7 @@ export default function Nav() {
     setOpen(false);
   }, [pathname]);
 
-  // The private dashboard has its own chrome — don't render the public nav there.
+  // The private dashboard has its own chrome - don't render the public nav there.
   if (pathname?.startsWith("/dashboard")) return null;
 
   return (
@@ -29,7 +29,7 @@ export default function Nav() {
         <Link
           href="/"
           className="font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
-          aria-label="All The Glory — home"
+          aria-label="All The Glory - home"
         >
           {site.name}
         </Link>
@@ -50,7 +50,7 @@ export default function Nav() {
                 }`}
               >
                 {item.label}
-                {/* Underline — amber for active, white/soft on hover for others */}
+                {/* Underline - amber for active, white/soft on hover for others */}
                 <span
                   className={`pointer-events-none absolute left-0 right-0 -bottom-1.5 h-px origin-center transition-transform duration-300 ${
                     active

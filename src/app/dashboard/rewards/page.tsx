@@ -147,7 +147,7 @@ export default function RewardsPage() {
     },
     {
       id: "longest-bible-30",
-      title: "Best streak — 30 days",
+      title: "Best streak - 30 days",
       blurb: "A 30-day Bible streak at any point.",
       points: 80,
       progress: () => ({ current: longestBible, target: 30 }),
@@ -175,7 +175,7 @@ export default function RewardsPage() {
           <div className="eyebrow eyebrow-amber">{tier}</div>
           <h1 className="dash-title mt-1">Rewards &amp; Milestones</h1>
           <div className="dash-subtitle">
-            The reward is the life you&apos;re building — these are the markers along the way.
+            The reward is the life you&apos;re building - these are the markers along the way.
           </div>
         </div>
       </div>

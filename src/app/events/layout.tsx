@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bookings",
+  title: "Commissions",
   description:
-    "Bookings and ministry enquiries for All The Glory — worship nights, church services, conferences, and intimate gatherings.",
+    "Commissions for All The Glory - bespoke songs written and recorded for personal testimonies, weddings, memorials, church themes, and milestone moments.",
   alternates: { canonical: "/events" },
   openGraph: {
-    title: "Bookings — All The Glory",
+    title: "Commissions - All The Glory",
     description:
-      "Bookings and ministry enquiries for All The Glory — worship nights, church services, conferences, and intimate gatherings.",
+      "Commissions for All The Glory - bespoke songs written and recorded for personal testimonies, weddings, memorials, church themes, and milestone moments.",
     url: "/events",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "All The Glory — From Darkness To Light",
+        alt: "All The Glory - From Darkness To Light",
       },
     ],
   },

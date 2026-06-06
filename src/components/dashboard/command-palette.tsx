@@ -26,7 +26,7 @@ export default function CommandPalette() {
   const [hi, setHi] = useState(0);
   const today = todayISO();
 
-  // Global ⌘K / Ctrl+K listener — and Esc to close.
+  // Global ⌘K / Ctrl+K listener - and Esc to close.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {

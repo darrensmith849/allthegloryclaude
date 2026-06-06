@@ -1,4 +1,4 @@
-// "Who am I?" identity statements — 25 verses to read each morning before
+// "Who am I?" identity statements - 25 verses to read each morning before
 // stepping into the day. Each entry is the reference + the verse text in the
 // ESV (English Standard Version).
 
@@ -70,7 +70,7 @@ export const IDENTITY_STATEMENTS: IdentityStatement[] = [
   },
   {
     ref: "Romans 8:16–17",
-    text: "The Spirit himself bears witness with our spirit that we are children of God, and if children, then heirs—heirs of God and fellow heirs with Christ, provided we suffer with him in order that we may also be glorified with him.",
+    text: "The Spirit himself bears witness with our spirit that we are children of God, and if children, then heirs-heirs of God and fellow heirs with Christ, provided we suffer with him in order that we may also be glorified with him.",
   },
   {
     ref: "1 Peter 2:9",

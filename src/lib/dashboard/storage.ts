@@ -22,7 +22,7 @@ function read(): DashboardState {
     } as DashboardState;
 
     // ── Schedule day-of-week migration ──────────────────────────
-    // Older rows had no daysOfWeek field — assume weekdays only.
+    // Older rows had no daysOfWeek field - assume weekdays only.
     // Also drop in the Sunday Church default if it's not there.
     const WEEKDAYS = [1, 2, 3, 4, 5];
     const sched = merged.settings.schedule ?? [];
@@ -66,7 +66,7 @@ function write(state: DashboardState) {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
-    // quota / privacy — silently fail; the in-memory state still works for the session.
+    // quota / privacy - silently fail; the in-memory state still works for the session.
   }
 }
 

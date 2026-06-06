@@ -9,7 +9,7 @@ const processSteps = [
   },
   {
     title: "Write the song",
-    body: "An initial draft is written and recorded — lyrics, melody, arrangement — shaped prayerfully around your brief.",
+    body: "An initial draft is written and recorded - lyrics, melody, arrangement - shaped prayerfully around your brief.",
   },
   {
     title: "Refine together",
@@ -24,11 +24,11 @@ const processSteps = [
 const faqItems = [
   {
     q: "How long does a commission take?",
-    a: "Typical turnaround is 4–6 weeks from brief to final master. If you're working to a specific date — a wedding, a memorial, a conference — let us know in your first message and we'll confirm timing before starting.",
+    a: "Typical turnaround is 4–6 weeks from brief to final master. If you're working to a specific date - a wedding, a memorial, a conference - let us know in your first message and we'll confirm timing before starting.",
   },
   {
     q: "What do you need from me to begin?",
-    a: "A short written brief is ideal — who the song is for, the occasion, any scripture or phrases that matter, and the emotional weight you want it to carry. Reference tracks are welcome but not required.",
+    a: "A short written brief is ideal - who the song is for, the occasion, any scripture or phrases that matter, and the emotional weight you want it to carry. Reference tracks are welcome but not required.",
   },
   {
     q: "Can I request revisions?",
@@ -44,7 +44,7 @@ const faqItems = [
   },
   {
     q: "How is the commission priced?",
-    a: "Pricing depends on scope — solo vocal & guitar versus a full-band production is a different body of work. Reach out with your brief and we'll send a quote within 48 hours.",
+    a: "Pricing depends on scope - solo vocal & guitar versus a full-band production is a different body of work. Reach out with your brief and we'll send a quote within 48 hours.",
   },
 ];
 
@@ -108,7 +108,7 @@ export default function BookingsPage() {
             Let&apos;s write something that matters
           </h2>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto leading-relaxed">
-            Every song begins with a conversation. Share the story —
+            Every song begins with a conversation. Share the story -
             we&apos;ll take it from there.
           </p>
           <div className="mt-7 flex flex-wrap gap-3 justify-center">

@@ -76,13 +76,13 @@ export default function DonatePage() {
             An offering
           </h1>
           <p className="font-display mt-5 text-base md:text-lg italic text-white/75 max-w-xl mx-auto leading-relaxed">
-            I didn&apos;t want to put a price on worship — this is an
+            I didn&apos;t want to put a price on worship - this is an
             offering unto the Lord.
           </p>
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
             If you feel led to support the work, your gift goes directly
             into recording, production, and releasing more music. A portion
-            of every gift also goes toward causes close to my heart —
+            of every gift also goes toward causes close to my heart -
             helping others, beyond the music.
           </p>
         </motion.header>
@@ -98,7 +98,7 @@ export default function DonatePage() {
             Donation amount
           </h2>
 
-          {/* Preset chips — quick shortcuts only, never a maximum */}
+          {/* Preset chips - quick shortcuts only, never a maximum */}
           <div className="text-xs uppercase tracking-[0.26em] text-white/55">
             Quick amounts
           </div>
@@ -123,18 +123,18 @@ export default function DonatePage() {
             })}
           </div>
 
-          {/* Bridge helper — explicitly tells users they aren't capped at $50 */}
+          {/* Bridge helper - explicitly tells users they aren't capped at $50 */}
           <p className="mt-4 text-xs text-white/55">
             Or enter your own amount below.
           </p>
 
-          {/* Custom amount — fully open-ended, any positive value */}
+          {/* Custom amount - fully open-ended, any positive value */}
           <div className="mt-5">
             <label
               htmlFor="donation-amount"
               className="text-xs uppercase tracking-[0.26em] text-white/60"
             >
-              Custom amount — enter any amount
+              Custom amount - enter any amount
             </label>
             <div className="relative mt-2">
               <span

@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://www.alltheglory.co.za";
   // Only real, useful destination pages.
-  // /events now serves as the Bookings & Enquiries page.
+  // /events now serves as the Commissions page.
   const routes = [
     "/",
     "/about",

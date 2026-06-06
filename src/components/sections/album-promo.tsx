@@ -24,7 +24,7 @@ export default function AlbumPromo() {
           href="/album/from-darkness-to-light"
           className="block group"
         >
-          {/* Album image — hero-sized so it owns the lower half of the home page */}
+          {/* Album image - hero-sized so it owns the lower half of the home page */}
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 h-[400px] md:h-[560px]">
             <Image
               src={assets.albumArt}

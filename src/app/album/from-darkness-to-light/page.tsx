@@ -305,14 +305,14 @@ export default function AlbumPage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
-  // detach it cleanly when the user switches tracks — otherwise a late-firing
+  // detach it cleanly when the user switches tracks - otherwise a late-firing
   // ended event on the previous track could flip a newly-started track back
   // to "Preview".
   const endedHandlerRef = useRef<(() => void) | null>(null);
   const reduce = useReducedMotion();
 
   useEffect(() => {
-    // Was 10s — now matches the actual entrance length so hover works
+    // Was 10s - now matches the actual entrance length so hover works
     // shortly after the tracks land. Instant when reduced motion.
     const timer = setTimeout(() => setHoverReady(true), reduce ? 0 : 3500);
     return () => clearTimeout(timer);
@@ -336,7 +336,7 @@ export default function AlbumPage() {
       return;
     }
 
-    // Switching to a new track — tear down the previous one completely
+    // Switching to a new track - tear down the previous one completely
     // before we start the new one.
     detachAudio();
 
@@ -373,7 +373,7 @@ export default function AlbumPage() {
 
   return (
     <main className="relative bg-transparent overflow-x-clip">
-      {/* Full-bleed BTS studio video sitting behind the entire top banner —
+      {/* Full-bleed BTS studio video sitting behind the entire top banner -
           behind the left artwork, the album header card, and the right
           artwork. Fades into the page background before the track list so
           the rest of the page stays calm. Skipped under reduced-motion. */}
@@ -398,7 +398,7 @@ export default function AlbumPage() {
       )}
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT artwork — sticky so it follows the tracks as they scroll.
+          {/* LEFT artwork - sticky so it follows the tracks as they scroll.
               Credit is hidden here so it doesn't collide with the fixed
               bottom-left social dock; the right side keeps the credit. */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
@@ -412,7 +412,7 @@ export default function AlbumPage() {
 
           {/* CENTRE: everything centred */}
           <section className="flex flex-col items-center text-center">
-            {/* Album header — animates independently and locks in place */}
+            {/* Album header - animates independently and locks in place */}
             <motion.div
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -445,13 +445,13 @@ export default function AlbumPage() {
               </div>
 
               <p className="font-display mt-5 text-sm md:text-base italic text-white/65 leading-relaxed max-w-sm mx-auto">
-                I didn&apos;t want to put a price on worship — this is an
+                I didn&apos;t want to put a price on worship - this is an
                 offering unto the Lord. Take it, listen, and let it lead you
                 to Him.
               </p>
             </motion.div>
 
-            {/* Tracks — animate independently, don't affect header */}
+            {/* Tracks - animate independently, don't affect header */}
             <div className="mt-8 grid gap-3 w-full">
               {album.tracks.map((t, i) => (
                 <TrackRow
@@ -471,7 +471,7 @@ export default function AlbumPage() {
               ))}
             </div>
 
-            {/* Primary download CTA — sits between the track list and the
+            {/* Primary download CTA - sits between the track list and the
                 streaming row so listeners always have a clear path to take
                 the album with them. */}
             <motion.div
@@ -493,7 +493,7 @@ export default function AlbumPage() {
               </button>
             </motion.div>
 
-            {/* Streaming links — only the platforms that actually exist */}
+            {/* Streaming links - only the platforms that actually exist */}
             <motion.div
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -533,7 +533,7 @@ export default function AlbumPage() {
             </motion.div>
           </section>
 
-          {/* RIGHT artwork (desktop only) — sticky so it follows the tracks as they scroll */}
+          {/* RIGHT artwork (desktop only) - sticky so it follows the tracks as they scroll */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt delay={0.14} side="right" />
           </div>

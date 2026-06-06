@@ -1,7 +1,7 @@
 "use client";
 
 // Client wrapper around the dashboard layout. Lets us conditionally render
-// the sidebar — the welcome page at /dashboard takes over the full viewport
+// the sidebar - the welcome page at /dashboard takes over the full viewport
 // (no sidebar), every other /dashboard/* route gets the sidebar shell.
 
 import { usePathname } from "next/navigation";

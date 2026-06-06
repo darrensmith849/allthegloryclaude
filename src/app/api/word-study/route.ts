@@ -1,9 +1,9 @@
 // AI + lexicon word study.
 //
 // Three layers:
-//   1. Curated lexicon (instant, pastoral) — ~40 of the most-studied words.
-//   2. Full Strong's lexicon (5,523 Greek + 8,674 Hebrew) — exhaustive.
-//   3. Anthropic Claude (optional) — adds a pastoral synthesis if a key
+//   1. Curated lexicon (instant, pastoral) - ~40 of the most-studied words.
+//   2. Full Strong's lexicon (5,523 Greek + 8,674 Hebrew) - exhaustive.
+//   3. Anthropic Claude (optional) - adds a pastoral synthesis if a key
 //      is set in ANTHROPIC_API_KEY.
 //
 // Layer 2 is the new fallback that ensures EVERY word search returns
@@ -33,10 +33,10 @@ export async function POST(req: Request) {
   const query = String(body?.query ?? "").trim();
   if (!query) return NextResponse.json({ error: "query is required" }, { status: 400 });
 
-  // 1. Curated — always fastest and best-written.
+  // 1. Curated - always fastest and best-written.
   const curated = searchStrongs(query).map((e) => ({ ...e, source: "curated" as const }));
 
-  // 2. Full lexicon — fills the long tail.
+  // 2. Full lexicon - fills the long tail.
   const seenNums = new Set(curated.map((c) => c.number));
   const fullLex = searchFullLexicon(query, 20)
     .filter((e) => !seenNums.has(e.number))
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // 3. AI synthesis — adds context, doesn't replace the lexicon hits.
+  // 3. AI synthesis - adds context, doesn't replace the lexicon hits.
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
           "translit, original (the original script), gloss (short), usage " +
           "(2-4 sentences, pastoral and accurate), english (array of common " +
           "translations), examples (array of {ref, quote?}). Be sober and " +
-          "biblical. Do not invent numbers — leave the number field empty if " +
+          "biblical. Do not invent numbers - leave the number field empty if " +
           "unsure. Return ONLY JSON, no prose.",
         messages: [
           {

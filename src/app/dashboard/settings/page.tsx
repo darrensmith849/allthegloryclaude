@@ -151,7 +151,7 @@ export default function SettingsPage() {
   const s = state.settings;
 
   // ── Backup + restore ────────────────────────────────────────
-  // The dashboard is localStorage-only — clearing the browser wipes
+  // The dashboard is localStorage-only - clearing the browser wipes
   // everything. Export/import gives the user a manual safety net.
   function exportData() {
     const blob = new Blob([JSON.stringify(state, null, 2)], {
@@ -203,7 +203,7 @@ export default function SettingsPage() {
           <div className="eyebrow eyebrow-amber">Everything tunable</div>
           <h1 className="dash-title mt-1">Settings</h1>
           <div className="dash-subtitle">
-            Edit the schedule, the habits, the plan — make it yours.
+            Edit the schedule, the habits, the plan - make it yours.
           </div>
         </div>
       </div>
@@ -378,7 +378,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       updateScheduleRow(row.id, { hour: Number(e.target.value) || 0 })
                     }
-                    title="Hour as 24h decimal — used for the 'now' highlight"
+                    title="Hour as 24h decimal - used for the 'now' highlight"
                   />
                   <input
                     className="dash-input"
@@ -742,7 +742,7 @@ Numbers 22 - 23
         <div className="dash-col-12">
           <Panel eyebrow="Danger zone" title="Reset everything">
             <p className="text-[13px] text-[var(--colour-ink-soft)] mb-3">
-              Wipes habits, logs, tasks, sessions, book, settings — every byte of dashboard
+              Wipes habits, logs, tasks, sessions, book, settings - every byte of dashboard
               storage in this browser. Cannot be undone.
             </p>
             <button className="dash-btn dash-btn-danger" onClick={wipeAll}>

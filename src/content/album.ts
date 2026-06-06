@@ -1,7 +1,7 @@
-/** Album data — single source of truth for the album page, the
+/** Album data - single source of truth for the album page, the
  *  homepage hero, and the JSON-LD structured data in the layout. */
 
-/** Worship artist name — used in the download zip filename so the
+/** Worship artist name - used in the download zip filename so the
  *  listener sees "All The Glory - From Darkness To Light.zip" in
  *  their downloads folder. */
 export const ARTIST_NAME = "All The Glory";
@@ -25,16 +25,16 @@ export const album = {
 
   /**
    * Tracks. Each track carries:
-   *  - title         — display title (the verse reference)
-   *  - verse         — the headline / hover quote (short, iconic)
-   *  - ref           — citation shown in the verse modal eyebrow
-   *  - fullVerse     — the full ESV passage shown in the modal
-   *  - reflection    — short editorial commentary on the verse, shown
+   *  - title         - display title (the verse reference)
+   *  - verse         - the headline / hover quote (short, iconic)
+   *  - ref           - citation shown in the verse modal eyebrow
+   *  - fullVerse     - the full ESV passage shown in the modal
+   *  - reflection    - short editorial commentary on the verse, shown
    *                    in the modal under the scripture. Written as
-   *                    scriptural reflection, not personal voice — feel
+   *                    scriptural reflection, not personal voice - feel
    *                    free to edit each one to add your own context
    *                    or rewrite in first person when you're ready.
-   *  - previewSrc    — preview audio file path
+   *  - previewSrc    - preview audio file path
    */
   tracks: [
     {
@@ -50,7 +50,7 @@ export const album = {
       verse: "\u201CO you of little faith, why did you doubt?\u201D",
       ref: "Matthew 14:31",
       fullVerse: "Jesus immediately reached out his hand and took hold of him, saying to him, \u201CO you of little faith, why did you doubt?\u201D",
-      reflection: "Not a rebuke first — a hand reaching out first. The doubt is named, but only after the rescue.",
+      reflection: "Not a rebuke first - a hand reaching out first. The doubt is named, but only after the rescue.",
       previewSrc: "/audio/previews/02-matthew-14-vs-31.mp3",
     },
     {
@@ -58,7 +58,7 @@ export const album = {
       verse: "\u201CJesus wept.\u201D",
       ref: "John 11:35",
       fullVerse: "Jesus wept.",
-      reflection: "Two words. The shortest verse in scripture, and the proof that grief is not weakness — even God enters our weeping before he answers it.",
+      reflection: "Two words. The shortest verse in scripture, and the proof that grief is not weakness - even God enters our weeping before he answers it.",
       previewSrc: "/audio/previews/03-john-11-vs-35.mp3",
     },
     {
@@ -74,7 +74,7 @@ export const album = {
       verse: "\u201CTrust in the Lord with all your heart, and do not lean on your own understanding.\u201D",
       ref: "Proverbs 3:5",
       fullVerse: "Trust in the Lord with all your heart, and do not lean on your own understanding.",
-      reflection: "The hardest verse to live. Not lean on your own understanding — even when your understanding feels like all you have.",
+      reflection: "The hardest verse to live. Not lean on your own understanding - even when your understanding feels like all you have.",
       previewSrc: "/audio/previews/05-proverbs-3-vs-5.mp3",
     },
     {
@@ -90,7 +90,7 @@ export const album = {
       verse: "\u201CFor our sake he made him to be sin who knew no sin, so that in him we might become the righteousness of God.\u201D",
       ref: "2 Corinthians 5:21",
       fullVerse: "For our sake he made him to be sin who knew no sin, so that in him we might become the righteousness of God.",
-      reflection: "The trade no one else could make. His righteousness for our shame — freely given, never earned.",
+      reflection: "The trade no one else could make. His righteousness for our shame - freely given, never earned.",
       previewSrc: "/audio/previews/07-2-corinthians-5-vs-21.mp3",
     },
   ],

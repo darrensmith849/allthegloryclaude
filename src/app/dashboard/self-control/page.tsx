@@ -17,7 +17,7 @@ import { currentStreak, longestStreak, habitOn } from "@/lib/dashboard/streaks";
 const HABIT_KEY = "noPorn"; // single discipline this page focuses on
 const HEATMAP_DAYS = 91; // 13 weeks of history including today
 
-// Milestones — small early wins through to a clean year.
+// Milestones - small early wins through to a clean year.
 const MILESTONES = [
   { target: 7, label: "One week" },
   { target: 14, label: "Two weeks" },
@@ -69,7 +69,7 @@ export default function SelfControlPage() {
     });
   }
 
-  // ── Backfill — mark the last N days clean in a single click ────
+  // ── Backfill - mark the last N days clean in a single click ────
   const [backfillDays, setBackfillDays] = useState(14);
   const [backfillFrom, setBackfillFrom] = useState<string>(() =>
     addDays(today, -13),
@@ -160,7 +160,7 @@ export default function SelfControlPage() {
           />
         </div>
 
-        {/* Backfill widget — the whole point of this page right now */}
+        {/* Backfill widget - the whole point of this page right now */}
         <div className="dash-col-12">
           <Panel
             eyebrow="Backfill"
@@ -244,7 +244,7 @@ export default function SelfControlPage() {
           </Panel>
         </div>
 
-        {/* Heatmap calendar — 13 weeks (~3 months) */}
+        {/* Heatmap calendar - 13 weeks (~3 months) */}
         <div className="dash-col-8">
           <Panel eyebrow={`Last ${HEATMAP_DAYS} days`} title="Calendar">
             <div className="dash-clean-heatmap">

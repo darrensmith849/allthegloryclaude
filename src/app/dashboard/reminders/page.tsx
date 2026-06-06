@@ -15,7 +15,7 @@ export default function RemindersPage() {
           <div className="eyebrow eyebrow-amber">{formatHuman(today)}</div>
           <h1 className="dash-title mt-1">Reminders</h1>
           <div className="dash-subtitle">
-            All five together. One rotates onto the Today page each morning — the rest stay here.
+            All five together. One rotates onto the Today page each morning - the rest stay here.
           </div>
         </div>
       </div>
