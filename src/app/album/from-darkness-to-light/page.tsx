@@ -422,9 +422,9 @@ export default function AlbumPage() {
               </div>
 
               <p className="font-display mt-5 text-sm md:text-base italic text-white/65 leading-relaxed max-w-sm mx-auto">
-                I didn&apos;t want to put a price on worship - this is an
-                offering unto the Lord. Take it, listen, and let it lead you
-                to Him.
+                This album is a free offering unto the Lord.
+                <br />
+                May every song lead you closer to Him.
               </p>
             </motion.div>
 
