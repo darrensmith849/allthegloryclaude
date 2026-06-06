@@ -30,11 +30,16 @@ export default function TestimonyPage() {
           </h1>
 
           <p className="font-display mt-6 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
-            The Lord pulled me out of drugs and gave me a new life.
+            Jesus rescued me from addiction and a 20-year battle with
+            suicidal thoughts, and gave me a new life.
           </p>
           <p className="mt-4 text-sm md:text-base text-white/65 leading-relaxed max-w-xl mx-auto">
-            Take a few minutes and watch the full story below — Jesus is
-            still in the business of setting people free.
+            Take a few minutes to watch the full story below — Jesus is
+            still setting people free.
+          </p>
+          <p className="mt-4 text-sm md:text-base text-white/65 leading-relaxed max-w-xl mx-auto">
+            If you know someone this testimony could help, please share it
+            with them.
           </p>
         </motion.div>
 
