@@ -53,10 +53,21 @@ function BibleReadingInner() {
   function setPlanOverride(text: string | null) {
     update((d) => {
       if (!d.settings.planOverrides) d.settings.planOverrides = {};
-      if (text == null || text.trim() === "" || text.trim() === planFor(planDay).passage) {
+      const trimmed = text?.trim() ?? "";
+      if (!trimmed || trimmed === planFor(planDay).passage) {
         delete d.settings.planOverrides[planDay];
-      } else {
-        d.settings.planOverrides[planDay] = text.trim();
+        return;
+      }
+      d.settings.planOverrides[planDay] = trimmed;
+
+      // Auto-prefill the NEXT day's passage with "Book endChapter" so the user
+      // can extend it (e.g. typing "-22" turns "Numbers 19" into "Numbers 19-22").
+      // We only do this when the next day has no override yet — never overwrite
+      // a deliberate edit the user has already made.
+      const nextDay = planDay + 1;
+      if (nextDay <= 365 && !d.settings.planOverrides[nextDay]) {
+        const end = parseEndOfPassage(trimmed);
+        if (end) d.settings.planOverrides[nextDay] = `${end.book} ${end.chapter}`;
       }
     });
   }
@@ -204,15 +215,43 @@ function BibleReadingInner() {
                 />
               </div>
               <div>
-                <label className="dash-label">Minutes read</label>
-                <input
-                  className="dash-input"
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="e.g. 30"
-                  value={log.minutes ?? ""}
-                  onChange={(e) => setLog({ minutes: Number(e.target.value) || 0 })}
-                />
+                <label className="dash-label">Time spent</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    className="dash-input"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={24}
+                    placeholder="h"
+                    value={Math.floor((log.minutes ?? 0) / 60) || ""}
+                    onChange={(e) => {
+                      const h = Number(e.target.value) || 0;
+                      const m = (log.minutes ?? 0) % 60;
+                      setLog({ minutes: h * 60 + m });
+                    }}
+                    style={{ width: "calc(50% - 8px)" }}
+                    title="Hours"
+                  />
+                  <span className="text-[11px] text-[var(--colour-ink-quiet)]">h</span>
+                  <input
+                    className="dash-input"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={59}
+                    placeholder="min"
+                    value={(log.minutes ?? 0) % 60 || ""}
+                    onChange={(e) => {
+                      const m = Number(e.target.value) || 0;
+                      const h = Math.floor((log.minutes ?? 0) / 60);
+                      setLog({ minutes: h * 60 + m });
+                    }}
+                    style={{ width: "calc(50% - 8px)" }}
+                    title="Minutes"
+                  />
+                  <span className="text-[11px] text-[var(--colour-ink-quiet)]">m</span>
+                </div>
               </div>
             </div>
 
@@ -472,4 +511,31 @@ function ReadHere({ passage }: { passage: string }) {
       )}
     </div>
   );
+}
+
+// Extract the LAST chapter from a passage so we can auto-prefill the next
+// day's continuation. Supports common patterns:
+//   "Numbers 16-19"        → { book: "Numbers", chapter: 19 }
+//   "Numbers 19"           → { book: "Numbers", chapter: 19 }
+//   "1 Peter 1:5-2:10"     → { book: "1 Peter", chapter: 2 }
+//   "Genesis 1-3; Job 1"   → null (multi-book — skip auto-prefill)
+function parseEndOfPassage(
+  passage: string,
+): { book: string; chapter: number } | null {
+  // Bail on multi-book or "Re-read" / "Pray through" style entries.
+  if (/[;,]/.test(passage)) return null;
+  if (/^(re-?read|memori[sz]e|pray|reflect)/i.test(passage)) return null;
+
+  // Match Book (optional leading digit, words) + range
+  const m = passage
+    .trim()
+    .match(/^(\d?\s?[A-Za-z][A-Za-z.\s]+?)\s+(\d+(?::\d+)?(?:\s*[-–]\s*\d+(?::\d+)?)?)\s*$/);
+  if (!m) return null;
+  const book = m[1].replace(/\s+/g, " ").trim();
+  const range = m[2];
+  const parts = range.split(/[-–]/).map((s) => s.trim());
+  const last = parts[parts.length - 1];
+  const chapter = parseInt(last.split(":")[0], 10);
+  if (!Number.isFinite(chapter)) return null;
+  return { book, chapter };
 }
