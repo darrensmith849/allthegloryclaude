@@ -281,38 +281,73 @@ function AlbumArt({
   delay,
   side,
   showCredit = true,
+  cardSrc,
+  cardAlt,
+  onClick,
 }: {
   delay: number;
   side: "left" | "right";
   showCredit?: boolean;
+  /** Optional lyric-card image to render in place of the album cover. */
+  cardSrc?: string;
+  /** Accessible label for the lyric card variant. */
+  cardAlt?: string;
+  /** Click handler - when set, the whole panel becomes a button that opens
+   *  the verse modal for the linked track. */
+  onClick?: () => void;
 }) {
   const reduce = useReducedMotion();
   const transition = reduce
     ? { duration: 0.01 }
     : { duration: 1.6, delay, ease: [0.25, 0.1, 0.25, 1] as const };
   void side;
+  const isCard = Boolean(cardSrc);
+
+  const panelInner = (
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 ${
+        onClick
+          ? "transition-transform duration-500 ease-out group-hover:scale-[1.015] group-focus-visible:scale-[1.015] group-focus-visible:ring-2 group-focus-visible:ring-[var(--colour-amber)]/50"
+          : ""
+      }`}
+      style={
+        isCard
+          ? { width: "100%", aspectRatio: "1200 / 2000" }
+          : { width: "100%", height: "min(560px, 65vh)" }
+      }
+    >
+      <Image
+        src={isCard ? cardSrc! : album.coverImage}
+        alt={isCard ? cardAlt ?? "Lyric card" : "Album cover"}
+        fill
+        sizes="(max-width: 1024px) 100vw, 33vw"
+        className={isCard ? "object-cover" : "object-cover"}
+        priority={isCard}
+      />
+      {!isCard && (
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
+      )}
+    </div>
+  );
+
   return (
     <motion.section
       initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
-      animate={{ opacity: 0.85, y: 0 }}
+      animate={{ opacity: isCard ? 1 : 0.85, y: 0 }}
       transition={transition}
     >
-      <div
-        className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20"
-        style={{
-          width: "100%",
-          height: "min(560px, 65vh)",
-        }}
-      >
-        <Image
-          src={album.coverImage}
-          alt="Album cover"
-          fill
-          sizes="(max-width: 1024px) 100vw, 33vw"
-          className="object-cover"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
-      </div>
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className="group block w-full text-left focus:outline-none rounded-2xl"
+          aria-label={cardAlt ?? "Open lyrics"}
+        >
+          {panelInner}
+        </button>
+      ) : (
+        panelInner
+      )}
 
       {showCredit && (
         <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-white/55">
@@ -409,14 +444,31 @@ export default function AlbumPage() {
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT artwork - sticky so it follows the tracks as they scroll.
-              Credit is hidden here so it doesn't collide with the fixed
-              bottom-left social dock; the right side keeps the credit. */}
+          {/* LEFT - lyric card 01 from John 19 vs 30 (verse). Sticky so it
+              follows the tracks; click opens the John 19 vs 30 modal. The
+              "Artwork by Debbie Clarke" credit lives at the bottom of the
+              centre column now so it doesn't collide with the social dock. */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
-            <AlbumArt delay={0.08} side="left" showCredit={false} />
+            <AlbumArt
+              delay={0.08}
+              side="left"
+              showCredit={false}
+              cardSrc={album.tracks[0].lyricCards?.[0]}
+              cardAlt={`${album.tracks[0].ref} lyric card 1 - opens lyrics`}
+              onClick={() =>
+                setVerseModal({
+                  ref: album.tracks[0].ref,
+                  fullVerse: album.tracks[0].fullVerse,
+                  reflection: album.tracks[0].reflection,
+                  lyricCards: album.tracks[0].lyricCards,
+                  lyricCardsPdf: album.tracks[0].lyricCardsPdf,
+                })
+              }
+            />
           </div>
 
-          {/* Mobile artwork */}
+          {/* Mobile artwork - keep the original painting as the hero on
+              small screens; the lyric-card flank only shows on desktop. */}
           <div className="lg:hidden">
             <AlbumArt delay={0.08} side="left" />
           </div>
@@ -542,11 +594,43 @@ export default function AlbumPage() {
                 YouTube ↗
               </a>
             </motion.div>
+
+            {/* Artwork credit - moved here from under the side artwork now
+                that the side panels show lyric cards. Same painting tops
+                every lyric card, so the credit is still attribution-correct. */}
+            <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-white/45">
+              Artwork by{" "}
+              <a
+                href="https://debbieclarkart.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                Debbie Clarke
+              </a>
+            </p>
           </section>
 
-          {/* RIGHT artwork (desktop only) - sticky so it follows the tracks as they scroll */}
+          {/* RIGHT - lyric card 02 from John 19 vs 30 (chorus). Sticky;
+              click opens the same modal as the left card. Credit suppressed
+              here too; the centre column carries it. */}
           <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
-            <AlbumArt delay={0.14} side="right" />
+            <AlbumArt
+              delay={0.14}
+              side="right"
+              showCredit={false}
+              cardSrc={album.tracks[0].lyricCards?.[1]}
+              cardAlt={`${album.tracks[0].ref} lyric card 2 - opens lyrics`}
+              onClick={() =>
+                setVerseModal({
+                  ref: album.tracks[0].ref,
+                  fullVerse: album.tracks[0].fullVerse,
+                  reflection: album.tracks[0].reflection,
+                  lyricCards: album.tracks[0].lyricCards,
+                  lyricCardsPdf: album.tracks[0].lyricCardsPdf,
+                })
+              }
+            />
           </div>
         </div>
       </div>
