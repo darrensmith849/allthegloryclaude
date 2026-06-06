@@ -389,7 +389,10 @@ export default function AlbumPage() {
 
           {/* CENTRE: everything centred */}
           <section className="flex flex-col items-center text-center">
-            {/* Album header — animates independently and locks in place */}
+            {/* Album header — animates independently and locks in place.
+                A muted, looping BTS studio video sits behind the header as
+                editorial banner art. The video is decorative only and is
+                blurred + darkened so the header text always wins. */}
             <motion.div
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -398,8 +401,26 @@ export default function AlbumPage() {
                   ? { duration: 0.01 }
                   : { duration: 1.6, delay: 0, ease: [0.25, 0.1, 0.25, 1] as const }
               }
-              className="p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+              className="relative isolate overflow-hidden rounded-2xl border border-white/10 p-6 md:p-8 w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             >
+              {!reduce && (
+                <video
+                  src="/media/music-bts.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-60"
+                />
+              )}
+              {/* Legibility scrim — keeps header text readable over the video */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/45 to-black/70"
+              />
               <div className="eyebrow eyebrow-amber">
                 2026 · Album
               </div>
