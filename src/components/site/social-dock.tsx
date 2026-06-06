@@ -23,10 +23,7 @@ function Item({ href, label, delay }: { href?: string; label: string; delay: num
 
 export default function SocialDock() {
   const pathname = usePathname();
-  // Hidden on routes that anchor their own bottom-of-page socials inline
-  // (album page does this so the dock never collides with the lyric cards).
-  const hideOnRoutes = ["/dashboard", "/album"];
-  if (hideOnRoutes.some((p) => pathname?.startsWith(p))) return null;
+  if (pathname?.startsWith("/dashboard")) return null;
   return (
     <div className="social-dock-bottom">
       <Item href={site.socials.instagram} label="Instagram" delay={1} />
