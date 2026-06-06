@@ -51,6 +51,7 @@ export const album = {
         "/lyrics/john-19-vs-30/04.jpg",
       ],
       lyricCardsPdf: "/lyrics/john-19-vs-30/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 2132",
     },
     {
       title: "Matthew 14 vs 31",
@@ -65,6 +66,7 @@ export const album = {
         "/lyrics/matthew-14-vs-31/03.jpg",
       ],
       lyricCardsPdf: "/lyrics/matthew-14-vs-31/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 1800",
     },
     {
       title: "John 11 vs 35",
@@ -81,6 +83,7 @@ export const album = {
         "/lyrics/john-11-vs-35/05.jpg",
       ],
       lyricCardsPdf: "/lyrics/john-11-vs-35/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 2133",
     },
     {
       title: "Luke 15 vs 20",
@@ -95,6 +98,7 @@ export const album = {
         "/lyrics/luke-15-vs-20/03.jpg",
       ],
       lyricCardsPdf: "/lyrics/luke-15-vs-20/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 1800",
     },
     {
       title: "Proverbs 3 vs 5",
@@ -110,6 +114,7 @@ export const album = {
         "/lyrics/proverbs-3-vs-5/04.jpg",
       ],
       lyricCardsPdf: "/lyrics/proverbs-3-vs-5/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 2132",
     },
     {
       title: "John 3 vs 16",
@@ -124,6 +129,7 @@ export const album = {
         "/lyrics/john-3-vs-16/03.jpg",
       ],
       lyricCardsPdf: "/lyrics/john-3-vs-16/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 1800",
     },
     {
       title: "2 Corinthians 5 vs 21",
@@ -139,6 +145,7 @@ export const album = {
         "/lyrics/2-corinthians-5-vs-21/04.jpg",
       ],
       lyricCardsPdf: "/lyrics/2-corinthians-5-vs-21/lyric-cards.pdf",
+      lyricCardAspect: "1200 / 2132",
     },
   ],
 };

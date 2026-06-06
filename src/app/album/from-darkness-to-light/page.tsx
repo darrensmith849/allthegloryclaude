@@ -285,6 +285,7 @@ function AlbumArt({
   showCredit = true,
   cardSrc,
   cardAlt,
+  cardAspect,
   onClick,
   onHoverChange,
 }: {
@@ -296,6 +297,11 @@ function AlbumArt({
   cardSrc?: string;
   /** Accessible label for the lyric card variant. */
   cardAlt?: string;
+  /** Aspect ratio for the lyric-card container (CSS aspect-ratio syntax,
+   *  e.g. "1200 / 1800"). Each card has its own native aspect; the
+   *  container shrinks/grows to match so the gold border always sits
+   *  flush with the panel edge. */
+  cardAspect?: string;
   /** Click handler - when set, the whole panel becomes a button that opens
    *  the verse modal for the linked track. */
   onClick?: () => void;
@@ -324,10 +330,14 @@ function AlbumArt({
       }`}
       style={
         isCard
-          ? // Tallest card aspect (1200 x 2133) - shorter cards letterbox a
-            // touch but the whole card is always visible. Beats the previous
-            // 1200/2000 + object-cover combo which clipped tall cards' lyrics.
-            { width: "100%", aspectRatio: "1200 / 2133" }
+          ? // Per-card aspect ratio - the container shrinks/grows so the gold
+            // ornate border on every card sits flush with the panel edge.
+            // Tailwind handles the smooth height interpolation on transition.
+            {
+              width: "100%",
+              aspectRatio: cardAspect ?? "1200 / 2133",
+              transition: "aspect-ratio 1.4s cubic-bezier(0.4, 0, 0.2, 1)",
+            }
           : { width: "100%", height: "min(560px, 65vh)" }
       }
     >
@@ -548,6 +558,7 @@ export default function AlbumPage() {
               showCredit={false}
               cardSrc={featuredLeftCard}
               cardAlt={`${featuredTrack.ref} - opens lyrics`}
+              cardAspect={featuredTrack.lyricCardAspect}
               onClick={openFeaturedModal}
               onHoverChange={setRotationPaused}
             />
@@ -707,6 +718,7 @@ export default function AlbumPage() {
               showCredit={false}
               cardSrc={featuredRightCard}
               cardAlt={`${featuredTrack.ref} - opens lyrics`}
+              cardAspect={featuredTrack.lyricCardAspect}
               onClick={openFeaturedModal}
               onHoverChange={setRotationPaused}
             />
