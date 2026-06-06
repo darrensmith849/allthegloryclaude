@@ -14,6 +14,9 @@ export default function SiteFooter() {
   const footerRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
+  // The private dashboard ships its own layout — skip the marketing footer there.
+  const isDashboard = pathname?.startsWith("/dashboard") ?? false;
+
   useEffect(() => {
     setInView(false);
     if (videoRef.current) {
@@ -29,7 +32,24 @@ export default function SiteFooter() {
       ([entry]) => {
         if (entry.isIntersecting && !inView) {
           setInView(true);
-          videoRef.current?.play();
+          const v = videoRef.current;
+          if (!v) return;
+          // Force a load() before play() — preload="metadata" only fetches
+          // metadata, so we still need to nudge it to fetch + buffer enough
+          // to actually play. Then catch the play promise: browsers reject
+          // it for autoplay-policy reasons (no user interaction yet, etc.)
+          // and an unhandled rejection would fail silently and leave the
+          // video paused with no signal to the user.
+          try {
+            v.load();
+          } catch {
+            /* load() can throw on some browsers if already loading — safe to ignore */
+          }
+          v.play().catch(() => {
+            // Autoplay was blocked. The fallback Jesus painting underneath
+            // is still visible, so the section is never broken — the lightning
+            // overlay just won't animate in this session. Nothing to do.
+          });
         }
       },
       { threshold: 0.1 }
@@ -37,6 +57,8 @@ export default function SiteFooter() {
     obs.observe(footer);
     return () => obs.disconnect();
   }, [pathname, inView]);
+
+  if (isDashboard) return null;
 
   return (
     <footer ref={footerRef} className="relative w-full overflow-hidden">
@@ -64,10 +86,11 @@ export default function SiteFooter() {
       >
         <video
           ref={videoRef}
+          autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="metadata"
           className="absolute inset-0 w-full h-full object-cover"
           style={{ filter: "brightness(1.3) contrast(1.1)" }}
         >

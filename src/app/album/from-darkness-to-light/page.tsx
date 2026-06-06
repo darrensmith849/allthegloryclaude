@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
 import { site } from "@/content/site";
@@ -244,7 +243,15 @@ function VerseModal({
   );
 }
 
-function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
+function AlbumArt({
+  delay,
+  side,
+  showCredit = true,
+}: {
+  delay: number;
+  side: "left" | "right";
+  showCredit?: boolean;
+}) {
   const reduce = useReducedMotion();
   const transition = reduce
     ? { duration: 0.01 }
@@ -273,17 +280,19 @@ function AlbumArt({ delay, side }: { delay: number; side: "left" | "right" }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
       </div>
 
-      <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-white/55">
-        Artwork by{" "}
-        <a
-          href="https://debbieclarkart.com/"
-          target="_blank"
-          rel="noreferrer"
-          className="text-white/80 hover:text-white transition-colors"
-        >
-          Debbie Clarke
-        </a>
-      </div>
+      {showCredit && (
+        <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-white/55">
+          Artwork by{" "}
+          <a
+            href="https://debbieclarkart.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-white/80 hover:text-white transition-colors"
+          >
+            Debbie Clarke
+          </a>
+        </div>
+      )}
     </motion.section>
   );
 }
@@ -366,9 +375,11 @@ export default function AlbumPage() {
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT artwork */}
-          <div className="hidden lg:block">
-            <AlbumArt delay={0.08} side="left" />
+          {/* LEFT artwork — sticky so it follows the tracks as they scroll.
+              Credit is hidden here so it doesn't collide with the fixed
+              bottom-left social dock; the right side keeps the credit. */}
+          <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+            <AlbumArt delay={0.08} side="left" showCredit={false} />
           </div>
 
           {/* Mobile artwork */}
@@ -399,7 +410,7 @@ export default function AlbumPage() {
                 {album.subtitle}
               </p>
 
-              {/* Download / Donate */}
+              {/* Download */}
               <div className="mt-6 flex justify-center gap-3">
                 <button
                   type="button"
@@ -408,16 +419,12 @@ export default function AlbumPage() {
                 >
                   Download free →
                 </button>
-                <Link href="/donate" className="btn btn-ghost">
-                  Donate →
-                </Link>
               </div>
 
               <p className="font-display mt-5 text-sm md:text-base italic text-white/65 leading-relaxed max-w-sm mx-auto">
                 I didn&apos;t want to put a price on worship — this is an
-                offering unto the Lord. If you feel led to support the work,
-                your gift goes directly into recording, production, and
-                releasing more music.
+                offering unto the Lord. Take it, listen, and let it lead you
+                to Him.
               </p>
             </motion.div>
 
@@ -503,8 +510,8 @@ export default function AlbumPage() {
             </motion.div>
           </section>
 
-          {/* RIGHT artwork (desktop only) */}
-          <div className="hidden lg:block">
+          {/* RIGHT artwork (desktop only) — sticky so it follows the tracks as they scroll */}
+          <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt delay={0.14} side="right" />
           </div>
         </div>
