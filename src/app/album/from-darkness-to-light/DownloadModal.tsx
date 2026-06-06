@@ -126,7 +126,7 @@ export default function DownloadModal({ onClose }: Props) {
           From Darkness To Light
         </h2>
         <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/55">
-          7 tracks · {album.releaseYear}
+          7 tracks + lyric cards · {album.releaseYear}
         </p>
 
         {/* Track list - display only, for context */}
@@ -156,8 +156,8 @@ export default function DownloadModal({ onClose }: Props) {
         </a>
 
         <p className="mt-4 text-[11px] text-white/45 leading-relaxed">
-          Free. The album is yours. If it blesses you, your donation
-          helps fund what&apos;s next.
+          Free. The album and lyric cards are yours - take them, share
+          them, let them lead you to Him.
         </p>
 
         <button

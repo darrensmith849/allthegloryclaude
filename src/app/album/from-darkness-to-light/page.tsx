@@ -113,12 +113,14 @@ function VerseModal({
   fullVerse,
   reflection,
   lyricCards,
+  lyricCardsPdf,
   onClose,
 }: {
   verseRef: string;
   fullVerse: string;
   reflection?: string;
   lyricCards?: string[];
+  lyricCardsPdf?: string;
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -251,6 +253,15 @@ function VerseModal({
                 />
               ))}
             </div>
+            {lyricCardsPdf && (
+              <a
+                href={lyricCardsPdf}
+                download
+                className="mt-5 inline-block text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--colour-amber)]/70 hover:text-[var(--colour-amber)] transition-colors duration-300"
+              >
+                Download lyric cards (PDF) ↓
+              </a>
+            )}
           </>
         )}
 
@@ -324,7 +335,7 @@ export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
-  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string; lyricCards?: string[] } | null>(null);
+  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string; lyricCards?: string[]; lyricCardsPdf?: string } | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
@@ -466,7 +477,7 @@ export default function AlbumPage() {
                   isLoading={loadingIndex === i && playingIndex !== i}
                   reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
-                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection, lyricCards: t.lyricCards })}
+                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection, lyricCards: t.lyricCards, lyricCardsPdf: t.lyricCardsPdf })}
                 />
               ))}
             </div>
@@ -547,6 +558,7 @@ export default function AlbumPage() {
             fullVerse={verseModal.fullVerse}
             reflection={verseModal.reflection}
             lyricCards={verseModal.lyricCards}
+            lyricCardsPdf={verseModal.lyricCardsPdf}
             onClose={() => setVerseModal(null)}
           />
         )}

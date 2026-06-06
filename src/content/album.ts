@@ -50,6 +50,7 @@ export const album = {
         "/lyrics/john-19-vs-30/03.jpg",
         "/lyrics/john-19-vs-30/04.jpg",
       ],
+      lyricCardsPdf: "/lyrics/john-19-vs-30/lyric-cards.pdf",
     },
     {
       title: "Matthew 14 vs 31",
