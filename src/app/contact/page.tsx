@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+const CONTACT_INBOX = "peter777daniel@gmail.com";
+
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,6 +54,21 @@ export default function ContactPage() {
     }
 
     setErrors({});
+
+    const name = (formData.get("name") as string).trim();
+    const email = (formData.get("email") as string).trim();
+    const message = (formData.get("message") as string).trim();
+
+    const subject = `New message from ${name} (All The Glory)`;
+    const body = `${message}\n\n— ${name}\n${email}`;
+    const mailto =
+      `mailto:${CONTACT_INBOX}` +
+      `?subject=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(body)}`;
+
+    // Hand off to the visitor's mail client so the message lands in
+    // peter777daniel@gmail.com immediately.
+    window.location.href = mailto;
     setSubmitted(true);
   }
 
@@ -94,7 +111,16 @@ export default function ContactPage() {
                 Thank you
               </h2>
               <p className="text-colour-fg/60">
-                Your message has been received. We&apos;ll be in touch.
+                Your email client should have opened — just hit send and the
+                message will land with us straight away. If nothing opened,
+                email{" "}
+                <a
+                  href={`mailto:${CONTACT_INBOX}`}
+                  className="text-[var(--colour-amber)] underline"
+                >
+                  {CONTACT_INBOX}
+                </a>{" "}
+                directly.
               </p>
             </div>
           ) : (

@@ -7,7 +7,7 @@
  */
 export const videos = {
   /** YouTube video ID — the 11-char string from the YouTube URL. */
-  featuredId: "sxcoxQZ8kRM",
+  featuredId: "oWzZ7kEykhw",
   /** Canonical watch URL — used by the primary "Watch on YouTube" CTA. */
-  featuredWatchUrl: "https://www.youtube.com/watch?v=sxcoxQZ8kRM",
+  featuredWatchUrl: "https://www.youtube.com/watch?v=oWzZ7kEykhw",
 };
