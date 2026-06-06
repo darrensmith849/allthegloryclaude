@@ -535,7 +535,7 @@ export default function AlbumPage() {
   }, [detachAudio]);
 
   return (
-    <main className="bg-transparent overflow-x-clip">
+    <main className="relative bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
           {/* LEFT - verse card from the currently-featured track. Both side
@@ -713,64 +713,66 @@ export default function AlbumPage() {
           </div>
         </div>
 
-        {/* Bottom social column - the only place socials appear on /album.
-            Fades in via whileInView so it loads with the foot-of-page text
-            (artwork credit + footer below). Same vertical arrow style as
-            the dock used on every other page. */}
-        <motion.aside
-          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-          transition={
-            reduce
-              ? { duration: 0.01 }
-              : { duration: 1.4, ease: [0.16, 1, 0.3, 1] as const }
-          }
-          aria-label="Social links"
-          className="mt-20 mb-2 flex flex-col items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55"
-        >
-          <a
-            href={site.socials.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/90 transition-colors"
-          >
-            Instagram ↗
-          </a>
-          <a
-            href={site.socials.facebook}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/90 transition-colors"
-          >
-            Facebook ↗
-          </a>
-          <a
-            href={site.socials.youtube}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/90 transition-colors"
-          >
-            YouTube ↗
-          </a>
-          <a
-            href={site.socials.spotify}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/90 transition-colors"
-          >
-            Spotify ↗
-          </a>
-          <a
-            href={site.socials.tiktok}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/90 transition-colors"
-          >
-            TikTok ↗
-          </a>
-        </motion.aside>
       </div>
+
+      {/* Bottom-left social column - pinned to the bottom of the album
+          page (not the viewport) so it matches the bottom-left dock
+          position visitors expect from every other page, but only
+          appears once the visitor has scrolled into the footer area.
+          Desktop only - mobile uses the page footer's social icons. */}
+      <motion.aside
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+        transition={
+          reduce
+            ? { duration: 0.01 }
+            : { duration: 1.4, ease: [0.16, 1, 0.3, 1] as const }
+        }
+        aria-label="Social links"
+        className="hidden lg:flex absolute bottom-6 left-[18px] flex-col gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/72"
+      >
+        <a
+          href={site.socials.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white/95 transition-colors"
+        >
+          Instagram ↗
+        </a>
+        <a
+          href={site.socials.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white/95 transition-colors"
+        >
+          Facebook ↗
+        </a>
+        <a
+          href={site.socials.youtube}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white/95 transition-colors"
+        >
+          YouTube ↗
+        </a>
+        <a
+          href={site.socials.spotify}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white/95 transition-colors"
+        >
+          Spotify ↗
+        </a>
+        <a
+          href={site.socials.tiktok}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white/95 transition-colors"
+        >
+          TikTok ↗
+        </a>
+      </motion.aside>
 
       <AnimatePresence>
         {verseModal && (
