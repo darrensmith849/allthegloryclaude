@@ -258,6 +258,8 @@ function BibleReadingInner() {
             </div>
 
             <div className="dash-divider" />
+            <ReadHere passage={log.passage?.trim() || plan.passage} />
+            <div className="dash-divider" />
             <div className="flex flex-wrap gap-2">
               <Link href="/dashboard/word-study" className="dash-btn">
                 Look up Greek / Hebrew
@@ -361,5 +363,113 @@ function BibleReadingInner() {
         </div>
       </div>
     </>
+  );
+}
+
+// ── Inline passage reader ────────────────────────────────────────
+// Lazy-fetches today's passage via the existing /api/verse proxy (bible-api.com,
+// World English Bible by default — no API key needed). Toggled open so we
+// don't fetch on every page load.
+interface Verse {
+  ref: string;
+  chapter: number;
+  verse: number;
+  text: string;
+}
+// Reduce a multi-chapter reference (e.g. "Numbers 23-25") to a single
+// chapter ("Numbers 23"), because the free bible-api.com only serves one
+// chapter per request.
+function firstChapter(ref: string): string {
+  // Match "Book Chapter" allowing a leading number on the book ("1 Peter").
+  const m = ref.match(/^([\d ]*[A-Za-z][A-Za-z. ]*?)\s+(\d+)/);
+  if (m) return `${m[1].trim()} ${m[2]}`;
+  return ref;
+}
+
+function ReadHere({ passage }: { passage: string }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [data, setData] = useState<{ verses: Verse[]; translation: string; reference: string } | null>(null);
+  const [truncated, setTruncated] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !passage) return;
+    let cancelled = false;
+    setLoading(true);
+    setErr(null);
+    setData(null);
+    setTruncated(null);
+
+    const tryFetch = async (ref: string, fallback = false) => {
+      const r = await fetch(`/api/verse?ref=${encodeURIComponent(ref)}`);
+      const d = await r.json();
+      if (cancelled) return;
+      if (d.error) {
+        // If the passage spans too many chapters, retry with just the first.
+        const tooMany = /too many chapters/i.test(d.error) || /one whole chapter/i.test(d.detail ?? "");
+        if (tooMany && !fallback) {
+          const fc = firstChapter(ref);
+          if (fc !== ref) {
+            setTruncated(`Showing ${fc} only — full reading spans multiple chapters.`);
+            return tryFetch(fc, true);
+          }
+        }
+        setErr(d.error);
+        return;
+      }
+      setData(d);
+    };
+
+    tryFetch(passage)
+      .catch((e) => !cancelled && setErr(e instanceof Error ? e.message : "Lookup failed"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, passage]);
+
+  return (
+    <div className="dash-bible-readhere">
+      <button
+        type="button"
+        className="dash-btn"
+        onClick={() => setOpen((v) => !v)}
+        style={{ padding: "8px 14px", fontSize: 11 }}
+      >
+        {open ? "Hide passage" : "📖 Read the passage here"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          {loading && (
+            <div className="text-[12.5px] text-[var(--colour-ink-quiet)]">Loading…</div>
+          )}
+          {err && (
+            <div className="text-[12.5px] text-[#f1a07d]">
+              {err}. Try editing the passage above to a single chapter (e.g. &ldquo;Numbers 21&rdquo;).
+            </div>
+          )}
+          {data && (
+            <article>
+              <div className="eyebrow eyebrow-amber">{data.translation}</div>
+              <div className="font-display text-[18px] mt-1">{data.reference}</div>
+              {truncated && (
+                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
+                  {truncated}
+                </div>
+              )}
+              <div className="dash-verse mt-3 leading-relaxed">
+                {data.verses.map((v) => (
+                  <p key={`${v.chapter}-${v.verse}`} className="mb-2">
+                    <span className="dash-verse-num">{v.verse}</span>
+                    {v.text}
+                  </p>
+                ))}
+              </div>
+            </article>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

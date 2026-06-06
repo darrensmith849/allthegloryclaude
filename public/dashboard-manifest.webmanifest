@@ -1,0 +1,19 @@
+{
+  "name": "All The Glory — Dashboard",
+  "short_name": "ATG Dashboard",
+  "description": "Private discipline + Bible-reading dashboard.",
+  "start_url": "/dashboard",
+  "scope": "/dashboard",
+  "display": "standalone",
+  "background_color": "#060410",
+  "theme_color": "#0a0810",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/atg-welcome/jesus.jpg",
+      "sizes": "563x751",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

@@ -150,6 +150,40 @@ export default function SettingsPage() {
   // ── Goals + rules ───────────────────────────────────────────
   const s = state.settings;
 
+  // ── Backup + restore ────────────────────────────────────────
+  // The dashboard is localStorage-only — clearing the browser wipes
+  // everything. Export/import gives the user a manual safety net.
+  function exportData() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `atg-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
+  async function importDataFromFile(file: File) {
+    setRestoreMsg(null);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (typeof parsed !== "object" || !parsed) throw new Error("Not a valid backup file.");
+      if (!confirm("Replace your current dashboard data with this backup? This cannot be undone.")) return;
+      // Write straight to localStorage so the existing read() merger handles
+      // schema drift between versions on the next page-load.
+      window.localStorage.setItem("atg:dashboard:v1", JSON.stringify(parsed));
+      setRestoreMsg("Restored. Reloading…");
+      setTimeout(() => window.location.reload(), 400);
+    } catch (e) {
+      setRestoreMsg(e instanceof Error ? e.message : "Could not read backup.");
+    }
+  }
+
   // ── Wipe ────────────────────────────────────────────────────
   function wipeAll() {
     if (!confirm("Wipe every habit, log, task, session, and reset settings to defaults? This cannot be undone.")) return;
@@ -605,6 +639,40 @@ Numbers 22 - 23
               </button>
               {planMsg && (
                 <span className="text-[12.5px] text-[var(--colour-amber-soft)]">{planMsg}</span>
+              )}
+            </div>
+          </Panel>
+        </div>
+
+        {/* ── Backup + restore ────────────────────── */}
+        <div className="dash-col-12" id="backup">
+          <Panel eyebrow="Backup &amp; restore" title="Save your data">
+            <p className="text-[13px] text-[var(--colour-ink-soft)] mb-3">
+              Everything lives in this browser&apos;s storage. Export a full backup
+              to a JSON file, or restore from one if you ever clear your browser
+              or move machines. Drop a copy in your iCloud / Drive every week.
+            </p>
+            <div className="flex flex-wrap gap-2 items-center">
+              <button className="dash-btn dash-btn-primary" onClick={exportData}>
+                ⇣ Export to file
+              </button>
+              <label className="dash-btn" style={{ cursor: "pointer" }}>
+                ⇡ Import from file
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) importDataFromFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {restoreMsg && (
+                <span className="text-[12.5px] text-[var(--colour-amber-soft)]">
+                  {restoreMsg}
+                </span>
               )}
             </div>
           </Panel>

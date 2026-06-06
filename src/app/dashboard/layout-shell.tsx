@@ -6,18 +6,25 @@
 
 import { usePathname } from "next/navigation";
 import DashboardSidebar from "@/components/dashboard/sidebar";
+import CommandPalette from "@/components/dashboard/command-palette";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isWelcome = pathname === "/dashboard";
 
   if (isWelcome) {
-    return <div className="dash-welcome-root">{children}</div>;
+    return (
+      <div className="dash-welcome-root">
+        {children}
+        <CommandPalette />
+      </div>
+    );
   }
   return (
     <div className="dash-root">
       <DashboardSidebar />
       <main className="dash-main">{children}</main>
+      <CommandPalette />
     </div>
   );
 }
