@@ -307,22 +307,27 @@ function AlbumArt({
   const transition = reduce
     ? { duration: 0.01 }
     : { duration: 1.6, delay, ease: [0.25, 0.1, 0.25, 1] as const };
+  // A slow, generous crossfade. Both the old card's exit (1 -> 0) and the
+  // new card's entrance (0 -> 1) overlap fully so neither one snaps.
   const crossfade = reduce
     ? { duration: 0.01 }
-    : { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const };
+    : { duration: 1.6, ease: [0.4, 0, 0.2, 1] as const };
   void side;
   const isCard = Boolean(cardSrc);
 
   const panelInner = (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 ${
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 ${
         onClick
           ? "transition-transform duration-500 ease-out group-hover:scale-[1.015] group-focus-visible:scale-[1.015] group-focus-visible:ring-2 group-focus-visible:ring-[var(--colour-amber)]/50"
           : ""
       }`}
       style={
         isCard
-          ? { width: "100%", aspectRatio: "1200 / 2000" }
+          ? // Tallest card aspect (1200 x 2133) - shorter cards letterbox a
+            // touch but the whole card is always visible. Beats the previous
+            // 1200/2000 + object-cover combo which clipped tall cards' lyrics.
+            { width: "100%", aspectRatio: "1200 / 2133" }
           : { width: "100%", height: "min(560px, 65vh)" }
       }
     >
@@ -341,7 +346,7 @@ function AlbumArt({
               alt={cardAlt ?? "Lyric card"}
               fill
               sizes="(max-width: 1024px) 100vw, 33vw"
-              className="object-cover"
+              className="object-contain"
               priority
             />
           </motion.div>
@@ -707,6 +712,64 @@ export default function AlbumPage() {
             />
           </div>
         </div>
+
+        {/* Bottom social column - the only place socials appear on /album.
+            Fades in via whileInView so it loads with the foot-of-page text
+            (artwork credit + footer below). Same vertical arrow style as
+            the dock used on every other page. */}
+        <motion.aside
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+          transition={
+            reduce
+              ? { duration: 0.01 }
+              : { duration: 1.4, ease: [0.16, 1, 0.3, 1] as const }
+          }
+          aria-label="Social links"
+          className="mt-20 mb-2 flex flex-col items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55"
+        >
+          <a
+            href={site.socials.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/90 transition-colors"
+          >
+            Instagram ↗
+          </a>
+          <a
+            href={site.socials.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/90 transition-colors"
+          >
+            Facebook ↗
+          </a>
+          <a
+            href={site.socials.youtube}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/90 transition-colors"
+          >
+            YouTube ↗
+          </a>
+          <a
+            href={site.socials.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/90 transition-colors"
+          >
+            Spotify ↗
+          </a>
+          <a
+            href={site.socials.tiktok}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/90 transition-colors"
+          >
+            TikTok ↗
+          </a>
+        </motion.aside>
       </div>
 
       <AnimatePresence>
