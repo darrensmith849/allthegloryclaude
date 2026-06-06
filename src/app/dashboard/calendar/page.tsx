@@ -17,7 +17,8 @@ import {
 import {
   emptyHabits,
   resolveHabits,
-  resolveSchedule,
+  getScheduleForDate,
+  ScheduleRow,
   resolveTaskTags,
   DayHabits,
   Task,
@@ -69,7 +70,7 @@ export default function CalendarPage() {
   const planDay = planDayFor(selected, state.settings.startDate, state.settings.startPlanDay);
   const plan = planForWithOverride(planDay, state.settings.planOverrides);
   const habitDefs = resolveHabits(state.settings);
-  const schedule = resolveSchedule(state.settings);
+  const schedule = getScheduleForDate(selected, state.settings, state.scheduleExtras);
   const TAGS = resolveTaskTags(state.settings);
 
   // Per-day completion percentage (mirrors the Today progress bar logic, but
@@ -149,6 +150,37 @@ export default function CalendarPage() {
       d.scheduleChecks[selected] = day;
     });
   }
+  // Per-date schedule additions — only visible on the selected day.
+  const [extraTime, setExtraTime] = useState("");
+  const [extraTitle, setExtraTitle] = useState("");
+  function addScheduleExtraForSelected(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!extraTime.trim() || !extraTitle.trim()) return;
+    const [hh, mm] = extraTime.split(":").map(Number);
+    const hour = (hh || 0) + (mm || 0) / 60;
+    const row: ScheduleRow = {
+      id: `x-${uid()}`,
+      time: extraTime,
+      hour,
+      title: extraTitle.trim(),
+      sub: "",
+    };
+    update((d) => {
+      if (!d.scheduleExtras) d.scheduleExtras = {};
+      d.scheduleExtras[selected] = [...(d.scheduleExtras[selected] ?? []), row];
+    });
+    setExtraTime("");
+    setExtraTitle("");
+  }
+  function removeScheduleExtra(rowId: string) {
+    update((d) => {
+      if (!d.scheduleExtras) return;
+      d.scheduleExtras[selected] = (d.scheduleExtras[selected] ?? []).filter(
+        (r) => r.id !== rowId,
+      );
+    });
+  }
+
   function addTaskForSelected(e?: React.FormEvent) {
     e?.preventDefault();
     if (!newTaskTitle.trim()) return;
@@ -367,27 +399,78 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex flex-col gap-4 mt-4">
-              {/* Daily schedule for this day — every row checkable */}
+              {/* Daily schedule for this day — every row checkable.
+                  Filtered by day-of-week, with per-date extras at the end. */}
               <section>
                 <div className="eyebrow mb-2">Daily schedule</div>
-                <div className="flex flex-col gap-1.5">
-                  {schedule.map((row) => {
-                    const done = rowDoneForSelected(row.id, row.habitId);
-                    return (
-                      <button
-                        key={row.id}
-                        type="button"
-                        onClick={() => toggleScheduleRowForSelected(row.id, row.habitId)}
-                        className={`dash-mini-row ${done ? "is-done" : ""}`}
-                      >
-                        <span className="dash-mini-row-time">{row.time}</span>
-                        <span className="dash-mini-row-title">{row.title}</span>
-                        <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
-                          {done ? "✓" : ""}
-                        </span>
-                      </button>
-                    );
-                  })}
+                {schedule.length === 0 ? (
+                  <div className="text-[12px] text-[var(--colour-ink-quiet)] mb-2">
+                    Nothing scheduled for this day yet. Add something below.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {schedule.map((row) => {
+                      const done = rowDoneForSelected(row.id, row.habitId);
+                      const isExtra = row.id.startsWith("x-");
+                      return (
+                        <div key={row.id} className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleScheduleRowForSelected(row.id, row.habitId)}
+                            className={`dash-mini-row flex-1 ${done ? "is-done" : ""}`}
+                          >
+                            <span className="dash-mini-row-time">{row.time}</span>
+                            <span className="dash-mini-row-title">{row.title}</span>
+                            <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
+                              {done ? "✓" : ""}
+                            </span>
+                          </button>
+                          {isExtra && (
+                            <button
+                              type="button"
+                              className="dash-row-move"
+                              onClick={() => removeScheduleExtra(row.id)}
+                              title="Remove this one-off entry"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <form
+                  onSubmit={addScheduleExtraForSelected}
+                  className="flex gap-2 mt-2 items-end"
+                >
+                  <input
+                    type="time"
+                    className="dash-input"
+                    style={{ width: 90 }}
+                    value={extraTime}
+                    onChange={(e) => setExtraTime(e.target.value)}
+                    required
+                    placeholder="08:00"
+                  />
+                  <input
+                    className="dash-input"
+                    style={{ flex: 1 }}
+                    value={extraTitle}
+                    onChange={(e) => setExtraTitle(e.target.value)}
+                    placeholder="What's at this time?"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="dash-btn dash-btn-primary"
+                    style={{ padding: "8px 14px", fontSize: 11 }}
+                  >
+                    + Add
+                  </button>
+                </form>
+                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
+                  This addition only lives on {formatHuman(selected)} — perfect for weekends.
                 </div>
               </section>
 

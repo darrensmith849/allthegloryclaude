@@ -14,12 +14,38 @@ function read(): DashboardState {
     const parsed = JSON.parse(raw) as Partial<DashboardState>;
     // Merge with empty state defensively so newly added fields don't crash old data.
     const fresh = emptyState();
-    return {
+    const merged = {
       ...fresh,
       ...parsed,
       book: { ...fresh.book, ...(parsed.book ?? {}) },
       settings: { ...fresh.settings, ...(parsed.settings ?? {}) },
     } as DashboardState;
+
+    // ── Schedule day-of-week migration ──────────────────────────
+    // Older rows had no daysOfWeek field — assume weekdays only.
+    // Also drop in the Sunday Church default if it's not there.
+    const WEEKDAYS = [1, 2, 3, 4, 5];
+    const sched = merged.settings.schedule ?? [];
+    let migrated = sched.map((r) =>
+      r.daysOfWeek && r.daysOfWeek.length > 0 ? r : { ...r, daysOfWeek: WEEKDAYS },
+    );
+    if (!migrated.some((r) => r.id === "s-sun-church")) {
+      migrated = [
+        ...migrated,
+        {
+          id: "s-sun-church",
+          time: "6:30",
+          hour: 6.5,
+          title: "Church",
+          sub: "Sunday gathering",
+          habitId: "worship",
+          daysOfWeek: [0],
+        },
+      ];
+    }
+    merged.settings.schedule = migrated;
+    if (!merged.scheduleExtras) merged.scheduleExtras = {};
+    return merged;
   } catch {
     return emptyState();
   }

@@ -75,19 +75,54 @@ export interface ScheduleRow {
   title: string;
   sub: string;
   habitId?: string; // optional — when set, surfaces a Mark button + ticks the habit
+  // Which days of week this row applies to. 0=Sun, 1=Mon ... 6=Sat.
+  // Missing/empty = backward-compat fallback (weekdays only).
+  daysOfWeek?: number[];
 }
 
+const WEEKDAYS = [1, 2, 3, 4, 5];
 export const DEFAULT_SCHEDULE: ScheduleRow[] = [
-  { id: "s-word", time: "7:00", hour: 7, title: "The Word", sub: "Chronological reading + journal", habitId: "bibleRead" },
-  { id: "s-2ko", time: "9:00", hour: 9, title: "2KO with Darren", sub: "Deep work block" },
-  { id: "s-coffee", time: "10:00", hour: 10, title: "Coffee break", sub: "Stand up, water, breathe" },
-  { id: "s-lunch", time: "12:00", hour: 12, title: "Lunch", sub: "Eat away from the screen" },
-  { id: "s-afternoon", time: "13:00", hour: 13, title: "Afternoon work", sub: "2KO continued" },
-  { id: "s-gym", time: "15:00", hour: 15, title: "Gym", sub: "Train hard.", habitId: "gym" },
-  { id: "s-creative", time: "17:00", hour: 17, title: "Guitar / writing", sub: "Practice or book session", habitId: "guitar" },
-  { id: "s-worship", time: "18:30", hour: 18.5, title: "Evening worship", sub: "Worship before phone off", habitId: "worship" },
-  { id: "s-phone-off", time: "19:00", hour: 19, title: "Phone off", sub: "No screens until tomorrow", habitId: "phoneOffAt7" },
+  // Weekday rhythm — Mon to Fri
+  { id: "s-word", time: "7:00", hour: 7, title: "The Word", sub: "Chronological reading + journal", habitId: "bibleRead", daysOfWeek: WEEKDAYS },
+  { id: "s-2ko", time: "9:00", hour: 9, title: "2KO with Darren", sub: "Deep work block", daysOfWeek: WEEKDAYS },
+  { id: "s-coffee", time: "10:00", hour: 10, title: "Coffee break", sub: "Stand up, water, breathe", daysOfWeek: WEEKDAYS },
+  { id: "s-lunch", time: "12:00", hour: 12, title: "Lunch", sub: "Eat away from the screen", daysOfWeek: WEEKDAYS },
+  { id: "s-afternoon", time: "13:00", hour: 13, title: "Afternoon work", sub: "2KO continued", daysOfWeek: WEEKDAYS },
+  { id: "s-gym", time: "15:00", hour: 15, title: "Gym", sub: "Train hard.", habitId: "gym", daysOfWeek: WEEKDAYS },
+  { id: "s-creative", time: "17:00", hour: 17, title: "Guitar / writing", sub: "Practice or book session", habitId: "guitar", daysOfWeek: WEEKDAYS },
+  { id: "s-worship", time: "18:30", hour: 18.5, title: "Evening worship", sub: "Worship before phone off", habitId: "worship", daysOfWeek: WEEKDAYS },
+  { id: "s-phone-off", time: "19:00", hour: 19, title: "Phone off", sub: "No screens until tomorrow", habitId: "phoneOffAt7", daysOfWeek: WEEKDAYS },
+  // Sunday default — church first thing.
+  { id: "s-sun-church", time: "6:30", hour: 6.5, title: "Church", sub: "Sunday gathering", habitId: "worship", daysOfWeek: [0] },
 ];
+
+// 0=Sun, 1=Mon, ..., 6=Sat from an ISO date string (local time).
+function dayOfWeekFor(iso: ISODate): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
+
+// Resolve the schedule for a specific calendar date — filters the global
+// schedule by day-of-week, then appends any per-date extras the user has
+// added via the calendar.
+export function getScheduleForDate(
+  date: ISODate,
+  settings: Settings,
+  scheduleExtras: Record<ISODate, ScheduleRow[]> | undefined,
+): ScheduleRow[] {
+  const dow = dayOfWeekFor(date);
+  const isWeekend = dow === 0 || dow === 6;
+  const base = resolveSchedule(settings).filter((r) => {
+    const dayList = r.daysOfWeek;
+    if (!dayList || dayList.length === 0) {
+      // Older rows with no day list default to weekdays only.
+      return !isWeekend;
+    }
+    return dayList.includes(dow);
+  });
+  const extras = scheduleExtras?.[date] ?? [];
+  return [...base, ...extras];
+}
 
 // ─── Guitar weekly plan ───────────────────────────────────────────
 export interface GuitarWeekRow {
@@ -337,6 +372,9 @@ export interface DashboardState {
   // (e.g. "Coffee break", "Lunch") so every row can be ticked off and
   // counted toward the daily progress bar.
   scheduleChecks: Record<ISODate, Record<string, boolean>>;
+  // Per-date custom rows the user adds directly on a specific day
+  // (e.g. weekend plans). Merged after the global day-of-week schedule.
+  scheduleExtras: Record<ISODate, ScheduleRow[]>;
   bibleLogs: Record<ISODate, BibleDayLog>;
   // When the user clicks "Complete the day" we stamp this map with the ISO
   // timestamp it was sealed at. A day key in here means the day is "closed"
@@ -354,6 +392,7 @@ export function emptyState(): DashboardState {
     tasks: [],
     habits: {},
     scheduleChecks: {},
+    scheduleExtras: {},
     bibleLogs: {},
     dayCompleted: {},
     guitar: [],
