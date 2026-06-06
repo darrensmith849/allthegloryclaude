@@ -113,18 +113,20 @@ export default function DashboardHome() {
     if (!addTime.trim() || !addTitle.trim()) return;
     const [hh, mm] = addTime.split(":").map(Number);
     const hour = (hh || 0) + (mm || 0) / 60;
+    // "x-" prefix marks this as a one-off entry living in scheduleExtras[today].
+    // That way it shows up on today's schedule regardless of day-of-week —
+    // critical fix because Sat/Sun filter weekday rows out by default.
+    // For recurring rows, use Settings → Schedule editor.
     const row: ScheduleRow = {
-      id: `s-${uid()}`,
+      id: `x-${uid()}`,
       time: addTime,
       hour,
       title: addTitle.trim(),
       sub: "",
     };
     update((draft) => {
-      // Persist into settings.schedule so the row sticks across days.
-      // Append to the end — user can manually reorder via the up/down arrows.
-      const rows = [...(draft.settings.schedule ?? []), row];
-      draft.settings.schedule = rows;
+      if (!draft.scheduleExtras) draft.scheduleExtras = {};
+      draft.scheduleExtras[today] = [...(draft.scheduleExtras[today] ?? []), row];
     });
     setAddTitle("");
     setAddOpen(false);
@@ -141,43 +143,80 @@ export default function DashboardHome() {
     setEditTitle(row.title);
     setEditSub(row.sub);
   }
+  // Helper — rows whose id starts with "x-" live in scheduleExtras[today];
+  // everything else lives in the global settings.schedule.
+  const isExtraId = (id: string) => id.startsWith("x-");
+
   function saveEditing() {
     if (!editingRowId) return;
     const [hh, mm] = editTime.split(":").map(Number);
     const hour = (hh || 0) + (mm || 0) / 60;
+    const patch = (r: ScheduleRow): ScheduleRow =>
+      r.id === editingRowId
+        ? { ...r, time: editTime, hour, title: editTitle.trim() || r.title, sub: editSub }
+        : r;
     update((draft) => {
-      const rows = (draft.settings.schedule ?? []).map((r) =>
-        r.id === editingRowId
-          ? { ...r, time: editTime, hour, title: editTitle.trim() || r.title, sub: editSub }
-          : r,
-      );
-      // Keep manual order; user can reorder with the up/down arrows.
-      draft.settings.schedule = rows;
+      if (isExtraId(editingRowId)) {
+        if (!draft.scheduleExtras) draft.scheduleExtras = {};
+        draft.scheduleExtras[today] = (draft.scheduleExtras[today] ?? []).map(patch);
+      } else {
+        draft.settings.schedule = (draft.settings.schedule ?? []).map(patch);
+      }
     });
     setEditingRowId(null);
   }
   function deleteEditing() {
     if (!editingRowId) return;
     update((draft) => {
-      draft.settings.schedule = (draft.settings.schedule ?? []).filter(
-        (r) => r.id !== editingRowId,
-      );
+      if (isExtraId(editingRowId)) {
+        if (draft.scheduleExtras) {
+          draft.scheduleExtras[today] = (draft.scheduleExtras[today] ?? []).filter(
+            (r) => r.id !== editingRowId,
+          );
+        }
+      } else {
+        draft.settings.schedule = (draft.settings.schedule ?? []).filter(
+          (r) => r.id !== editingRowId,
+        );
+      }
     });
     setEditingRowId(null);
   }
 
-  // Move a schedule row up or down. Times no longer auto-sort the list, so
-  // the user's chosen order sticks — even if it ignores chronology.
+  // Move within the row's source list (global or extras) — never cross
+  // between the two, because the visual list mixes both.
   function moveRow(rowId: string, dir: -1 | 1) {
     update((draft) => {
-      const rows = [...(draft.settings.schedule ?? [])];
+      const extra = isExtraId(rowId);
+      const rows = [
+        ...(extra ? draft.scheduleExtras?.[today] ?? [] : draft.settings.schedule ?? []),
+      ];
       const i = rows.findIndex((r) => r.id === rowId);
       if (i < 0) return;
       const j = i + dir;
       if (j < 0 || j >= rows.length) return;
       [rows[i], rows[j]] = [rows[j], rows[i]];
-      draft.settings.schedule = rows;
+      if (extra) {
+        if (!draft.scheduleExtras) draft.scheduleExtras = {};
+        draft.scheduleExtras[today] = rows;
+      } else {
+        draft.settings.schedule = rows;
+      }
     });
+  }
+  // Source-aware first/last detection so the up/down disable state is right
+  // for both global rows and one-off extras.
+  function rowIsFirstInSource(rowId: string): boolean {
+    const list = isExtraId(rowId)
+      ? state.scheduleExtras?.[today] ?? []
+      : state.settings.schedule ?? [];
+    return list[0]?.id === rowId;
+  }
+  function rowIsLastInSource(rowId: string): boolean {
+    const list = isExtraId(rowId)
+      ? state.scheduleExtras?.[today] ?? []
+      : state.settings.schedule ?? [];
+    return list[list.length - 1]?.id === rowId;
   }
   function rowDone(rowId: string, habitId?: string): boolean {
     if (habitId) return Boolean(habits[habitId]);
@@ -499,7 +538,7 @@ export default function DashboardHome() {
                             e.stopPropagation();
                             moveRow(row.id, -1);
                           }}
-                          disabled={schedule[0]?.id === row.id}
+                          disabled={rowIsFirstInSource(row.id)}
                           title="Move up"
                           aria-label="Move row up"
                         >
@@ -512,7 +551,7 @@ export default function DashboardHome() {
                             e.stopPropagation();
                             moveRow(row.id, 1);
                           }}
-                          disabled={schedule[schedule.length - 1]?.id === row.id}
+                          disabled={rowIsLastInSource(row.id)}
                           title="Move down"
                           aria-label="Move row down"
                         >
