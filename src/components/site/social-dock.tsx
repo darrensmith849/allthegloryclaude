@@ -23,11 +23,7 @@ function Item({ href, label, delay }: { href?: string; label: string; delay: num
 
 export default function SocialDock() {
   const pathname = usePathname();
-  // Routes that own their own visual space at the page edges - the dock
-  // would collide with the artwork / lyric cards / video / etc. Streaming
-  // and social links are still reachable from the footer on these pages.
-  const hideOnRoutes = ["/dashboard", "/album"];
-  if (hideOnRoutes.some((p) => pathname?.startsWith(p))) return null;
+  if (pathname?.startsWith("/dashboard")) return null;
   return (
     <div className="social-dock-bottom">
       <Item href={site.socials.instagram} label="Instagram" delay={1} />
