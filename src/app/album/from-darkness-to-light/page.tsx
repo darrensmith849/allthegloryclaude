@@ -346,7 +346,7 @@ function AlbumArt({
               alt={cardAlt ?? "Lyric card"}
               fill
               sizes="(max-width: 1024px) 100vw, 33vw"
-              className="object-contain"
+              className="object-cover"
               priority
             />
           </motion.div>
