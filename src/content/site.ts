@@ -14,7 +14,7 @@ export const site = {
     { label: "Home", href: "/" },
     { label: "Music", href: "/album/from-darkness-to-light" },
     { label: "Videos", href: "/videos" },
-    { label: "Bookings", href: "/events" },
+    { label: "Commissions", href: "/events" },
     { label: "Testimony", href: "/testimony" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },

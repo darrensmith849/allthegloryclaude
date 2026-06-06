@@ -17,10 +17,10 @@ export default function NotFound() {
         <p className="mt-6 font-display italic text-lg md:text-xl text-white/70 leading-relaxed max-w-lg">
           &ldquo;For the Son of Man came to seek and to save the lost.&rdquo;
         </p>
-        <div className="mt-2 eyebrow text-white/40">— Luke 19:10</div>
+        <div className="mt-2 eyebrow text-white/40">- Luke 19:10</div>
 
         <p className="mt-10 text-sm md:text-base text-white/55 max-w-md leading-relaxed">
-          The page you were looking for isn&apos;t here — but you are, and
+          The page you were looking for isn&apos;t here - but you are, and
           that&apos;s enough. Head home and start again.
         </p>
 

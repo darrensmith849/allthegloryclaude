@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Videos",
   description:
-    "Watch All The Glory on YouTube — a curated gallery of worship films, music videos, and live moments.",
+    "Watch All The Glory on YouTube - a curated gallery of worship films, music videos, and live moments.",
   alternates: { canonical: "/videos" },
   openGraph: {
-    title: "Videos — All The Glory",
+    title: "Videos - All The Glory",
     description:
-      "A curated gallery of worship films, music videos, and live moments — all on YouTube.",
+      "A curated gallery of worship films, music videos, and live moments - all on YouTube.",
     url: "/videos",
     type: "website",
     images: [
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Videos — All The Glory",
+    title: "Videos - All The Glory",
     description:
-      "A curated gallery of worship films, music videos, and live moments — all on YouTube.",
+      "A curated gallery of worship films, music videos, and live moments - all on YouTube.",
     images: ["/media/videos-cover.jpg"],
   },
 };

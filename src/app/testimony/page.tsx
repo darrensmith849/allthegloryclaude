@@ -34,7 +34,7 @@ export default function TestimonyPage() {
             suicidal thoughts, and gave me a new life.
           </p>
           <p className="mt-4 text-sm md:text-base text-white/65 leading-relaxed max-w-xl mx-auto">
-            Take a few minutes to watch the full story below — Jesus is
+            Take a few minutes to watch the full story below - Jesus is
             still setting people free.
           </p>
           <p className="mt-4 text-sm md:text-base text-white/65 leading-relaxed max-w-xl mx-auto">
@@ -60,7 +60,7 @@ export default function TestimonyPage() {
           <div className="relative overflow-hidden rounded-2xl border border-white/10 panel-scrim aspect-video">
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${VIDEO_ID}?rel=0&modestbranding=1&playsinline=1`}
-              title="All The Glory — testimony"
+              title="All The Glory - testimony"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"

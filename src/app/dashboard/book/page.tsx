@@ -260,7 +260,7 @@ export default function BookPage() {
                       </div>
                       <div>
                         <div className="text-[14px] text-[var(--colour-ink-strong)]">
-                          {ch?.title ?? "—"}
+                          {ch?.title ?? "-"}
                         </div>
                         {s.notes && (
                           <div className="text-[12.5px] text-[var(--colour-ink-soft)] mt-0.5">

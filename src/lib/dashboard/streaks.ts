@@ -13,7 +13,7 @@ export function currentStreak(
 ): number {
   let cursor = todayISO();
   let streak = 0;
-  // Allow today to be "in progress" — if today isn't checked yet, start counting
+  // Allow today to be "in progress" - if today isn't checked yet, start counting
   // from yesterday so a not-yet-completed day doesn't zero the streak.
   if (!predicate(getHabits(state, cursor))) {
     cursor = addDays(cursor, -1);
@@ -67,5 +67,5 @@ export function countInLastN(
   return count;
 }
 
-// Convenience: predicate "is habit X marked done?" — works with the new string-keyed map.
+// Convenience: predicate "is habit X marked done?" - works with the new string-keyed map.
 export const habitOn = (id: string) => (h: DayHabits) => Boolean(h[id]);

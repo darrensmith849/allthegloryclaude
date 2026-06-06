@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 /**
  * Newsletter subscription endpoint.
  *
- * This is deliberately a stub — it validates the email shape and logs
+ * This is deliberately a stub - it validates the email shape and logs
  * to the server console so the form in the footer works end-to-end
  * immediately, and responds { ok: true } on success so the UI can show
  * the thank-you state.

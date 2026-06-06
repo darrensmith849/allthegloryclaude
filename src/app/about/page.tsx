@@ -35,7 +35,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Lead image — the dad photo, treated as the rightful
+          {/* Lead image - the dad photo, treated as the rightful
               opening visual. Natural 3:2 fit for the source frame. */}
           <motion.figure
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
@@ -63,13 +63,13 @@ export default function AboutPage() {
             transition={heroTextTransition}
             className="mt-8 md:mt-10 text-center text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
           >
-            The story behind the music — a testimony of grace, surrender, and the
+            The story behind the music - a testimony of grace, surrender, and the
             relentless pursuit of light in the darkest places.
           </motion.p>
         </div>
       </section>
 
-      {/* ── THE STORY — heading lives inside the Testimony glass panel
+      {/* ── THE STORY - heading lives inside the Testimony glass panel
            so the eyebrow, title, and body are one aligned block ──── */}
       <Testimony
         eyebrow="The Story"
@@ -106,7 +106,7 @@ export default function AboutPage() {
                 language, and translates it into something the heart can understand.
               </p>
               <p>
-                Every song is a marker on the journey — a reminder that the God who
+                Every song is a marker on the journey - a reminder that the God who
                 began a good work is faithful to complete it. The music is raw,
                 honest, and unapologetically hopeful.
               </p>

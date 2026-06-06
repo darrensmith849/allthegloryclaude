@@ -61,7 +61,7 @@ export default function HabitsPage() {
           <div className="eyebrow eyebrow-amber">Disciplines · {formatHuman(today)}</div>
           <h1 className="dash-title mt-1">Habits &amp; Streaks</h1>
           <div className="dash-subtitle">
-            Daily reps. The disciplines you want to keep — and the ones you want to keep at a distance.
+            Daily reps. The disciplines you want to keep - and the ones you want to keep at a distance.
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function HabitsPage() {
             <div className="text-[12.5px] text-[var(--colour-ink-quiet)] leading-relaxed">
               Rules: social media is for {state.settings.socialMediaPerWeek} marked days each week,
               trading charts for {state.settings.tradingChartsPerMonth} marked day(s) each month.
-              Marking a day as “allowed” counts the discipline as kept — you set the rhythm,
+              Marking a day as “allowed” counts the discipline as kept - you set the rhythm,
               the rhythm doesn&apos;t set you.
             </div>
           </Panel>

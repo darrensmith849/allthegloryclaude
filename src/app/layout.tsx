@@ -11,7 +11,7 @@ import { site } from "@/content/site";
 import { album } from "@/content/album";
 
 // Premium editorial serif for display headings.
-// Fraunces is a warm, variable serif with optical sizing — feels
+// Fraunces is a warm, variable serif with optical sizing - feels
 // hand-set at large sizes and reads cleanly at small ones.
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -27,7 +27,7 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-// Structured data — built from the actual content sources, no hardcoded facts.
+// Structured data - built from the actual content sources, no hardcoded facts.
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [

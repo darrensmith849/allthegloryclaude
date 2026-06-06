@@ -1,13 +1,13 @@
 /**
  * Featured video data for the /videos page.
  *
- * The page is deliberately minimal — one featured video that links out
+ * The page is deliberately minimal - one featured video that links out
  * to YouTube. Update `featuredId` and `featuredWatchUrl` when a new
  * video should take the spotlight.
  */
 export const videos = {
-  /** YouTube video ID — the 11-char string from the YouTube URL. */
+  /** YouTube video ID - the 11-char string from the YouTube URL. */
   featuredId: "oWzZ7kEykhw",
-  /** Canonical watch URL — used by the primary "Watch on YouTube" CTA. */
+  /** Canonical watch URL - used by the primary "Watch on YouTube" CTA. */
   featuredWatchUrl: "https://www.youtube.com/watch?v=oWzZ7kEykhw",
 };

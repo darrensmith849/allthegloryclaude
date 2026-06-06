@@ -25,7 +25,7 @@ export default function StickyBackdrop() {
 
   const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
 
-  // Ambient glow — smoothly brightens the whole scene as you scroll
+  // Ambient glow - smoothly brightens the whole scene as you scroll
   const glowOpacity = useTransform(scrollYProgress, [0, 0.4, 1], [0, 0.12, 0.28]);
 
   const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
@@ -34,7 +34,7 @@ export default function StickyBackdrop() {
 
   return (
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">
-      {/* Cloud layer — subtle base underneath */}
+      {/* Cloud layer - subtle base underneath */}
       <div
         className="absolute inset-0"
         style={{
@@ -60,7 +60,7 @@ export default function StickyBackdrop() {
         />
       </div>
 
-      {/* Stars image — overlays the clouds with screen blend */}
+      {/* Stars image - overlays the clouds with screen blend */}
       <motion.div
         className="absolute inset-0"
         style={{
@@ -89,10 +89,10 @@ export default function StickyBackdrop() {
         />
       </motion.div>
 
-      {/* Dark veil — fades to nothing as you scroll */}
+      {/* Dark veil - fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
 
-      {/* Ambient glow — smooth scene brightening on scroll */}
+      {/* Ambient glow - smooth scene brightening on scroll */}
       <motion.div
         className="absolute inset-0 pointer-events-none bg-white"
         style={{

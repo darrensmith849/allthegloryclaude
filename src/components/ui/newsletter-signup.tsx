@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Newsletter signup — posts to /api/subscribe. The API route is
+ * Newsletter signup - posts to /api/subscribe. The API route is
  * intentionally stubbed; wire it to Resend / ConvertKit / Mailchimp /
  * Buttondown when ready by editing src/app/api/subscribe/route.ts.
  */
@@ -32,7 +32,7 @@ export default function NewsletterSignup() {
       };
       if (res.ok && data.ok) {
         setStatus("success");
-        setMessage("Thank you — we'll let you know when new music drops.");
+        setMessage("Thank you - we'll let you know when new music drops.");
         setEmail("");
       } else {
         setStatus("error");

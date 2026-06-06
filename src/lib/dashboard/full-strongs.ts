@@ -1,18 +1,18 @@
 // Full Strong's lexicon search. The curated lexicon in strongs.ts gives
 // rich, pastoral results for ~40 of the most-studied words. This file is
-// the fallback that ensures EVERY word lookup returns at least something —
+// the fallback that ensures EVERY word lookup returns at least something -
 // it searches 5,523 Greek + 8,674 Hebrew entries from the openscriptures
 // Strong's dictionary (CC-BY-SA, derived from public-domain 1890 text).
 //
 // The JSON is 1.7 MB and is imported once at module-load on the server.
-// It is never shipped to the browser — the /api/word-study route reads
+// It is never shipped to the browser - the /api/word-study route reads
 // it server-side and returns only the matches.
 
 import { StrongsEntry } from "./strongs";
 import lex from "./data/strongs-lex.json";
 
 interface LexEntry {
-  l: string; // lemma — the original script
+  l: string; // lemma - the original script
   t: string; // transliteration
   d: string; // Strong's definition
   k: string; // KJV translation glosses
@@ -80,7 +80,7 @@ export function searchFullLexicon(query: string, limit = 16): StrongsEntry[] {
   const q = norm(raw);
   const QU = raw.toUpperCase().replace(/\s+/g, "");
 
-  // Direct hit on Strong's number — G26, H2617, etc.
+  // Direct hit on Strong's number - G26, H2617, etc.
   if (/^G\d+$/.test(QU) && greek[QU]) return [toEntry(QU, greek[QU], "greek")];
   if (/^H\d+$/.test(QU) && hebrew[QU]) return [toEntry(QU, hebrew[QU], "hebrew")];
   if (/^\d+$/.test(QU)) {

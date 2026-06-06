@@ -23,7 +23,7 @@ export const DEFAULT_TASK_TAGS: TaskTag[] = [
 export interface Task {
   id: string;
   title: string;
-  tag: string; // tag id — resolved against settings.taskTags + DEFAULT_TASK_TAGS
+  tag: string; // tag id - resolved against settings.taskTags + DEFAULT_TASK_TAGS
   done: boolean;
   createdAt: string;
   completedAt?: string;
@@ -50,7 +50,7 @@ export type DayHabits = Record<string, boolean>;
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 const HABIT_WEEKDAYS = [1, 2, 3, 4, 5];
 
-// Built-in habit set — kept as defaults so first-load users see something useful.
+// Built-in habit set - kept as defaults so first-load users see something useful.
 // daysOfWeek defaults are tuned for the user's rhythm: the core disciplines
 // apply every day, gym + guitar + book writing are weekday-only.
 export const DEFAULT_HABITS: HabitDef[] = [
@@ -76,7 +76,7 @@ export function recommendedDaysFor(habitId: string): number[] {
   return RECOMMENDED_DAYS[habitId] ?? ALL_DAYS;
 }
 
-// Special-purpose flags that aren't toggled by the user as normal habits —
+// Special-purpose flags that aren't toggled by the user as normal habits -
 // these are quota-style "allowed-day" markers.
 export const ALLOWED_FLAGS = {
   socialMedia: "_socialMediaAllowed",
@@ -91,10 +91,10 @@ export function emptyHabits(): DayHabits {
 export interface ScheduleRow {
   id: string;
   time: string; // display label, e.g. "7:00"
-  hour: number; // 24h fractional, e.g. 18.5 = 6:30pm — used for "now" highlight
+  hour: number; // 24h fractional, e.g. 18.5 = 6:30pm - used for "now" highlight
   title: string;
   sub: string;
-  habitId?: string; // optional — when set, surfaces a Mark button + ticks the habit
+  habitId?: string; // optional - when set, surfaces a Mark button + ticks the habit
   // Which days of week this row applies to. 0=Sun, 1=Mon ... 6=Sat.
   // Missing/empty = backward-compat fallback (weekdays only).
   daysOfWeek?: number[];
@@ -102,7 +102,7 @@ export interface ScheduleRow {
 
 const WEEKDAYS = [1, 2, 3, 4, 5];
 export const DEFAULT_SCHEDULE: ScheduleRow[] = [
-  // Weekday rhythm — Mon to Fri
+  // Weekday rhythm - Mon to Fri
   { id: "s-word", time: "7:00", hour: 7, title: "The Word", sub: "Chronological reading + journal", habitId: "bibleRead", daysOfWeek: WEEKDAYS },
   { id: "s-2ko", time: "9:00", hour: 9, title: "2KO with Darren", sub: "Deep work block", daysOfWeek: WEEKDAYS },
   { id: "s-coffee", time: "10:00", hour: 10, title: "Coffee break", sub: "Stand up, water, breathe", daysOfWeek: WEEKDAYS },
@@ -112,7 +112,7 @@ export const DEFAULT_SCHEDULE: ScheduleRow[] = [
   { id: "s-creative", time: "17:00", hour: 17, title: "Guitar / writing", sub: "Practice or book session", habitId: "guitar", daysOfWeek: WEEKDAYS },
   { id: "s-worship", time: "18:30", hour: 18.5, title: "Evening worship", sub: "Worship before phone off", habitId: "worship", daysOfWeek: WEEKDAYS },
   { id: "s-phone-off", time: "19:00", hour: 19, title: "Phone off", sub: "No screens until tomorrow", habitId: "phoneOffAt7", daysOfWeek: WEEKDAYS },
-  // Sunday default — church first thing.
+  // Sunday default - church first thing.
   { id: "s-sun-church", time: "6:30", hour: 6.5, title: "Church", sub: "Sunday gathering", habitId: "worship", daysOfWeek: [0] },
 ];
 
@@ -122,7 +122,7 @@ function dayOfWeekFor(iso: ISODate): number {
   return new Date(y, m - 1, d).getDay();
 }
 
-// Resolve the schedule for a specific calendar date — filters the global
+// Resolve the schedule for a specific calendar date - filters the global
 // schedule by day-of-week, then appends any per-date extras the user has
 // added via the calendar.
 export function getScheduleForDate(
@@ -156,7 +156,7 @@ export interface GuitarWeekRow {
 // ─── Guitar course (Udemy lessons) ────────────────────────────────
 export interface CourseLesson {
   id: string;
-  section: string; // section identifier — "1", "2", etc.
+  section: string; // section identifier - "1", "2", etc.
   sectionTitle?: string;
   number: number; // running lesson number across the whole course
   title: string;
@@ -166,12 +166,12 @@ export interface CourseLesson {
   notes?: string;
 }
 
-// Seeded from the lessons the user has been showing — sections 1 & 2 so far.
+// Seeded from the lessons the user has been showing - sections 1 & 2 so far.
 // All marked done because the user's Udemy UI shows ✓ on every one.
 // New lessons can be added in Settings; the plan generator picks the next
 // undone ones.
 export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
-  // Section 1 — intro / theory foundation (33 min)
+  // Section 1 - intro / theory foundation (33 min)
   { id: "u-1", section: "1", sectionTitle: "Foundations", number: 1, title: "There Are 12 Notes In Western Music", minutes: 3, status: "todo" },
   { id: "u-2", section: "1", sectionTitle: "Foundations", number: 2, title: "Introduction to Intervals", minutes: 2, status: "todo" },
   { id: "u-3", section: "1", sectionTitle: "Foundations", number: 3, title: "Intervals on the Guitar", minutes: 6, status: "todo" },
@@ -181,7 +181,7 @@ export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
   { id: "u-7", section: "1", sectionTitle: "Foundations", number: 7, title: "Fretboard Memorisation Pt. I", minutes: 7, status: "todo" },
   { id: "u-8", section: "1", sectionTitle: "Foundations", number: 8, title: "Fretboard Memorisation Pt. II", minutes: 5, hasResources: true, status: "todo" },
   { id: "u-9", section: "1", sectionTitle: "Foundations", number: 9, title: "PLAY-ALONG Circle of 4th's", minutes: 2, status: "todo" },
-  // Section 2 — Chords and How to Practice Them (2hr 1min, 22/28 lessons watched)
+  // Section 2 - Chords and How to Practice Them (2hr 1min, 22/28 lessons watched)
   { id: "u-10", section: "2", sectionTitle: "Chords & Practice", number: 10, title: "Diatonic Harmony Pt. I", minutes: 5, status: "todo" },
   { id: "u-11", section: "2", sectionTitle: "Chords & Practice", number: 11, title: "Diatonic Harmony Pt. II", minutes: 10, status: "todo" },
   { id: "u-12", section: "2", sectionTitle: "Chords & Practice", number: 12, title: "7th Chords - Root on 6th String", minutes: 9, status: "todo" },
@@ -191,7 +191,7 @@ export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
   { id: "u-16", section: "2", sectionTitle: "Chords & Practice", number: 16, title: "Common Chord Progressions", minutes: 5, hasResources: true, status: "todo" },
   { id: "u-17", section: "2", sectionTitle: "Chords & Practice", number: 17, title: "PLAY-ALONG I vi IV V", minutes: 2, status: "todo" },
   { id: "u-18", section: "2", sectionTitle: "Chords & Practice", number: 18, title: "PLAY-ALONG - I iii IV V", minutes: 2, status: "todo" },
-  // Section 2 continued — Practice tracks, triads, triad applications
+  // Section 2 continued - Practice tracks, triads, triad applications
   { id: "u-19", section: "2", sectionTitle: "Chords & Practice", number: 19, title: "Practice Track - I vi IV V", minutes: 3, hasResources: true, status: "todo" },
   { id: "u-20", section: "2", sectionTitle: "Chords & Practice", number: 20, title: "Practice Track - I iii IV V", minutes: 3, hasResources: true, status: "todo" },
   { id: "u-21", section: "2", sectionTitle: "Chords & Practice", number: 21, title: "An Introduction to Triads", minutes: 5, hasResources: true, status: "todo" },
@@ -211,7 +211,7 @@ export const DEFAULT_GUITAR_COURSE: CourseLesson[] = [
   { id: "u-35", section: "2", sectionTitle: "Chords & Practice", number: 35, title: "Triad Application Pt. II - Diminished & Augmented", minutes: 7, hasResources: true, status: "todo" },
   { id: "u-36", section: "2", sectionTitle: "Chords & Practice", number: 36, title: "Triad Application Pt. III - Another Approach", minutes: 9, status: "todo" },
   { id: "u-37", section: "2", sectionTitle: "Chords & Practice", number: 37, title: "Triad Application Pt. IV - Larger Chords", minutes: 3, hasResources: true, status: "todo" },
-  // Section 3 — Scales and Improvisation (25 lessons, 1hr 36min, 0 done so far)
+  // Section 3 - Scales and Improvisation (25 lessons, 1hr 36min, 0 done so far)
   { id: "u-38", section: "3", sectionTitle: "Scales & Improvisation", number: 38, title: "How Most Guitarists Are Taught Scales", minutes: 3, status: "todo" },
   { id: "u-39", section: "3", sectionTitle: "Scales & Improvisation", number: 39, title: "7 Positions of The Major Scale", minutes: 5, hasResources: true, status: "todo" },
   { id: "u-40", section: "3", sectionTitle: "Scales & Improvisation", number: 40, title: "PLAY-ALONG 7 Positions of The Major Scale", minutes: 2, status: "todo" },
@@ -365,12 +365,12 @@ export function resolveTaskTags(settings: Settings): TaskTag[] {
   return out;
 }
 
-// Resolve the active habits list — falls back to defaults for fresh installs.
+// Resolve the active habits list - falls back to defaults for fresh installs.
 export function resolveHabits(settings: Settings): HabitDef[] {
   return settings.habits?.length ? settings.habits : DEFAULT_HABITS;
 }
 
-// Resolve the habits visible on a specific date — filters by day-of-week so
+// Resolve the habits visible on a specific date - filters by day-of-week so
 // e.g. Gym is hidden on Saturday, the daily disciplines stay every day.
 export function getHabitsForDate(date: ISODate, settings: Settings): HabitDef[] {
   const dow = dayOfWeekFor(date);
@@ -398,7 +398,7 @@ export interface DashboardState {
   tasks: Task[];
   habits: Record<ISODate, DayHabits>;
   // Per-day "is this schedule row done?" checks, keyed by row id.
-  // Schedule rows linked to a habit don't need this — their habit field
+  // Schedule rows linked to a habit don't need this - their habit field
   // already encodes their done state. This map covers the ones that don't
   // (e.g. "Coffee break", "Lunch") so every row can be ticked off and
   // counted toward the daily progress bar.
@@ -409,7 +409,7 @@ export interface DashboardState {
   bibleLogs: Record<ISODate, BibleDayLog>;
   // When the user clicks "Complete the day" we stamp this map with the ISO
   // timestamp it was sealed at. A day key in here means the day is "closed"
-  // — Today shows a recap instead of the action buttons, and the calendar
+  // - Today shows a recap instead of the action buttons, and the calendar
   // marks it as completed. Reopening the day removes the key.
   dayCompleted: Record<ISODate, string>;
   guitar: GuitarSession[];

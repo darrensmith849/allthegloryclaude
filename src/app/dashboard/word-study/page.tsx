@@ -138,7 +138,7 @@ export default function WordStudyPage() {
 
             {!results && (
               <div className="dash-empty">
-                Start with a word like <em>love</em> or <em>grace</em> — or browse the lexicon below.
+                Start with a word like <em>love</em> or <em>grace</em> - or browse the lexicon below.
               </div>
             )}
 
@@ -207,7 +207,7 @@ export default function WordStudyPage() {
                           >
                             ↗ {ex.ref}
                             {ex.quote && (
-                              <span className="text-[var(--colour-ink-soft)] italic"> — “{ex.quote}”</span>
+                              <span className="text-[var(--colour-ink-soft)] italic"> - “{ex.quote}”</span>
                             )}
                           </button>
                         ))}

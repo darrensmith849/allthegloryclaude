@@ -76,7 +76,7 @@ export default function FAQ({
             <div
               className="mt-3 text-sm md:text-base text-white/70 leading-relaxed"
               // Pre-warmed max-height so the description isn't clipped
-              // when the item opens — detail elements don't animate height
+              // when the item opens - detail elements don't animate height
               // natively, and we're deliberately not adding a JS height
               // measurement for 10-item FAQ.
               style={{ contain: i === items.length - 1 ? "none" : "layout" }}

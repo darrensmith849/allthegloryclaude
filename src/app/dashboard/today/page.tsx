@@ -63,7 +63,7 @@ export default function DashboardHome() {
     });
   }
 
-  // Bulk operations — flip every visible checkbox in a single click.
+  // Bulk operations - flip every visible checkbox in a single click.
   function markAllDone() {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
@@ -103,7 +103,7 @@ export default function DashboardHome() {
     });
   }
 
-  // Inline "+ Add block" form state and handler — adds a row to the user's
+  // Inline "+ Add block" form state and handler - adds a row to the user's
   // editable schedule so any time of day can be tracked, not just the presets.
   const [addOpen, setAddOpen] = useState(false);
   const [addTime, setAddTime] = useState("11:00");
@@ -114,7 +114,7 @@ export default function DashboardHome() {
     const [hh, mm] = addTime.split(":").map(Number);
     const hour = (hh || 0) + (mm || 0) / 60;
     // "x-" prefix marks this as a one-off entry living in scheduleExtras[today].
-    // That way it shows up on today's schedule regardless of day-of-week —
+    // That way it shows up on today's schedule regardless of day-of-week -
     // critical fix because Sat/Sun filter weekday rows out by default.
     // For recurring rows, use Settings → Schedule editor.
     const row: ScheduleRow = {
@@ -143,7 +143,7 @@ export default function DashboardHome() {
     setEditTitle(row.title);
     setEditSub(row.sub);
   }
-  // Helper — rows whose id starts with "x-" live in scheduleExtras[today];
+  // Helper - rows whose id starts with "x-" live in scheduleExtras[today];
   // everything else lives in the global settings.schedule.
   const isExtraId = (id: string) => id.startsWith("x-");
 
@@ -183,7 +183,7 @@ export default function DashboardHome() {
     setEditingRowId(null);
   }
 
-  // Move within the row's source list (global or extras) — never cross
+  // Move within the row's source list (global or extras) - never cross
   // between the two, because the visual list mixes both.
   function moveRow(rowId: string, dir: -1 | 1) {
     update((draft) => {
@@ -284,7 +284,7 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Daily completion bar — fills as you tick boxes through the day.
+      {/* Daily completion bar - fills as you tick boxes through the day.
           When the day is sealed via Complete the day, swaps to a recap. */}
       <div className={`dash-progress-card ${dayCompletedAt ? "is-completed" : ""}`}>
         <div className="dash-progress-head">
@@ -378,7 +378,7 @@ export default function DashboardHome() {
           />
         </div>
 
-        {/* Reminders card — all five in a row, today's highlighted. */}
+        {/* Reminders card - all five in a row, today's highlighted. */}
         <div className="dash-col-12">
           <div className="dash-reminder-frame">
             <div className="dash-reminder-frame-eyebrow">
@@ -422,7 +422,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Daily schedule — every row is a button. Click anywhere on a row to tick it. */}
+        {/* Daily schedule - every row is a button. Click anywhere on a row to tick it. */}
         <div className="dash-col-8">
           <Panel
             eyebrow="Daily rhythm · click ✎ to edit times"
@@ -654,7 +654,7 @@ export default function DashboardHome() {
 
         {/* Today's reading preview */}
         <div className="dash-col-6">
-          <Panel eyebrow={`Chronological — Day ${planDay}`} title={plan.passage}>
+          <Panel eyebrow={`Chronological - Day ${planDay}`} title={plan.passage}>
             <p className="text-[14px] text-[var(--colour-ink-soft)] leading-relaxed">
               {plan.theme ?? ""}
             </p>

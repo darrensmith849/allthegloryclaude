@@ -20,7 +20,7 @@ export const REMINDERS: Reminder[] = [
     id: "consecration",
     src: "/atg-reminders/reminder-02.webp",
     quote:
-      "Your consecration is not just about you — there are families waiting for your prayers, generations tied to your obedience, and destinies connected to your surrender.",
+      "Your consecration is not just about you - there are families waiting for your prayers, generations tied to your obedience, and destinies connected to your surrender.",
     short: "Generations are tied to your surrender.",
   },
   {
@@ -46,7 +46,7 @@ export const REMINDERS: Reminder[] = [
   },
 ];
 
-// Deterministic pick for a given date — so "today's reminder" is stable through the day.
+// Deterministic pick for a given date - so "today's reminder" is stable through the day.
 export function reminderForDate(iso: string): Reminder {
   const [y, m, d] = iso.split("-").map(Number);
   // Days-since-epoch keeps it sequential and the same on every load that day.

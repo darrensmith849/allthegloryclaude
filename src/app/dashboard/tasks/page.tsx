@@ -207,7 +207,7 @@ export default function TasksPage() {
                         className="dash-task-due"
                         style={overdue ? { color: "#f1a07d" } : undefined}
                       >
-                        {t.due ? formatShort(t.due) : "—"}
+                        {t.due ? formatShort(t.due) : "-"}
                         <button
                           onClick={() => remove(t.id)}
                           className="ml-3 opacity-50 hover:opacity-100"

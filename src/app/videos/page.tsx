@@ -8,7 +8,7 @@ import FeaturedVideoHero from "./FeaturedVideoHero";
 const channelUrl = site.socials.youtube;
 
 /**
- * Minimal Videos page — every path leads to YouTube.
+ * Minimal Videos page - every path leads to YouTube.
  *
  *   eyebrow → headline → one-line description → two CTAs → featured video.
  *
@@ -48,7 +48,7 @@ export default function VideosPage() {
           </h1>
 
           <p className="mt-6 text-sm md:text-base text-white/65 leading-relaxed max-w-md mx-auto">
-            Live worship, performances, and music videos — shared as they
+            Live worship, performances, and music videos - shared as they
             release on the channel.
           </p>
 
@@ -74,7 +74,7 @@ export default function VideosPage() {
           </div>
         </motion.div>
 
-        {/* Featured video — sits below the text block as a wide,
+        {/* Featured video - sits below the text block as a wide,
             cinematic banner. Soft amber glow anchors it in the page
             atmosphere instead of having it sit on top of the page. */}
         <motion.div
@@ -94,6 +94,21 @@ export default function VideosPage() {
             }}
           />
           <FeaturedVideoHero videoId={videos.featuredId} />
+
+          {/* Open-in-YouTube CTA directly under the player - gives the
+              viewer a one-click path off the embed when they want sound,
+              full controls, or to keep watching on the channel. */}
+          <div className="mt-6 md:mt-8 flex justify-center">
+            <a
+              href={videos.featuredWatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+              aria-label="Open the featured video on YouTube (opens in a new tab)"
+            >
+              Open in YouTube ↗
+            </a>
+          </div>
         </motion.div>
       </section>
     </main>

@@ -181,7 +181,7 @@ export default function GuitarPage() {
           <Stat label="Sessions logged" value={state.guitar.length} tone="ok" />
         </div>
 
-        {/* Weekly rotation panel removed per user request — the Udemy course
+        {/* Weekly rotation panel removed per user request - the Udemy course
             plan below handles the weekly cadence now. */}
 
         {/* ─── Udemy course tracker ─── */}
@@ -214,7 +214,7 @@ export default function GuitarPage() {
             <p className="text-[12.5px] text-[var(--colour-ink-soft)] mb-3">
               5 days a week. New lessons on <strong>Mon · Wed · Fri</strong>; Tue and Thu
               consolidate yesterday&apos;s. If a lesson runs long, mark it{" "}
-              <strong>in progress</strong> — it stays at the front of the queue.
+              <strong>in progress</strong> - it stays at the front of the queue.
             </p>
 
             {lessonOpen && (
@@ -333,7 +333,7 @@ export default function GuitarPage() {
                     </>
                   ) : (
                     <div className="text-[12px] text-[var(--colour-ink-quiet)] mt-2">
-                      Nothing queued — add lessons below.
+                      Nothing queued - add lessons below.
                     </div>
                   )}
                 </div>

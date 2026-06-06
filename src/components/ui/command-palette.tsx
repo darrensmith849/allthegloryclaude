@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Command palette — the Linear / Vercel-style ⌘K menu.
+ * Command palette - the Linear / Vercel-style ⌘K menu.
  *
  * - Open: ⌘K on macOS, Ctrl+K on Windows/Linux.
  * - Navigate: ↑ / ↓ to move, Enter to go, Esc to close.
  * - Surfaces every page in `site.nav`, plus the album page even though
  *   it lives outside the top nav.
  *
- * Intentionally no third-party dependency — it's ~120 lines and doesn't
+ * Intentionally no third-party dependency - it's ~120 lines and doesn't
  * need cmdk's full state machine for a menu this small.
  */
 
@@ -21,7 +21,7 @@ import { album } from "@/content/album";
 type Item = { label: string; href: string; hint?: string };
 
 const extraItems: Item[] = [
-  { label: "Album — From Darkness To Light", href: album.path, hint: "Music" },
+  { label: "Album - From Darkness To Light", href: album.path, hint: "Music" },
 ];
 
 export default function CommandPalette() {

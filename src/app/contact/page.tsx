@@ -60,7 +60,7 @@ export default function ContactPage() {
     const message = (formData.get("message") as string).trim();
 
     const subject = `New message from ${name} (All The Glory)`;
-    const body = `${message}\n\n— ${name}\n${email}`;
+    const body = `${message}\n\n- ${name}\n${email}`;
     const mailto =
       `mailto:${CONTACT_INBOX}` +
       `?subject=${encodeURIComponent(subject)}` +
@@ -111,7 +111,7 @@ export default function ContactPage() {
                 Thank you
               </h2>
               <p className="text-colour-fg/60">
-                Your email client should have opened — just hit send and the
+                Your email client should have opened - just hit send and the
                 message will land with us straight away. If nothing opened,
                 email{" "}
                 <a

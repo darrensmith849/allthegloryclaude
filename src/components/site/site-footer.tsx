@@ -14,7 +14,7 @@ export default function SiteFooter() {
   const footerRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
-  // The private dashboard ships its own layout — skip the marketing footer there.
+  // The private dashboard ships its own layout - skip the marketing footer there.
   const isDashboard = pathname?.startsWith("/dashboard") ?? false;
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function SiteFooter() {
           setInView(true);
           const v = videoRef.current;
           if (!v) return;
-          // Force a load() before play() — preload="metadata" only fetches
+          // Force a load() before play() - preload="metadata" only fetches
           // metadata, so we still need to nudge it to fetch + buffer enough
           // to actually play. Then catch the play promise: browsers reject
           // it for autoplay-policy reasons (no user interaction yet, etc.)
@@ -43,11 +43,11 @@ export default function SiteFooter() {
           try {
             v.load();
           } catch {
-            /* load() can throw on some browsers if already loading — safe to ignore */
+            /* load() can throw on some browsers if already loading - safe to ignore */
           }
           v.play().catch(() => {
             // Autoplay was blocked. The fallback Jesus painting underneath
-            // is still visible, so the section is never broken — the lightning
+            // is still visible, so the section is never broken - the lightning
             // overlay just won't animate in this session. Nothing to do.
           });
         }
@@ -62,7 +62,7 @@ export default function SiteFooter() {
 
   return (
     <footer ref={footerRef} className="relative w-full overflow-hidden">
-      {/* Jesus painting background — full width */}
+      {/* Jesus painting background - full width */}
       <div className="absolute inset-0">
         <Image
           src="/media/jesus-painting.jpg"
@@ -79,7 +79,7 @@ export default function SiteFooter() {
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[var(--colour-bg)] to-transparent" />
       </div>
 
-      {/* Lightning video — starts when footer enters view */}
+      {/* Lightning video - starts when footer enters view */}
       <div
         className="absolute inset-0 overflow-hidden transition-opacity duration-[2000ms]"
         style={{ mixBlendMode: "screen", opacity: inView ? 0.2 : 0 }}
@@ -99,9 +99,9 @@ export default function SiteFooter() {
       </div>
 
       <div className="relative px-6 py-16 md:py-24">
-        {/* Stacked centre — narrow panels so Jesus shows on both sides */}
+        {/* Stacked centre - narrow panels so Jesus shows on both sides */}
         <div className="mx-auto max-w-md flex flex-col gap-6">
-          {/* Scripture — fades in after painting is visible */}
+          {/* Scripture - fades in after painting is visible */}
           <motion.div
             key={`scripture-${pathname}`}
             initial={{ opacity: 0 }}
@@ -117,11 +117,11 @@ export default function SiteFooter() {
               className="block mt-4 text-[11px] not-italic uppercase tracking-[0.24em]"
               style={{ color: "var(--colour-accent-1)" }}
             >
-              — Mark 8:36
+              - Mark 8:36
             </cite>
           </motion.div>
 
-          {/* Newsletter — fades in between scripture and nav panels */}
+          {/* Newsletter - fades in between scripture and nav panels */}
           <motion.div
             key={`newsletter-${pathname}`}
             initial={{ opacity: 0 }}
@@ -133,7 +133,7 @@ export default function SiteFooter() {
             <NewsletterSignup />
           </motion.div>
 
-          {/* Nav + socials + credits — fades in slightly after scripture */}
+          {/* Nav + socials + credits - fades in slightly after scripture */}
           <motion.div
             key={`nav-${pathname}`}
             initial={{ opacity: 0 }}
