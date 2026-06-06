@@ -1,19 +1,16 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { site } from "@/content/site";
 import { videos } from "@/content/videos";
 import FeaturedVideoHero from "./FeaturedVideoHero";
 
-const channelUrl = site.socials.youtube;
-
 /**
- * Minimal Videos page - every path leads to YouTube.
+ * Minimal Videos page - the video itself is the hero.
  *
- *   eyebrow → headline → one-line description → two CTAs → featured video.
+ *   eyebrow → headline → one-line description → autoplaying video → one
+ *   Watch-on-YouTube CTA below.
  *
- * No collection, no scripture interlude, no subscribe panel below the
- * video. Deliberately spare; the channel is the destination.
+ * Deliberately spare; the channel is the destination.
  */
 export default function VideosPage() {
   const reduce = useReducedMotion();
@@ -51,32 +48,11 @@ export default function VideosPage() {
             Live worship, performances, and music videos - shared as they
             release on the channel.
           </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a
-              href={videos.featuredWatchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary"
-              aria-label="Watch the featured video on YouTube (opens in a new tab)"
-            >
-              Watch on YouTube ↗
-            </a>
-            <a
-              href={channelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-ghost"
-              aria-label="Visit the All The Glory YouTube channel (opens in a new tab)"
-            >
-              Visit the channel ↗
-            </a>
-          </div>
         </motion.div>
 
-        {/* Featured video - sits below the text block as a wide,
-            cinematic banner. Soft amber glow anchors it in the page
-            atmosphere instead of having it sit on top of the page. */}
+        {/* Featured video - autoplays muted; viewer unmutes with one click.
+            Soft amber glow anchors it in the page atmosphere instead of
+            having it sit on top of the page. */}
         <motion.div
           initial={
             reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 18 }
@@ -95,18 +71,16 @@ export default function VideosPage() {
           />
           <FeaturedVideoHero videoId={videos.featuredId} />
 
-          {/* Open-in-YouTube CTA directly under the player - gives the
-              viewer a one-click path off the embed when they want sound,
-              full controls, or to keep watching on the channel. */}
+          {/* Single Watch-on-YouTube CTA, directly under the player. */}
           <div className="mt-6 md:mt-8 flex justify-center">
             <a
               href={videos.featuredWatchUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-ghost"
-              aria-label="Open the featured video on YouTube (opens in a new tab)"
+              className="btn btn-primary"
+              aria-label="Watch the featured video on YouTube (opens in a new tab)"
             >
-              Open in YouTube ↗
+              Watch on YouTube ↗
             </a>
           </div>
         </motion.div>
