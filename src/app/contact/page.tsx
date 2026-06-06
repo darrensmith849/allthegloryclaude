@@ -6,8 +6,9 @@ import { motion, useReducedMotion } from "framer-motion";
 const CONTACT_INBOX = "peter777daniel@gmail.com";
 
 export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
   const reduce = useReducedMotion();
 
   function validate(formData: FormData) {
@@ -28,25 +29,26 @@ export default function ContactPage() {
     return errs;
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setServerError(null);
     const formData = new FormData(e.currentTarget);
     const validationErrors = validate(formData);
 
     if (validationErrors.__bot) {
-      setSubmitted(true);
+      // Bot - fake success and bail.
+      setStatus("sent");
       return;
     }
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      // Move focus to the first invalid field for accessibility
       const firstInvalid =
         validationErrors.name
           ? "name"
           : validationErrors.email
-          ? "email"
-          : "message";
+            ? "email"
+            : "message";
       requestAnimationFrame(() => {
         document.getElementById(firstInvalid)?.focus();
       });
@@ -54,22 +56,38 @@ export default function ContactPage() {
     }
 
     setErrors({});
+    setStatus("sending");
 
-    const name = (formData.get("name") as string).trim();
-    const email = (formData.get("email") as string).trim();
-    const message = (formData.get("message") as string).trim();
-
-    const subject = `New message from ${name} (All The Glory)`;
-    const body = `${message}\n\n- ${name}\n${email}`;
-    const mailto =
-      `mailto:${CONTACT_INBOX}` +
-      `?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(body)}`;
-
-    // Hand off to the visitor's mail client so the message lands in
-    // peter777daniel@gmail.com immediately.
-    window.location.href = mailto;
-    setSubmitted(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: (formData.get("name") as string).trim(),
+          email: (formData.get("email") as string).trim(),
+          message: (formData.get("message") as string).trim(),
+          website: formData.get("website") as string,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setServerError(
+          data.error ??
+            "We couldn't send your message right now. Please try again.",
+        );
+        setStatus("idle");
+        return;
+      }
+      setStatus("sent");
+    } catch {
+      setServerError(
+        "Network error. Please check your connection and try again.",
+      );
+      setStatus("idle");
+    }
   }
 
   const headerTransition = reduce
@@ -78,6 +96,9 @@ export default function ContactPage() {
   const formTransition = reduce
     ? { duration: 0.01 }
     : { duration: 1.4, delay: 0.4, ease: [0.06, 1, 0.18, 1] as const };
+
+  const submitted = status === "sent";
+  const sending = status === "sending";
 
   return (
     <main className="bg-transparent overflow-x-clip min-h-[88vh] md:min-h-[90vh] flex flex-col pt-24">
@@ -111,9 +132,11 @@ export default function ContactPage() {
                 Thank you
               </h2>
               <p className="text-colour-fg/60">
-                Your email client should have opened - just hit send and the
-                message will land with us straight away. If nothing opened,
-                email{" "}
+                Your message has landed in our inbox. We&apos;ll get back to
+                you as soon as we can.
+              </p>
+              <p className="text-colour-fg/40 mt-4 text-sm">
+                If anything goes wrong, email{" "}
                 <a
                   href={`mailto:${CONTACT_INBOX}`}
                   className="text-[var(--colour-amber)] underline"
@@ -207,7 +230,9 @@ export default function ContactPage() {
                   required
                   rows={6}
                   aria-invalid={errors.message ? true : undefined}
-                  aria-describedby={errors.message ? "message-error" : undefined}
+                  aria-describedby={
+                    errors.message ? "message-error" : undefined
+                  }
                   className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors resize-none"
                   placeholder="Your message..."
                 />
@@ -223,11 +248,22 @@ export default function ContactPage() {
                 )}
               </div>
 
+              {serverError && (
+                <p
+                  role="alert"
+                  aria-live="polite"
+                  className="text-sm text-red-400"
+                >
+                  {serverError}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-3 bg-colour-accent text-colour-bg font-semibold text-sm uppercase tracking-widest hover:bg-colour-fg transition-colors"
+                disabled={sending}
+                className="w-full py-3 bg-colour-accent text-colour-bg font-semibold text-sm uppercase tracking-widest hover:bg-colour-fg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Send Message
+                {sending ? "Sending…" : "Send Message"}
               </button>
             </form>
           )}
