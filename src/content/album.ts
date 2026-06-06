@@ -44,6 +44,12 @@ export const album = {
       fullVerse: "When Jesus had received the sour wine, he said, \u201CIt is finished,\u201D and he bowed his head and gave up his spirit.",
       reflection: "The cry that ends the long ache. Three words that close the gap, settle the debt, and finish the work no one else could carry.",
       previewSrc: "/audio/previews/01-john-19-vs-30.mp3",
+      lyricCards: [
+        "/lyrics/john-19-vs-30/01.jpg",
+        "/lyrics/john-19-vs-30/02.jpg",
+        "/lyrics/john-19-vs-30/03.jpg",
+        "/lyrics/john-19-vs-30/04.jpg",
+      ],
     },
     {
       title: "Matthew 14 vs 31",

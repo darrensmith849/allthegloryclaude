@@ -112,11 +112,13 @@ function VerseModal({
   verseRef,
   fullVerse,
   reflection,
+  lyricCards,
   onClose,
 }: {
   verseRef: string;
   fullVerse: string;
   reflection?: string;
+  lyricCards?: string[];
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -208,7 +210,7 @@ function VerseModal({
             : { opacity: 0, scale: 0.92, y: 20 }
         }
         transition={dialogTransition}
-        className="relative max-w-lg w-full panel-scrim border border-white/10 rounded-2xl px-8 py-10 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--colour-amber)]/50"
+        className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto panel-scrim border border-white/10 rounded-2xl px-8 py-10 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--colour-amber)]/50"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -228,6 +230,27 @@ function VerseModal({
             <p className="mt-6 text-sm md:text-base text-white/65 leading-relaxed max-w-md mx-auto">
               {reflection}
             </p>
+          </>
+        )}
+
+        {lyricCards && lyricCards.length > 0 && (
+          <>
+            <div className="mt-8 mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
+            <div className="eyebrow eyebrow-amber mt-6">Lyrics</div>
+            <div className="mt-5 flex flex-col gap-4">
+              {lyricCards.map((src, i) => (
+                <Image
+                  key={src}
+                  src={src}
+                  alt={`${verseRef} lyric card ${i + 1}`}
+                  width={1200}
+                  height={2000}
+                  sizes="(max-width: 640px) 90vw, 480px"
+                  className="w-full h-auto rounded-xl border border-white/10"
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
+              ))}
+            </div>
           </>
         )}
 
@@ -301,7 +324,7 @@ export default function AlbumPage() {
   const [hoverReady, setHoverReady] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
-  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string } | null>(null);
+  const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string; lyricCards?: string[] } | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
@@ -443,7 +466,7 @@ export default function AlbumPage() {
                   isLoading={loadingIndex === i && playingIndex !== i}
                   reduce={!!reduce}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
-                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection })}
+                  onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection, lyricCards: t.lyricCards })}
                 />
               ))}
             </div>
@@ -523,6 +546,7 @@ export default function AlbumPage() {
             verseRef={verseModal.ref}
             fullVerse={verseModal.fullVerse}
             reflection={verseModal.reflection}
+            lyricCards={verseModal.lyricCards}
             onClose={() => setVerseModal(null)}
           />
         )}
