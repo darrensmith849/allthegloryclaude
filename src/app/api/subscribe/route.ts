@@ -1,23 +1,17 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
 /**
  * Newsletter subscription endpoint.
  *
- * This is deliberately a stub - it validates the email shape and logs
- * to the server console so the form in the footer works end-to-end
- * immediately, and responds { ok: true } on success so the UI can show
- * the thank-you state.
+ * Adds the email to the Resend audience configured by
+ * RESEND_AUDIENCE_ID, using the full-access key in
+ * RESEND_FULL_API_KEY (separate from the sending-only key used by
+ * /api/contact so a leaked sending key can never touch the audience).
  *
- * To wire a real provider, replace the "Real provider" block below
- * with a fetch() to one of:
- *
- *   - Resend:      https://resend.com/docs/api-reference/audiences/add-contact
- *   - ConvertKit:  https://developers.kit.com/#add-subscriber
- *   - Buttondown:  https://docs.buttondown.email/api-subscribers-create
- *   - Mailchimp:   https://mailchimp.com/developer/marketing/api/list-members/
- *
- * Store the provider API key as an env var (e.g. RESEND_API_KEY) on
- * Vercel so it never ships to the client.
+ * Returns { ok: true } on success. Duplicate sign-ups are treated as
+ * success — Resend's API returns a 409 in that case, which we swallow
+ * so the visitor never sees a confusing error.
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,7 +23,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid request body." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -41,25 +35,62 @@ export async function POST(req: Request) {
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json(
       { ok: false, error: "Please enter a valid email address." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  // ── Real provider block ────────────────────────────────────────
-  // Swap the console.log below for a fetch() call to your provider.
-  // Example (Resend audiences):
-  //
-  //   await fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ email, unsubscribed: false }),
-  //   });
-  //
-  console.log(`[newsletter] subscribe request: ${email}`);
-  // ───────────────────────────────────────────────────────────────
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  const apiKey = process.env.RESEND_FULL_API_KEY;
+
+  if (!audienceId || !apiKey) {
+    console.error(
+      "Newsletter not configured: missing RESEND_AUDIENCE_ID or RESEND_FULL_API_KEY.",
+    );
+    return NextResponse.json(
+      { ok: false, error: "Newsletter is not configured." },
+      { status: 500 },
+    );
+  }
+
+  try {
+    const resend = new Resend(apiKey);
+    const { error } = await resend.contacts.create({
+      audienceId,
+      email,
+      unsubscribed: false,
+    });
+
+    if (error) {
+      // The SDK returns an error object on failure. A duplicate
+      // sign-up should still feel like success to the visitor, so we
+      // detect 4xx-ish messages that mean "already subscribed" and
+      // pretend everything is fine.
+      const msg = (error.message ?? "").toLowerCase();
+      const isDuplicate =
+        msg.includes("already") || msg.includes("exists") || msg.includes("duplicate");
+      if (!isDuplicate) {
+        console.error("Resend contacts.create error:", error);
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "We couldn't add you to the list right now. Please try again in a moment.",
+          },
+          { status: 502 },
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Unexpected newsletter error:", err);
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "We couldn't add you to the list right now. Please try again in a moment.",
+      },
+      { status: 502 },
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
