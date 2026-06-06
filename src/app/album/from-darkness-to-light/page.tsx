@@ -366,8 +366,8 @@ export default function AlbumPage() {
     <main className="bg-transparent overflow-x-clip">
       <div className="mx-auto w-full max-w-7xl px-6 py-14 md:py-20">
         <div className="grid gap-8 lg:grid-cols-[1fr_minmax(380px,520px)_1fr] items-start">
-          {/* LEFT artwork */}
-          <div className="hidden lg:block">
+          {/* LEFT artwork — sticky so it follows the tracks as they scroll */}
+          <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt delay={0.08} side="left" />
           </div>
 
@@ -503,8 +503,8 @@ export default function AlbumPage() {
             </motion.div>
           </section>
 
-          {/* RIGHT artwork (desktop only) */}
-          <div className="hidden lg:block">
+          {/* RIGHT artwork (desktop only) — sticky so it follows the tracks as they scroll */}
+          <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <AlbumArt delay={0.14} side="right" />
           </div>
         </div>
