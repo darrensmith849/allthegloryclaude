@@ -17,6 +17,7 @@ function TrackRow({
   isPlaying,
   isLoading,
   reduce,
+  hasLyrics,
   onTogglePlay,
   onReadVerse,
 }: {
@@ -29,6 +30,7 @@ function TrackRow({
   isPlaying: boolean;
   isLoading: boolean;
   reduce: boolean;
+  hasLyrics: boolean;
   onTogglePlay: () => void;
   onReadVerse: () => void;
 }) {
@@ -87,7 +89,7 @@ function TrackRow({
           onClick={onReadVerse}
           className="mt-3 inline-block text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--colour-amber)]/70 hover:text-[var(--colour-amber)] transition-colors duration-300"
         >
-          Read verse ↗
+          {hasLyrics ? "Read verse + lyrics ↗" : "Read verse ↗"}
         </button>
       </div>
 
@@ -528,6 +530,7 @@ export default function AlbumPage() {
                   isPlaying={playingIndex === i}
                   isLoading={loadingIndex === i && playingIndex !== i}
                   reduce={!!reduce}
+                  hasLyrics={!!t.lyricCards && t.lyricCards.length > 0}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
                   onReadVerse={() => setVerseModal({ ref: t.ref, fullVerse: t.fullVerse, reflection: t.reflection, lyricCards: t.lyricCards, lyricCardsPdf: t.lyricCardsPdf })}
                 />
