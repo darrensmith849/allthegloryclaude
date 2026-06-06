@@ -180,6 +180,24 @@ export default function CalendarPage() {
       );
     });
   }
+  // Delete from the global settings.schedule — removes the row from every
+  // day it would have appeared on. Confirms first so it's never accidental.
+  function removeGlobalScheduleRow(rowId: string, title: string) {
+    const ok = confirm(
+      `Delete "${title}" from the schedule? It will no longer appear on any day. Use Settings → Schedule editor to re-add it later.`,
+    );
+    if (!ok) return;
+    update((d) => {
+      d.settings.schedule = (d.settings.schedule ?? []).filter((r) => r.id !== rowId);
+    });
+  }
+  function deleteRow(rowId: string, title: string) {
+    if (rowId.startsWith("x-")) {
+      removeScheduleExtra(rowId);
+    } else {
+      removeGlobalScheduleRow(rowId, title);
+    }
+  }
 
   function addTaskForSelected(e?: React.FormEvent) {
     e?.preventDefault();
@@ -425,16 +443,19 @@ export default function CalendarPage() {
                               {done ? "✓" : ""}
                             </span>
                           </button>
-                          {isExtra && (
-                            <button
-                              type="button"
-                              className="dash-row-move"
-                              onClick={() => removeScheduleExtra(row.id)}
-                              title="Remove this one-off entry"
-                            >
-                              ✕
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            className="dash-row-delete"
+                            onClick={() => deleteRow(row.id, row.title)}
+                            title={
+                              isExtra
+                                ? "Remove this one-off entry"
+                                : "Delete this row from every day (Settings to re-add)"
+                            }
+                            aria-label="Delete row"
+                          >
+                            ✕
+                          </button>
                         </div>
                       );
                     })}

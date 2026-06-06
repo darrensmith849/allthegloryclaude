@@ -204,6 +204,31 @@ export default function DashboardHome() {
       }
     });
   }
+  // Quick-delete a row directly from the schedule (without entering edit mode).
+  // Extras delete immediately; global rows confirm first so a stray click can't
+  // wipe a recurring block from every day.
+  function quickDeleteRow(rowId: string, title: string) {
+    if (isExtraId(rowId)) {
+      update((draft) => {
+        if (draft.scheduleExtras) {
+          draft.scheduleExtras[today] = (draft.scheduleExtras[today] ?? []).filter(
+            (r) => r.id !== rowId,
+          );
+        }
+      });
+      return;
+    }
+    const ok = confirm(
+      `Delete "${title}" from the schedule? It will no longer appear on any day. Use Settings → Schedule editor to re-add it later.`,
+    );
+    if (!ok) return;
+    update((draft) => {
+      draft.settings.schedule = (draft.settings.schedule ?? []).filter(
+        (r) => r.id !== rowId,
+      );
+    });
+  }
+
   // Source-aware first/last detection so the up/down disable state is right
   // for both global rows and one-off extras.
   function rowIsFirstInSource(rowId: string): boolean {
@@ -569,6 +594,18 @@ export default function DashboardHome() {
                         aria-label="Edit this row"
                       >
                         ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="dash-row-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          quickDeleteRow(row.id, row.title);
+                        }}
+                        title="Delete this row"
+                        aria-label="Delete this row"
+                      >
+                        ✕
                       </button>
                       <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
                         {done ? "✓" : ""}

@@ -914,6 +914,26 @@
   background: rgba(216, 178, 90, 0.05);
 }
 
+/* Delete button on each schedule row — sits beside the edit pencil and dot. */
+.dash-row-delete {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 100, 100, 0.18);
+  background: rgba(255, 100, 100, 0.04);
+  color: rgba(255, 170, 170, 0.78);
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.dash-row-delete:hover {
+  background: rgba(255, 100, 100, 0.18);
+  border-color: rgba(255, 100, 100, 0.55);
+  color: rgba(255, 200, 200, 1);
+}
+
 /* Up/down reorder buttons — small chevrons on each row */
 .dash-row-move {
   width: 22px;
