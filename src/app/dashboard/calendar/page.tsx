@@ -16,7 +16,7 @@ import {
 } from "@/lib/dashboard/dates";
 import {
   emptyHabits,
-  resolveHabits,
+  getHabitsForDate,
   getScheduleForDate,
   ScheduleRow,
   resolveTaskTags,
@@ -69,7 +69,7 @@ export default function CalendarPage() {
   const selectedLog = state.bibleLogs[selected];
   const planDay = planDayFor(selected, state.settings.startDate, state.settings.startPlanDay);
   const plan = planForWithOverride(planDay, state.settings.planOverrides);
-  const habitDefs = resolveHabits(state.settings);
+  const habitDefs = getHabitsForDate(selected, state.settings);
   const schedule = getScheduleForDate(selected, state.settings, state.scheduleExtras);
   const TAGS = resolveTaskTags(state.settings);
 

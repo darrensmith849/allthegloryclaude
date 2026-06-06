@@ -436,35 +436,95 @@ export default function SettingsPage() {
             }
           >
             <div className="flex flex-col gap-2">
-              {habits.map((h) => (
-                <div
-                  key={h.id}
-                  className="grid items-center gap-2 p-2.5 rounded-md border border-white/8 bg-white/[0.02]"
-                  style={{ gridTemplateColumns: "1fr 110px 30px" }}
-                >
-                  <input
-                    className="dash-input"
-                    value={h.label}
-                    onChange={(e) => updateHabit(h.id, { label: e.target.value })}
-                  />
-                  <label className="flex items-center gap-2 text-[12px] text-[var(--colour-ink-soft)]">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(h.showOnSchedule)}
-                      onChange={(e) =>
-                        updateHabit(h.id, { showOnSchedule: e.target.checked })
-                      }
-                    />
-                    On schedule
-                  </label>
-                  <button
-                    className="opacity-50 hover:opacity-100"
-                    onClick={() => removeHabit(h.id)}
+              {habits.map((h) => {
+                const days = h.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6];
+                const toggleDay = (d: number) => {
+                  const next = days.includes(d)
+                    ? days.filter((x) => x !== d)
+                    : [...days, d].sort((a, b) => a - b);
+                  updateHabit(h.id, { daysOfWeek: next });
+                };
+                const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+                return (
+                  <div
+                    key={h.id}
+                    className="p-2.5 rounded-md border border-white/8 bg-white/[0.02]"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <div
+                      className="grid items-center gap-2"
+                      style={{ gridTemplateColumns: "1fr 110px 30px" }}
+                    >
+                      <input
+                        className="dash-input"
+                        value={h.label}
+                        onChange={(e) => updateHabit(h.id, { label: e.target.value })}
+                      />
+                      <label className="flex items-center gap-2 text-[12px] text-[var(--colour-ink-soft)]">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(h.showOnSchedule)}
+                          onChange={(e) =>
+                            updateHabit(h.id, { showOnSchedule: e.target.checked })
+                          }
+                        />
+                        On schedule
+                      </label>
+                      <button
+                        className="opacity-50 hover:opacity-100"
+                        onClick={() => removeHabit(h.id)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[10.5px] eyebrow">Days</span>
+                      <div className="flex gap-1">
+                        {DAY_LABELS.map((lbl, i) => {
+                          const on = days.includes(i);
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => toggleDay(i)}
+                              className="dash-row-move"
+                              style={
+                                on
+                                  ? {
+                                      background: "rgba(216,178,90,0.18)",
+                                      borderColor: "rgba(216,178,90,0.5)",
+                                      color: "var(--colour-glow)",
+                                      width: 26,
+                                      height: 26,
+                                    }
+                                  : { width: 26, height: 26 }
+                              }
+                              title={
+                                ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i]
+                              }
+                            >
+                              {lbl}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => updateHabit(h.id, { daysOfWeek: [1, 2, 3, 4, 5] })}
+                        className="text-[10.5px] eyebrow opacity-60 hover:opacity-100"
+                      >
+                        Weekdays
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateHabit(h.id, { daysOfWeek: [0, 1, 2, 3, 4, 5, 6] })}
+                        className="text-[10.5px] eyebrow opacity-60 hover:opacity-100"
+                      >
+                        Every day
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Panel>
         </div>

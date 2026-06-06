@@ -9,7 +9,7 @@ import { todayISO, formatHuman } from "@/lib/dashboard/dates";
 import { planDayFor, planForWithOverride } from "@/lib/dashboard/plan";
 import {
   emptyHabits,
-  resolveHabits,
+  getHabitsForDate,
   resolveTaskTags,
   getScheduleForDate,
   ScheduleRow,
@@ -32,7 +32,7 @@ export default function DashboardHome() {
   const cleanStreak = currentStreak(state, habitOn("noPorn"));
 
   const schedule = getScheduleForDate(today, state.settings, state.scheduleExtras);
-  const tracked = resolveHabits(state.settings);
+  const tracked = getHabitsForDate(today, state.settings);
   const TAGS = resolveTaskTags(state.settings);
   const reminder = reminderForDate(today);
 

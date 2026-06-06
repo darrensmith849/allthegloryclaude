@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DashboardState, emptyState } from "./types";
+import { DashboardState, emptyState, recommendedDaysFor } from "./types";
 
 const KEY = "atg:dashboard:v1";
 
@@ -45,6 +45,16 @@ function read(): DashboardState {
     }
     merged.settings.schedule = migrated;
     if (!merged.scheduleExtras) merged.scheduleExtras = {};
+
+    // ── Habit day-of-week migration ────────────────────────────
+    // Existing habits without daysOfWeek inherit the recommended default for
+    // their id (weekdays for gym/guitar/book; all-days for everything else).
+    const habits = merged.settings.habits ?? [];
+    merged.settings.habits = habits.map((h) =>
+      h.daysOfWeek && h.daysOfWeek.length > 0
+        ? h
+        : { ...h, daysOfWeek: recommendedDaysFor(h.id) },
+    );
     return merged;
   } catch {
     return emptyState();

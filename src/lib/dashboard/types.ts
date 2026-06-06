@@ -39,22 +39,42 @@ export interface HabitDef {
   id: string; // stable key, e.g. "bibleRead"
   label: string; // user-facing label
   showOnSchedule?: boolean; // surfaced as a "Mark" button on the Today schedule
+  // Which days of week this habit applies to. 0=Sun, 1=Mon, ..., 6=Sat.
+  // Missing/empty = every day. Habits with a daysOfWeek list are hidden on
+  // days outside that list (e.g. Gym is weekdays only).
+  daysOfWeek?: number[];
 }
 
 export type DayHabits = Record<string, boolean>;
 
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+const HABIT_WEEKDAYS = [1, 2, 3, 4, 5];
+
 // Built-in habit set — kept as defaults so first-load users see something useful.
+// daysOfWeek defaults are tuned for the user's rhythm: the core disciplines
+// apply every day, gym + guitar + book writing are weekday-only.
 export const DEFAULT_HABITS: HabitDef[] = [
-  { id: "bibleRead", label: "Read the Word", showOnSchedule: true },
-  { id: "noPorn", label: "Stayed clean" },
-  { id: "noSocialMedia", label: "No social media" },
-  { id: "noTradingCharts", label: "No trading charts" },
-  { id: "gym", label: "Gym", showOnSchedule: true },
-  { id: "worship", label: "Evening worship", showOnSchedule: true },
-  { id: "phoneOffAt7", label: "Phone off by 7pm", showOnSchedule: true },
-  { id: "guitar", label: "Guitar practice", showOnSchedule: true },
-  { id: "bookWriting", label: "Book writing" },
+  { id: "bibleRead", label: "Read the Word", showOnSchedule: true, daysOfWeek: ALL_DAYS },
+  { id: "noPorn", label: "Stayed clean", daysOfWeek: ALL_DAYS },
+  { id: "noSocialMedia", label: "No social media", daysOfWeek: ALL_DAYS },
+  { id: "noTradingCharts", label: "No trading charts", daysOfWeek: ALL_DAYS },
+  { id: "gym", label: "Gym", showOnSchedule: true, daysOfWeek: HABIT_WEEKDAYS },
+  { id: "worship", label: "Evening worship", showOnSchedule: true, daysOfWeek: ALL_DAYS },
+  { id: "phoneOffAt7", label: "Phone off by 7pm", showOnSchedule: true, daysOfWeek: ALL_DAYS },
+  { id: "guitar", label: "Guitar practice", showOnSchedule: true, daysOfWeek: HABIT_WEEKDAYS },
+  { id: "bookWriting", label: "Book writing", daysOfWeek: HABIT_WEEKDAYS },
 ];
+
+// Recommended weekday-only defaults applied during migration when an existing
+// user has the same habit id but no daysOfWeek yet.
+const RECOMMENDED_DAYS: Record<string, number[]> = {
+  gym: HABIT_WEEKDAYS,
+  guitar: HABIT_WEEKDAYS,
+  bookWriting: HABIT_WEEKDAYS,
+};
+export function recommendedDaysFor(habitId: string): number[] {
+  return RECOMMENDED_DAYS[habitId] ?? ALL_DAYS;
+}
 
 // Special-purpose flags that aren't toggled by the user as normal habits —
 // these are quota-style "allowed-day" markers.
@@ -348,6 +368,17 @@ export function resolveTaskTags(settings: Settings): TaskTag[] {
 // Resolve the active habits list — falls back to defaults for fresh installs.
 export function resolveHabits(settings: Settings): HabitDef[] {
   return settings.habits?.length ? settings.habits : DEFAULT_HABITS;
+}
+
+// Resolve the habits visible on a specific date — filters by day-of-week so
+// e.g. Gym is hidden on Saturday, the daily disciplines stay every day.
+export function getHabitsForDate(date: ISODate, settings: Settings): HabitDef[] {
+  const dow = dayOfWeekFor(date);
+  return resolveHabits(settings).filter((h) => {
+    const list = h.daysOfWeek;
+    if (!list || list.length === 0) return true; // unknown → show every day
+    return list.includes(dow);
+  });
 }
 
 export function resolveSchedule(settings: Settings): ScheduleRow[] {
