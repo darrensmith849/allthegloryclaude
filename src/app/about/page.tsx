@@ -30,7 +30,13 @@ export default function AboutPage() {
             <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
               Daniel
             </h1>
-            <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto">
+            <p
+              aria-label="From Darkness To Light"
+              className="subtitle-glyph mt-4 text-sm md:text-base tracking-[0.18em] text-white/70"
+            >
+              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+            </p>
+            <p className="mt-3 text-sm md:text-base text-white/65 max-w-md mx-auto">
               Singer, songwriter, worshipper. Harare, Zimbabwe.
             </p>
           </div>
