@@ -185,24 +185,27 @@ body {
   background-size: 220px 220px;
 }
 
-/* Left-rail socials. Vertical column of icons running TOP→DOWN the left
- * edge of the page on every viewport. Vertically centred so the rail
- * stays clear of the nav above and any footer/iOS-home-indicator below. */
+/* Left-rail socials. Vertical column of icons anchored to the BOTTOM
+ * of the left edge of the page on every viewport. Mobile gets a small
+ * extra offset above the iOS home indicator. */
 .social-dock-bottom {
   position: fixed;
   left: calc(var(--page-pad) - 0.5rem); /* offset for the 44×44 tap padding */
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: calc(var(--hero-bottom-pad) - 0.25rem);
   z-index: 60;
   display: flex !important;
   flex-direction: column !important;
   gap: 4px;
+  /* Avoid colliding with iOS home indicator on bottom-edge gestures */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @media (min-width: 1024px) {
   .social-dock-bottom {
     left: var(--page-pad);
+    bottom: var(--hero-bottom-pad);
     gap: 6px;
+    padding-bottom: 0;
   }
 }
 
