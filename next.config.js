@@ -13,17 +13,18 @@ const nextConfig = {
     qualities: [75, 90, 100],
   },
   async redirects() {
+    // Donation flow was retired. Bounce every old donate-adjacent URL to
+    // /contact (the closest "stay involved" surface) so anyone who has the
+    // links bookmarked doesn't hit a 404. Permanent so search engines
+    // forget the old URLs.
     return [
-      {
-        source: '/give',
-        destination: '/donate',
-        permanent: true,
-      },
-      {
-        source: '/sow',
-        destination: '/donate',
-        permanent: true,
-      },
+      { source: '/donate', destination: '/contact', permanent: true },
+      { source: '/give', destination: '/contact', permanent: true },
+      { source: '/sow', destination: '/contact', permanent: true },
+      // /success and /cancel were Stripe return URLs — point them at home
+      // since they have no successor.
+      { source: '/success', destination: '/', permanent: true },
+      { source: '/cancel', destination: '/', permanent: true },
     ];
   },
   async headers() {
