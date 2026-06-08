@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import NewsletterSignup from "@/components/ui/newsletter-signup";
 import { site } from "@/content/site";
@@ -111,6 +112,39 @@ export default function ContactPage() {
           transition={headerTransition}
           className="max-w-4xl mx-auto px-6 text-center"
         >
+          {/* Full dove + sunburst artwork — the source asset is on a
+              solid black field that bleeds into the painted body
+              background, so it reads as the logo descending into the
+              page rather than a pasted-on tile. The amber radial glow
+              behind it warms the surrounding cloud area without
+              fighting the painting. */}
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={
+              reduce
+                ? { duration: 0.01 }
+                : { duration: 1.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] as const }
+            }
+            className="relative mx-auto mb-6 md:mb-8 w-[clamp(120px,18vw,180px)] aspect-square"
+          >
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -m-8 rounded-full blur-3xl opacity-50"
+              style={{
+                background:
+                  "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.45), rgba(216,178,90,0.10) 55%, transparent 75%)",
+              }}
+            />
+            <Image
+              src="/media/logo-dove.jpg"
+              alt="All The Glory"
+              fill
+              priority
+              sizes="(max-width: 768px) 140px, 180px"
+              className="relative object-contain"
+            />
+          </motion.div>
           <div className="eyebrow mb-4">Contact</div>
           <h1 className="font-display text-4xl md:text-6xl font-normal text-white tracking-tight mb-4">
             Get in touch
