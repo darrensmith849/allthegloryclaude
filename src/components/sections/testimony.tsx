@@ -15,8 +15,11 @@ type TestimonyProps = {
    *  When provided together with `title`, an editorial section-style header is
    *  rendered instead of the default album-style header. */
   eyebrow?: string;
-  /** Optional custom section title. See `eyebrow`. */
-  title?: string;
+  /** Optional custom section title. See `eyebrow`.
+   *  Accepts ReactNode so callers can fold styling (e.g. the
+   *  inverted-glyph "From Darkness" treatment) directly into the
+   *  heading instead of stacking a tagline below it. */
+  title?: ReactNode;
   /** Optional id for the rendered heading, for aria-labelledby linking. */
   headingId?: string;
 };

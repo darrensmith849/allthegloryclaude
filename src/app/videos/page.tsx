@@ -43,12 +43,6 @@ export default function VideosPage() {
             Worship in{" "}
             <span className="italic text-[var(--colour-amber)]">motion</span>
           </h1>
-          <p
-            aria-label="From Darkness To Light"
-            className="subtitle-glyph mt-4 text-xs md:text-sm tracking-[0.18em] text-white/55"
-          >
-            Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
-          </p>
 
           <p className="mt-6 text-sm md:text-base text-white/65 leading-relaxed max-w-md mx-auto">
             Live worship, performances, and music videos - shared as they
