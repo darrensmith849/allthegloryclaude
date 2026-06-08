@@ -233,6 +233,31 @@ export default function FastPage() {
         </div>
       </div>
 
+      {/* The Vow — the major framing for every visit. This is the first
+          thing the eye lands on after the page header, so the daily ticks
+          below are read in the right spirit. Amber gradient + display
+          font + italic supporting line so the whole banner reads as
+          "the reason for the fast" rather than just a quote. */}
+      <section
+        className="dash-panel"
+        style={{
+          marginBottom: 18,
+          borderColor: "rgba(216,178,90,0.35)",
+          background:
+            "linear-gradient(135deg, rgba(216,178,90,0.10), rgba(216,178,90,0.02) 60%, transparent)",
+        }}
+      >
+        <div className="eyebrow eyebrow-amber">The Vow</div>
+        <h2 className="font-display mt-2 text-[22px] md:text-[28px] leading-tight tracking-tight text-white/95">
+          This is not the wilderness I am entering — it is the wilderness
+          I am coming <span className="italic text-[var(--colour-amber)]">out of</span>.
+        </h2>
+        <p className="font-display italic mt-3 text-[15px] md:text-[17px] leading-relaxed text-[var(--colour-amber-soft)]">
+          For 40 days I am with the Lord — to honour Him, serve Him, learn
+          more about Him, and draw closer to Him.
+        </p>
+      </section>
+
       <div className="dash-grid">
         {/* LEFT: progress, today's check, and the 40-day grid */}
         <div className="dash-col-8">
@@ -373,17 +398,36 @@ export default function FastPage() {
 
         {/* RIGHT: scripture anchor + category editor */}
         <div className="dash-col-4">
-          <Panel eyebrow="A word for the fast" title="Matthew 4:1–2">
-            <p className="text-[13px] text-[var(--colour-ink-soft)] italic leading-relaxed">
-              Then was Jesus led up of the Spirit into the wilderness to be
-              tempted of the devil. And when he had fasted forty days and
-              forty nights, he was afterward an hungred.
+          <Panel eyebrow="A word for the fast" title="Drawing near">
+            <p className="text-[12.5px] uppercase tracking-[0.16em] text-[var(--colour-amber-soft)]">
+              James 4:8
             </p>
-            <p className="text-[12px] text-[var(--colour-ink-quiet)] mt-4 leading-relaxed">
-              Forty days is the biblical pattern — long enough for the
-              appetite to die and the spirit to be sharpened. Tick each
-              category off honestly; one slip doesn&apos;t kill the fast,
-              it just resets the streak counter.
+            <p className="text-[13px] text-[var(--colour-ink-soft)] italic leading-relaxed mt-1">
+              Draw nigh to God, and he will draw nigh to you.
+            </p>
+
+            <p className="text-[12.5px] uppercase tracking-[0.16em] text-[var(--colour-amber-soft)] mt-5">
+              Hosea 6:1, 3
+            </p>
+            <p className="text-[13px] text-[var(--colour-ink-soft)] italic leading-relaxed mt-1">
+              Come, and let us return unto the LORD … Then shall we know,
+              if we follow on to know the LORD: his going forth is
+              prepared as the morning; and he shall come unto us as the
+              rain, as the latter and former rain unto the earth.
+            </p>
+
+            <p className="text-[12.5px] uppercase tracking-[0.16em] text-[var(--colour-amber-soft)] mt-5">
+              Matthew 4:2
+            </p>
+            <p className="text-[13px] text-[var(--colour-ink-soft)] italic leading-relaxed mt-1">
+              And when he had fasted forty days and forty nights …
+            </p>
+
+            <p className="text-[12px] text-[var(--colour-ink-quiet)] mt-5 leading-relaxed">
+              Forty days is the biblical pattern. These aren&apos;t empty
+              days — they&apos;re days to honour Him, serve Him, learn Him,
+              and draw closer. Tick each category off honestly; one slip
+              doesn&apos;t kill the fast, it just resets the streak counter.
             </p>
           </Panel>
 
