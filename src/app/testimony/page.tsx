@@ -24,20 +24,31 @@ export default function TestimonyPage() {
           className="text-center"
         >
           <div className="eyebrow">Testimony</div>
-          {/* The headline IS the motif — left half rendered as the
-              inverted-glyph "From Darkness" so the wordmark carries
-              the brand instead of needing a separate tagline below.
-              The visible string still reads "From darkness into light"
-              when announced by screen readers, via aria-label on the H1. */}
+          {/* The headline IS the motif. Two stacked lines:
+                line 1 — "From Darkness" rendered with the inverted-glyph
+                          treatment so the words read upside-down;
+                line 2 — "into the light" right-side-up, but styled with
+                          the same mathematical / dagger-as-cross glyphs
+                          used in the home-page top-corner ("†o 𝕃Ɨ𝕘𝓱𝐓")
+                          so the two lines feel like a deliberate pair —
+                          inversion on top, cross-T resurrection beneath.
+              Screen readers get the clean "From darkness into the light"
+              string via aria-label on the H1. */}
           <h1
-            aria-label="From darkness into light"
-            className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight leading-[1.1]"
+            aria-label="From darkness into the light"
+            className="font-display mt-4 text-4xl md:text-6xl font-normal tracking-tight leading-[1.15]"
           >
-            <span aria-hidden="true" className="subtitle-glyph">
+            <span
+              aria-hidden="true"
+              className="subtitle-glyph block text-white"
+            >
               Ⅎɹoɯ ᗡɐɹʞuǝss
-            </span>{" "}
-            <span aria-hidden="true" className="italic text-[var(--colour-amber)]">
-              into light
+            </span>
+            <span
+              aria-hidden="true"
+              className="subtitle-glyph block italic text-[var(--colour-amber)] mt-2 md:mt-3"
+            >
+              in†o †he 𝕃Ɨ𝕘𝓱𝐓
             </span>
           </h1>
 
