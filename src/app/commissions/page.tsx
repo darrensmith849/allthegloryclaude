@@ -58,6 +58,12 @@ export default function BookingsPage() {
             Songs that{" "}
             <span className="italic text-[var(--colour-amber)]">carry weight</span>
           </h1>
+          <p
+            aria-label="From Darkness To Light"
+            className="subtitle-glyph mt-4 text-xs md:text-sm tracking-[0.18em] text-white/55"
+          >
+            Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+          </p>
           <p className="mt-5 text-sm md:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
             Original songs written and recorded to carry a specific
             message, ministry, or milestone.
