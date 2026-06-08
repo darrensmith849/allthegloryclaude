@@ -49,7 +49,7 @@ function TrackRow({
       }
       animate={{ opacity: 1, x: 0 }}
       transition={trackTransition}
-      className={`${hoverReady ? "group" : ""} panel-scrim panel-flush px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
+      className={`${hoverReady ? "group" : ""} panel-scrim panel-flush-mobile px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 text-left">
