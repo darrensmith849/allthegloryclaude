@@ -104,8 +104,14 @@ body {
 /* Slightly tighter scale for the homepage hero so the composition
    breathes a bit and leaves room for the CTA cluster underneath. */
 .modo-title-tight {
-  font-size: clamp(2.6rem, 6.4vw, 5.8rem);
-  letter-spacing: 0.18em;
+  font-size: clamp(3.8rem, 15vw, 6rem);
+  letter-spacing: 0.1em;
+}
+@media (min-width: 768px) {
+  .modo-title-tight {
+    font-size: clamp(2.6rem, 6.4vw, 5.8rem);
+    letter-spacing: 0.18em;
+  }
 }
 
 /* Prevent awkward breaking ("Glor / y") */

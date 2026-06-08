@@ -414,7 +414,7 @@ function AlbumArt({
             rel="noreferrer"
             className="text-white/80 hover:text-white transition-colors"
           >
-            Debbie Clarke
+            Debbie Clarke ↗
           </a>
         </div>
       )}
@@ -704,7 +704,7 @@ export default function AlbumPage() {
                 rel="noreferrer"
                 className="text-white/70 hover:text-white transition-colors"
               >
-                Debbie Clarke
+                Debbie Clarke ↗
               </a>
             </p>
 

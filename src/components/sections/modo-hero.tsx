@@ -51,16 +51,17 @@ export default function ModoHero() {
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
       </motion.div>
 
-      {/* "All The Glory" - title + primary action cluster, right-aligned */}
-      <div className="mx-auto w-full max-w-6xl px-6 pt-28 pb-20 md:pt-32 md:pb-24 flex justify-end">
-        <div className="w-full max-w-[52rem] flex flex-col items-end">
+      {/* "All The Glory" - centred on mobile (larger, more vertical breathing room),
+          right-aligned on desktop. */}
+      <div className="mx-auto w-full max-w-6xl px-6 pt-[26vh] pb-20 md:pt-32 md:pb-24 flex justify-center md:justify-end">
+        <div className="w-full max-w-[52rem] flex flex-col items-center md:items-end">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={titleTransition}
-            className="w-full text-right"
+            className="w-full text-center md:text-right"
           >
-            <h1 className="modo-title modo-title-tight modo-wrap inline-block text-right ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
+            <h1 className="modo-title modo-title-tight modo-wrap inline-block text-center md:text-right md:ml-auto uppercase tracking-[0.22em] text-[rgba(244,240,232,0.72)]">
               <span className="block">All The</span>
               <span className="block">Glory</span>
             </h1>

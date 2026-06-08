@@ -28,8 +28,14 @@ export default function TestimonyPage() {
             From darkness{" "}
             <span className="italic text-[var(--colour-amber)]">into light</span>
           </h1>
+          <p
+            aria-label="From Darkness To Light"
+            className="subtitle-glyph mt-5 text-sm md:text-base tracking-[0.18em] text-white/70"
+          >
+            Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+          </p>
 
-          <p className="font-display mt-6 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
+          <p className="font-display mt-5 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
             Jesus rescued me from addiction and a 20-year battle with
             suicidal thoughts, and gave me a new life.
           </p>

@@ -231,7 +231,7 @@ export default function SiteFooter() {
                 rel="noreferrer"
                 className="underline decoration-white/20 underline-offset-4 hover:opacity-80"
               >
-                Debbie Clarke
+                Debbie Clarke ↗
               </a>
             </p>
             <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>
