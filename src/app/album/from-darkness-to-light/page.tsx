@@ -583,28 +583,14 @@ export default function AlbumPage() {
     };
   }, [detachAudio]);
 
-  // Share the album page. On mobile (and any browser that supports the
-  // Web Share API) this opens the native share sheet — the visitor picks
-  // WhatsApp, Messages, Mail, etc. without us forcing a particular
-  // channel. Desktop browsers without navigator.share fall back to
-  // copying the URL to the clipboard.
+  // Share the album page — copy the URL straight to the clipboard.
+  // The native share sheet was confusing visitors ("share via AirDrop?
+  // Mail? Reminders?"); a plain copy-link action is what's actually
+  // useful and matches what most people expect a Share button to do.
   const handleShare = useCallback(async () => {
     if (typeof window === "undefined") return;
     const url = window.location.href;
-    const shareData = {
-      title: "All The Glory — From Darkness To Light",
-      text:
-        "A free worship album — From Darkness To Light. May it bless you the way it blessed me.",
-      url,
-    };
     try {
-      if (
-        typeof navigator !== "undefined" &&
-        typeof navigator.share === "function"
-      ) {
-        await navigator.share(shareData);
-        return;
-      }
       if (
         typeof navigator !== "undefined" &&
         navigator.clipboard?.writeText
@@ -614,17 +600,11 @@ export default function AlbumPage() {
         setTimeout(() => setShareState("idle"), 2400);
         return;
       }
+      // No clipboard API available — surface a hint so the visitor knows
+      // they can grab the URL out of the address bar instead.
       setShareState("error");
       setTimeout(() => setShareState("idle"), 2400);
-    } catch (err) {
-      // AbortError fires when the visitor dismisses the share sheet — that
-      // isn't a failure, so don't surface anything in the UI.
-      if (
-        err instanceof DOMException &&
-        (err.name === "AbortError" || err.name === "NotAllowedError")
-      ) {
-        return;
-      }
+    } catch {
       setShareState("error");
       setTimeout(() => setShareState("idle"), 2400);
     }
@@ -801,9 +781,10 @@ export default function AlbumPage() {
 
             {/* ── PASS IT ON ────────────────────────────────────────
                  The closing word: this music is free, so if it lands
-                 with someone, encourage them to send it on. One-tap
-                 share via the Web Share API on mobile; copy-link
-                 fallback on desktop. */}
+                 with someone, encourage them to send it on. The button
+                 copies the album URL straight to the visitor's
+                 clipboard so they can paste it into whatever app they
+                 want — no native share sheet, no extra step. */}
             <div className="mt-14 md:mt-20 max-w-md mx-auto text-center">
               <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
               <div className="eyebrow eyebrow-amber mt-6">Pass it on</div>
@@ -819,28 +800,22 @@ export default function AlbumPage() {
                 Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
               </p>
 
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-live="polite"
-                className="btn btn-primary mt-7"
-              >
-                {shareState === "copied"
-                  ? "Link copied ✓"
-                  : shareState === "error"
-                    ? "Copy from URL bar →"
-                    : "Share this album →"}
-              </button>
-
-              <p className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/40">
-                Or send the link:{" "}
-                <a
-                  href="https://www.alltheglory.co.za/album/from-darkness-to-light"
-                  className="text-white/70 hover:text-[var(--colour-amber)] transition-colors underline decoration-white/20 underline-offset-4"
+              {/* Mirror the "Download free →" CTA above so the closing
+                  beat reads as a deliberate pair with the opening CTA. */}
+              <div className="mt-7 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  aria-live="polite"
+                  className="btn btn-primary"
                 >
-                  alltheglory.co.za
-                </a>
-              </p>
+                  {shareState === "copied"
+                    ? "Link copied ✓"
+                    : shareState === "error"
+                      ? "Copy from URL bar →"
+                      : "Share this album →"}
+                </button>
+              </div>
             </div>
 
           </section>
