@@ -112,11 +112,11 @@ export default function ContactPage() {
           transition={headerTransition}
           className="max-w-4xl mx-auto px-6 text-center"
         >
-          {/* Full dove + sunburst artwork — the source asset is on a
-              solid black field that bleeds into the painted body
-              background, so it reads as the logo descending into the
-              page rather than a pasted-on tile. The amber radial glow
-              behind it warms the surrounding cloud area without
+          {/* Full dove + sunburst artwork — transparent PNG with the
+              black field of the source already chroma-keyed out, so
+              the dove floats over the painted cloud body instead of
+              sitting inside a visible square. A soft amber radial
+              glow underneath warms the surrounding clouds without
               fighting the painting. */}
           <motion.div
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: -16 }}
@@ -126,22 +126,22 @@ export default function ContactPage() {
                 ? { duration: 0.01 }
                 : { duration: 1.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] as const }
             }
-            className="relative mx-auto mb-6 md:mb-8 w-[clamp(120px,18vw,180px)] aspect-square"
+            className="relative mx-auto mb-6 md:mb-8 w-[clamp(160px,22vw,220px)] aspect-square"
           >
             <div
               aria-hidden="true"
-              className="absolute inset-0 -m-8 rounded-full blur-3xl opacity-50"
+              className="absolute inset-0 -m-10 rounded-full blur-3xl opacity-55"
               style={{
                 background:
-                  "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.45), rgba(216,178,90,0.10) 55%, transparent 75%)",
+                  "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.55), rgba(216,178,90,0.12) 55%, transparent 75%)",
               }}
             />
             <Image
-              src="/media/logo-dove.jpg"
+              src="/media/logo-dove.png"
               alt="All The Glory"
               fill
               priority
-              sizes="(max-width: 768px) 140px, 180px"
+              sizes="(max-width: 768px) 180px, 220px"
               className="relative object-contain"
             />
           </motion.div>

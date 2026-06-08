@@ -37,7 +37,7 @@ const structuredData = {
       name: site.name,
       url: site.url,
       sameAs: Object.values(site.socials),
-      image: `${site.url}/og-image.jpg`,
+      image: `${site.url}/og-dove.jpg`,
     },
     {
       "@type": "MusicAlbum",
@@ -84,8 +84,8 @@ export const metadata: Metadata = {
     siteName: site.name,
     images: [
       {
-        url: "/og-image.jpg",
-        secureUrl: `${site.url}/og-image.jpg`,
+        url: "/og-dove.jpg",
+        secureUrl: `${site.url}/og-dove.jpg`,
         width: 1200,
         height: 630,
         type: "image/jpeg",
@@ -99,7 +99,7 @@ export const metadata: Metadata = {
     description: site.description,
     images: [
       {
-        url: `${site.url}/og-image.jpg`,
+        url: `${site.url}/og-dove.jpg`,
         width: 1200,
         height: 630,
         alt: "All The Glory - From Darkness To Light",
