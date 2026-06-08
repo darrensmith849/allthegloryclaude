@@ -427,6 +427,12 @@ export default function AlbumPage() {
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [verseModal, setVerseModal] = useState<{ ref: string; fullVerse: string; reflection?: string; lyricCards?: string[]; lyricCardsPdf?: string } | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  // Share-this-album state: visitors get a single "Share" button that opens
+  // the native share sheet on mobile (navigator.share) and falls back to
+  // copy-to-clipboard on desktop. `shareState` drives the button label.
+  const [shareState, setShareState] = useState<"idle" | "copied" | "error">(
+    "idle"
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track which audio element owns the current "ended" listener so we can
   // detach it cleanly when the user switches tracks - otherwise a late-firing
@@ -542,6 +548,53 @@ export default function AlbumPage() {
       detachAudio();
     };
   }, [detachAudio]);
+
+  // Share the album page. On mobile (and any browser that supports the
+  // Web Share API) this opens the native share sheet — the visitor picks
+  // WhatsApp, Messages, Mail, etc. without us forcing a particular
+  // channel. Desktop browsers without navigator.share fall back to
+  // copying the URL to the clipboard.
+  const handleShare = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    const shareData = {
+      title: "All The Glory — From Darkness To Light",
+      text:
+        "A free worship album — From Darkness To Light. May it bless you the way it blessed me.",
+      url,
+    };
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.share === "function"
+      ) {
+        await navigator.share(shareData);
+        return;
+      }
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard?.writeText
+      ) {
+        await navigator.clipboard.writeText(url);
+        setShareState("copied");
+        setTimeout(() => setShareState("idle"), 2400);
+        return;
+      }
+      setShareState("error");
+      setTimeout(() => setShareState("idle"), 2400);
+    } catch (err) {
+      // AbortError fires when the visitor dismisses the share sheet — that
+      // isn't a failure, so don't surface anything in the UI.
+      if (
+        err instanceof DOMException &&
+        (err.name === "AbortError" || err.name === "NotAllowedError")
+      ) {
+        return;
+      }
+      setShareState("error");
+      setTimeout(() => setShareState("idle"), 2400);
+    }
+  }, []);
 
   return (
     <main className="bg-transparent overflow-x-clip">
@@ -708,6 +761,50 @@ export default function AlbumPage() {
                 Debbie Clarke ↗
               </a>
             </p>
+
+            {/* ── PASS IT ON ────────────────────────────────────────
+                 The closing word: this music is free, so if it lands
+                 with someone, encourage them to send it on. One-tap
+                 share via the Web Share API on mobile; copy-link
+                 fallback on desktop. */}
+            <div className="mt-14 md:mt-20 max-w-md mx-auto text-center">
+              <div className="mx-auto h-px w-12 bg-[var(--colour-amber)]/30" />
+              <div className="eyebrow eyebrow-amber mt-6">Pass it on</div>
+              <p className="font-display mt-3 text-lg md:text-xl italic text-white/80 leading-relaxed">
+                This album is a free offering. If it speaks to you,
+                share it with someone who may need it — a friend, a
+                family member, anyone walking through the dark.
+              </p>
+              <p
+                aria-label="From Darkness To Light"
+                className="subtitle-glyph mt-4 text-xs md:text-sm tracking-[0.18em] text-white/55"
+              >
+                Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+              </p>
+
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-live="polite"
+                className="btn btn-primary mt-7"
+              >
+                {shareState === "copied"
+                  ? "Link copied ✓"
+                  : shareState === "error"
+                    ? "Copy from URL bar →"
+                    : "Share this album →"}
+              </button>
+
+              <p className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/40">
+                Or send the link:{" "}
+                <a
+                  href="https://www.alltheglory.co.za/album/from-darkness-to-light"
+                  className="text-white/70 hover:text-[var(--colour-amber)] transition-colors underline decoration-white/20 underline-offset-4"
+                >
+                  alltheglory.co.za
+                </a>
+              </p>
+            </div>
 
           </section>
 
