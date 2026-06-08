@@ -185,17 +185,17 @@ body {
   background-size: 220px 220px;
 }
 
-/* Left-rail socials. Vertical column of icons anchored to the BOTTOM
- * of the left edge of the page on every viewport. Mobile gets a small
- * extra offset above the iOS home indicator. */
+/* Bottom-left socials. Single horizontal row of icons anchored to the
+ * bottom-left of the page on every viewport. Same row layout the dock
+ * originally used; vertical experiment is reverted. */
 .social-dock-bottom {
   position: fixed;
   left: calc(var(--page-pad) - 0.5rem); /* offset for the 44×44 tap padding */
   bottom: calc(var(--hero-bottom-pad) - 0.25rem);
   z-index: 60;
   display: flex !important;
-  flex-direction: column !important;
-  gap: 4px;
+  flex-direction: row !important;
+  gap: 2px;
   /* Avoid colliding with iOS home indicator on bottom-edge gestures */
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -204,7 +204,7 @@ body {
   .social-dock-bottom {
     left: var(--page-pad);
     bottom: var(--hero-bottom-pad);
-    gap: 6px;
+    gap: 4px;
     padding-bottom: 0;
   }
 }
