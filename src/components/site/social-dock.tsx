@@ -103,11 +103,14 @@ function Item({
       animate={{ opacity: 1 }}
       transition={{ duration: 1.6, delay, ease: "easeOut" }}
     >
-      {/* Icon-only on every viewport. The 44×44 wrapper is a proper touch
-          target on mobile and gives the desktop column a roomy, even rhythm. */}
-      <span className="inline-flex h-11 w-11 items-center justify-center">
+      {/* Mobile / tablet: the platform icon inside a 44×44 wrapper so each
+          social hits the Apple HIG / Material tap-target minimum.
+          Desktop (lg+): the original uppercase word marks the artist
+          preferred — "INSTAGRAM ↗", "FACEBOOK ↗", … stacked vertically. */}
+      <span className="lg:hidden inline-flex h-11 w-11 items-center justify-center">
         {Icons[label]}
       </span>
+      <span className="hidden lg:inline">{label} ↗</span>
     </motion.a>
   );
 }
