@@ -88,13 +88,13 @@ export default function AboutPage() {
         aria-labelledby="mission-heading"
         className="w-full pb-24 md:pb-32"
       >
-        <div className="mx-auto max-w-3xl px-6">
+        <div className="mx-auto max-w-3xl px-0 md:px-6">
           <motion.div
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={missionTransition}
-            className="panel-scrim p-7 md:p-10"
+            className="panel-scrim panel-flush-mobile p-7 md:p-10"
           >
             <div className="eyebrow eyebrow-amber">
               The Mission

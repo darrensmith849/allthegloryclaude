@@ -63,7 +63,7 @@ export default function ProcessSteps({
               delay: reduce ? 0 : i * 0.08,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="relative panel-scrim p-6 md:p-7"
+            className="relative panel-scrim panel-flush-mobile p-6 md:p-7"
           >
             <div className="flex items-center gap-3">
               <span

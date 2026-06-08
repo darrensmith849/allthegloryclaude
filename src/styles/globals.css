@@ -93,14 +93,17 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Mobile-only modifier: drop the rounded-block framing so the panel
-   reads as an edge-to-edge banner section. Pair with px-0 on the outer
-   container so the panel can span the viewport. */
+/* Mobile-only modifier: drop the rounded-block framing AND break the
+   panel out to the viewport edges, so the panel reads as an edge-to-edge
+   banner section regardless of the parent's horizontal padding.
+   The `calc(50% - 50vw)` trick pulls each side flush with the viewport. */
 @media (max-width: 767px) {
   .panel-flush-mobile {
     border-radius: 0;
     border-left-width: 0;
     border-right-width: 0;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);

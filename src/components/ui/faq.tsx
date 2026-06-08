@@ -46,7 +46,7 @@ export default function FAQ({
         </motion.header>
       )}
 
-      <div className="panel-scrim divide-y divide-white/10">
+      <div className="panel-scrim panel-flush-mobile divide-y divide-white/10">
         {items.map((item, i) => (
           <details
             key={item.q}

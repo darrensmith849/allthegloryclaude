@@ -55,7 +55,7 @@ export default function AlbumPromo() {
           className="block group"
         >
           {/* Glass panel with text */}
-          <div className="panel-scrim p-6 md:p-7 text-center group-hover:border-white/20 transition-colors duration-300">
+          <div className="panel-scrim panel-flush-mobile p-6 md:p-7 text-center group-hover:border-white/20 transition-colors duration-300">
             <div className="eyebrow eyebrow-amber">The Album</div>
 
             <p className="subtitle-glyph mt-3 text-lg md:text-xl text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
