@@ -39,6 +39,27 @@
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(9, 8, 14, 0.7);
   backdrop-filter: blur(14px);
+  /* The nav has 13 items; on shorter viewports Settings was clipped at
+   * the bottom with no way to reach it. overflow-y: auto turns the
+   * sidebar itself into a scrollable column so the full nav is always
+   * reachable. overscroll-behavior: contain stops the parent page from
+   * also scrolling when you reach the sidebar's bottom. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* Hairline scrollbar that fits the dashboard's dark glass aesthetic
+ * rather than the OS default chrome. */
+.dash-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.dash-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+.dash-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 @media (max-width: 900px) {
