@@ -682,6 +682,16 @@ export default function AlbumPage() {
               >
                 Christina Ribeiro ↗
               </a>
+              {" · "}
+              Drums by{" "}
+              <a
+                href="https://www.instagram.com/dhowardondrums"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
+              >
+                Darnell Howard ↗
+              </a>
             </p>
 
             {/* Artwork credit - moved here from under the side artwork now
