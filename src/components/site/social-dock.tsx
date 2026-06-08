@@ -97,18 +97,17 @@ function Item({
       target="_blank"
       rel="noreferrer"
       aria-label={label}
+      title={label}
       className="social-link"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6, delay, ease: "easeOut" }}
     >
-      {/* Mobile / tablet: the platform icon. The wrapper is a real 44x44
-          touch target so every social is comfortably tappable even with
-          the icon visually only 20×20.  Desktop: the original word mark. */}
-      <span className="lg:hidden inline-flex h-11 w-11 items-center justify-center">
+      {/* Icon-only on every viewport. The 44×44 wrapper is a proper touch
+          target on mobile and gives the desktop column a roomy, even rhythm. */}
+      <span className="inline-flex h-11 w-11 items-center justify-center">
         {Icons[label]}
       </span>
-      <span className="hidden lg:inline">{label} ↗</span>
     </motion.a>
   );
 }

@@ -185,52 +185,34 @@ body {
   background-size: 220px 220px;
 }
 
-/* Bottom-left socials. Same rails as the bottom hero caption so the
- * two share a baseline.
- *  Mobile / tablet: horizontal row of icons, fixed at bottom-left.
- *  Desktop (lg+):  vertical column of word marks anchored bottom-left. */
+/* Left-rail socials. Vertical column of icons running TOP→DOWN the left
+ * edge of the page on every viewport. Vertically centred so the rail
+ * stays clear of the nav above and any footer/iOS-home-indicator below. */
 .social-dock-bottom {
   position: fixed;
   left: calc(var(--page-pad) - 0.5rem); /* offset for the 44×44 tap padding */
-  bottom: calc(var(--hero-bottom-pad) - 0.25rem);
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 60;
-  display: flex;
-  flex-direction: row;
-  gap: 2px;
-  /* Avoid colliding with iOS home indicator on bottom-edge gestures */
-  padding-bottom: env(safe-area-inset-bottom);
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px;
 }
 
 @media (min-width: 1024px) {
   .social-dock-bottom {
     left: var(--page-pad);
-    bottom: var(--hero-bottom-pad);
-    flex-direction: column;
-    gap: 10px;
-    padding-bottom: 0;
+    gap: 6px;
   }
 }
 
 .social-link {
-  /* Compact on mobile so all five labels fit on one row inside the
-     fixed dock without overflowing the viewport. Desktop restores the
-     original 11px / 0.22em treatment. */
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: rgba(244,240,232,0.72);
   transition: color 180ms ease, opacity 180ms ease;
   text-decoration: none;
-  white-space: nowrap;
+  line-height: 1;
 }
 .social-link:hover { color: rgba(244,240,232,0.92); }
-
-@media (min-width: 1024px) {
-  .social-link {
-    font-size: 11px;
-    letter-spacing: 0.22em;
-  }
-}
 
 /* Verse marquee: boxed + slower loop */
 .marquee-single { overflow: hidden; padding: 18px 0 12px; }
