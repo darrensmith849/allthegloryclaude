@@ -693,10 +693,25 @@ export default function AlbumPage() {
               </a>
             </motion.div>
 
+            {/* Production credit — sits between the streaming row and the
+                artwork credit so the people who made the album get visible
+                attribution every time someone scrolls to the end of the
+                tracklist. */}
+            <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed">
+              Engineered &amp; Produced by{" "}
+              <span className="text-white/80">Simba Moyo</span>
+              {" · "}
+              <span className="text-white/80">Riffi Wacho</span>
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> · </span>
+              Backing vocals by{" "}
+              <span className="text-white/80">Christina Ribeiro</span>
+            </p>
+
             {/* Artwork credit - moved here from under the side artwork now
                 that the side panels show lyric cards. Same painting tops
                 every lyric card, so the credit is still attribution-correct. */}
-            <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-white/45">
+            <p className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/45">
               Artwork by{" "}
               <a
                 href="https://debbieclarkart.com/"
