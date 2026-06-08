@@ -833,10 +833,14 @@ export default function AlbumPage() {
                   Simba Moyo ↗
                 </a>
                 {" · "}
-                {/* Riffi's site URL coming — keep as a plain span for now so
-                    the link styling/arrow only shows up once it's actually
-                    clickable. Swap for an <a> with target=_blank when ready. */}
-                <span className="text-white/80 whitespace-nowrap">Riffi Wacho</span>
+                <a
+                  href="https://soundbetter.com/profiles/9495-riffi-wacho"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                >
+                  Riffi Wacho ↗
+                </a>
               </p>
               <p>
                 <span className="whitespace-nowrap">Backing vocals by</span>{" "}
