@@ -41,6 +41,9 @@ export default function FastPage() {
 
   // Inline form state for editing categories.
   const [newCatLabel, setNewCatLabel] = useState("");
+  // Per-row inline rename state — only one category is being edited at a time.
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatLabel, setEditingCatLabel] = useState("");
 
   const fast = state.fast;
 
@@ -144,6 +147,30 @@ export default function FastPage() {
         delete d.fast.checks[date][catId];
       }
     });
+  }
+  function startEditingCategory(c: FastCategory) {
+    setEditingCatId(c.id);
+    setEditingCatLabel(c.label);
+  }
+  function saveEditingCategory() {
+    if (!editingCatId) return;
+    const newLabel = editingCatLabel.trim();
+    if (!newLabel) {
+      // Empty rename = treat as cancel rather than wipe the category's
+      // label out from under the user.
+      setEditingCatId(null);
+      return;
+    }
+    update((d) => {
+      if (!d.fast) return;
+      d.fast.categories = d.fast.categories.map((c) =>
+        c.id === editingCatId ? { ...c, label: newLabel } : c,
+      );
+    });
+    setEditingCatId(null);
+  }
+  function cancelEditingCategory() {
+    setEditingCatId(null);
   }
   function resetFast() {
     if (
@@ -375,23 +402,78 @@ export default function FastPage() {
             }
           >
             <div className="flex flex-col gap-1.5 mb-3">
-              {fast.categories.map((c: FastCategory) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between gap-2 text-[13px] text-[var(--colour-ink-soft)] px-2 py-1.5 rounded bg-white/[0.02]"
-                >
-                  <span>{c.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeCategory(c.id)}
-                    className="dash-row-delete"
-                    aria-label={`Remove ${c.label}`}
-                    title="Remove this category"
+              {fast.categories.map((c: FastCategory) => {
+                const isEditing = editingCatId === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between gap-2 text-[13px] text-[var(--colour-ink-soft)] px-2 py-1.5 rounded bg-white/[0.02]"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    {isEditing ? (
+                      <>
+                        <input
+                          className="dash-input"
+                          value={editingCatLabel}
+                          onChange={(e) => setEditingCatLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEditingCategory();
+                            if (e.key === "Escape") cancelEditingCategory();
+                          }}
+                          autoFocus
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={saveEditingCategory}
+                          className="dash-btn dash-btn-primary"
+                          style={{ padding: "5px 10px", fontSize: 10.5 }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditingCategory}
+                          className="dash-btn dash-btn-ghost"
+                          style={{ padding: "5px 10px", fontSize: 10.5 }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* Whole label is also clickable for fast rename — */}
+                        {/* the ✎ button is the redundant discoverable hint.  */}
+                        <button
+                          type="button"
+                          onClick={() => startEditingCategory(c)}
+                          className="text-left flex-1 hover:text-[var(--colour-glow)] transition truncate"
+                          title="Click to rename"
+                        >
+                          {c.label}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => startEditingCategory(c)}
+                          className="dash-row-edit-btn"
+                          aria-label={`Rename ${c.label}`}
+                          title="Rename this category"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeCategory(c.id)}
+                          className="dash-row-delete"
+                          aria-label={`Remove ${c.label}`}
+                          title="Remove this category"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
               {fast.categories.length === 0 && (
                 <div className="text-[12px] text-[var(--colour-ink-quiet)]">
                   No categories yet — add one below.
