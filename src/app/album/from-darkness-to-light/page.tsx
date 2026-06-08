@@ -706,46 +706,49 @@ export default function AlbumPage() {
               </button>
             </motion.div>
 
-            {/* Production credit — sits at the end of the tracklist so
-                the people who made the album get visible attribution every
-                time someone scrolls past the download CTA. */}
-            <p className="mt-10 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed">
-              Engineered &amp; Produced by{" "}
-              <a
-                href="https://www.optimusik.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
-              >
-                Simba Moyo ↗
-              </a>
-              {" · "}
-              {/* Riffi's site URL coming — keep as a plain span for now so
-                  the link styling/arrow only shows up once it's actually
-                  clickable. Swap for an <a> with target=_blank when ready. */}
-              <span className="text-white/80">Riffi Wacho</span>
-              <br className="hidden sm:inline" />
-              <span className="sm:hidden"> · </span>
-              Backing vocals by{" "}
-              <a
-                href="https://www.endgamestrategylab.co.za"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
-              >
-                Christina Ribeiro ↗
-              </a>
-              {" · "}
-              Drums by{" "}
-              <a
-                href="https://www.instagram.com/dhowardondrums"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
-              >
-                Darnell Howard ↗
-              </a>
-            </p>
+            {/* Production credit — one role per line so each contributor's
+                name stays intact on a single line at every breakpoint and
+                the section reads as a clean stacked attribution block. */}
+            <div className="mt-10 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed space-y-1.5">
+              <p>
+                <span className="whitespace-nowrap">Engineered &amp; Produced by</span>{" "}
+                <a
+                  href="https://www.optimusik.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                >
+                  Simba Moyo ↗
+                </a>
+                {" · "}
+                {/* Riffi's site URL coming — keep as a plain span for now so
+                    the link styling/arrow only shows up once it's actually
+                    clickable. Swap for an <a> with target=_blank when ready. */}
+                <span className="text-white/80 whitespace-nowrap">Riffi Wacho</span>
+              </p>
+              <p>
+                <span className="whitespace-nowrap">Backing vocals by</span>{" "}
+                <a
+                  href="https://www.endgamestrategylab.co.za"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                >
+                  Christina Ribeiro ↗
+                </a>
+              </p>
+              <p>
+                <span className="whitespace-nowrap">Drums by</span>{" "}
+                <a
+                  href="https://www.instagram.com/dhowardondrums"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                >
+                  Darnell Howard ↗
+                </a>
+              </p>
+            </div>
 
             {/* Artwork credit - moved here from under the side artwork now
                 that the side panels show lyric cards. Same painting tops
