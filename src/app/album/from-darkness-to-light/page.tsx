@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
-import { site } from "@/content/site";
 import DownloadModal from "./DownloadModal";
 
 function TrackRow({
@@ -654,50 +653,10 @@ export default function AlbumPage() {
               </button>
             </motion.div>
 
-            {/* Streaming links - only the platforms that actually exist */}
-            <motion.div
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={
-                reduce
-                  ? { duration: 0.01 }
-                  : { duration: 1.4, delay: 2.4, ease: [0.06, 1, 0.18, 1] as const }
-              }
-              className="mt-8 flex flex-wrap justify-center gap-8 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/55"
-            >
-              <a
-                href={site.socials.spotify}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-              >
-                Spotify ↗
-              </a>
-              {site.socials.appleMusic && (
-                <a
-                  href={site.socials.appleMusic}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  Apple Music ↗
-                </a>
-              )}
-              <a
-                href={site.socials.youtube}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-              >
-                YouTube ↗
-              </a>
-            </motion.div>
-
-            {/* Production credit — sits between the streaming row and the
-                artwork credit so the people who made the album get visible
-                attribution every time someone scrolls to the end of the
-                tracklist. */}
-            <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed">
+            {/* Production credit — sits at the end of the tracklist so
+                the people who made the album get visible attribution every
+                time someone scrolls past the download CTA. */}
+            <p className="mt-10 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed">
               Engineered &amp; Produced by{" "}
               <span className="text-white/80">Simba Moyo</span>
               {" · "}
