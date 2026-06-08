@@ -65,7 +65,7 @@ export default function BookingsPage() {
         </header>
 
         <section
-          className="mt-14 panel-scrim p-7 md:p-10"
+          className="mt-14 panel-scrim panel-flush-mobile p-7 md:p-10"
           aria-labelledby="commission-heading"
         >
           <div className="eyebrow eyebrow-amber">Request an original song</div>
@@ -102,7 +102,7 @@ export default function BookingsPage() {
       />
 
       <section className="mx-auto w-full max-w-3xl px-6 pb-24 md:pb-32">
-        <div className="panel-scrim p-8 md:p-10 text-center">
+        <div className="panel-scrim panel-flush-mobile p-8 md:p-10 text-center">
           <div className="eyebrow eyebrow-amber">Ready when you are</div>
           <h2 className="font-display mt-3 text-2xl md:text-3xl font-normal text-white tracking-tight">
             Let&apos;s write something that matters

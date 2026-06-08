@@ -91,7 +91,7 @@ export default function DonatePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={cardTransition}
-          className="mt-10 md:mt-14 panel-scrim p-7 md:p-9"
+          className="mt-10 md:mt-14 panel-scrim panel-flush-mobile p-7 md:p-9"
           aria-labelledby="give-heading"
         >
           <h2 id="give-heading" className="sr-only">
