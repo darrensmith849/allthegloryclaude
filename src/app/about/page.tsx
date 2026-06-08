@@ -84,9 +84,18 @@ export default function AboutPage() {
             <span aria-hidden="true">Out of </span>
             <span aria-hidden="true" className="subtitle-glyph">
               ᗡɐɹʞuǝss
+            </span>{" "}
+            {/* "Light" half now uses the same cross-T / mathematical
+                glyph treatment from the home-page top corner so it
+                pairs with the upside-down "Darkness" half and reads
+                as the canonical brand phrase end-to-end. */}
+            <span
+              aria-hidden="true"
+              className="subtitle-glyph italic text-[var(--colour-amber)]"
+            >
+              †o 𝕃Ɨ𝕘𝓱𝐓
             </span>
-            <span aria-hidden="true"> into the light</span>
-            <span className="sr-only">Out of darkness into the light</span>
+            <span className="sr-only">Out of darkness to light</span>
           </>
         }
         headingId="story-heading"

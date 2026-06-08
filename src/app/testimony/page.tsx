@@ -35,15 +35,21 @@ export default function TestimonyPage() {
             aria-label="From darkness to light"
             className="font-display mt-4 text-4xl md:text-6xl font-normal tracking-tight leading-[1.15]"
           >
+            {/* inline display:block beats the .subtitle-glyph rule's
+                `display: inline-block` (same specificity, but inline-style
+                always wins) so the two halves actually stack vertically
+                instead of flowing inline on a wide viewport. */}
             <span
               aria-hidden="true"
-              className="subtitle-glyph block text-white"
+              className="subtitle-glyph text-white"
+              style={{ display: "block" }}
             >
               Ⅎɹoɯ ᗡɐɹʞuǝss
             </span>
             <span
               aria-hidden="true"
-              className="subtitle-glyph block italic text-[var(--colour-amber)] mt-2 md:mt-3"
+              className="subtitle-glyph italic text-[var(--colour-amber)] mt-2 md:mt-3"
+              style={{ display: "block" }}
             >
               †o 𝕃Ɨ𝕘𝓱𝐓
             </span>
