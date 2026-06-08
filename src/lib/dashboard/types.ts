@@ -395,6 +395,41 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
   return settings.guitarCourse?.length ? settings.guitarCourse : DEFAULT_GUITAR_COURSE;
 }
 
+// ─── 40-Day Fast ──────────────────────────────────────────────────
+// A bounded streak plan — typically 40 days, the biblical fast length —
+// where the user abstains from a small set of categories (social media,
+// movies, etc.) and ticks each one off per day. Separate from the
+// open-ended habit system so it has its own start date + length + grid
+// and doesn't pollute the daily habits map.
+export interface FastCategory {
+  id: string;
+  label: string;
+}
+
+export interface Fast {
+  startDate: ISODate;
+  days: number; // 40 by default
+  categories: FastCategory[];
+  // per-date → per-categoryId boolean. true = kept clean that day.
+  checks: Record<ISODate, Record<string, boolean>>;
+}
+
+export const DEFAULT_FAST_CATEGORIES: FastCategory[] = [
+  { id: "socials", label: "Social media" },
+  { id: "movies", label: "Movies & TV" },
+  { id: "youtube", label: "YouTube" },
+  { id: "news", label: "News" },
+];
+
+export function defaultFast(startDate: ISODate): Fast {
+  return {
+    startDate,
+    days: 40,
+    categories: DEFAULT_FAST_CATEGORIES,
+    checks: {},
+  };
+}
+
 // ─── Root state ───────────────────────────────────────────────────
 export interface DashboardState {
   tasks: Task[];
@@ -418,6 +453,9 @@ export interface DashboardState {
   book: { meta: BookMeta; sessions: BookSession[] };
   settings: Settings;
   rewardsClaimed: Record<string, ISODate>;
+  // Active 40-day fast (null when no fast has been started). Populated
+  // on first visit to /dashboard/fast.
+  fast: Fast | null;
 }
 
 export function emptyState(): DashboardState {
@@ -439,5 +477,6 @@ export function emptyState(): DashboardState {
     },
     settings: defaultSettings(),
     rewardsClaimed: {},
+    fast: null,
   };
 }
