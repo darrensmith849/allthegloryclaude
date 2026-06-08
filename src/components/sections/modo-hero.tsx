@@ -20,41 +20,49 @@ export default function ModoHero() {
     : { duration: 1.8, delay: 1.6, ease };
 
   return (
-    <section className="relative min-h-[92vh] w-full overflow-x-clip">
-      {/* Top-left corner */}
+    <section className="hero-section">
+      {/* Top-left micro label.
+          Hidden on phones — the corner labels read as accidental
+          clipping at narrow widths. The cluster still carries the
+          motif via the album promo and inline page taglines. */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={cornerTransition}
-        className="absolute left-6 top-20 md:top-24 hero-corner subtitle-glyph"
+        className="hero-micro hero-micro-left hero-corner subtitle-glyph"
       >
         Ⅎɹoɯ ᗡɐɹʞuǝss
       </motion.div>
 
-      {/* Top-right corner */}
+      {/* Top-right micro label — pair to the left one. */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={cornerTransition}
-        className="absolute right-6 top-20 md:top-24 hero-corner subtitle-glyph text-right"
+        className="hero-micro hero-micro-right hero-corner subtitle-glyph"
       >
         †o 𝕃Ɨ𝕘𝓱𝐓
       </motion.div>
 
-      {/* Caption */}
+      {/* Bottom-right description — pinned to the same rails as the
+          fixed social dock on the bottom-left so they share a
+          baseline. Hidden on phones (the dock alone is enough chrome
+          at the bottom of a small screen). */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={cornerTransition}
-        className="absolute right-6 bottom-8 hero-caption hidden md:block"
+        className="hero-bottom-caption hero-caption"
       >
         Worship music born from struggle, offering honest stories of pain, freedom, and hope.
       </motion.div>
 
-      {/* "All The Glory" - centred on mobile (larger, more vertical breathing room),
-          right-aligned on desktop. */}
-      <div className="mx-auto w-full max-w-6xl px-6 pt-[26vh] pb-20 md:pt-32 md:pb-24 flex justify-center md:justify-end">
-        <div className="w-full max-w-[52rem] flex flex-col items-center md:items-end">
+      {/* Headline + CTA — one content block.
+          Mobile: centred. Desktop: right-aligned against --page-pad
+          so the title's right edge sits on the same vertical rail
+          as the caption and (above it) the right edge of the nav. */}
+      <div className="hero-content">
+        <div className="hero-title-block">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -67,12 +75,13 @@ export default function ModoHero() {
             </h1>
           </motion.div>
 
-          {/* Single primary CTA - fades in after the title settles */}
+          {/* CTA — sits tight against the title so they read as one
+              cluster, not two separate elements. */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={ctaTransition}
-            className="mt-7 md:mt-9"
+            className="hero-cta"
           >
             <Link
               href="/album/from-darkness-to-light"

@@ -25,7 +25,17 @@ export default function Nav() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-colour-bg/75 backdrop-blur-xl border-b border-white/5">
-      <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+      {/* Hangs off the shared --page-pad so the logo + nav sit on the
+          same vertical rails as every other page-chrome element
+          (hero, caption, social dock). --header-height controls
+          the bar's vertical size. */}
+      <div
+        className="mx-auto max-w-7xl flex items-center justify-between"
+        style={{
+          paddingInline: "var(--page-pad)",
+          height: "var(--header-height)",
+        }}
+      >
         <Link
           href="/"
           className="font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
