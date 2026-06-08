@@ -183,27 +183,6 @@ export default function DashboardHome() {
     setEditingRowId(null);
   }
 
-  // Move within the row's source list (global or extras) - never cross
-  // between the two, because the visual list mixes both.
-  function moveRow(rowId: string, dir: -1 | 1) {
-    update((draft) => {
-      const extra = isExtraId(rowId);
-      const rows = [
-        ...(extra ? draft.scheduleExtras?.[today] ?? [] : draft.settings.schedule ?? []),
-      ];
-      const i = rows.findIndex((r) => r.id === rowId);
-      if (i < 0) return;
-      const j = i + dir;
-      if (j < 0 || j >= rows.length) return;
-      [rows[i], rows[j]] = [rows[j], rows[i]];
-      if (extra) {
-        if (!draft.scheduleExtras) draft.scheduleExtras = {};
-        draft.scheduleExtras[today] = rows;
-      } else {
-        draft.settings.schedule = rows;
-      }
-    });
-  }
   // Quick-delete a row directly from the schedule (without entering edit mode).
   // Extras delete immediately; global rows confirm first so a stray click can't
   // wipe a recurring block from every day.
@@ -229,20 +208,6 @@ export default function DashboardHome() {
     });
   }
 
-  // Source-aware first/last detection so the up/down disable state is right
-  // for both global rows and one-off extras.
-  function rowIsFirstInSource(rowId: string): boolean {
-    const list = isExtraId(rowId)
-      ? state.scheduleExtras?.[today] ?? []
-      : state.settings.schedule ?? [];
-    return list[0]?.id === rowId;
-  }
-  function rowIsLastInSource(rowId: string): boolean {
-    const list = isExtraId(rowId)
-      ? state.scheduleExtras?.[today] ?? []
-      : state.settings.schedule ?? [];
-    return list[list.length - 1]?.id === rowId;
-  }
   function rowDone(rowId: string, habitId?: string): boolean {
     if (habitId) return Boolean(habits[habitId]);
     return Boolean(rowChecks[rowId]);
@@ -555,34 +520,6 @@ export default function DashboardHome() {
                       <div className="dash-schedule-sub">{row.sub}</div>
                     </div>
                     <div className="dash-schedule-actions">
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          className="dash-row-move"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveRow(row.id, -1);
-                          }}
-                          disabled={rowIsFirstInSource(row.id)}
-                          title="Move up"
-                          aria-label="Move row up"
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="dash-row-move"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveRow(row.id, 1);
-                          }}
-                          disabled={rowIsLastInSource(row.id)}
-                          title="Move down"
-                          aria-label="Move row down"
-                        >
-                          ▼
-                        </button>
-                      </div>
                       <button
                         type="button"
                         className="dash-row-edit-btn"
@@ -590,7 +527,7 @@ export default function DashboardHome() {
                           e.stopPropagation();
                           startEditing(row);
                         }}
-                        title="Edit time, title, subtitle"
+                        title="Edit time, title, subtitle (rows auto-sort by time)"
                         aria-label="Edit this row"
                       >
                         ✎

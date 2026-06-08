@@ -123,8 +123,10 @@ function dayOfWeekFor(iso: ISODate): number {
 }
 
 // Resolve the schedule for a specific calendar date - filters the global
-// schedule by day-of-week, then appends any per-date extras the user has
-// added via the calendar.
+// schedule by day-of-week, then merges per-date extras and sorts the whole
+// thing by hour so any newly added row auto-slots into the right time slot
+// instead of appearing at the bottom. JS sort has been stable since ES2019
+// so rows with identical hours keep their insertion order.
 export function getScheduleForDate(
   date: ISODate,
   settings: Settings,
@@ -141,7 +143,7 @@ export function getScheduleForDate(
     return dayList.includes(dow);
   });
   const extras = scheduleExtras?.[date] ?? [];
-  return [...base, ...extras];
+  return [...base, ...extras].sort((a, b) => a.hour - b.hour);
 }
 
 // ─── Guitar weekly plan ───────────────────────────────────────────
