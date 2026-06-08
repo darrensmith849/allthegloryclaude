@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import NewsletterSignup from "@/components/ui/newsletter-signup";
+import { site } from "@/content/site";
 
 const CONTACT_INBOX = "peter777daniel@gmail.com";
 
@@ -124,7 +126,7 @@ export default function ContactPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={formTransition}
-          className="max-w-xl mx-auto px-6"
+          className="max-w-xl mx-auto px-6 mb-12 md:mb-16"
         >
           {submitted ? (
             <div className="text-center py-16">
@@ -267,6 +269,125 @@ export default function ContactPage() {
               </button>
             </form>
           )}
+        </motion.div>
+      </section>
+
+      {/* ── STAY IN THE LOOP ───────────────────────────────────────
+           Always visible, even after a successful send — the form is
+           the primary CTA, but everyone visiting the contact page is
+           a candidate for the newsletter + YouTube. We weave the
+           inverted-glyph motif in so the section reads as a
+           continuation of the album-side of the site, not a generic
+           footer call-to-action. */}
+      <section
+        aria-labelledby="stay-in-loop-heading"
+        className="w-full pb-20 md:pb-28"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{
+            duration: reduce ? 0.01 : 1.2,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="max-w-xl mx-auto px-6"
+        >
+          <div className="panel-scrim panel-flush-mobile p-7 md:p-9 text-center">
+            <div className="eyebrow eyebrow-amber">Stay in the loop</div>
+            <h2
+              id="stay-in-loop-heading"
+              className="font-display mt-3 text-2xl md:text-3xl font-normal text-white tracking-tight"
+            >
+              Walk this road with me
+            </h2>
+            <p
+              aria-label="From Darkness To Light"
+              className="subtitle-glyph mt-3 text-xs md:text-sm tracking-[0.18em] text-white/60"
+            >
+              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+            </p>
+            <p className="mt-4 text-sm md:text-base text-white/70 leading-relaxed max-w-md mx-auto">
+              Be the first to hear when new songs, videos, and stories drop —
+              no spam, just an honest update now and then.
+            </p>
+
+            <div className="mt-7">
+              <NewsletterSignup />
+            </div>
+
+            {/* ─── YouTube spotlight + socials ─── */}
+            <div className="mt-9 pt-7 border-t border-white/10">
+              <p className="text-xs md:text-sm text-white/65 mb-4">
+                Already on YouTube? Hit subscribe so new releases land in
+                your feed.
+              </p>
+              {site.socials.youtube && (
+                <a
+                  href={site.socials.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                >
+                  Subscribe on YouTube →
+                </a>
+              )}
+
+              <div className="mt-7 text-[11px] uppercase tracking-[0.22em] text-white/45 mb-3">
+                Or follow along here
+              </div>
+              <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.22em]">
+                {site.socials.instagram && (
+                  <li>
+                    <a
+                      href={site.socials.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                    >
+                      Instagram ↗
+                    </a>
+                  </li>
+                )}
+                {site.socials.spotify && (
+                  <li>
+                    <a
+                      href={site.socials.spotify}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                    >
+                      Spotify ↗
+                    </a>
+                  </li>
+                )}
+                {site.socials.facebook && (
+                  <li>
+                    <a
+                      href={site.socials.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                    >
+                      Facebook ↗
+                    </a>
+                  </li>
+                )}
+                {site.socials.tiktok && (
+                  <li>
+                    <a
+                      href={site.socials.tiktok}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                    >
+                      TikTok ↗
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
         </motion.div>
       </section>
     </main>
