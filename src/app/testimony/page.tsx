@@ -24,18 +24,15 @@ export default function TestimonyPage() {
           className="text-center"
         >
           <div className="eyebrow">Testimony</div>
-          {/* The headline IS the motif. Two stacked lines:
-                line 1 — "From Darkness" rendered with the inverted-glyph
-                          treatment so the words read upside-down;
-                line 2 — "into the light" right-side-up, but styled with
-                          the same mathematical / dagger-as-cross glyphs
-                          used in the home-page top-corner ("†o 𝕃Ɨ𝕘𝓱𝐓")
-                          so the two lines feel like a deliberate pair —
-                          inversion on top, cross-T resurrection beneath.
-              Screen readers get the clean "From darkness into the light"
+          {/* The headline IS the motif — same canonical phrase the
+              homepage corners use ("Ⅎɹoɯ ᗡɐɹʞuǝss†o 𝕃Ɨ𝕘𝓱𝐓"), split
+              into two stacked lines:
+                line 1 — "Ⅎɹoɯ ᗡɐɹʞuǝss" (From Darkness, upside-down)
+                line 2 — "†o 𝕃Ɨ𝕘𝓱𝐓"   (To Light, cross-T, right-side-up)
+              Screen readers get the clean "From darkness to light"
               string via aria-label on the H1. */}
           <h1
-            aria-label="From darkness into the light"
+            aria-label="From darkness to light"
             className="font-display mt-4 text-4xl md:text-6xl font-normal tracking-tight leading-[1.15]"
           >
             <span
@@ -48,7 +45,7 @@ export default function TestimonyPage() {
               aria-hidden="true"
               className="subtitle-glyph block italic text-[var(--colour-amber)] mt-2 md:mt-3"
             >
-              in†o †he 𝕃Ɨ𝕘𝓱𝐓
+              †o 𝕃Ɨ𝕘𝓱𝐓
             </span>
           </h1>
 
