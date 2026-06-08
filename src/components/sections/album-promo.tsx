@@ -46,7 +46,7 @@ export default function AlbumPromo() {
             rel="noreferrer"
             className="text-white/75 underline decoration-white/20 underline-offset-4 hover:text-white"
           >
-            Debbie Clarke
+            Debbie Clarke ↗
           </a>
         </div>
 
