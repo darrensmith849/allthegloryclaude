@@ -101,7 +101,7 @@ function Item({
       className="social-link"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+      transition={{ duration: 1.6, delay, ease: "easeOut" }}
     >
       {/* Icon-only on every viewport. The 44×44 wrapper is a proper touch
           target on mobile and gives the desktop column a roomy, even rhythm. */}
@@ -121,11 +121,14 @@ export default function SocialDock() {
   }
   return (
     <div className="social-dock-bottom">
-      <Item href={site.socials.instagram} label="Instagram" delay={0.15} />
-      <Item href={site.socials.facebook} label="Facebook" delay={0.22} />
-      <Item href={site.socials.youtube} label="YouTube" delay={0.29} />
-      <Item href={site.socials.spotify} label="Spotify" delay={0.36} />
-      <Item href={site.socials.tiktok} label="TikTok" delay={0.43} />
+      {/* Slow cascade fade-in: each icon takes 1.6s, stepped 0.18s apart
+          so the rail visibly assembles itself after the hero settles —
+          matches the 2s footer fades used elsewhere on the site. */}
+      <Item href={site.socials.instagram} label="Instagram" delay={0.6} />
+      <Item href={site.socials.facebook} label="Facebook" delay={0.78} />
+      <Item href={site.socials.youtube} label="YouTube" delay={0.96} />
+      <Item href={site.socials.spotify} label="Spotify" delay={1.14} />
+      <Item href={site.socials.tiktok} label="TikTok" delay={1.32} />
     </div>
   );
 }
