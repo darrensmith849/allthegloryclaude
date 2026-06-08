@@ -17,7 +17,7 @@ export default function VerseMarquee() {
         }}
         className="mx-auto w-full max-w-6xl px-0 md:px-6 py-10 md:py-14"
       >
-        <div className="panel-soft panel-flush-mobile relative overflow-hidden">
+        <div className="panel-soft panel-flush relative overflow-hidden">
           <div className="marquee-single">
             <div className="marquee-single-track">
               <div className="verse-block">

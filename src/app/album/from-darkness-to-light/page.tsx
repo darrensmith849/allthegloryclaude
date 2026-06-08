@@ -49,7 +49,7 @@ function TrackRow({
       }
       animate={{ opacity: 1, x: 0 }}
       transition={trackTransition}
-      className={`${hoverReady ? "group" : ""} panel-scrim panel-flush-mobile px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
+      className={`${hoverReady ? "group" : ""} panel-scrim panel-flush px-5 py-4 md:px-6 md:py-5 relative overflow-hidden`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 text-left">
@@ -71,10 +71,44 @@ function TrackRow({
                 : `Play preview of ${title}`
           }
           aria-pressed={isPlaying}
-          className={`shrink-0 text-[11px] font-semibold uppercase tracking-[0.26em] transition-colors duration-300 ${
+          className={`shrink-0 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.26em] transition-colors duration-300 ${
             isPlaying ? "text-[var(--colour-amber)]" : "text-white/55 hover:text-white/85"
           }`}
         >
+          {/* Play / pause / loading glyph — gives the row an unmistakable
+              audio affordance without leaning on color alone. */}
+          <span
+            aria-hidden="true"
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-current"
+          >
+            {isPlaying ? (
+              // Pause icon
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
+                <rect x="1.5" y="1" width="2" height="8" rx="0.5" />
+                <rect x="6.5" y="1" width="2" height="8" rx="0.5" />
+              </svg>
+            ) : isLoading ? (
+              // Tiny spinner
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                className="animate-spin"
+              >
+                <circle cx="6" cy="6" r="4.5" opacity="0.3" />
+                <path d="M10.5 6a4.5 4.5 0 0 0-4.5-4.5" strokeLinecap="round" />
+              </svg>
+            ) : (
+              // Play triangle — nudged 1px right of center so the
+              // optical centre matches the circle's geometric centre.
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M3 1.5 L8 5 L3 8.5 Z" />
+              </svg>
+            )}
+          </span>
           {isPlaying ? "Pause" : isLoading ? "Loading…" : "Preview"}
         </button>
       </div>
