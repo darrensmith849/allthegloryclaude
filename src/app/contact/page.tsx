@@ -209,7 +209,7 @@ export default function ContactPage() {
                   required
                   aria-invalid={errors.name ? true : undefined}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
+                  className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-base text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
                   placeholder="Your name"
                 />
                 {errors.name && (
@@ -238,7 +238,7 @@ export default function ContactPage() {
                   required
                   aria-invalid={errors.email ? true : undefined}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
+                  className="w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-base text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors"
                   placeholder="you@example.com"
                 />
                 {errors.email && (

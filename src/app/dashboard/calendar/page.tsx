@@ -153,6 +153,38 @@ export default function CalendarPage() {
   // Per-date schedule additions - only visible on the selected day.
   const [extraTime, setExtraTime] = useState("");
   const [extraTitle, setExtraTitle] = useState("");
+
+  // Inline edit of any schedule row (extras + global) - mirrors the Today
+  // page edit UX so reordering can be done by changing a row's time.
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editTime, setEditTime] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editSub, setEditSub] = useState("");
+  const isExtraId = (id: string) => id.startsWith("x-");
+  function startEditing(row: ScheduleRow) {
+    setEditingRowId(row.id);
+    setEditTime(row.time);
+    setEditTitle(row.title);
+    setEditSub(row.sub ?? "");
+  }
+  function saveEditing() {
+    if (!editingRowId) return;
+    const [hh, mm] = editTime.split(":").map(Number);
+    const hour = (hh || 0) + (mm || 0) / 60;
+    const patch = (r: ScheduleRow): ScheduleRow =>
+      r.id === editingRowId
+        ? { ...r, time: editTime, hour, title: editTitle.trim() || r.title, sub: editSub }
+        : r;
+    update((d) => {
+      if (isExtraId(editingRowId)) {
+        if (!d.scheduleExtras) d.scheduleExtras = {};
+        d.scheduleExtras[selected] = (d.scheduleExtras[selected] ?? []).map(patch);
+      } else {
+        d.settings.schedule = (d.settings.schedule ?? []).map(patch);
+      }
+    });
+    setEditingRowId(null);
+  }
   function addScheduleExtraForSelected(e?: React.FormEvent) {
     e?.preventDefault();
     if (!extraTime.trim() || !extraTitle.trim()) return;
@@ -430,18 +462,69 @@ export default function CalendarPage() {
                     {schedule.map((row) => {
                       const done = rowDoneForSelected(row.id, row.habitId);
                       const isExtra = row.id.startsWith("x-");
+                      if (editingRowId === row.id) {
+                        return (
+                          <div key={row.id} className="flex items-center gap-1.5">
+                            <input
+                              type="time"
+                              className="dash-input"
+                              style={{ width: 90 }}
+                              value={editTime}
+                              onChange={(e) => setEditTime(e.target.value)}
+                            />
+                            <input
+                              className="dash-input"
+                              style={{ flex: 1 }}
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEditing();
+                                if (e.key === "Escape") setEditingRowId(null);
+                              }}
+                              placeholder="Title"
+                            />
+                            <button
+                              type="button"
+                              className="dash-btn dash-btn-primary"
+                              style={{ padding: "6px 10px", fontSize: 11 }}
+                              onClick={saveEditing}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="dash-btn dash-btn-ghost"
+                              style={{ padding: "6px 10px", fontSize: 11 }}
+                              onClick={() => setEditingRowId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        );
+                      }
                       return (
                         <div key={row.id} className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => toggleScheduleRowForSelected(row.id, row.habitId)}
                             className={`dash-mini-row flex-1 ${done ? "is-done" : ""}`}
+                            title="Click to mark done · Use ✎ to change the time and re-order"
                           >
                             <span className="dash-mini-row-time">{row.time}</span>
                             <span className="dash-mini-row-title">{row.title}</span>
                             <span className={`dash-check-dot ${done ? "is-on" : ""}`}>
                               {done ? "✓" : ""}
                             </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dash-row-edit-btn"
+                            onClick={() => startEditing(row)}
+                            title="Edit time / title (change time to re-order)"
+                            aria-label="Edit row"
+                          >
+                            ✎
                           </button>
                           <button
                             type="button"
@@ -492,6 +575,8 @@ export default function CalendarPage() {
                 </form>
                 <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-1">
                   This addition only lives on {formatHuman(selected)} - perfect for weekends.
+                  New entries auto-slot into the right time slot. Use ✎ to change a row&apos;s time
+                  to re-order it.
                 </div>
               </section>
 

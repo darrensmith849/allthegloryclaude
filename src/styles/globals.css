@@ -187,22 +187,24 @@ body {
 
 /* Bottom-left socials. Same rails as the bottom hero caption so the
  * two share a baseline.
- *  Mobile / tablet: horizontal row, fixed to the bottom-left.
- *  Desktop (lg+):  vertical column anchored bottom-left, no box. */
+ *  Mobile / tablet: horizontal row of icons, fixed at bottom-left.
+ *  Desktop (lg+):  vertical column of word marks anchored bottom-left. */
 .social-dock-bottom {
   position: fixed;
-  left: var(--page-pad);
-  bottom: var(--hero-bottom-pad);
+  left: calc(var(--page-pad) - 0.5rem); /* offset for the 44×44 tap padding */
+  bottom: calc(var(--hero-bottom-pad) - 0.25rem);
   z-index: 60;
   display: flex;
   flex-direction: row;
-  gap: 14px;
+  gap: 2px;
   /* Avoid colliding with iOS home indicator on bottom-edge gestures */
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 @media (min-width: 1024px) {
   .social-dock-bottom {
+    left: var(--page-pad);
+    bottom: var(--hero-bottom-pad);
     flex-direction: column;
     gap: 10px;
     padding-bottom: 0;

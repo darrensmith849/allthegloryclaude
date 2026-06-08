@@ -68,7 +68,7 @@ export default function NewsletterSignup() {
           onChange={(e) => setEmail(e.target.value)}
           disabled={status === "loading" || status === "success"}
           aria-invalid={status === "error"}
-          className="flex-1 min-w-0 px-4 py-3 text-sm text-white placeholder:text-white/30 bg-white/[0.04] border border-white/10 rounded-lg focus:outline-none focus:border-[var(--colour-amber)]/60 disabled:opacity-60"
+          className="flex-1 min-w-0 px-4 py-3 text-base md:text-sm text-white placeholder:text-white/30 bg-white/[0.04] border border-white/10 rounded-lg focus:outline-none focus:border-[var(--colour-amber)]/60 disabled:opacity-60"
         />
         <button
           type="submit"
