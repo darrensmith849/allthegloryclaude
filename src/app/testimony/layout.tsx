@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     url: "/testimony",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-dove.jpg",
         width: 1200,
         height: 630,
         alt: "All The Glory - From Darkness To Light",
