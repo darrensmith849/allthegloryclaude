@@ -13,12 +13,6 @@ export default function NotFound() {
         <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
           Lost in the wilderness
         </h1>
-        <p
-          aria-label="From Darkness To Light"
-          className="subtitle-glyph mt-5 text-xs md:text-sm tracking-[0.18em] text-white/55"
-        >
-          Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
-        </p>
 
         <p className="mt-6 font-display italic text-lg md:text-xl text-white/70 leading-relaxed max-w-lg">
           &ldquo;For the Son of Man came to seek and to save the lost.&rdquo;

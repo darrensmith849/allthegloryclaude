@@ -30,13 +30,7 @@ export default function AboutPage() {
             <h1 className="font-display mt-4 text-5xl md:text-7xl font-normal text-white tracking-tight">
               Daniel
             </h1>
-            <p
-              aria-label="From Darkness To Light"
-              className="subtitle-glyph mt-4 text-sm md:text-base tracking-[0.18em] text-white/70"
-            >
-              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
-            </p>
-            <p className="mt-3 text-sm md:text-base text-white/65 max-w-md mx-auto">
+            <p className="mt-4 text-sm md:text-base text-white/65 max-w-md mx-auto">
               Singer, songwriter, worshipper. Harare, Zimbabwe.
             </p>
           </div>
@@ -76,10 +70,25 @@ export default function AboutPage() {
       </section>
 
       {/* ── THE STORY - heading lives inside the Testimony glass panel
-           so the eyebrow, title, and body are one aligned block ──── */}
+           so the eyebrow, title, and body are one aligned block. The
+           "darkness" half of the title is rendered in the inverted-glyph
+           treatment inline so the motif is folded into the heading
+           rather than tacked on as a separate tagline. The aria-label on
+           the rendered h2 (added in Testimony.tsx via headingId+title)
+           is set elsewhere; here we just emit a fully accessible
+           aria-label that matches the readable phrase. ──── */}
       <Testimony
         eyebrow="The Story"
-        title="Out of darkness into the light"
+        title={
+          <>
+            <span aria-hidden="true">Out of </span>
+            <span aria-hidden="true" className="subtitle-glyph">
+              ᗡɐɹʞuǝss
+            </span>
+            <span aria-hidden="true"> into the light</span>
+            <span className="sr-only">Out of darkness into the light</span>
+          </>
+        }
         headingId="story-heading"
       />
 

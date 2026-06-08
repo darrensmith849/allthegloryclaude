@@ -24,18 +24,24 @@ export default function TestimonyPage() {
           className="text-center"
         >
           <div className="eyebrow">Testimony</div>
-          <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight leading-[1.05]">
-            From darkness{" "}
-            <span className="italic text-[var(--colour-amber)]">into light</span>
-          </h1>
-          <p
-            aria-label="From Darkness To Light"
-            className="subtitle-glyph mt-5 text-sm md:text-base tracking-[0.18em] text-white/70"
+          {/* The headline IS the motif — left half rendered as the
+              inverted-glyph "From Darkness" so the wordmark carries
+              the brand instead of needing a separate tagline below.
+              The visible string still reads "From darkness into light"
+              when announced by screen readers, via aria-label on the H1. */}
+          <h1
+            aria-label="From darkness into light"
+            className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight leading-[1.1]"
           >
-            Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
-          </p>
+            <span aria-hidden="true" className="subtitle-glyph">
+              Ⅎɹoɯ ᗡɐɹʞuǝss
+            </span>{" "}
+            <span aria-hidden="true" className="italic text-[var(--colour-amber)]">
+              into light
+            </span>
+          </h1>
 
-          <p className="font-display mt-5 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
+          <p className="font-display mt-7 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
             Jesus rescued me from addiction and a 20-year battle with
             suicidal thoughts, and gave me a new life.
           </p>
