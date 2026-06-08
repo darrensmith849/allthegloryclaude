@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -38,9 +39,21 @@ export default function Nav() {
       >
         <Link
           href="/"
-          className="font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
+          className="group flex items-center gap-3 font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
           aria-label="All The Glory - home"
         >
+          {/* Dove + sunburst logo. The source asset is on a solid black
+              field that matches the nav background, so it reads as a
+              cut-out mark next to the wordmark. */}
+          <Image
+            src="/media/logo-dove.jpg"
+            alt=""
+            width={64}
+            height={64}
+            priority
+            sizes="36px"
+            className="h-9 w-9 object-cover rounded-full ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-[1.04]"
+          />
           {site.name}
         </Link>
 
