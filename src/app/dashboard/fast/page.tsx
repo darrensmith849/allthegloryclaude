@@ -237,22 +237,35 @@ export default function FastPage() {
           thing the eye lands on after the page header, so the daily ticks
           below are read in the right spirit. Amber gradient + display
           font + italic supporting line so the whole banner reads as
-          "the reason for the fast" rather than just a quote. */}
+          "the reason for the fast" rather than just a quote.
+          Inline padding because .dash-panel itself has none (padding
+          lives in .dash-panel-body, which we're bypassing to apply the
+          custom gradient background). */}
       <section
         className="dash-panel"
         style={{
           marginBottom: 18,
+          padding: "22px 26px 24px",
           borderColor: "rgba(216,178,90,0.35)",
           background:
             "linear-gradient(135deg, rgba(216,178,90,0.10), rgba(216,178,90,0.02) 60%, transparent)",
         }}
       >
         <div className="eyebrow eyebrow-amber">The Vow</div>
-        <h2 className="font-display mt-2 text-[22px] md:text-[28px] leading-tight tracking-tight text-white/95">
+        {/* Heading is capped at 30ch so it wraps onto two clean lines on
+            wide viewports instead of stretching edge-to-edge. The
+            em-dash makes a natural break point either way. */}
+        <h2
+          className="font-display mt-2 text-[22px] md:text-[28px] leading-snug tracking-tight text-white/95"
+          style={{ maxWidth: "32ch" }}
+        >
           This is not the wilderness I am entering — it is the wilderness
           I am coming <span className="italic text-[var(--colour-amber)]">out of</span>.
         </h2>
-        <p className="font-display italic mt-3 text-[15px] md:text-[17px] leading-relaxed text-[var(--colour-amber-soft)]">
+        <p
+          className="font-display italic mt-3 text-[15px] md:text-[17px] leading-relaxed text-[var(--colour-amber-soft)]"
+          style={{ maxWidth: "60ch" }}
+        >
           For 40 days I am with the Lord — to honour Him, serve Him, learn
           more about Him, and draw closer to Him.
         </p>
