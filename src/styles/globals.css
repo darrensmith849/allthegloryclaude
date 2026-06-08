@@ -93,6 +93,20 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+/* Mobile-only modifier: drop the rounded-block framing so the panel
+   reads as an edge-to-edge banner section. Pair with px-0 on the outer
+   container so the panel can span the viewport. */
+@media (max-width: 767px) {
+  .panel-flush-mobile {
+    border-radius: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+}
+
 /* Big title */
 .modo-title {
   font-size: clamp(2.8rem, 7.2vw, 6.6rem);
