@@ -128,8 +128,8 @@ export default function Testimony({
 
   return (
     <section className="bg-transparent">
-      <div className="mx-auto w-full max-w-3xl px-6 py-14 md:py-20">
-        <div className="panel-scrim p-7 md:p-10">
+      <div className="mx-auto w-full max-w-3xl px-0 md:px-6 py-14 md:py-20">
+        <div className="panel-scrim panel-flush-mobile p-7 md:p-10">
           {showHeader && (
             <FadeOnView
               yOffset={20}
