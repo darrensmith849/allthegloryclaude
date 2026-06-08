@@ -89,7 +89,7 @@ export default function Nav() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-white/90 p-2"
+          className="md:hidden text-white/90 p-3 -m-3"
           aria-label="Toggle menu"
           aria-expanded={open}
         >
