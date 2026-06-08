@@ -15,6 +15,7 @@ function TrackRow({
   hoverReady,
   isPlaying,
   isLoading,
+  progress,
   reduce,
   hasLyrics,
   onTogglePlay,
@@ -28,11 +29,23 @@ function TrackRow({
   hoverReady: boolean;
   isPlaying: boolean;
   isLoading: boolean;
+  /** Preview playback progress in [0, 1]. Drives the circular ring around
+   *  the play / pause button so visitors can see how much of the snippet
+   *  is left. Only meaningful when isPlaying is true. */
+  progress: number;
   reduce: boolean;
   hasLyrics: boolean;
   onTogglePlay: () => void;
   onReadVerse: () => void;
 }) {
+  // Progress ring geometry — drawn inside the 20×20 button slot. r = 9 so
+  // the ring sits just inside the circle, leaving room for the 1.5px stroke.
+  const RING_R = 9;
+  const RING_C = 2 * Math.PI * RING_R;
+  const dashOffset =
+    isPlaying && Number.isFinite(progress)
+      ? RING_C * (1 - Math.max(0, Math.min(1, progress)))
+      : RING_C;
   const trackTransition = reduce
     ? { duration: 0.01 }
     : { duration: 1.4, delay: delay * 0.4, ease: [0.06, 1, 0.18, 1] as const };
@@ -76,38 +89,76 @@ function TrackRow({
           }`}
         >
           {/* Play / pause / loading glyph — gives the row an unmistakable
-              audio affordance without leaning on color alone. */}
+              audio affordance without leaning on color alone.
+              When playing, the surrounding circle becomes a progress ring
+              that fills from 12 o'clock clockwise as the preview plays. */}
           <span
             aria-hidden="true"
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-current"
+            className="relative inline-flex items-center justify-center w-5 h-5"
           >
-            {isPlaying ? (
-              // Pause icon
-              <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
-                <rect x="1.5" y="1" width="2" height="8" rx="0.5" />
-                <rect x="6.5" y="1" width="2" height="8" rx="0.5" />
-              </svg>
-            ) : isLoading ? (
-              // Tiny spinner
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                fill="none"
+            {/* Background ring (always visible, takes the place of the old
+                static border) + foreground progress ring (only when playing). */}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              className="absolute inset-0"
+              fill="none"
+            >
+              <circle
+                cx="10"
+                cy="10"
+                r={RING_R}
                 stroke="currentColor"
-                strokeWidth="1.6"
-                className="animate-spin"
-              >
-                <circle cx="6" cy="6" r="4.5" opacity="0.3" />
-                <path d="M10.5 6a4.5 4.5 0 0 0-4.5-4.5" strokeLinecap="round" />
-              </svg>
-            ) : (
-              // Play triangle — nudged 1px right of center so the
-              // optical centre matches the circle's geometric centre.
-              <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
-                <path d="M3 1.5 L8 5 L3 8.5 Z" />
-              </svg>
-            )}
+                strokeWidth="1"
+                opacity={isPlaying ? 0.25 : 0.85}
+              />
+              {isPlaying && (
+                <circle
+                  cx="10"
+                  cy="10"
+                  r={RING_R}
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={dashOffset}
+                  // rotate -90deg so dash starts at 12 o'clock and runs CW
+                  transform="rotate(-90 10 10)"
+                  style={{ transition: "stroke-dashoffset 120ms linear" }}
+                />
+              )}
+            </svg>
+            {/* Icon, centered inside the ring */}
+            <span className="relative inline-flex items-center justify-center">
+              {isPlaying ? (
+                // Pause icon
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
+                  <rect x="1.5" y="1" width="2" height="8" rx="0.5" />
+                  <rect x="6.5" y="1" width="2" height="8" rx="0.5" />
+                </svg>
+              ) : isLoading ? (
+                // Tiny spinner
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  className="animate-spin"
+                >
+                  <circle cx="6" cy="6" r="4.5" opacity="0.3" />
+                  <path d="M10.5 6a4.5 4.5 0 0 0-4.5-4.5" strokeLinecap="round" />
+                </svg>
+              ) : (
+                // Play triangle — nudged 1px right of center so the
+                // optical centre matches the circle's geometric centre.
+                <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M3 1.5 L8 5 L3 8.5 Z" />
+                </svg>
+              )}
+            </span>
           </span>
           {isPlaying ? "Pause" : isLoading ? "Loading…" : "Preview"}
         </button>
@@ -473,6 +524,14 @@ export default function AlbumPage() {
   // ended event on the previous track could flip a newly-started track back
   // to "Preview".
   const endedHandlerRef = useRef<(() => void) | null>(null);
+  // Same dance for the timeupdate listener that drives the progress ring.
+  const timeUpdateHandlerRef = useRef<(() => void) | null>(null);
+  // Preview progress in [0, 1] — fed to the active TrackRow's circular
+  // progress ring. Reset to 0 on every track switch / end / pause.
+  const [progress, setProgress] = useState(0);
+  // Self-ref so the onEnded handler can auto-advance to the next track
+  // without capturing a stale togglePlay closure.
+  const togglePlayRef = useRef<((index: number, src: string) => void) | null>(null);
   const reduce = useReducedMotion();
 
   useEffect(() => {
@@ -538,7 +597,12 @@ export default function AlbumPage() {
         audio.removeEventListener("ended", endedHandlerRef.current);
         endedHandlerRef.current = null;
       }
+      if (timeUpdateHandlerRef.current) {
+        audio.removeEventListener("timeupdate", timeUpdateHandlerRef.current);
+        timeUpdateHandlerRef.current = null;
+      }
     }
+    setProgress(0);
   }, []);
 
   const togglePlay = useCallback((index: number, src: string) => {
@@ -554,7 +618,34 @@ export default function AlbumPage() {
 
     const audio = new Audio(src);
     audio.preload = "auto";
-    const onEnded = () => setPlayingIndex(null);
+
+    // Progress ring: refresh on each timeupdate (~250ms intervals on most
+    // browsers). Cheap enough — single setState — and the SVG transition
+    // smooths the visual jump between ticks.
+    const onTimeUpdate = () => {
+      const d = audio.duration;
+      if (d && Number.isFinite(d) && d > 0) {
+        setProgress(audio.currentTime / d);
+      }
+    };
+    timeUpdateHandlerRef.current = onTimeUpdate;
+    audio.addEventListener("timeupdate", onTimeUpdate);
+
+    // Auto-advance: when this preview finishes, kick off the next track's
+    // preview automatically (only if there is one). Defer with setTimeout
+    // so the React state from setPlayingIndex(null) settles before the
+    // recursive togglePlayRef call reads it.
+    const onEnded = () => {
+      setPlayingIndex(null);
+      setProgress(0);
+      const nextIndex = index + 1;
+      const nextTrack = album.tracks[nextIndex];
+      if (nextTrack?.previewSrc) {
+        setTimeout(() => {
+          togglePlayRef.current?.(nextIndex, nextTrack.previewSrc);
+        }, 0);
+      }
+    };
     endedHandlerRef.current = onEnded;
     audio.addEventListener("ended", onEnded);
     audioRef.current = audio;
@@ -576,6 +667,12 @@ export default function AlbumPage() {
         clearLoading();
       });
   }, [playingIndex, detachAudio]);
+
+  // Keep the self-ref pointed at the latest togglePlay so the onEnded
+  // handler in a previous closure can call into the current implementation.
+  useEffect(() => {
+    togglePlayRef.current = togglePlay;
+  }, [togglePlay]);
 
   useEffect(() => {
     return () => {
@@ -690,6 +787,7 @@ export default function AlbumPage() {
                   hoverReady={hoverReady}
                   isPlaying={playingIndex === i}
                   isLoading={loadingIndex === i && playingIndex !== i}
+                  progress={playingIndex === i ? progress : 0}
                   reduce={!!reduce}
                   hasLyrics={!!t.lyricCards && t.lyricCards.length > 0}
                   onTogglePlay={() => togglePlay(i, t.previewSrc)}
