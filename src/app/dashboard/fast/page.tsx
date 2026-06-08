@@ -24,6 +24,10 @@ export default function FastPage() {
   const { state, update, ready } = useDashboard();
   const today = todayISO();
 
+  // ─── All hooks must run on every render. Anything that would otherwise
+  //     sit behind an early-return goes here, guarded with null-safe
+  //     defaults so it works whether or not the fast has been seeded yet.
+
   // Auto-initialise on first visit so "from today" works without any
   // setup step. If the user wants to restart later, the Reset button
   // wipes it and the next render re-initialises with today as Day 1.
@@ -35,34 +39,32 @@ export default function FastPage() {
     }
   }, [ready, state.fast, today, update]);
 
-  const fast = state.fast;
-
-  // ── Inline form state for editing categories ─────────────────────
+  // Inline form state for editing categories.
   const [newCatLabel, setNewCatLabel] = useState("");
 
-  if (!ready || !fast) {
-    return (
-      <div className="text-[13px] text-[var(--colour-ink-quiet)] p-6">
-        Starting your 40-day fast…
-      </div>
-    );
-  }
+  const fast = state.fast;
 
-  // ── Derived values ───────────────────────────────────────────────
-  const dayIndexZero = Math.max(0, diffDays(fast.startDate, today)); // 0-based
-  const dayNumber = Math.min(fast.days, dayIndexZero + 1); // 1..40 (capped)
-  const daysRemaining = Math.max(0, fast.days - dayNumber);
-  const endDate = addDays(fast.startDate, fast.days - 1);
-  const isComplete = dayIndexZero >= fast.days;
+  // Derived values — computed even when fast is null, returning safe
+  // defaults so the hooks below stay stable across renders.
+  const dayIndexZero = fast
+    ? Math.max(0, diffDays(fast.startDate, today))
+    : 0; // 0-based
+  const fastDays = fast?.days ?? 40;
+  const dayNumber = Math.min(fastDays, dayIndexZero + 1); // 1..40 (capped)
+  const daysRemaining = Math.max(0, fastDays - dayNumber);
+  const endDate = fast ? addDays(fast.startDate, fast.days - 1) : today;
+  const isComplete = fast ? dayIndexZero >= fast.days : false;
 
-  // For each completed day, count it as "clean" only if EVERY category was
-  // kept. That's a strict but honest metric for a fast.
+  // For each day of the fast, count it as "clean" only if EVERY category
+  // was kept. Strict but honest metric.
   const dayCleanMap = useMemo(() => {
     const map: Record<string, boolean> = {};
+    if (!fast) return map;
     for (let i = 0; i < fast.days; i++) {
       const date = addDays(fast.startDate, i);
       const dayChecks = fast.checks[date] ?? {};
-      const allClean = fast.categories.every((c) => dayChecks[c.id]);
+      const allClean =
+        fast.categories.length > 0 && fast.categories.every((c) => dayChecks[c.id]);
       map[date] = allClean;
     }
     return map;
@@ -71,6 +73,7 @@ export default function FastPage() {
   // Current streak — consecutive clean days counting backwards from
   // today (or from the last day of the fast if it's over).
   const currentStreak = useMemo(() => {
+    if (!fast) return 0;
     let n = 0;
     const endIdx = Math.min(dayIndexZero, fast.days - 1);
     for (let i = endIdx; i >= 0; i--) {
@@ -85,6 +88,15 @@ export default function FastPage() {
     () => Object.values(dayCleanMap).filter(Boolean).length,
     [dayCleanMap],
   );
+
+  // ─── Now that every hook has been called, it's safe to short-circuit ─
+  if (!ready || !fast) {
+    return (
+      <div className="text-[13px] text-[var(--colour-ink-quiet)] p-6">
+        Starting your 40-day fast…
+      </div>
+    );
+  }
 
   const progressPct = Math.round((cleanDaysTotal / fast.days) * 100);
 
