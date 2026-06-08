@@ -29,6 +29,18 @@
   --colour-fg-rgb: 244 240 232;
   --colour-accent-rgb: 216 178 90;
   --colour-surface-rgb: 18 17 26;
+
+  /* ── Spacing system ─────────────────────────────────────────────
+     One shared grid so every page chrome element (nav, hero, social
+     dock, bottom caption, etc.) hangs off the same rails at every
+     viewport. Clamps so the layout scales cleanly from 320px to 2560px. */
+  --page-pad: clamp(24px, 5vw, 88px);
+  --header-height: clamp(72px, 7vh, 92px);
+  --hero-bottom-pad: clamp(40px, 7vh, 96px);
+  /* Slightly more inset than --page-pad so the tiny "From Darkness / to
+     Light" labels have breathing room from the viewport edges and don't
+     read as accidentally clipped. */
+  --hero-edge-micro: clamp(40px, 7vw, 140px);
 }
 
 html, body { height: 100%; }
@@ -173,14 +185,14 @@ body {
   background-size: 220px 220px;
 }
 
-/* Bottom-left socials.
- * Mobile / tablet: horizontal row, fixed to the bottom-left so the links
- *   are always one tap away without scrolling to the footer.
- * Desktop (lg+): vertical column anchored bottom-left, no box. */
+/* Bottom-left socials. Same rails as the bottom hero caption so the
+ * two share a baseline.
+ *  Mobile / tablet: horizontal row, fixed to the bottom-left.
+ *  Desktop (lg+):  vertical column anchored bottom-left, no box. */
 .social-dock-bottom {
   position: fixed;
-  left: 14px;
-  bottom: 14px;
+  left: var(--page-pad);
+  bottom: var(--hero-bottom-pad);
   z-index: 60;
   display: flex;
   flex-direction: row;
@@ -191,8 +203,6 @@ body {
 
 @media (min-width: 1024px) {
   .social-dock-bottom {
-    left: 18px;
-    bottom: 18px;
     flex-direction: column;
     gap: 10px;
     padding-bottom: 0;
@@ -259,7 +269,85 @@ body {
   font-size: 13px;
   line-height: 1.45;
   color: rgba(244,240,232,0.62);
-  max-width: 320px;
+  max-width: 360px;
+}
+
+/* ── Hero spacing — all values flow from the shared spacing system ──
+   above so the layout reads as one intentional grid instead of a
+   collection of ad-hoc absolute offsets. */
+.hero-section {
+  /* Sits flush under the fixed nav. min-height lets the hero breathe
+     to fill the viewport on every screen size. */
+  min-height: calc(100vh - var(--header-height));
+  position: relative;
+  overflow-x: clip;
+}
+
+/* Top-of-hero micro labels — the inverted "From Darkness / to Light"
+   pair. Positioned in from the viewport edges with deliberate
+   breathing room, and hidden on phone-sized viewports.
+   The display rule lives here (rather than on Tailwind's
+   `hidden md:block`) because `.subtitle-glyph` re-asserts display
+   later in this file and would otherwise win the cascade. */
+.hero-micro {
+  display: none;
+  position: absolute;
+  top: calc(var(--header-height) + clamp(16px, 3vh, 48px));
+}
+@media (min-width: 768px) {
+  .hero-micro { display: block; }
+}
+.hero-micro-left  { left:  var(--hero-edge-micro); }
+.hero-micro-right { right: var(--hero-edge-micro); text-align: right; }
+
+/* Headline + CTA block — flex flow so it reflows naturally on phones
+   (centred) and locks to the right rail on desktop. Padding hangs off
+   the shared --page-pad so the headline's right edge sits on the
+   same vertical rail as the bottom caption and social dock. */
+.hero-content {
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--page-pad);
+  padding-top: clamp(120px, 26vh, 240px);
+  padding-bottom: calc(var(--hero-bottom-pad) + clamp(40px, 8vh, 96px));
+}
+@media (min-width: 768px) {
+  .hero-content {
+    justify-content: flex-end;
+    padding-top: clamp(120px, 15vh, 190px);
+  }
+}
+
+.hero-title-block {
+  width: 100%;
+  max-width: 52rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .hero-title-block { align-items: flex-end; }
+}
+
+.hero-cta {
+  /* Tighter than before — the CTA reads as the trailing beat of the
+     title block, not a separate element. */
+  margin-top: clamp(20px, 3.4vh, 40px);
+}
+
+/* Bottom caption — pinned to the same rails as the social dock so
+   the two share a baseline. Hidden on phones (the dock alone is
+   enough chrome at the bottom of a small screen). */
+.hero-bottom-caption {
+  display: none;
+  position: absolute;
+  right: var(--page-pad);
+  bottom: var(--hero-bottom-pad);
+  max-width: 360px;
+  text-align: right;
+}
+@media (min-width: 768px) {
+  .hero-bottom-caption { display: block; }
 }
 
 /* Buttons */
