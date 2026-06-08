@@ -25,6 +25,9 @@ const nextConfig = {
       // since they have no successor.
       { source: '/success', destination: '/', permanent: true },
       { source: '/cancel', destination: '/', permanent: true },
+      // The commissioned-work page used to live at /events. Permanent so any
+      // crawled link or bookmark lands on the canonical URL.
+      { source: '/events', destination: '/commissions', permanent: true },
     ];
   },
   async headers() {
