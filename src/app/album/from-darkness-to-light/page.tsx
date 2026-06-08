@@ -658,13 +658,30 @@ export default function AlbumPage() {
                 time someone scrolls past the download CTA. */}
             <p className="mt-10 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed">
               Engineered &amp; Produced by{" "}
-              <span className="text-white/80">Simba Moyo</span>
+              <a
+                href="https://www.optimusik.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
+              >
+                Simba Moyo ↗
+              </a>
               {" · "}
+              {/* Riffi's site URL coming — keep as a plain span for now so
+                  the link styling/arrow only shows up once it's actually
+                  clickable. Swap for an <a> with target=_blank when ready. */}
               <span className="text-white/80">Riffi Wacho</span>
               <br className="hidden sm:inline" />
               <span className="sm:hidden"> · </span>
               Backing vocals by{" "}
-              <span className="text-white/80">Christina Ribeiro</span>
+              <a
+                href="https://www.endgamestrategylab.co.za"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-[var(--colour-amber)] transition-colors"
+              >
+                Christina Ribeiro ↗
+              </a>
             </p>
 
             {/* Artwork credit - moved here from under the side artwork now
