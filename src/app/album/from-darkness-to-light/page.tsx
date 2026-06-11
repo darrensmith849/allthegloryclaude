@@ -852,6 +852,13 @@ export default function AlbumPage() {
                 >
                   Christina Ribeiro ↗
                 </a>
+                {" · "}
+                {/* No link supplied yet — keep as plain span, matching
+                    the pattern used for Riffi Wacho before his
+                    SoundBetter URL came through. Swap to <a> when ready. */}
+                <span className="text-white/80 whitespace-nowrap">
+                  Dimakatso Machingaifa
+                </span>
               </p>
               <p>
                 <span className="whitespace-nowrap">Drums by</span>{" "}
