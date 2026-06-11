@@ -853,12 +853,14 @@ export default function AlbumPage() {
                   Christina Ribeiro ↗
                 </a>
                 {" · "}
-                {/* No link supplied yet — keep as plain span, matching
-                    the pattern used for Riffi Wacho before his
-                    SoundBetter URL came through. Swap to <a> when ready. */}
-                <span className="text-white/80 whitespace-nowrap">
-                  Dimakatso Machingaifa
-                </span>
+                <a
+                  href="https://music.apple.com/za/album/thought-i-was-over-you-radio-edit-single/1643703974"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                >
+                  Dimakatso Machingaifa ↗
+                </a>
               </p>
               <p>
                 <span className="whitespace-nowrap">Drums by</span>{" "}

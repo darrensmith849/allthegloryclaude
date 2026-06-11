@@ -67,6 +67,18 @@ export default function TestimonyPage() {
             If you know someone this testimony could help, please share it
             with them.
           </p>
+          {/* Forward-looking note — this page is the home of Daniel's
+              own testimony today, but the longer plan is for it to grow
+              into a shared wall of testimonies. Setting that expectation
+              up front so visitors know what to look for over time. */}
+          <p className="mt-6 text-xs md:text-sm tracking-[0.18em] uppercase text-[var(--colour-amber-soft)] max-w-xl mx-auto">
+            More testimonies coming
+          </p>
+          <p className="mt-2 text-sm md:text-base text-white/65 leading-relaxed max-w-xl mx-auto">
+            This page will become a home for other people&apos;s testimonies
+            too — stories of Jesus rescuing, healing, and setting free,
+            added here over time.
+          </p>
         </motion.div>
 
         <motion.div
