@@ -41,6 +41,19 @@ export function startOfMonth(iso: ISODate): ISODate {
   return `${y}-${String(m).padStart(2, "0")}-01`;
 }
 
+// Shift the cursor by `n` whole months. Always lands on the 1st of the
+// resulting month. Use this instead of `startOfMonth(addDays(c, n*32))`,
+// which silently SKIPS a month going backwards from a 31-day month
+// (Aug 1 − 32 days = June 30, not July 31).
+export function shiftMonth(iso: ISODate, n: number): ISODate {
+  const [y, m] = iso.split("-").map(Number);
+  // 0-based month total since year 0, then convert back.
+  const total = y * 12 + (m - 1) + n;
+  const newY = Math.floor(total / 12);
+  const newM = (((total % 12) + 12) % 12) + 1;
+  return `${newY}-${String(newM).padStart(2, "0")}-01`;
+}
+
 export function monthGrid(iso: ISODate): ISODate[] {
   // Always returns 42 ISO dates (6 weeks) starting on the Monday on or before the 1st.
   const first = startOfMonth(iso);

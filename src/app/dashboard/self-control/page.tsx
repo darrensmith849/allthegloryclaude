@@ -8,14 +8,27 @@ import {
   diffDays,
   formatHuman,
   formatShort,
+  isSameMonth,
   isToday,
+  monthGrid,
+  shiftMonth,
+  startOfMonth,
   todayISO,
 } from "@/lib/dashboard/dates";
 import { emptyHabits } from "@/lib/dashboard/types";
 import { currentStreak, longestStreak, habitOn } from "@/lib/dashboard/streaks";
 
 const HABIT_KEY = "noPorn"; // single discipline this page focuses on
-const HEATMAP_DAYS = 91; // 13 weeks of history including today
+const CAL_HEAD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// Pretty month label ("June 2026") for the calendar panel header.
+function monthLabel(iso: string) {
+  const [y, m] = iso.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
 
 // Milestones - small early wins through to a clean year.
 const MILESTONES = [
@@ -37,21 +50,16 @@ export default function SelfControlPage() {
   const longestEver = longestStreak(state, habitOn(HABIT_KEY));
   const totalCleanDays = Object.values(state.habits).filter((h) => h[HABIT_KEY]).length;
 
-  // ── Heatmap ────────────────────────────────────────────────────
-  // Build a list of (date, isClean) tuples for the last HEATMAP_DAYS days.
-  // We chunk by week (Mon → Sun) so the layout reads like a GitHub-style heatmap.
-  const heatmap = useMemo(() => {
-    const days: { date: string; clean: boolean; isToday: boolean }[] = [];
-    for (let i = HEATMAP_DAYS - 1; i >= 0; i--) {
-      const d = addDays(today, -i);
-      days.push({
-        date: d,
-        clean: Boolean(state.habits[d]?.[HABIT_KEY]),
-        isToday: isToday(d),
-      });
-    }
-    return days;
-  }, [state.habits, today]);
+  // ── Month calendar ─────────────────────────────────────────────
+  // Cursor = the 1st of whichever month is in view. Starts on the
+  // current month and the Prev / Today / Next buttons shift it around.
+  const [calCursor, setCalCursor] = useState<string>(() => startOfMonth(today));
+  // 42 ISO dates (6 weeks) starting on the Monday on/before the 1st of
+  // the cursor's month — same shape the main /dashboard/calendar uses.
+  const calGrid = useMemo(() => monthGrid(calCursor), [calCursor]);
+  function shiftMonths(n: number) {
+    setCalCursor((c) => shiftMonth(c, n));
+  }
 
   // ── Mark today ─────────────────────────────────────────────────
   function setToday(value: boolean) {
@@ -110,9 +118,6 @@ export default function SelfControlPage() {
   if (!ready) return null;
 
   const cleanToday = Boolean(state.habits[today]?.[HABIT_KEY]);
-  // Group heatmap into rows of 7 (weeks)
-  const weeks: typeof heatmap[] = [];
-  for (let i = 0; i < heatmap.length; i += 7) weeks.push(heatmap.slice(i, i + 7));
 
   return (
     <>
@@ -244,44 +249,96 @@ export default function SelfControlPage() {
           </Panel>
         </div>
 
-        {/* Heatmap calendar - 13 weeks (~3 months) */}
+        {/* Month calendar — date numbers visible, Prev / Today / Next
+            navigation, same widget shape as /dashboard/calendar so the
+            two pages share a vocabulary. Click any cell to toggle its
+            clean state. */}
         <div className="dash-col-8">
-          <Panel eyebrow={`Last ${HEATMAP_DAYS} days`} title="Calendar">
-            <div className="dash-clean-heatmap">
-              {weeks.map((wk, wi) => (
-                <div key={wi} className="dash-clean-week">
-                  {wk.map((d) => (
-                    <button
-                      key={d.date}
-                      type="button"
-                      onClick={() => toggleDate(d.date)}
-                      className={`dash-clean-cell ${d.clean ? "is-clean" : ""} ${
-                        d.isToday ? "is-today" : ""
-                      }`}
-                      title={`${formatShort(d.date)} · ${d.clean ? "clean" : "not yet"}`}
-                      aria-label={`${formatShort(d.date)} ${d.clean ? "clean" : "not yet"}`}
-                    />
-                  ))}
+          <Panel
+            eyebrow={monthLabel(calCursor)}
+            title="Calendar"
+            action={
+              <div className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost"
+                  onClick={() => shiftMonths(-1)}
+                  aria-label="Previous month"
+                  title="Previous month"
+                  style={{ padding: "6px 12px", fontSize: 11 }}
+                >
+                  ← Prev
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost"
+                  onClick={() => setCalCursor(startOfMonth(todayISO()))}
+                  title="Jump to current month"
+                  style={{ padding: "6px 12px", fontSize: 11 }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost"
+                  onClick={() => shiftMonths(1)}
+                  aria-label="Next month"
+                  title="Next month"
+                  style={{ padding: "6px 12px", fontSize: 11 }}
+                >
+                  Next →
+                </button>
+              </div>
+            }
+          >
+            <div className="dash-cal">
+              {CAL_HEAD.map((d) => (
+                <div key={d} className="dash-cal-head">
+                  {d}
                 </div>
               ))}
+              {calGrid.map((d) => {
+                const clean = Boolean(state.habits[d]?.[HABIT_KEY]);
+                const other = !isSameMonth(d, calCursor);
+                const dayNum = Number(d.slice(8));
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => toggleDate(d)}
+                    className={`dash-cal-cell ${other ? "is-other" : ""} ${
+                      isToday(d) ? "is-today" : ""
+                    } ${clean ? "is-selected" : ""}`}
+                    title={`${formatShort(d)} · ${clean ? "clean" : "not yet"}`}
+                    aria-label={`${formatShort(d)} ${clean ? "clean" : "not yet"}`}
+                  >
+                    <div className="dash-cal-day">{dayNum}</div>
+                    {clean && (
+                      <div className="dash-cal-dots">
+                        <span
+                          className="dash-cal-dot"
+                          style={{ background: "var(--colour-amber)" }}
+                          aria-hidden="true"
+                        />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <div className="dash-divider" />
-            <div className="flex items-center gap-3 text-[11.5px] text-[var(--colour-ink-quiet)]">
-              <span className="flex items-center gap-1.5">
-                <span className="dash-clean-cell" style={{ width: 12, height: 12 }} />
-                Empty
-              </span>
+            <div className="flex items-center gap-3 text-[11.5px] text-[var(--colour-ink-quiet)] flex-wrap">
               <span className="flex items-center gap-1.5">
                 <span
-                  className="dash-clean-cell is-clean"
-                  style={{ width: 12, height: 12 }}
+                  className="dash-cal-dot"
+                  style={{ background: "var(--colour-amber)" }}
                 />
-                Clean
+                Clean day
               </span>
               <span className="flex items-center gap-1.5">
                 <span
-                  className="dash-clean-cell is-today"
-                  style={{ width: 12, height: 12 }}
+                  className="dash-cal-cell is-today"
+                  style={{ width: 14, height: 14, padding: 0 }}
                 />
                 Today
               </span>
