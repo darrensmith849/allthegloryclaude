@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
+import { site } from "@/content/site";
 import DownloadModal from "./DownloadModal";
 
 function TrackRow({
@@ -818,6 +819,14 @@ export default function AlbumPage() {
               </button>
             </motion.div>
 
+            {/* Streaming row — icon-only, no per-link captions. Each icon
+                only renders when its URL is filled in, so the row gracefully
+                stays empty until CD Baby distribution lands. Same vocabulary
+                of brand glyphs the social dock uses, kept small + amber on
+                hover so it reads as a quiet "also available here" line
+                rather than a competing CTA. */}
+            <StreamingRow reduce={!!reduce} />
+
             {/* Production credit — one role per line so each contributor's
                 name stays intact on a single line at every breakpoint and
                 the section reads as a clean stacked attribution block. */}
@@ -967,5 +976,100 @@ export default function AlbumPage() {
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+// ── Streaming row ────────────────────────────────────────────────
+// Icon-only "also on streaming" row below the download CTA. Reads from
+// site.socials so the URLs live in one place; each platform is only
+// rendered when its URL is non-empty, so this row gracefully shows just
+// Spotify today and quietly grows as Apple Music / YouTube Music come
+// online via CD Baby distribution.
+
+function StreamingRow({ reduce }: { reduce: boolean }) {
+  const links: { href: string; label: string; icon: React.ReactNode }[] = [];
+  if (site.socials.spotify) {
+    links.push({
+      href: site.socials.spotify,
+      label: "Listen on Spotify",
+      icon: <SpotifyIcon />,
+    });
+  }
+  if (site.socials.appleMusic) {
+    links.push({
+      href: site.socials.appleMusic,
+      label: "Listen on Apple Music",
+      icon: <AppleMusicIcon />,
+    });
+  }
+  if (site.socials.youtubeMusic) {
+    links.push({
+      href: site.socials.youtubeMusic,
+      label: "Listen on YouTube Music",
+      icon: <YouTubeMusicIcon />,
+    });
+  }
+  if (links.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={
+        reduce
+          ? { duration: 0.01 }
+          : { duration: 1.2, delay: 2.2, ease: [0.06, 1, 0.18, 1] as const }
+      }
+      className="mt-8 flex flex-col items-center gap-3"
+    >
+      <div className="eyebrow eyebrow-amber">Also on streaming</div>
+      <div className="flex items-center gap-7">
+        {links.map((l) => (
+          <a
+            key={l.href}
+            href={l.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={l.label}
+            title={l.label}
+            className="text-white/55 hover:text-[var(--colour-amber)] transition-colors duration-300"
+          >
+            <span className="inline-flex h-10 w-10 items-center justify-center">
+              {l.icon}
+            </span>
+          </a>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function SpotifyIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+    </svg>
+  );
+}
+
+function AppleMusicIcon() {
+  // Stylised musical note inside a rounded square — Apple-Music-ish
+  // glyph, simplified for an icon-row at 26px.
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19.5 0h-15A4.5 4.5 0 0 0 0 4.5v15A4.5 4.5 0 0 0 4.5 24h15a4.5 4.5 0 0 0 4.5-4.5v-15A4.5 4.5 0 0 0 19.5 0Zm-4.71 16.41c0 1.55-1.36 2.84-3 2.84s-3-1.29-3-2.84 1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V8.3l-5.71 1.55v8.06c0 1.55-1.36 2.84-3 2.84S2.4 19.46 2.4 17.91s1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V7l9.04-2.45v11.86Z" />
+    </svg>
+  );
+}
+
+function YouTubeMusicIcon() {
+  // Outlined circle with a play triangle — the universally readable
+  // "YouTube Music" silhouette, kept currentColor so it inherits the
+  // hover amber treatment.
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
+    </svg>
   );
 }
