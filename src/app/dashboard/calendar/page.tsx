@@ -5,12 +5,12 @@ import Link from "next/link";
 import { Panel, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import {
-  addDays,
   formatHuman,
   formatShort,
   isSameMonth,
   isToday,
   monthGrid,
+  shiftMonth,
   startOfMonth,
   todayISO,
 } from "@/lib/dashboard/dates";
@@ -261,7 +261,7 @@ export default function CalendarPage() {
   const quarter = useMemo(() => {
     const months: { start: string; grid: string[] }[] = [];
     for (let off = -1; off <= 1; off++) {
-      const start = startOfMonth(addDays(cursor, off * 32));
+      const start = shiftMonth(cursor, off);
       months.push({ start, grid: monthGrid(start) });
     }
     return months;
@@ -277,7 +277,7 @@ export default function CalendarPage() {
   }, [cursor]);
 
   function shiftMonths(n: number) {
-    setCursor(startOfMonth(addDays(cursor, n * 32)));
+    setCursor((c) => shiftMonth(c, n));
   }
   function shiftYears(n: number) {
     const [y, m] = cursor.split("-").map(Number);
