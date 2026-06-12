@@ -147,6 +147,19 @@ export default function DownloadModal({ onClose }: Props) {
           download={album.downloadZipFilename}
           className="mt-7 btn btn-primary w-full justify-center inline-flex"
           onClick={() => {
+            // Fire-and-forget download event for the private analytics
+            // dashboard. Never blocks the actual download.
+            try {
+              fetch("/api/track", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                  event: "download",
+                  file: album.downloadZipFilename,
+                }),
+                keepalive: true,
+              }).catch(() => {});
+            } catch {}
             // Close the modal shortly after the browser starts the download,
             // so the user lands back on the album page.
             setTimeout(onClose, 300);

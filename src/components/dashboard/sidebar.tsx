@@ -17,6 +17,7 @@ const NAV = [
   { href: "/dashboard/book", label: "Book", glyph: "❦" },
   { href: "/dashboard/reminders", label: "Reminders", glyph: "☼" },
   { href: "/dashboard/rewards", label: "Rewards", glyph: "✧" },
+  { href: "/dashboard/analytics", label: "Analytics", glyph: "◔" },
   { href: "/dashboard/settings", label: "Settings", glyph: "⚙" },
 ];
 

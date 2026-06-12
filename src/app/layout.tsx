@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "@/styles/globals.css";
 import Nav from "@/components/site/nav";
+import PageViewTracker from "@/components/site/page-view-tracker";
 import SiteFooter from "@/components/site/site-footer";
 import SocialDock from "@/components/site/social-dock";
 import StickyBackdrop from "@/components/site/sticky-backdrop";
@@ -129,6 +130,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteFooter />
         </div>
         <CommandPalette />
+        {/* Fire-and-forget page-view tracker for the private analytics
+            dashboard. Skips /dashboard/* internally so the owner's own
+            visits don't pollute the numbers. */}
+        <PageViewTracker />
         <div className="grain-overlay" aria-hidden="true" />
       </body>
     </html>
