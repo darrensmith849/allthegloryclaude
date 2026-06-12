@@ -79,6 +79,17 @@ const Icons: Record<string, ReactNode> = {
       <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.2a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.17a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.6z" />
     </svg>
   ),
+  "Apple Music": (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M19.5 0h-15A4.5 4.5 0 0 0 0 4.5v15A4.5 4.5 0 0 0 4.5 24h15a4.5 4.5 0 0 0 4.5-4.5v-15A4.5 4.5 0 0 0 19.5 0Zm-4.71 16.41c0 1.55-1.36 2.84-3 2.84s-3-1.29-3-2.84 1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V8.3l-5.71 1.55v8.06c0 1.55-1.36 2.84-3 2.84S2.4 19.46 2.4 17.91s1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V7l9.04-2.45v11.86Z" />
+    </svg>
+  ),
 };
 
 function Item({
@@ -122,6 +133,15 @@ export default function SocialDock() {
   if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/album")) {
     return null;
   }
+  // Apple Music falls back to a search URL for the album until the real
+  // artist URL is pasted into site.socials.appleMusic (waiting on CD Baby
+  // distribution). The icon still renders today so visitors have a path
+  // to find the album on Apple Music; the moment the real URL lands, the
+  // fallback drops away automatically.
+  const appleMusicHref =
+    site.socials.appleMusic ||
+    "https://music.apple.com/search?term=" +
+      encodeURIComponent("All The Glory From Darkness To Light");
   return (
     <div className="social-dock-bottom">
       {/* Slow cascade fade-in: each icon takes 1.6s, stepped 0.18s apart
@@ -131,7 +151,8 @@ export default function SocialDock() {
       <Item href={site.socials.facebook} label="Facebook" delay={0.78} />
       <Item href={site.socials.youtube} label="YouTube" delay={0.96} />
       <Item href={site.socials.spotify} label="Spotify" delay={1.14} />
-      <Item href={site.socials.tiktok} label="TikTok" delay={1.32} />
+      <Item href={appleMusicHref} label="Apple Music" delay={1.32} />
+      <Item href={site.socials.tiktok} label="TikTok" delay={1.50} />
     </div>
   );
 }
