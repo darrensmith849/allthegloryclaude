@@ -987,6 +987,20 @@ export default function AlbumPage() {
 // online via CD Baby distribution.
 
 function StreamingRow({ reduce }: { reduce: boolean }) {
+  // Search-URL fallbacks for platforms that don't have a real artist URL
+  // pasted into site.socials yet (Apple Music + YouTube Music will get
+  // theirs when CD Baby distribution lands). Visitors land on a search
+  // result page for the album in the meantime, which still beats a
+  // hidden icon. The moment the real URL is added to site.socials, the
+  // fallback is dropped automatically — no other change required.
+  const albumQuery = "All The Glory From Darkness To Light";
+  const appleMusicHref =
+    site.socials.appleMusic ||
+    `https://music.apple.com/search?term=${encodeURIComponent(albumQuery)}`;
+  const youtubeMusicHref =
+    site.socials.youtubeMusic ||
+    `https://music.youtube.com/search?q=${encodeURIComponent(albumQuery)}`;
+
   const links: { href: string; label: string; icon: React.ReactNode }[] = [];
   if (site.socials.spotify) {
     links.push({
@@ -995,20 +1009,20 @@ function StreamingRow({ reduce }: { reduce: boolean }) {
       icon: <SpotifyIcon />,
     });
   }
-  if (site.socials.appleMusic) {
-    links.push({
-      href: site.socials.appleMusic,
-      label: "Listen on Apple Music",
-      icon: <AppleMusicIcon />,
-    });
-  }
-  if (site.socials.youtubeMusic) {
-    links.push({
-      href: site.socials.youtubeMusic,
-      label: "Listen on YouTube Music",
-      icon: <YouTubeMusicIcon />,
-    });
-  }
+  links.push({
+    href: appleMusicHref,
+    label: site.socials.appleMusic
+      ? "Listen on Apple Music"
+      : "Find on Apple Music",
+    icon: <AppleMusicIcon />,
+  });
+  links.push({
+    href: youtubeMusicHref,
+    label: site.socials.youtubeMusic
+      ? "Listen on YouTube Music"
+      : "Find on YouTube Music",
+    icon: <YouTubeMusicIcon />,
+  });
   if (links.length === 0) return null;
 
   return (
