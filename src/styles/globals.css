@@ -205,8 +205,16 @@ body {
   .social-dock-bottom {
     left: var(--page-pad);
     bottom: var(--hero-bottom-pad);
-    flex-direction: column;
-    gap: 10px;
+    /* Wrap the six word-marks across rows so the wider "APPLE MUSIC ↗"
+       chip doesn't stretch the column and so TIKTOK (the shortest)
+       naturally lands on the final row. max-width tuned so it falls
+       into roughly: INSTAGRAM · FACEBOOK · YOUTUBE / SPOTIFY ·
+       APPLE MUSIC / TIKTOK — text "runs across and then down". */
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 300px;
+    row-gap: 10px;
+    column-gap: 16px;
     padding-bottom: 0;
   }
 }
