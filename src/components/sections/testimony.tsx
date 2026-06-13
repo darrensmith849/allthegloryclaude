@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import {
   storyTitle,
@@ -22,7 +23,17 @@ type TestimonyProps = {
   title?: ReactNode;
   /** Optional id for the rendered heading, for aria-labelledby linking. */
   headingId?: string;
+  /** Teaser mode for the home page: render only the first two paragraphs
+   *  (intro + turning-point) followed by a "Read the full story →" link
+   *  to /about. The benediction and deeper theology stay on /about so
+   *  the two pages have distinct value and the home reads tighter. */
+  preview?: boolean;
 };
+
+/** How many paragraphs from the start of storyParagraphs the teaser
+ *  shows on the home page. 2 = the intro line + the turning-point
+ *  paragraph; about /about gets all of them. */
+const PREVIEW_PARAGRAPH_COUNT = 2;
 
 /**
  * Pure-CSS fade-on-view wrapper.
@@ -126,8 +137,12 @@ export default function Testimony({
   eyebrow,
   title,
   headingId,
+  preview = false,
 }: TestimonyProps) {
   const useCustomHeader = Boolean(eyebrow && title);
+  const paragraphs = preview
+    ? storyParagraphs.slice(0, PREVIEW_PARAGRAPH_COUNT)
+    : storyParagraphs;
 
   return (
     <section className="bg-transparent">
@@ -175,7 +190,7 @@ export default function Testimony({
           )}
 
           <div className="space-y-6 md:space-y-7">
-            {storyParagraphs.map((paragraph, i) => (
+            {paragraphs.map((paragraph, i) => (
               <FadeOnView
                 key={i}
                 as="p"
@@ -191,11 +206,32 @@ export default function Testimony({
             ))}
           </div>
 
+          {/* Preview-mode CTA — visible only on the home page. Sends curious
+              visitors to /about for the full story rather than dropping the
+              same five paragraphs in twice. */}
+          {preview && (
+            <FadeOnView
+              finalOpacity={1}
+              yOffset={8}
+              duration={1000}
+              rootMargin="-25% 0px -25% 0px"
+              className="mt-8 md:mt-10 text-center"
+            >
+              <Link
+                href="/about"
+                className="inline-block text-[12px] md:text-[13px] font-semibold uppercase tracking-[0.22em] text-[var(--colour-amber)]/80 hover:text-[var(--colour-amber)] transition-colors duration-300"
+              >
+                Read the full story →
+              </Link>
+            </FadeOnView>
+          )}
+
           {/* Closing benediction - set apart with a soft amber hairline,
               centred italic Fraunces, slightly larger than the body. Gives
               the prayer the visual weight a benediction deserves without
-              feeling disconnected from the body above. */}
-          {storyBenediction && (
+              feeling disconnected from the body above. Hidden in preview
+              mode so the teaser ends on the CTA, not the prayer. */}
+          {storyBenediction && !preview && (
             <FadeOnView
               finalOpacity={0.88}
               yOffset={12}
