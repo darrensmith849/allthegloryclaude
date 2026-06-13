@@ -69,43 +69,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── THE STORY - heading lives inside the Testimony glass panel
-           so the eyebrow, title, and body are one aligned block. The
-           "darkness" half of the title is rendered in the inverted-glyph
-           treatment inline so the motif is folded into the heading
-           rather than tacked on as a separate tagline. The aria-label on
-           the rendered h2 (added in Testimony.tsx via headingId+title)
-           is set elsewhere; here we just emit a fully accessible
-           aria-label that matches the readable phrase. ──── */}
+      {/* About All The Glory — heading per the press-kit copy spec.
+           Plain editorial eyebrow + title rather than the inverted-glyph
+           treatment, so the heading reads as a clean "About All The
+           Glory" headline above the body paragraphs. */}
       <Testimony
-        eyebrow="The Story"
-        title={
-          <>
-            {/* Two-line stacked heading. Inline display:block beats
-                .subtitle-glyph's inline-block, so the two halves stack
-                cleanly on every viewport instead of wrapping mid-phrase.
-                "Out of ᗡɐɹʞuǝss" — upside-down (darkness).
-                "and into the light" — normal italic amber. */}
-            <span
-              aria-hidden="true"
-              className="subtitle-glyph text-white"
-              style={{ display: "block" }}
-            >
-              Out of{" "}
-              <span className="subtitle-glyph">ᗡɐɹʞuǝss</span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="italic text-[var(--colour-amber)] mt-2 md:mt-3"
-              style={{ display: "block" }}
-            >
-              and into the light
-            </span>
-            <span className="sr-only">
-              Out of darkness and into the light
-            </span>
-          </>
-        }
+        eyebrow="About"
+        title="All The Glory"
         headingId="story-heading"
       />
 

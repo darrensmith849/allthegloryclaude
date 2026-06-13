@@ -54,20 +54,30 @@ export default function AlbumPromo() {
           href="/album/from-darkness-to-light"
           className="block group"
         >
-          {/* Glass panel with text */}
+          {/* Glass panel with text — copy per the press-kit spec.
+              Heading kept as the inverted-glyph "From Darkness To Light"
+              brand mark; body line + small "Available …" line + button
+              text per the spec. */}
           <div className="panel-scrim panel-flush-mobile p-6 md:p-7 text-center group-hover:border-white/20 transition-colors duration-300">
             <div className="eyebrow eyebrow-amber">The Album</div>
 
-            <p className="subtitle-glyph mt-3 text-lg md:text-xl text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
-              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+            <p
+              className="subtitle-glyph mt-3 text-lg md:text-xl text-white/90 group-hover:text-[var(--colour-amber)] transition-colors duration-300"
+              aria-label="From Darkness To Light"
+            >
+              <span aria-hidden="true">Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓</span>
             </p>
 
-            <p className="font-display mt-2 text-base md:text-lg text-white/75 italic">
-              A testimony of truth and freedom
+            <p className="font-display mt-2 text-base md:text-lg text-white/75 italic max-w-md mx-auto leading-relaxed">
+              A seven-track worship album shaped by Scripture, testimony, and surrender.
             </p>
 
-            <div className="mt-5 text-[11px] uppercase tracking-[0.22em] text-white/55 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
-              Listen now →
+            <p className="mt-4 text-[11px] uppercase tracking-[0.22em] text-[var(--colour-amber-soft)]">
+              Available 17 July 2026
+            </p>
+
+            <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-white/55 group-hover:text-[var(--colour-amber)] transition-colors duration-300">
+              Explore The Album →
             </div>
           </div>
         </Link>
