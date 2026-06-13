@@ -1067,11 +1067,16 @@ function SpotifyIcon() {
 }
 
 function AppleMusicIcon() {
-  // Stylised musical note inside a rounded square — Apple-Music-ish
-  // glyph, simplified for an icon-row at 26px.
+  // Clean beamed-eighth-note silhouette (Heroicons musical-note, solid).
+  // No container box — matches the silhouette weight of the Spotify
+  // circle next to it and reads cleanly at small icon sizes.
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19.5 0h-15A4.5 4.5 0 0 0 0 4.5v15A4.5 4.5 0 0 0 4.5 24h15a4.5 4.5 0 0 0 4.5-4.5v-15A4.5 4.5 0 0 0 19.5 0Zm-4.71 16.41c0 1.55-1.36 2.84-3 2.84s-3-1.29-3-2.84 1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V8.3l-5.71 1.55v8.06c0 1.55-1.36 2.84-3 2.84S2.4 19.46 2.4 17.91s1.36-2.84 3-2.84a3.2 3.2 0 0 1 1.41.33V7l9.04-2.45v11.86Z" />
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M19.952 1.651a.75.75 0 0 1 .298.599V16.303a3 3 0 0 1-2.176 2.884l-1.32.377a2.553 2.553 0 1 1-1.403-4.909l2.311-.66a1.5 1.5 0 0 0 1.088-1.442V6.994l-9 2.572v9.737a3 3 0 0 1-2.176 2.884l-1.32.377a2.553 2.553 0 1 1-1.402-4.909l2.31-.66a1.5 1.5 0 0 0 1.088-1.442V5.25a.75.75 0 0 1 .544-.721l10.5-3a.75.75 0 0 1 .658.122Z"
+      />
     </svg>
   );
 }
