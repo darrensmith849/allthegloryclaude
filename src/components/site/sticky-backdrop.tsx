@@ -10,6 +10,12 @@ export default function StickyBackdrop() {
   const { scrollYProgress } = useScroll();
   const pathname = usePathname();
   const isDashboard = pathname?.startsWith("/dashboard");
+  // Lightning video runs as part of the painted backdrop ONLY on the
+  // home page, so it reads as part of the hero scene as the visitor
+  // lands. Other pages keep the calmer clouds + stars only. The footer
+  // still has its own separate lightning instance (in site-footer.tsx)
+  // — this doesn't touch or replace that.
+  const isHome = pathname === "/";
   const [starsReady, setStarsReady] = useState(false);
   const [cloudsReady, setCloudsReady] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -88,6 +94,32 @@ export default function StickyBackdrop() {
           }}
         />
       </motion.div>
+
+      {/* Lightning video — home page only. Sits above stars / below
+          the dark veil + glow so the veil still tints it down when
+          you're at the top, and the glow softens it as you scroll.
+          Same screen-blend treatment as the footer's lightning so the
+          two read as one storm rather than two effects. Muted + autoplay
+          + playsInline so it kicks in on first paint without sound. */}
+      {isHome && !prefersReducedMotion && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ mixBlendMode: "screen", opacity: 0.2 }}
+          aria-hidden="true"
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: "brightness(1.3) contrast(1.1)" }}
+          >
+            <source src="/media/lightning.mp4" type="video/mp4" />
+          </video>
+        </div>
+      )}
 
       {/* Dark veil - fades to nothing as you scroll */}
       <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
