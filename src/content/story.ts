@@ -16,7 +16,7 @@ export const storyHomePreviewParagraphs = [
 export const storyParagraphs = [
   "All The Glory is not just an artist name. It is the reason the music exists.",
   "Behind the songs is Daniel Jenkins, a singer-songwriter from Harare, Zimbabwe, whose life has been marked by both deep struggle and the restoring power of Jesus Christ.",
-  "For many years, Daniel lived with depression, addiction, shame, and the weight of trying to find life in things that could never satisfy. But in the middle of that darkness, Jesus began to reveal the truth: that freedom is not found in performance, approval, escape, or striving. It is found in Him.",
+  "For over two decades, Daniel lived with severe depression, relentless suicidal thoughts, addiction, shame, and the weight of searching for life in things that could never satisfy. But in the middle of that darkness, Jesus began to reveal the truth: freedom is not found in performance, approval, escape, or striving. It is found in Him.",
   "From Darkness To Light is the sound of that journey. These songs are honest, Scripture-rooted, and deeply personal. They ask hard questions about pain, identity, brokenness, and hope, while pointing to the only One who can truly restore the soul.",
   "May God be glorified through every lyric, every melody, and every life touched by this music.",
 ];
