@@ -81,21 +81,29 @@ export default function AboutPage() {
         eyebrow="The Story"
         title={
           <>
-            <span aria-hidden="true">Out of </span>
-            <span aria-hidden="true" className="subtitle-glyph">
-              ᗡɐɹʞuǝss
-            </span>{" "}
-            {/* "Light" half now uses the same cross-T / mathematical
-                glyph treatment from the home-page top corner so it
-                pairs with the upside-down "Darkness" half and reads
-                as the canonical brand phrase end-to-end. */}
+            {/* Two-line stacked heading. Inline display:block beats
+                .subtitle-glyph's inline-block, so the two halves stack
+                cleanly on every viewport instead of wrapping mid-phrase.
+                "Out of ᗡɐɹʞuǝss" — upside-down (darkness).
+                "and into the light" — normal italic amber. */}
             <span
               aria-hidden="true"
-              className="subtitle-glyph italic text-[var(--colour-amber)]"
+              className="subtitle-glyph text-white"
+              style={{ display: "block" }}
             >
-              †o 𝕃Ɨ𝕘𝓱𝐓
+              Out of{" "}
+              <span className="subtitle-glyph">ᗡɐɹʞuǝss</span>
             </span>
-            <span className="sr-only">Out of darkness to light</span>
+            <span
+              aria-hidden="true"
+              className="italic text-[var(--colour-amber)] mt-2 md:mt-3"
+              style={{ display: "block" }}
+            >
+              and into the light
+            </span>
+            <span className="sr-only">
+              Out of darkness and into the light
+            </span>
           </>
         }
         headingId="story-heading"
