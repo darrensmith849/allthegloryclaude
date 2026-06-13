@@ -7,6 +7,7 @@ import {
   storyKicker,
   storyParagraphs,
   storyBenediction,
+  storyHomeHook,
 } from "@/content/story";
 
 type TestimonyProps = {
@@ -23,17 +24,12 @@ type TestimonyProps = {
   title?: ReactNode;
   /** Optional id for the rendered heading, for aria-labelledby linking. */
   headingId?: string;
-  /** Teaser mode for the home page: render only the first two paragraphs
-   *  (intro + turning-point) followed by a "Read the full story →" link
-   *  to /about. The benediction and deeper theology stay on /about so
-   *  the two pages have distinct value and the home reads tighter. */
+  /** Teaser mode for the home page: render the single editorial hook
+   *  from storyHomeHook + a "Read the full story →" link to /about,
+   *  instead of slicing the long-form paragraphs. /about renders the
+   *  full story unchanged. */
   preview?: boolean;
 };
-
-/** How many paragraphs from the start of storyParagraphs the teaser
- *  shows on the home page. 2 = the intro line + the turning-point
- *  paragraph; about /about gets all of them. */
-const PREVIEW_PARAGRAPH_COUNT = 2;
 
 /**
  * Pure-CSS fade-on-view wrapper.
@@ -140,9 +136,11 @@ export default function Testimony({
   preview = false,
 }: TestimonyProps) {
   const useCustomHeader = Boolean(eyebrow && title);
-  const paragraphs = preview
-    ? storyParagraphs.slice(0, PREVIEW_PARAGRAPH_COUNT)
-    : storyParagraphs;
+  // Preview mode (home page) renders a single editorial hook line
+  // instead of a sliced sub-set of the long-form story paragraphs —
+  // a hook makes the home section feel intentional rather than like a
+  // fragment that breaks off mid-arc.
+  const paragraphs = preview ? [storyHomeHook] : storyParagraphs;
 
   return (
     <section className="bg-transparent">
@@ -198,7 +196,11 @@ export default function Testimony({
                 yOffset={12}
                 duration={1200}
                 rootMargin="-25% 0px -25% 0px"
-                className="text-base md:text-lg leading-relaxed"
+                className={
+                  preview
+                    ? "font-display italic text-lg md:text-2xl leading-relaxed text-center max-w-2xl mx-auto"
+                    : "text-base md:text-lg leading-relaxed"
+                }
                 style={{ color: "var(--colour-ink)" }}
               >
                 {paragraph}
