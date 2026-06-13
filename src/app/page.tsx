@@ -8,16 +8,24 @@ export default function HomePage() {
     <>
       <ModoHero />
       <VerseMarquee />
-      {/* Press-kit copy spec — "Testimony Section Preview" on home.
-          Heading + eyebrow per the spec; the two preview paragraphs
-          and the "Read The Full Story →" CTA live in the Testimony
-          component itself when preview is set. /about renders the
-          same component without `preview` to show the full long-form
-          About All The Glory body. */}
+      {/* Testimony Section Preview on home — eyebrow + title + the
+          two preview paragraphs and the "Read The Full Story →" CTA.
+          Title uses the same inverted-glyph "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓"
+          treatment as the hero's top-corner micro labels, so the
+          motif carries through the page. .subtitle-glyph fixes the
+          glyph line clipping; the sr-only span gives screen readers
+          the clean readable phrase. */}
       <Testimony
         preview
         eyebrow="Testimony"
-        title="The Story Behind The Songs"
+        title={
+          <>
+            <span aria-hidden="true" className="subtitle-glyph">
+              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
+            </span>
+            <span className="sr-only">From Darkness to Light</span>
+          </>
+        }
       />
       <AlbumPromo />
     </>
