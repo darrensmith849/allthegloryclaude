@@ -8,12 +8,17 @@ export default function HomePage() {
     <>
       <ModoHero />
       <VerseMarquee />
-      {/* Teaser mode — shows the first two paragraphs of Daniel's story
-          plus a "Read the full story →" link to /about. /about renders
-          the same component without `preview` to show all five paragraphs,
-          so the home + about pages each have distinct value instead of
-          duplicating the entire testimony. */}
-      <Testimony preview />
+      {/* Press-kit copy spec — "Testimony Section Preview" on home.
+          Heading + eyebrow per the spec; the two preview paragraphs
+          and the "Read The Full Story →" CTA live in the Testimony
+          component itself when preview is set. /about renders the
+          same component without `preview` to show the full long-form
+          About All The Glory body. */}
+      <Testimony
+        preview
+        eyebrow="Testimony"
+        title="The Story Behind The Songs"
+      />
       <AlbumPromo />
     </>
   );

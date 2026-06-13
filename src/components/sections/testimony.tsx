@@ -7,7 +7,7 @@ import {
   storyKicker,
   storyParagraphs,
   storyBenediction,
-  storyHomeHook,
+  storyHomePreviewParagraphs,
 } from "@/content/story";
 
 type TestimonyProps = {
@@ -136,11 +136,10 @@ export default function Testimony({
   preview = false,
 }: TestimonyProps) {
   const useCustomHeader = Boolean(eyebrow && title);
-  // Preview mode (home page) renders a single editorial hook line
-  // instead of a sliced sub-set of the long-form story paragraphs —
-  // a hook makes the home section feel intentional rather than like a
-  // fragment that breaks off mid-arc.
-  const paragraphs = preview ? [storyHomeHook] : storyParagraphs;
+  // Preview mode (home page) renders the dedicated preview paragraphs
+  // from the press-kit copy spec — distinct from the long-form story
+  // shown on /about so the two pages have separate value.
+  const paragraphs = preview ? storyHomePreviewParagraphs : storyParagraphs;
 
   return (
     <section className="bg-transparent">
@@ -196,11 +195,7 @@ export default function Testimony({
                 yOffset={12}
                 duration={1200}
                 rootMargin="-25% 0px -25% 0px"
-                className={
-                  preview
-                    ? "font-display italic text-lg md:text-2xl leading-relaxed text-center max-w-2xl mx-auto"
-                    : "text-base md:text-lg leading-relaxed"
-                }
+                className="text-base md:text-lg leading-relaxed"
                 style={{ color: "var(--colour-ink)" }}
               >
                 {paragraph}
@@ -223,7 +218,7 @@ export default function Testimony({
                 href="/about"
                 className="inline-block text-[12px] md:text-[13px] font-semibold uppercase tracking-[0.22em] text-[var(--colour-amber)]/80 hover:text-[var(--colour-amber)] transition-colors duration-300"
               >
-                Read the full story →
+                Read The Full Story →
               </Link>
             </FadeOnView>
           )}
