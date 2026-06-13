@@ -1,6 +1,15 @@
 export const storyTitle = "From Darkness To Light";
 export const storyKicker = "Truth that sets us free.";
 
+/**
+ * One-line editorial hook used by the Testimony component in `preview`
+ * mode (the home page). Replaces the paragraph-slice teaser — gives the
+ * home page a self-contained moment instead of a fragment that begs a
+ * click, while the full story lives on /about.
+ */
+export const storyHomeHook =
+  "Worship music born from a twenty-year fight with depression and addiction — and the freedom Jesus brought.";
+
 export const storyParagraphs = [
   "Daniel is a singer-songwriter from Harare, Zimbabwe.",
   "For more than two decades, Daniel walked through seasons of deep depression, addiction, and inner bondage. Nothing in the world could satisfy the ache in his soul - until he began seeking Jesus with his whole heart.",
