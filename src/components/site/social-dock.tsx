@@ -144,14 +144,18 @@ export default function SocialDock() {
       encodeURIComponent("All The Glory From Darkness To Light");
   return (
     <div className="social-dock-bottom">
-      {/* Slow cascade fade-in: each icon takes 1.6s, stepped 0.18s apart
-          so the rail visibly assembles itself after the hero settles —
-          matches the 2s footer fades used elsewhere on the site. */}
-      <Item href={site.socials.instagram} label="Instagram" delay={0.6} />
-      <Item href={site.socials.facebook} label="Facebook" delay={0.78} />
-      <Item href={site.socials.youtube} label="YouTube" delay={0.96} />
-      <Item href={site.socials.spotify} label="Spotify" delay={1.14} />
-      <Item href={appleMusicHref} label="Apple Music" delay={1.32} />
+      {/* Ordered longest word-mark → shortest, so the desktop column
+          tapers visually as you read down (Apple Music at top, TikTok
+          at bottom). Mobile icons still render in source order, which
+          stays consistent with the desktop sequence.
+          Slow cascade fade-in: each icon takes 1.6s, stepped 0.18s
+          apart so the rail visibly assembles itself top-to-bottom
+          after the hero settles. */}
+      <Item href={appleMusicHref} label="Apple Music" delay={0.6} />
+      <Item href={site.socials.instagram} label="Instagram" delay={0.78} />
+      <Item href={site.socials.facebook} label="Facebook" delay={0.96} />
+      <Item href={site.socials.youtube} label="YouTube" delay={1.14} />
+      <Item href={site.socials.spotify} label="Spotify" delay={1.32} />
       <Item href={site.socials.tiktok} label="TikTok" delay={1.50} />
     </div>
   );
