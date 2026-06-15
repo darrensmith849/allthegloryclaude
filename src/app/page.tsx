@@ -10,19 +10,17 @@ export default function HomePage() {
       <VerseMarquee />
       {/* Testimony Section Preview on home — eyebrow + title + the
           two preview paragraphs and the "Read The Full Story →" CTA.
-          Title uses the same inverted-glyph "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓"
-          treatment as the hero's top-corner micro labels, so the
-          motif carries through the page. .subtitle-glyph fixes the
-          glyph line clipping; the sr-only span gives screen readers
-          the clean readable phrase. */}
+          titleClassName mirrors the /album page hero's h1 (no
+          font-display, .subtitle-glyph on the h2 itself) so the
+          unicode-glyph wordmark renders through the same font
+          fallback chain on both pages. */}
       <Testimony
         preview
         eyebrow="Testimony"
+        titleClassName="subtitle-glyph mt-3 text-2xl md:text-4xl font-semibold text-white"
         title={
           <>
-            <span aria-hidden="true" className="subtitle-glyph">
-              Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓
-            </span>
+            <span aria-hidden="true">Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓</span>
             <span className="sr-only">From Darkness to Light</span>
           </>
         }
