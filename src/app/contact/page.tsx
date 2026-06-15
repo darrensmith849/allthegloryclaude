@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import NewsletterSignup from "@/components/ui/newsletter-signup";
 import { site } from "@/content/site";
 
-const CONTACT_INBOX = "peter777daniel@gmail.com";
+const CONTACT_INBOX = "daniel@alltheglory.co.za";
 
 export default function ContactPage() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
