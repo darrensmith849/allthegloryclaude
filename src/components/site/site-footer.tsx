@@ -14,8 +14,11 @@ export default function SiteFooter() {
   const footerRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
-  // The private dashboard ships its own layout - skip the marketing footer there.
+  // /dashboard ships its own layout; /press is an unlisted press-kit
+  // landing meant to read as a standalone share link. Neither gets
+  // the public marketing footer.
   const isDashboard = pathname?.startsWith("/dashboard") ?? false;
+  const isPress = pathname?.startsWith("/press") ?? false;
 
   useEffect(() => {
     setInView(false);
@@ -58,7 +61,7 @@ export default function SiteFooter() {
     return () => obs.disconnect();
   }, [pathname, inView]);
 
-  if (isDashboard) return null;
+  if (isDashboard || isPress) return null;
 
   return (
     <footer ref={footerRef} className="relative w-full overflow-hidden">
