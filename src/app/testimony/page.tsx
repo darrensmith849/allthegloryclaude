@@ -24,35 +24,15 @@ export default function TestimonyPage() {
           className="text-center"
         >
           <div className="eyebrow">Testimony</div>
-          {/* The headline IS the motif — same canonical phrase the
-              homepage corners use ("Ⅎɹoɯ ᗡɐɹʞuǝss†o 𝕃Ɨ𝕘𝓱𝐓"), split
-              into two stacked lines:
-                line 1 — "Ⅎɹoɯ ᗡɐɹʞuǝss" (From Darkness, upside-down)
-                line 2 — "†o 𝕃Ɨ𝕘𝓱𝐓"   (To Light, cross-T, right-side-up)
-              Screen readers get the clean "From darkness to light"
-              string via aria-label on the H1. */}
+          {/* Single-line inline heading — same treatment as the album
+              page hero so "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓" reads consistently
+              everywhere on the site. Screen readers get the clean
+              "From darkness to light" string via aria-label. */}
           <h1
             aria-label="From darkness to light"
-            className="font-display mt-4 text-4xl md:text-6xl font-normal tracking-tight leading-[1.15]"
+            className="subtitle-glyph mt-4 text-2xl md:text-4xl font-semibold text-white"
           >
-            {/* inline display:block beats the .subtitle-glyph rule's
-                `display: inline-block` (same specificity, but inline-style
-                always wins) so the two halves actually stack vertically
-                instead of flowing inline on a wide viewport. */}
-            <span
-              aria-hidden="true"
-              className="subtitle-glyph text-white"
-              style={{ display: "block" }}
-            >
-              Ⅎɹoɯ ᗡɐɹʞuǝss
-            </span>
-            <span
-              aria-hidden="true"
-              className="subtitle-glyph italic text-[var(--colour-amber)] mt-2 md:mt-3"
-              style={{ display: "block" }}
-            >
-              †o 𝕃Ɨ𝕘𝓱𝐓
-            </span>
+            <span aria-hidden="true">Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓</span>
           </h1>
 
           <p className="font-display mt-7 text-base md:text-lg italic text-white/80 leading-relaxed max-w-xl mx-auto">
