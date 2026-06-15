@@ -132,9 +132,14 @@ function Item({
 
 export default function SocialDock() {
   const pathname = usePathname();
-  // Hidden on /dashboard (private app chrome) and /album (music page -
-  // the artist asked not to show socials there).
-  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/album")) {
+  // Hidden on /dashboard (private app chrome), /album (music page -
+  // the artist asked not to show socials there), and /press (unlisted
+  // press-kit landing read as a standalone share link).
+  if (
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/album") ||
+    pathname?.startsWith("/press")
+  ) {
     return null;
   }
   // Apple Music falls back to a search URL for the album until the real

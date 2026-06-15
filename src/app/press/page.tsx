@@ -1,8 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { assets } from "@/content/assets";
+
+// Access code for the press-kit landing. Stored client-side, validated
+// against this constant on the gate. Case-insensitive on input so press
+// contacts don't get tripped up by shift-key mistakes.
+//
+// Note: this is friction, not security. The repo is public and the
+// content of /press is also reachable via the live preview link the
+// artist shares directly. The gate exists to keep casual scrapers /
+// search-engine spelunkers out, not to enforce true secrecy.
+const PRESS_ACCESS_CODE = "alltheglory";
+const PRESS_AUTH_KEY = "atg:press:auth";
 
 // ── Single source of truth for the press kit copy + links ─────────
 //   All copy is plain text with standard single hyphens (never em /
@@ -80,6 +92,45 @@ function Section({
 
 export default function PressKitPage() {
   const reduce = !!useReducedMotion();
+  // Client-side access gate. Starts in `loading` so the gate UI doesn't
+  // flash on first paint for already-authenticated visitors (we don't
+  // know auth state until localStorage reads on mount).
+  const [authState, setAuthState] = useState<"loading" | "locked" | "unlocked">(
+    "loading",
+  );
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(PRESS_AUTH_KEY) === "1") {
+        setAuthState("unlocked");
+        return;
+      }
+    } catch {
+      // private-mode / disabled storage falls through to locked.
+    }
+    setAuthState("locked");
+  }, []);
+
+  if (authState === "loading") {
+    return <main className="bg-transparent min-h-screen" />;
+  }
+
+  if (authState === "locked") {
+    return (
+      <PressGate
+        reduce={reduce}
+        onUnlock={() => {
+          try {
+            localStorage.setItem(PRESS_AUTH_KEY, "1");
+          } catch {
+            // ignore - we still flip the in-memory state so this session
+            // is unlocked even if storage is unavailable.
+          }
+          setAuthState("unlocked");
+        }}
+      />
+    );
+  }
 
   return (
     <main className="bg-transparent overflow-x-clip">
@@ -539,5 +590,101 @@ function AssetCard({
         {external ? "↗" : isHash ? "→" : "↓"}
       </span>
     </a>
+  );
+}
+
+// ── Press gate ────────────────────────────────────────────────────
+// Renders a single centred glass card with an access-code input. Lives
+// on the same dark cinematic backdrop as the rest of the site so the
+// unlock flow doesn't feel like a different product.
+
+function PressGate({
+  reduce,
+  onUnlock,
+}: {
+  reduce: boolean;
+  onUnlock: () => void;
+}) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const tried = value.trim().toLowerCase();
+    if (tried === PRESS_ACCESS_CODE) {
+      setError(null);
+      onUnlock();
+      return;
+    }
+    setError("That access code isn't right. Please check the link you were sent.");
+  }
+
+  return (
+    <main className="bg-transparent overflow-x-clip min-h-screen flex items-center justify-center px-6 py-24">
+      <motion.div
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: reduce ? 0.01 : 1.1,
+          ease: [0.16, 1, 0.3, 1] as const,
+        }}
+        className="panel-scrim w-full max-w-md p-8 md:p-10 text-center"
+      >
+        <div className="eyebrow eyebrow-amber">Press Kit</div>
+        <h1 className="font-display mt-3 text-2xl md:text-3xl font-semibold text-white">
+          Access required
+        </h1>
+        <p className="mt-3 text-sm md:text-base text-white/65 leading-relaxed">
+          This press kit is unlisted. Enter the access code you were sent
+          with the link to continue.
+        </p>
+
+        <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-3">
+          <label htmlFor="press-access-code" className="sr-only">
+            Access code
+          </label>
+          <input
+            id="press-access-code"
+            type="password"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="Access code"
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            // text-base on inputs avoids iOS Safari's auto-zoom-on-focus
+            className="w-full rounded-md border border-white/15 bg-black/30 px-4 py-3 text-base text-white placeholder:text-white/35 focus:border-[var(--colour-amber)]/60 focus:outline-none transition-colors"
+            required
+            autoFocus
+          />
+          <button type="submit" className="btn btn-primary justify-center">
+            Enter Press Kit →
+          </button>
+          {error && (
+            <div
+              role="alert"
+              className="mt-1 text-[12.5px] text-[#f1a07d] leading-relaxed"
+            >
+              {error}
+            </div>
+          )}
+        </form>
+
+        <p className="mt-7 text-[11.5px] text-white/45 leading-relaxed">
+          For access enquiries, email{" "}
+          <a
+            href="mailto:daniel@alltheglory.co.za"
+            className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] underline decoration-[var(--colour-amber)]/30 underline-offset-4 transition-colors"
+          >
+            daniel@alltheglory.co.za
+          </a>
+          .
+        </p>
+      </motion.div>
+    </main>
   );
 }

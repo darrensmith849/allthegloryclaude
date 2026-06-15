@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { site } from "@/content/site";
 import { album } from "@/content/album";
@@ -30,7 +30,11 @@ export default function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const reduce = useReducedMotion();
+  // /press is the unlisted press-kit landing - visitors shouldn't be
+  // able to ⌘K their way into the rest of the site from there.
+  const isPress = pathname?.startsWith("/press") ?? false;
 
   // All navigable targets, deduped by href.
   const items = useMemo<Item[]>(() => {
@@ -107,6 +111,9 @@ export default function CommandPalette() {
   const dialogTransition = reduce
     ? { duration: 0.01 }
     : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
+
+  // Skip the ⌘K palette entirely on the press-kit landing.
+  if (isPress) return null;
 
   return (
     <AnimatePresence>

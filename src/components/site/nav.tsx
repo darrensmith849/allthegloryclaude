@@ -21,8 +21,11 @@ export default function Nav() {
     setOpen(false);
   }, [pathname]);
 
-  // The private dashboard has its own chrome - don't render the public nav there.
+  // The private dashboard has its own chrome; /press is an unlisted
+  // press-kit landing meant to read as a standalone share link, not a
+  // gateway into the rest of the site. Neither shows the public nav.
   if (pathname?.startsWith("/dashboard")) return null;
+  if (pathname?.startsWith("/press")) return null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-colour-bg/75 backdrop-blur-xl border-b border-white/5">
