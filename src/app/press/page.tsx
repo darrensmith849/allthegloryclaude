@@ -11,10 +11,7 @@ import { assets } from "@/content/assets";
 const PRESS = {
   soundCloudPreview: "https://on.soundcloud.com/gJ7UvLyBtwFJyFuISG",
   websiteUrl: "https://www.alltheglory.co.za",
-  // TODO: confirm this is the inbound contact email Daniel wants on
-  // the press kit (different from any address used elsewhere on the
-  // site). Swap as needed.
-  contactEmail: "peter777daniel@gmail.com",
+  contactEmail: "daniel@alltheglory.co.za",
   releaseDate: "17 July 2026",
   focusTrack: "John 19:30",
   location: "Harare, Zimbabwe / Southern Africa",
