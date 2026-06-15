@@ -159,9 +159,14 @@ export default function Testimony({
               {useCustomHeader ? (
                 <>
                   <div className="eyebrow eyebrow-amber">{eyebrow}</div>
+                  {/* Heading classes match the canonical "music page"
+                      title on /album/from-darkness-to-light so the
+                      "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓" wordmark renders at
+                      the same size + weight + colour everywhere it
+                      appears on the site. */}
                   <h2
                     id={headingId}
-                    className="font-display mt-3 text-3xl md:text-4xl font-normal text-white tracking-tight"
+                    className="font-display mt-3 text-2xl md:text-4xl font-semibold text-white"
                   >
                     {title}
                   </h2>

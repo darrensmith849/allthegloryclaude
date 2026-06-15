@@ -150,8 +150,8 @@ export default function ContactPage() {
             Get in touch
           </h1>
           <p className="text-sm md:text-base text-white/65 max-w-md mx-auto">
-            For commissions, custom worship songs, prayer requests, or a
-            quick hello.
+            For commissions, custom worship songs, and ministry
+            collaborations that honour Jesus.
           </p>
         </motion.div>
       </section>
