@@ -21,11 +21,15 @@ const PRESS_AUTH_KEY = "atg:press:auth";
 //   en dashes) so the page stays consistent with the rest of the site
 //   per the artist's style rules.
 const PRESS = {
-  soundCloudPreview: "https://on.soundcloud.com/gJ7UvLyBtwFJyFuISG",
+  soundCloudPreview: "https://on.soundcloud.com/hn5LMp6AsuDQgDDPm9",
   websiteUrl: "https://www.alltheglory.co.za",
   contactEmail: "daniel@alltheglory.co.za",
   releaseDate: "17 July 2026",
-  focusTrack: "John 19:30",
+  focusTrack: "Luke 15:20",
+  // Where the focus track sits in the album order (zero-based). Used to
+  // place the "Focus Track" badge in the track list + the "Track NN"
+  // label on the listening preview card.
+  focusTrackIndex: 3,
   location: "Harare, Zimbabwe / Southern Africa",
   genre: "Christian / Worship / Inspirational",
 };
@@ -266,12 +270,15 @@ export default function PressKitPage() {
               />
             </div>
             <div className="flex-1 flex flex-col justify-center text-center md:text-left">
-              <div className="eyebrow">Track 01 · Focus Track</div>
+              <div className="eyebrow">
+                Track {String(PRESS.focusTrackIndex + 1).padStart(2, "0")} ·
+                Focus Track
+              </div>
               <div className="font-display mt-1 text-xl md:text-2xl text-white">
                 {PRESS.focusTrack}
               </div>
               <p className="text-[13px] md:text-sm text-white/65 italic mt-2 leading-relaxed">
-                &ldquo;It is finished.&rdquo;
+                &ldquo;His father saw him, and had compassion.&rdquo;
               </p>
               <div className="mt-4 flex justify-center md:justify-start">
                 <a
@@ -351,7 +358,7 @@ export default function PressKitPage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span>{track}</span>
-                {i === 0 && (
+                {i === PRESS.focusTrackIndex && (
                   <span className="ml-auto text-[10.5px] tracking-[0.18em] uppercase text-[var(--colour-amber-soft)]">
                     Focus Track
                   </span>
@@ -412,9 +419,9 @@ export default function PressKitPage() {
             />
             <AssetCard
               label="Lyrics (Focus Track)"
-              hint="John 19:30 · PDF"
-              href="/lyrics/john-19-vs-30/lyric-cards.pdf"
-              download="john-19-30-lyrics.pdf"
+              hint="Luke 15:20 · PDF"
+              href="/lyrics/luke-15-vs-20/lyric-cards.pdf"
+              download="luke-15-20-lyrics.pdf"
               external={false}
             />
             <AssetCard
