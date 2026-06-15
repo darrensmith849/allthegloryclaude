@@ -210,6 +210,19 @@ export default function PressKitPage() {
             <DetailRow label="Location" value={PRESS.location} />
             <DetailRow label="Focus Track" value={PRESS.focusTrack} />
             <DetailRow
+              label="Artwork By"
+              value={
+                <a
+                  href="https://debbieclarkart.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4"
+                >
+                  Debbie Clarke ↗
+                </a>
+              }
+            />
+            <DetailRow
               label="Website"
               value={
                 <a
@@ -392,9 +405,9 @@ export default function PressKitPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AssetCard
               label="Album Artwork"
-              hint="JPEG · download"
+              hint="JPEG · by Debbie Clarke"
               href={assets.albumArt}
-              download="all-the-glory-from-darkness-to-light.jpg"
+              download="From Darkness To Light Artwork (By Debbie Clarke).jpg"
               external={false}
             />
             <AssetCard
