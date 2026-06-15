@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 // Where messages from the contact form land.
-const CONTACT_INBOX = "peter777daniel@gmail.com";
+const CONTACT_INBOX = "daniel@alltheglory.co.za";
 
 // Sender address. Resend's onboarding domain works without any DNS
 // setup; once alltheglory.co.za is verified inside Resend this can
