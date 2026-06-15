@@ -24,6 +24,13 @@ type TestimonyProps = {
   title?: ReactNode;
   /** Optional id for the rendered heading, for aria-labelledby linking. */
   headingId?: string;
+  /** Optional className override for the rendered h2 in custom-header
+   *  mode. Pass the album-page heading classes when the title is a
+   *  unicode-glyph wordmark (e.g. "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓") so the
+   *  glyphs render through the same font fallback chain everywhere
+   *  on the site; leave undefined for regular-text titles to keep the
+   *  Fraunces display treatment. */
+  titleClassName?: string;
   /** Teaser mode for the home page: render the single editorial hook
    *  from storyHomeHook + a "Read the full story →" link to /about,
    *  instead of slicing the long-form paragraphs. /about renders the
@@ -133,6 +140,7 @@ export default function Testimony({
   eyebrow,
   title,
   headingId,
+  titleClassName,
   preview = false,
 }: TestimonyProps) {
   const useCustomHeader = Boolean(eyebrow && title);
@@ -159,14 +167,18 @@ export default function Testimony({
               {useCustomHeader ? (
                 <>
                   <div className="eyebrow eyebrow-amber">{eyebrow}</div>
-                  {/* Heading classes match the canonical "music page"
-                      title on /album/from-darkness-to-light so the
-                      "Ⅎɹoɯ ᗡɐɹʞuǝss †o 𝕃Ɨ𝕘𝓱𝐓" wordmark renders at
-                      the same size + weight + colour everywhere it
-                      appears on the site. */}
+                  {/* Default heading uses Fraunces (font-display) for
+                      regular text titles ("All The Glory" on /about).
+                      Callers can override with titleClassName when the
+                      title is a unicode-glyph wordmark, so the glyphs
+                      render through the same font fallback chain as
+                      the /album hero. */}
                   <h2
                     id={headingId}
-                    className="font-display mt-3 text-2xl md:text-4xl font-semibold text-white"
+                    className={
+                      titleClassName ??
+                      "font-display mt-3 text-2xl md:text-4xl font-semibold text-white"
+                    }
                   >
                     {title}
                   </h2>
