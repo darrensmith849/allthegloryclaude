@@ -61,25 +61,41 @@ export default function ContactPage() {
     setErrors({});
     setStatus("sending");
 
+    const name = (formData.get("name") as string).trim();
+    const email = (formData.get("email") as string).trim();
+    const message = (formData.get("message") as string).trim();
+
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: (formData.get("name") as string).trim(),
-          email: (formData.get("email") as string).trim(),
-          message: (formData.get("message") as string).trim(),
-          website: formData.get("website") as string,
-        }),
-      });
+      // Post straight to FormSubmit from the browser. FormSubmit blocks
+      // server-to-server calls (its anti-abuse rejects requests that don't
+      // come from a real browser), so submitting client-side is the
+      // supported path — it forwards each message to daniel@alltheglory.co.za.
+      const res = await fetch(
+        "https://formsubmit.co/ajax/daniel@alltheglory.co.za",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            message,
+            _subject: `New message from ${name} (All The Glory)`,
+            _template: "box",
+            _captcha: "false",
+          }),
+        },
+      );
       const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
+        success?: string | boolean;
       };
-      if (!res.ok || !data.ok) {
+      const ok =
+        res.ok && (data.success === true || data.success === "true");
+      if (!ok) {
         setServerError(
-          data.error ??
-            "We couldn't send your message right now. Please try again.",
+          "We couldn't send your message right now. Please try again.",
         );
         setStatus("idle");
         return;
