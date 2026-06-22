@@ -63,12 +63,20 @@ export async function POST(request: Request) {
     );
   }
 
+  // FormSubmit blocks server-to-server calls that arrive without a
+  // browser-style Origin/Referer ("...will not work in pages browsed as
+  // HTML files"), so forward the site's own origin and it accepts the POST.
+  const origin =
+    request.headers.get("origin") ?? "https://www.alltheglory.co.za";
+
   try {
     const res = await fetch(FORMSUBMIT_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Origin: origin,
+        Referer: `${origin}/contact`,
       },
       body: JSON.stringify({
         name,
