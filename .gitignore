@@ -28,6 +28,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare / opennext
+.open-next/
+.wrangler/
+.dev.vars
+
 # local tooling (Claude preview launch config, etc.)
 .claude
 
