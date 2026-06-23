@@ -3,7 +3,7 @@
 
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs"; // OpenNext runs all routes in the Node-compat worker
 
 interface RawVerse {
   book_id: string;
