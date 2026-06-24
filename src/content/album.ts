@@ -18,8 +18,11 @@ export const album = {
 
   /** Pre-built zip with all 7 full songs already named
    *  "NN - All The Glory - <track>.mp3" inside it, so they extract
-   *  in album order in any music app or file browser. */
-  downloadZipSrc: "/downloads/from-darkness-to-light.zip",
+   *  in album order in any music app or file browser.
+   *  Hosted on Cloudflare R2 (not in the worker bundle) because the
+   *  zip is 71 MB — over Cloudflare Workers' 25 MiB per-asset cap. */
+  downloadZipSrc:
+    "https://pub-5adbc18c423b444dbae6cfd25d3349cd.r2.dev/allthegloryclaude/from-darkness-to-light.zip",
   /** Filename the browser shows when the user downloads the zip. */
   downloadZipFilename: "All The Glory - From Darkness To Light.zip",
 
