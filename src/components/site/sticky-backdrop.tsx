@@ -1,13 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { assets } from "@/content/assets";
 import { useState, useEffect } from "react";
 
 export default function StickyBackdrop() {
-  const { scrollYProgress } = useScroll();
   const pathname = usePathname();
   const isDashboard = pathname?.startsWith("/dashboard");
   // Lightning video runs as part of the painted backdrop ONLY on the
@@ -25,16 +23,12 @@ export default function StickyBackdrop() {
     setPrefersReducedMotion(mq.matches);
   }, []);
 
-  const brightness = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.30, 1.55]);
-  const contrast = useTransform(scrollYProgress, [0, 1], [1.18, 1.04]);
-  const saturate = useTransform(scrollYProgress, [0, 1], [1.18, 1.28]);
-
-  const darkVeil = useTransform(scrollYProgress, [0, 0.5, 1], [0.30, 0.12, 0.0]);
-
-  // Ambient glow - smoothly brightens the whole scene as you scroll
-  const glowOpacity = useTransform(scrollYProgress, [0, 0.4, 1], [0, 0.12, 0.28]);
-
-  const filter = useMotionTemplate`brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
+  // NOTE: this backdrop is intentionally static. It used to drive the
+  // stars filter + dark-veil + glow opacities off scroll position via
+  // framer-motion useScroll/useTransform, which repainted this full
+  // viewport, screen/soft-light–blended layer on every scroll frame and
+  // made scrolling feel sluggish. Rendering it once keeps the scene
+  // identical at rest while leaving scroll completely native and snappy.
 
   if (isDashboard) return <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]" />;
 
@@ -66,11 +60,12 @@ export default function StickyBackdrop() {
         />
       </div>
 
-      {/* Stars image - overlays the clouds with screen blend */}
-      <motion.div
+      {/* Stars image - overlays the clouds with screen blend. Static
+          filter (no longer scroll-linked). */}
+      <div
         className="absolute inset-0"
         style={{
-          filter,
+          filter: "brightness(1.18) contrast(1.16) saturate(1.2)",
           mixBlendMode: "screen",
           opacity: prefersReducedMotion || starsReady ? 1 : 0,
           transition: prefersReducedMotion
@@ -93,14 +88,13 @@ export default function StickyBackdrop() {
             imageRendering: "auto",
           }}
         />
-      </motion.div>
+      </div>
 
       {/* Lightning video — home page only. Sits above stars / below
-          the dark veil + glow so the veil still tints it down when
-          you're at the top, and the glow softens it as you scroll.
-          Same screen-blend treatment as the footer's lightning so the
-          two read as one storm rather than two effects. Muted + autoplay
-          + playsInline so it kicks in on first paint without sound. */}
+          the dark veil + glow so the veil still tints it down. Same
+          screen-blend treatment as the footer's lightning so the two
+          read as one storm. Muted + autoplay + playsInline so it kicks
+          in on first paint without sound. */}
       {isHome && !prefersReducedMotion && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -121,16 +115,13 @@ export default function StickyBackdrop() {
         </div>
       )}
 
-      {/* Dark veil - fades to nothing as you scroll */}
-      <motion.div className="absolute inset-0 bg-black" style={{ opacity: darkVeil }} />
+      {/* Dark veil - static depth at the top of the scene */}
+      <div className="absolute inset-0 bg-black" style={{ opacity: 0.24 }} />
 
-      {/* Ambient glow - smooth scene brightening on scroll */}
-      <motion.div
+      {/* Ambient glow - static soft brightening */}
+      <div
         className="absolute inset-0 pointer-events-none bg-white"
-        style={{
-          opacity: glowOpacity,
-          mixBlendMode: "soft-light",
-        }}
+        style={{ opacity: 0.08, mixBlendMode: "soft-light" }}
       />
 
       {/* Starfield CSS overlays */}
