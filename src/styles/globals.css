@@ -249,6 +249,50 @@ video::-webkit-media-controls-overlay-play-button {
 }
 .social-link:hover { color: rgba(244,240,232,0.92); }
 
+/* Hero music toggle — icon-only play/pause for the album's opening track,
+   fixed bottom-right to mirror the social dock on the bottom-left. */
+.hero-music-btn {
+  position: fixed;
+  right: var(--page-pad);
+  bottom: calc(var(--hero-bottom-pad) + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  color: var(--colour-ink);
+  background: rgba(18, 17, 26, 0.55);
+  border: 1px solid var(--colour-amber-soft);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: color .25s ease, background .25s ease, border-color .25s ease, transform .25s ease;
+}
+.hero-music-btn:hover {
+  color: var(--colour-bg);
+  background: var(--colour-amber);
+  border-color: var(--colour-amber);
+  transform: translateY(-1px);
+}
+/* One-shot "tap me" pulse shown until the track has played at least once. */
+.hero-music-ping {
+  position: absolute;
+  inset: -1px;
+  border-radius: 9999px;
+  border: 1px solid var(--colour-amber-soft);
+  pointer-events: none;
+  animation: heroMusicPing 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes heroMusicPing {
+  0%        { transform: scale(1);   opacity: .7; }
+  70%, 100% { transform: scale(1.7); opacity: 0;  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-music-ping { animation: none; opacity: 0; }
+  .hero-music-btn  { transition: none; }
+}
+
 @media (min-width: 1024px) {
   .social-link {
     font-size: 11px;

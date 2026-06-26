@@ -5,6 +5,7 @@ import Nav from "@/components/site/nav";
 import PageViewTracker from "@/components/site/page-view-tracker";
 import SiteFooter from "@/components/site/site-footer";
 import SocialDock from "@/components/site/social-dock";
+import HeroMusicPlayer from "@/components/site/hero-music-player";
 import StickyBackdrop from "@/components/site/sticky-backdrop";
 import PageTransition from "@/components/site/page-transition";
 import CommandPalette from "@/components/ui/command-palette";
@@ -126,6 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="relative z-10">
           <Nav />
           <SocialDock />
+          <HeroMusicPlayer />
           <PageTransition>{children}</PageTransition>
           <SiteFooter />
         </div>
