@@ -13,6 +13,15 @@ export default function SiteFooter() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const footerRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
+  // Desktop only — same reason as the hero backdrop: on touch / compact
+  // screens iOS paints a native play button over a non-autoplaying <video>.
+  const [allowVideo, setAllowVideo] = useState(false);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = window.matchMedia("(pointer: coarse), (max-width: 820px)").matches;
+    setAllowVideo(!reduce && !compact);
+  }, []);
 
   // /dashboard ships its own layout; /press is an unlisted press-kit
   // landing meant to read as a standalone share link. Neither gets
@@ -82,24 +91,26 @@ export default function SiteFooter() {
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[var(--colour-bg)] to-transparent" />
       </div>
 
-      {/* Lightning video - starts when footer enters view */}
-      <div
-        className="absolute inset-0 overflow-hidden transition-opacity duration-[2000ms]"
-        style={{ mixBlendMode: "screen", opacity: inView ? 0.2 : 0 }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: "brightness(1.3) contrast(1.1)" }}
+      {/* Lightning video - desktop only, starts when footer enters view */}
+      {allowVideo && (
+        <div
+          className="absolute inset-0 overflow-hidden transition-opacity duration-[2000ms]"
+          style={{ mixBlendMode: "screen", opacity: inView ? 0.2 : 0 }}
         >
-          <source src="/media/lightning.mp4" type="video/mp4" />
-        </video>
-      </div>
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: "brightness(1.3) contrast(1.1)" }}
+          >
+            <source src="/media/lightning.mp4" type="video/mp4" />
+          </video>
+        </div>
+      )}
 
       <div className="relative px-6 py-16 md:py-24">
         {/* Stacked centre - narrow panels so Jesus shows on both sides */}
