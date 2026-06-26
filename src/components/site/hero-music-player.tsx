@@ -15,8 +15,10 @@ import { usePathname } from "next/navigation";
  * The component is mounted once in the root layout, so it keeps playing
  * across client-side navigation (Home → About → …) without restarting.
  * If the visitor pauses, we remember that (localStorage) and never
- * auto-start on them again. Hidden on /album (its own track previews live
- * there), /dashboard and /press.
+ * auto-start on them again. Shown on every page so the song is always
+ * pausable — the Music page included, where a visitor may want to stop it
+ * before playing a per-track preview. Only the private /dashboard (owner
+ * analytics, its own chrome) is excluded.
  */
 const SRC = "/audio/john-19-vs-30.mp3";
 const STORE_KEY = "atg-hero-music"; // value "paused" once the visitor opts out
@@ -27,11 +29,7 @@ export default function HeroMusicPlayer() {
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false); // hides the "tap me" pulse once it has ever played
 
-  const hidden =
-    !!pathname &&
-    (pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/album") ||
-      pathname.startsWith("/press"));
+  const hidden = !!pathname && pathname.startsWith("/dashboard");
 
   const optedOut = useCallback(() => {
     try {
