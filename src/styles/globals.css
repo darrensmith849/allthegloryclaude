@@ -53,6 +53,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Decorative background videos (the sticky backdrop + footer lightning) are
+   muted / autoplay / playsInline and purely atmospheric. On iOS, when autoplay
+   is blocked (e.g. Low Power Mode) the OS paints a native centre play button
+   over the video — and because the backdrop layer is position:fixed, that
+   button read as a stray play control stuck behind the page that didn't move
+   on scroll. These videos never need controls, so suppress the native playback
+   UI entirely. */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* ── Editorial display type ─────────────────────────────────
    Warm, optically-sized serif used for major page titles and
    section headings. Pairs against Inter for body copy. */
