@@ -17,10 +17,19 @@ export default function StickyBackdrop() {
   const [starsReady, setStarsReady] = useState(false);
   const [cloudsReady, setCloudsReady] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // Decorative lightning video renders on desktop only. On touch / compact
+  // screens iOS paints a native play button over a <video> that can't
+  // autoplay (e.g. Low Power Mode), which showed as a stray play control
+  // stuck in the hero. Starts false so the video is never in the initial or
+  // mobile DOM (no flash before hydration); enabled only once we confirm a
+  // non-touch, roomy viewport.
+  const [allowVideo, setAllowVideo] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = window.matchMedia("(pointer: coarse), (max-width: 820px)").matches;
+    setPrefersReducedMotion(reduce);
+    setAllowVideo(!reduce && !compact);
   }, []);
 
   // NOTE: this backdrop is intentionally static. It used to drive the
@@ -95,7 +104,7 @@ export default function StickyBackdrop() {
           screen-blend treatment as the footer's lightning so the two
           read as one storm. Muted + autoplay + playsInline so it kicks
           in on first paint without sound. */}
-      {isHome && !prefersReducedMotion && (
+      {isHome && allowVideo && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ mixBlendMode: "screen", opacity: 0.2 }}
