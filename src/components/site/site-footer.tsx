@@ -307,6 +307,15 @@ export default function SiteFooter() {
                     CrossCoders
                   </span>
                 </a>
+                <a
+                  href="https://www.crosscoders.co.za"
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  className="text-[10px] tracking-[0.12em] underline decoration-white/20 underline-offset-4 transition-opacity hover:opacity-80"
+                  style={{ color: "var(--colour-amber)" }}
+                >
+                  Visit crosscoders.co.za ↗
+                </a>
               </div>
             </div>
 
