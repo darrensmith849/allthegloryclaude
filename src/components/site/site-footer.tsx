@@ -252,6 +252,64 @@ export default function SiteFooter() {
               ))}
             </div>
 
+            {/* Supported by — the album's parent non-profit + the project that
+                built and hosts the site for free. Kept small and quiet so it
+                credits both without competing with the album. */}
+            <div className="flex flex-wrap items-start justify-center gap-x-9 gap-y-5 mb-5 pb-5 border-b border-white/10">
+              {/* Kingdom Come Foundation — the album's parent non-profit. No
+                  external site yet, so it stays unlinked for now.
+                  TODO: swap this text lockup for the real logo once
+                  /media/kingdom-come.png is added to the repo. */}
+              <div className="flex flex-col items-center gap-2">
+                <span
+                  className="text-[9px] uppercase tracking-[0.26em]"
+                  style={{ color: "var(--colour-ink)", opacity: 0.4 }}
+                >
+                  Presented by
+                </span>
+                <div className="text-center leading-none" style={{ opacity: 0.78 }}>
+                  <div className="font-display text-[17px]" style={{ color: "var(--colour-glow)" }}>
+                    Kingdom Come
+                  </div>
+                  <div
+                    className="text-[8px] uppercase tracking-[0.36em] mt-1"
+                    style={{ color: "var(--colour-amber)" }}
+                  >
+                    Foundation
+                  </div>
+                </div>
+              </div>
+
+              {/* CrossCoders — a Kingdom Come Foundation project that donated
+                  this site. Mark rebuilt from CrossCoders' own brand icon. */}
+              <div className="flex flex-col items-center gap-2">
+                <span
+                  className="text-[9px] uppercase tracking-[0.26em]"
+                  style={{ color: "var(--colour-ink)", opacity: 0.4 }}
+                >
+                  Website donated by
+                </span>
+                <a
+                  href="https://www.crosscoders.co.za"
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  aria-label="CrossCoders - free digital solutions for the church"
+                  className="flex items-center gap-2 opacity-75 hover:opacity-100 transition-opacity"
+                >
+                  <Image
+                    src="/media/crosscoders-mark.svg"
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="h-6 w-6"
+                  />
+                  <span className="font-display text-[17px]" style={{ color: "var(--colour-ink)" }}>
+                    CrossCoders
+                  </span>
+                </a>
+              </div>
+            </div>
+
             <p className="text-xs mb-1" style={{ color: "var(--colour-ink)", opacity: 0.35 }}>
               Artwork by{" "}
               <a
