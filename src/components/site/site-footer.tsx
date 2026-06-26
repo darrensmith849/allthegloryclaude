@@ -314,7 +314,7 @@ export default function SiteFooter() {
                   className="text-[10px] tracking-[0.12em] underline decoration-white/20 underline-offset-4 transition-opacity hover:opacity-80"
                   style={{ color: "var(--colour-amber)" }}
                 >
-                  Visit crosscoders.co.za ↗
+                  Visit ↗
                 </a>
               </div>
             </div>
