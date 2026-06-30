@@ -66,24 +66,36 @@ export default function ContactPage() {
     const message = (formData.get("message") as string).trim();
 
     try {
-      // Submit through our own same-origin API route, which sends the
-      // message server-side (Resend, with a FormSubmit fallback) to
-      // daniel@alltheglory.co.za. Same-origin means CORS and privacy
-      // blockers can't kill the request the way the old direct
-      // browser→FormSubmit call could.
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
-      });
+      // Post straight to FormSubmit from the browser. FormSubmit blocks
+      // server-to-server calls (its anti-abuse rejects requests that don't
+      // come from a real browser), so submitting client-side is the
+      // supported path — it forwards each message to daniel@alltheglory.co.za.
+      const res = await fetch(
+        "https://formsubmit.co/ajax/daniel@alltheglory.co.za",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            message,
+            _subject: `New message from ${name} (All The Glory)`,
+            _template: "box",
+            _captcha: "false",
+          }),
+        },
+      );
       const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
+        success?: string | boolean;
       };
-      if (!res.ok || data.ok !== true) {
+      const ok =
+        res.ok && (data.success === true || data.success === "true");
+      if (!ok) {
         setServerError(
-          data.error ??
-            "We couldn't send your message right now. Please try again.",
+          "We couldn't send your message right now. Please try again.",
         );
         setStatus("idle");
         return;
