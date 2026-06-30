@@ -66,34 +66,31 @@ export default function ContactPage() {
     const message = (formData.get("message") as string).trim();
 
     try {
-      // Post straight to FormSubmit from the browser. FormSubmit blocks
-      // server-to-server calls (its anti-abuse rejects requests that don't
-      // come from a real browser), so submitting client-side is the
-      // supported path — it forwards each message to daniel@alltheglory.co.za.
-      const res = await fetch(
-        "https://formsubmit.co/ajax/daniel@alltheglory.co.za",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            message,
-            _subject: `New message from ${name} (All The Glory)`,
-            _template: "box",
-            _captcha: "false",
-          }),
+      // Web3Forms is submitted client-side — their free plan rejects
+      // server-to-server calls (403, Pro-only). The access key is public by
+      // design; Web3Forms returns CORS for browser calls and the recipient
+      // inbox is already verified, so there's no activation step. Emails the
+      // submission to the address linked to the access key.
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          access_key: "0a0492f8-1036-4a26-8c01-e3cbdd7fab32",
+          subject: `New message from ${name} (All The Glory)`,
+          from_name: "All The Glory website",
+          replyto: email,
+          name,
+          email,
+          message,
+        }),
+      });
       const data = (await res.json().catch(() => ({}))) as {
-        success?: string | boolean;
+        success?: boolean;
       };
-      const ok =
-        res.ok && (data.success === true || data.success === "true");
-      if (!ok) {
+      if (!res.ok || !data.success) {
         setServerError(
           "We couldn't send your message right now. Please try again.",
         );
