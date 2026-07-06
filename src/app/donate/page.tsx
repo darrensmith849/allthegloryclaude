@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-// Quick-amount shortcuts in ZAR (Rand). Never a maximum — the custom
-// field below accepts any positive amount.
-const PRESETS = [50, 100, 250, 500] as const;
+// Quick-amount shortcuts in ZAR (Rand), spanning R50 → R5000. These are
+// shortcuts only, never a cap — the custom field below accepts any amount
+// from R50 up.
+const PRESETS = [50, 100, 250, 500, 1000, 5000] as const;
+const MIN_AMOUNT = 50;
 
 export default function DonatePage() {
   const [amount, setAmount] = useState("100");
@@ -19,7 +21,7 @@ export default function DonatePage() {
     const n = Number(amount.trim());
     if (!amount.trim()) return "Please enter an amount.";
     if (!Number.isFinite(n) || n <= 0) return "Please enter a valid amount.";
-    if (n < 1) return "The minimum donation is R1.";
+    if (n < MIN_AMOUNT) return `The minimum donation is R${MIN_AMOUNT}.`;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       return "Please enter a valid email so Paystack can send your receipt.";
     return null;
@@ -157,8 +159,8 @@ export default function DonatePage() {
                 id="donation-amount"
                 type="number"
                 inputMode="decimal"
-                min="1"
-                step="1"
+                min={MIN_AMOUNT}
+                step="10"
                 value={amount}
                 onChange={(e) => {
                   setAmount(e.target.value);
