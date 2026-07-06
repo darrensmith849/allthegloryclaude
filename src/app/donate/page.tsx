@@ -263,7 +263,7 @@ export default function DonatePage() {
               alt="CrossCoders"
               width={700}
               height={264}
-              className="mt-auto pt-6 w-44 h-auto rounded-md"
+              className="mt-auto pt-6 w-48 h-auto mx-auto"
             />
           </div>
 
@@ -286,7 +286,7 @@ export default function DonatePage() {
               alt="Kingdom Come Foundation"
               width={700}
               height={233}
-              className="mt-auto pt-6 w-44 h-auto rounded-md"
+              className="mt-auto pt-6 w-48 h-auto mx-auto"
             />
           </div>
         </motion.section>
