@@ -53,9 +53,9 @@ export async function POST(req: Request) {
   // Guard against absurd values; Paystack amounts are in the minor unit
   // (cents for ZAR), so multiply by 100 and round to whole cents.
   const amountMinor = Math.round(amountNum * 100);
-  if (amountMinor < 100) {
+  if (amountMinor < 5000) {
     return NextResponse.json(
-      { error: "The minimum donation is R1." },
+      { error: "The minimum donation is R50." },
       { status: 400 },
     );
   }
