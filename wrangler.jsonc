@@ -2,7 +2,7 @@
   // Cloudflare Workers deployment for the All The Glory album site
   // (full-stack Next.js via OpenNext). https://opennext.js.org/cloudflare
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alltheglory",
+  "name": "allthegloryclaude",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -10,6 +10,12 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // Production custom domains — Cloudflare creates the DNS records + SSL and
+  // routes both apex and www to this worker.
+  "routes": [
+    { "pattern": "alltheglory.co.za", "custom_domain": true },
+    { "pattern": "www.alltheglory.co.za", "custom_domain": true }
+  ],
   // The 74MB album download lives in R2 (Workers static assets cap at 25MiB
   // per file) and is served directly from its public R2 URL — see
   // downloadZipSrc in src/content/album.ts — so the app worker doesn't need
