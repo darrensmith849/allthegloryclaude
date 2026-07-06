@@ -293,6 +293,34 @@ video::-webkit-media-controls-overlay-play-button {
   .hero-music-btn  { transition: none; }
 }
 
+/* Donation preset chips — used by /donate */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(244,240,232,0.78);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.chip:hover {
+  border-color: rgba(255,255,255,0.28);
+  color: rgba(244,240,232,0.95);
+  background: rgba(255,255,255,0.07);
+}
+.chip-active {
+  border-color: var(--colour-amber);
+  background: rgba(216,178,90,0.12);
+  color: var(--colour-amber);
+}
+
 @media (min-width: 1024px) {
   .social-link {
     font-size: 11px;

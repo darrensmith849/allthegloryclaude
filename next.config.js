@@ -13,16 +13,14 @@ const nextConfig = {
     qualities: [75, 90, 100],
   },
   async redirects() {
-    // Donation flow was retired. Bounce every old donate-adjacent URL to
-    // /contact (the closest "stay involved" surface) so anyone who has the
-    // links bookmarked doesn't hit a 404. Permanent so search engines
-    // forget the old URLs.
+    // /donate is a live donation page again (gifts go to CrossCoders, a
+    // venture of the Kingdom Come Foundation). Keep the old donate-adjacent
+    // aliases pointing at it so bookmarked links land in the right place.
     return [
-      { source: '/donate', destination: '/contact', permanent: true },
-      { source: '/give', destination: '/contact', permanent: true },
-      { source: '/sow', destination: '/contact', permanent: true },
-      // /success and /cancel were Stripe return URLs — point them at home
-      // since they have no successor.
+      { source: '/give', destination: '/donate', permanent: true },
+      { source: '/sow', destination: '/donate', permanent: true },
+      // /success and /cancel were the old Stripe return URLs — point them at
+      // home since they have no successor (the new flow uses /donate/success).
       { source: '/success', destination: '/', permanent: true },
       { source: '/cancel', destination: '/', permanent: true },
       // The commissioned-work page used to live at /events. Permanent so any
