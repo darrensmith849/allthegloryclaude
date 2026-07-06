@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 
 // Quick-amount shortcuts in ZAR (Rand), spanning R50 → R5000. These are
@@ -240,7 +241,7 @@ export default function DonatePage() {
           transition={cardTransition}
           className="mt-8 grid gap-4 sm:grid-cols-2"
         >
-          <div className="panel-scrim p-6">
+          <div className="panel-scrim p-6 flex flex-col">
             <div className="eyebrow eyebrow-amber">Where it goes</div>
             <h3 className="font-display mt-3 text-xl text-white">CrossCoders</h3>
             <p className="mt-3 text-sm text-white/70 leading-relaxed">
@@ -257,9 +258,16 @@ export default function DonatePage() {
             >
               crosscoders.co.za ↗
             </a>
+            <Image
+              src="/media/crosscoders-logo.png"
+              alt="CrossCoders"
+              width={700}
+              height={264}
+              className="mt-auto pt-6 w-44 h-auto rounded-md"
+            />
           </div>
 
-          <div className="panel-scrim p-6">
+          <div className="panel-scrim p-6 flex flex-col">
             <div className="eyebrow eyebrow-amber">The umbrella</div>
             <h3 className="font-display mt-3 text-xl text-white">
               Kingdom Come Foundation
@@ -271,14 +279,15 @@ export default function DonatePage() {
               artisan livelihoods.{" "}
               <span className="italic text-white/60">Until His Kingdom comes.</span>
             </p>
-            <a
-              href="https://kingdom-come-foundation.pages.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--colour-amber)]/80 hover:text-[var(--colour-amber)] transition-colors"
-            >
-              Kingdom Come Foundation ↗
-            </a>
+            {/* Link intentionally omitted until the Kingdom Come Foundation
+                site is live. */}
+            <Image
+              src="/media/kingdom-come-logo.png"
+              alt="Kingdom Come Foundation"
+              width={700}
+              height={233}
+              className="mt-auto pt-6 w-44 h-auto rounded-md"
+            />
           </div>
         </motion.section>
       </div>
