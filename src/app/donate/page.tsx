@@ -93,10 +93,10 @@ export default function DonatePage() {
           </p>
           <p className="mt-4 text-sm md:text-base text-white/70 max-w-xl mx-auto leading-relaxed">
             <span className="text-[var(--colour-amber)] font-medium">
-              100% of every donation goes to CrossCoders
+              100% of every donation goes to CrossCoders.
             </span>{" "}
-            — not to the music, and not to me. Your gift funds free software
-            for churches that could never otherwise afford it.
+            Your gift funds free software for churches that could never
+            otherwise afford it.
           </p>
         </motion.header>
 
