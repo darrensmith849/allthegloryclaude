@@ -3,7 +3,8 @@
 
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
+// Runs in the Cloudflare Workers runtime (via OpenNext) — no `edge` runtime
+// export, which OpenNext bundles separately and we don't need here.
 
 interface RawVerse {
   book_id: string;

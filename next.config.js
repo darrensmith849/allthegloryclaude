@@ -5,12 +5,10 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 31536000,
-    // Allow per-<Image/> quality overrides. Required from Next.js 16 onwards
-    // when a component passes a non-default value via the `quality` prop.
-    // 75 is the default; 90 + 100 are used by the sticky backdrop layers.
-    qualities: [75, 90, 100],
+    // Cloudflare Workers has no built-in image optimization service (that's a
+    // Vercel feature), so serve images as-is. The album art, lyric cards and
+    // photos are already sized appropriately at source.
+    unoptimized: true,
   },
   async redirects() {
     // /donate is a live donation page again (gifts go to CrossCoders, a

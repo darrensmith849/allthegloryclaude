@@ -1,0 +1,22 @@
+{
+  // Cloudflare Workers deployment for the All The Glory album site
+  // (full-stack Next.js via OpenNext). https://opennext.js.org/cloudflare
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "alltheglory",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // The 74MB album download lives in R2 (Workers static assets cap at 25MiB
+  // per file) and is served directly from its public R2 URL — see
+  // downloadZipSrc in src/content/album.ts — so the app worker doesn't need
+  // an R2 binding for it.
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (PAYSTACK_SECRET_KEY, ANTHROPIC_API_KEY, etc.) are set with
+  // `wrangler secret put <NAME>` or in the dashboard — never committed here.
+}
