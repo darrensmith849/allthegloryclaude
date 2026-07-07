@@ -90,7 +90,7 @@ export default function DonatePage() {
             Give to the mission
           </h1>
           <p className="font-display mt-5 text-base md:text-lg italic text-white/75 max-w-xl mx-auto leading-relaxed">
-            The music is a free offering. This isn’t.
+            The music is freely given. Your gift helps carry the mission further.
           </p>
           <p className="mt-4 text-sm md:text-base text-white/70 max-w-xl mx-auto leading-relaxed">
             <span className="text-[var(--colour-amber)] font-medium">
