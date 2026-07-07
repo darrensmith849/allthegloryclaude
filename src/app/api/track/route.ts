@@ -2,82 +2,50 @@
  * POST /api/track
  *
  * Accepts a tiny "something happened" event from the public site and
- * writes it to Vercel KV. Two event types:
+ * appends it to the D1 events table. Two event types:
  *   - { event: "view",     path: string,  sid?: string }
  *   - { event: "download", file: string }
  *
- * Returns 204 always (even when KV isn't configured) so the client can
- * fire-and-forget without ever blocking the user. Country is sniffed
- * from the Vercel edge header so the client never has to send it.
+ * Always returns 204 (even on error / when D1 is unavailable) so the client
+ * can fire-and-forget without ever blocking the visitor. Country is sniffed
+ * from Cloudflare's edge header so the client never has to send it.
  */
 import type { NextRequest } from "next/server";
-import {
-  isAnalyticsConfigured,
-  kv,
-  K,
-  DAY_TTL_SECONDS,
-  ACTIVE_WINDOW_MS,
-  utcDayKey,
-} from "@/lib/analytics/store";
+import { getDb } from "@/lib/analytics/store";
 
-// Force the route to render dynamically — every request must hit the KV
-// store, never the Next response cache.
+// Never cached — every request records a fresh event.
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  if (!isAnalyticsConfigured()) {
-    return new Response(null, { status: 204 });
-  }
-
-  let body: Record<string, unknown>;
   try {
-    body = await req.json();
-  } catch {
-    return new Response("bad json", { status: 400 });
-  }
+    const db = await getDb();
+    if (!db) return new Response(null, { status: 204 });
 
-  const event = String(body.event ?? "");
-  const country = req.headers.get("x-vercel-ip-country") ?? "??";
-  const now = Date.now();
-  const day = utcDayKey();
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const event = String(body.event ?? "");
+    const country = (req.headers.get("cf-ipcountry") || "??").slice(0, 4);
+    const ts = Date.now();
 
-  try {
     if (event === "view") {
       const path = String(body.path ?? "/").slice(0, 200);
       const sid = String(body.sid ?? "").slice(0, 64);
-
-      // Five writes per view + a prune. Within the free-tier budget for
-      // realistic traffic; if it ever isn't, switch the daily/path/country
-      // counters to a single pipeline.
-      await Promise.all([
-        kv.incr(K.viewsTotal),
-        kv.incr(K.viewsDay(day)).then(() =>
-          kv.expire(K.viewsDay(day), DAY_TTL_SECONDS),
-        ),
-        kv.zincrby(K.viewsByPath, 1, path),
-        kv.zincrby(K.viewsByCountry, 1, country),
-        sid ? kv.zadd(K.viewsActive, { score: now, member: sid }) : Promise.resolve(),
-        kv.zremrangebyscore(K.viewsActive, 0, now - ACTIVE_WINDOW_MS),
-      ]);
+      await db
+        .prepare(
+          "INSERT INTO events (type, path, country, sid, ts) VALUES ('view', ?1, ?2, ?3, ?4)",
+        )
+        .bind(path, country, sid, ts)
+        .run();
     } else if (event === "download") {
       const file = String(body.file ?? "").slice(0, 200);
-
-      await Promise.all([
-        kv.incr(K.downloadsTotal),
-        kv.incr(K.downloadsDay(day)).then(() =>
-          kv.expire(K.downloadsDay(day), DAY_TTL_SECONDS),
-        ),
-        kv.lpush(
-          K.downloadsList,
-          JSON.stringify({ time: now, file, country }),
-        ),
-        kv.ltrim(K.downloadsList, 0, 99),
-      ]);
+      await db
+        .prepare(
+          "INSERT INTO events (type, file, country, ts) VALUES ('download', ?1, ?2, ?3)",
+        )
+        .bind(file, country, ts)
+        .run();
     }
   } catch {
-    // KV outage / quota — never bubble it to the visitor.
-    return new Response(null, { status: 204 });
+    // D1 hiccup — swallow it; analytics must never affect the visitor.
   }
-
   return new Response(null, { status: 204 });
 }

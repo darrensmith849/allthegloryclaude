@@ -20,6 +20,15 @@
   // per file) and is served directly from its public R2 URL — see
   // downloadZipSrc in src/content/album.ts — so the app worker doesn't need
   // an R2 binding for it.
+  // Durable analytics store — page views, album downloads, and donations.
+  // Native Cloudflare D1 (SQLite), nothing external to configure.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alltheglory-data",
+      "database_id": "6154f7e2-beb7-43ea-9243-8e631b7f45f0"
+    }
+  ],
   "observability": {
     "enabled": true
   }

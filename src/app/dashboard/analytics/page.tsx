@@ -164,6 +164,24 @@ export default function AnalyticsPage() {
             />
           </div>
 
+          {/* Donations — money given via the Give page (to CrossCoders). */}
+          <div className="dash-col-3">
+            <Stat
+              label="Total given"
+              value={`${data.raisedCurrency === "ZAR" ? "R" : data.raisedCurrency + " "}${data.totalRaised.toLocaleString()}`}
+              hint={`${data.totalDonations.toLocaleString()} gift${data.totalDonations === 1 ? "" : "s"} · all time`}
+              tone="amber"
+            />
+          </div>
+          <div className="dash-col-3">
+            <Stat
+              label="Given today"
+              value={`${data.raisedCurrency === "ZAR" ? "R" : data.raisedCurrency + " "}${data.raisedToday.toLocaleString()}`}
+              hint="Donations to CrossCoders"
+              tone="ok"
+            />
+          </div>
+
           {/* Last 7 days — views */}
           <div className="dash-col-8">
             <Panel eyebrow="Last 7 days" title="Visits per day">
@@ -264,6 +282,35 @@ export default function AnalyticsPage() {
                       <span className="text-[var(--colour-ink-soft)] truncate">
                         <span aria-hidden="true">{flagFromCode(d.country)}</span>{" "}
                         <span title={d.file}>{d.file}</span>
+                      </span>
+                      <span className="text-[var(--colour-ink-quiet)] shrink-0">
+                        {timeAgo(d.time)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Recent donations */}
+          <div className="dash-col-12">
+            <Panel eyebrow="Recent donations" title="Latest gifts to CrossCoders">
+              {data.recentDonations.length === 0 ? (
+                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
+                  No donations yet. When someone gives on the Give page, the
+                  gift lands here within seconds.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {data.recentDonations.map((d, i) => (
+                    <div
+                      key={`${d.time}-${i}`}
+                      className="flex items-baseline justify-between gap-3 text-[12.5px]"
+                    >
+                      <span className="text-[var(--colour-ink-soft)]">
+                        {d.currency === "ZAR" ? "R" : d.currency + " "}
+                        {d.amount.toLocaleString()}
                       </span>
                       <span className="text-[var(--colour-ink-quiet)] shrink-0">
                         {timeAgo(d.time)}
