@@ -15,6 +15,16 @@ const nextConfig = {
     // venture of the Kingdom Come Foundation). Keep the old donate-adjacent
     // aliases pointing at it so bookmarked links land in the right place.
     return [
+      // Canonicalise the bare apex to www. (matches how the site behaved on
+      // Vercel). Without this, alltheglory.co.za and www.alltheglory.co.za are
+      // two separate origins — and the private dashboard's localStorage lives
+      // under www, so visiting the apex looked like the data had reset.
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'alltheglory.co.za' }],
+        destination: 'https://www.alltheglory.co.za/:path*',
+        permanent: true,
+      },
       { source: '/give', destination: '/donate', permanent: true },
       { source: '/sow', destination: '/donate', permanent: true },
       // /success and /cancel were the old Stripe return URLs — point them at
