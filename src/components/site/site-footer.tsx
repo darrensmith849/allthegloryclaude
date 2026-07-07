@@ -343,6 +343,10 @@ export default function SiteFooter() {
             </p>
             <p className="text-xs" style={{ color: "var(--colour-ink)", opacity: 0.25 }}>
               &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
+              {" · "}
+              <Link href="/privacy" className="hover:opacity-100 transition-opacity underline decoration-transparent hover:decoration-current underline-offset-2">
+                Privacy
+              </Link>
             </p>
           </motion.div>
         </div>

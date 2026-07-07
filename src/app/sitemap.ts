@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/commissions",
     "/testimony",
     "/contact",
+    "/privacy",
   ];
 
   return routes.map((path) => ({
