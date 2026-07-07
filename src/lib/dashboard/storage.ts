@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { DashboardState, emptyState, recommendedDaysFor } from "./types";
 
 const KEY = "atg:dashboard:v1";
+const TS_KEY = "atg:dashboard:v1:ts"; // last-modified epoch ms (for last-write-wins)
+const API = "/api/dashboard-state"; // durable D1-backed sync
 
 // Lazy reader so we don't blow up during SSR / build.
 function read(): DashboardState {
@@ -61,12 +63,95 @@ function read(): DashboardState {
   }
 }
 
-function write(state: DashboardState) {
+function hasLocal(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+function localTs(): number {
+  try {
+    return Number(window.localStorage.getItem(TS_KEY) ?? 0) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function write(state: DashboardState, ts: number = Date.now()) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(KEY, JSON.stringify(state));
+    window.localStorage.setItem(TS_KEY, String(ts));
   } catch {
     // quota / privacy - silently fail; the in-memory state still works for the session.
+  }
+  schedulePush(); // durable copy to D1 (debounced, best-effort)
+}
+
+// ── Durable sync to Cloudflare D1 ──────────────────────────────────
+// localStorage is the instant cache; D1 is the durable, cross-device store.
+let pushTimer: number | null = null;
+function schedulePush() {
+  if (typeof window === "undefined") return;
+  if (pushTimer) window.clearTimeout(pushTimer);
+  pushTimer = window.setTimeout(() => {
+    pushTimer = null;
+    pushNow();
+  }, 1500);
+}
+function pushNow() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (raw === null) return;
+    fetch(API, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ json: raw, updatedAt: localTs() }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // never let a sync failure affect the dashboard
+  }
+}
+
+// On load: reconcile localStorage with the durable D1 copy.
+//   - remote newer (or nothing local) → adopt remote
+//   - local newer / remote empty      → seed/update D1 from local
+// The server also refuses to let an empty state overwrite a non-empty one,
+// so a fresh browser (e.g. the bare domain) can never wipe your history.
+async function hydrateFromD1(apply: (s: DashboardState) => void) {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch(API, { cache: "no-store" });
+    if (!res.ok) return;
+    const data = (await res.json()) as { json?: string | null; updatedAt?: number };
+    const remoteTs = Number(data?.updatedAt ?? 0) || 0;
+    const lTs = localTs();
+
+    if (data?.json && remoteTs >= lTs) {
+      // Adopt the durable remote copy (newer, or we had nothing local).
+      try {
+        window.localStorage.setItem(KEY, data.json);
+        window.localStorage.setItem(TS_KEY, String(remoteTs));
+        apply(read());
+      } catch {
+        /* ignore */
+      }
+    } else if (hasLocal()) {
+      // Local is newer, or remote is empty — seed/update the durable copy.
+      if (localTs() === 0) {
+        try {
+          window.localStorage.setItem(TS_KEY, String(Date.now()));
+        } catch {
+          /* ignore */
+        }
+      }
+      pushNow();
+    }
+  } catch {
+    // offline / transient — the local cache still works; we'll sync next time.
   }
 }
 
@@ -85,15 +170,29 @@ export function useDashboard() {
   useEffect(() => {
     setState(read());
     setReady(true);
+
+    // Pull the durable copy and reconcile (may replace the local cache).
+    hydrateFromD1((next) => {
+      setState(next);
+      broadcast(next);
+    });
+
     const sync = (next: DashboardState) => setState(next);
     listeners.add(sync);
     const onStorage = (e: StorageEvent) => {
       if (e.key === KEY) setState(read());
     };
+    // Flush any pending debounced push before the tab is hidden/closed so the
+    // very last change is never lost.
+    const onHide = () => {
+      if (document.visibilityState === "hidden") pushNow();
+    };
     window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onHide);
     return () => {
       listeners.delete(sync);
       window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onHide);
     };
   }, []);
 
