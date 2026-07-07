@@ -5,7 +5,7 @@ export const site = {
   socials: {
     instagram: "https://www.instagram.com/allthe_glory",
     youtube: "https://www.youtube.com/@Allthe_glory",
-    spotify: "https://open.spotify.com/artist/3k1a0DpzY9A1cGtavpQXt5?si=5w17YKdiSlWR05_EqGj9aw",
+    spotify: "https://open.spotify.com/artist/31qIQqqntN5cVt0NGK8uUa",
     appleMusic: "", // TODO: paste the Apple Music artist URL when live (CD Baby distribution)
     youtubeMusic: "", // TODO: paste the YouTube Music artist URL when live (CD Baby distribution)
     facebook: "https://www.facebook.com/allthegloryy",
