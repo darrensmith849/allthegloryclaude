@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
 import { site } from "@/content/site";
+import { fireTrack } from "@/lib/track-event";
 import DownloadModal from "./DownloadModal";
 
 function TrackRow({
@@ -662,6 +663,10 @@ export default function AlbumPage() {
       .then(() => {
         clearLoading();
         setPlayingIndex(index);
+        fireTrack({
+          event: "play",
+          file: `Preview · ${album.tracks[index]?.title ?? "track"}`,
+        });
       })
       .catch(() => {
         // Playback was blocked (autoplay policy) or aborted by a newer click.

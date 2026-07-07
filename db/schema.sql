@@ -3,12 +3,14 @@
 -- Page views + album downloads. One row per event.
 CREATE TABLE IF NOT EXISTS events (
   id      INTEGER PRIMARY KEY AUTOINCREMENT,
-  type    TEXT NOT NULL,          -- 'view' | 'download'
+  type    TEXT NOT NULL,          -- 'view' | 'download' | 'play'
   path    TEXT,                   -- request path (views)
-  file    TEXT,                   -- file key (downloads)
+  file    TEXT,                   -- file key (downloads) / track (plays)
   country TEXT,                   -- cf-ipcountry, best effort
   sid     TEXT,                   -- anonymous session id (visitor de-dupe)
-  ts      INTEGER NOT NULL        -- epoch ms
+  ts      INTEGER NOT NULL,       -- epoch ms
+  ref     TEXT,                   -- referrer source hostname / 'direct' (views)
+  device  TEXT                    -- 'mobile' | 'tablet' | 'desktop' (views)
 );
 CREATE INDEX IF NOT EXISTS idx_events_type_ts ON events(type, ts);
 CREATE INDEX IF NOT EXISTS idx_events_sid_ts  ON events(sid, ts);

@@ -83,6 +83,16 @@ export default function AnalyticsPage() {
   const maxDlBucket = data
     ? Math.max(1, ...data.last7Days.map((d) => d.downloads))
     : 1;
+  // Week-over-week visit trend (this rolling 7 days vs the previous 7).
+  const wowPct =
+    data && data.viewsLastWeek > 0
+      ? Math.round(
+          ((data.viewsThisWeek - data.viewsLastWeek) / data.viewsLastWeek) * 100,
+        )
+      : data && data.viewsThisWeek > 0
+        ? 100
+        : 0;
+  const wowStr = `${wowPct >= 0 ? "↑" : "↓"} ${Math.abs(wowPct)}% vs last week`;
 
   return (
     <>
@@ -135,8 +145,16 @@ export default function AnalyticsPage() {
             <Stat
               label="Total visits"
               value={data.totalViews.toLocaleString()}
-              hint="All time, public pages"
+              hint={wowStr}
               tone="amber"
+            />
+          </div>
+          <div className="dash-col-3">
+            <Stat
+              label="Unique visitors"
+              value={data.uniqueVisitors.toLocaleString()}
+              hint="Distinct people, all time"
+              tone="calm"
             />
           </div>
           <div className="dash-col-3">
@@ -153,6 +171,14 @@ export default function AnalyticsPage() {
               value={data.viewsToday.toLocaleString()}
               hint={data.last7Days[6]?.date}
               tone="calm"
+            />
+          </div>
+          <div className="dash-col-3">
+            <Stat
+              label="Music plays"
+              value={data.totalPlays.toLocaleString()}
+              hint={`${data.playsToday.toLocaleString()} today`}
+              tone="amber"
             />
           </div>
           <div className="dash-col-3">
@@ -256,6 +282,113 @@ export default function AnalyticsPage() {
                       </span>
                       <span className="font-display text-[13px] text-[var(--colour-glow)]">
                         {c.count.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Traffic sources */}
+          <div className="dash-col-4">
+            <Panel eyebrow="Traffic sources" title="How they arrived">
+              {data.topSources.length === 0 ? (
+                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
+                  No external sources yet.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {data.topSources.map((s) => (
+                    <div key={s.label} className="flex items-baseline justify-between gap-2">
+                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] truncate" title={s.label}>
+                        {s.label}
+                      </span>
+                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
+                        {s.count.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Most played */}
+          <div className="dash-col-4">
+            <Panel eyebrow="Music" title="Most played">
+              {data.topTracks.length === 0 ? (
+                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
+                  No plays yet.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {data.topTracks.map((t) => (
+                    <div key={t.label} className="flex items-baseline justify-between gap-2">
+                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] truncate" title={t.label}>
+                        {t.label}
+                      </span>
+                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
+                        {t.count.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Devices */}
+          <div className="dash-col-4">
+            <Panel eyebrow="Devices" title="What they browse on">
+              {data.deviceSplit.length === 0 ? (
+                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
+                  No data yet.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {data.deviceSplit.map((d) => (
+                    <div key={d.label} className="flex items-baseline justify-between gap-2">
+                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] capitalize">
+                        {d.label}
+                      </span>
+                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
+                        {d.count.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Live activity feed */}
+          <div className="dash-col-12">
+            <Panel eyebrow="Live" title="Recent activity">
+              {data.recentActivity.length === 0 ? (
+                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
+                  Nothing yet — visits, plays, downloads and gifts appear here
+                  in real time.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {data.recentActivity.map((a, i) => (
+                    <div
+                      key={`${a.time}-${i}`}
+                      className="flex items-baseline justify-between gap-3 text-[12.5px]"
+                    >
+                      <span className="text-[var(--colour-ink-soft)] truncate">
+                        {a.country ? (
+                          <span aria-hidden="true">{flagFromCode(a.country)} </span>
+                        ) : null}
+                        <span
+                          className={a.kind === "donation" ? "text-[var(--colour-glow)]" : ""}
+                        >
+                          {a.label}
+                        </span>
+                      </span>
+                      <span className="text-[var(--colour-ink-quiet)] shrink-0">
+                        {timeAgo(a.time)}
                       </span>
                     </div>
                   ))}

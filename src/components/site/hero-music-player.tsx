@@ -2,6 +2,18 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import { fireTrack } from "@/lib/track-event";
+
+// Log a "played the opening song" event once per session.
+function logHeroPlay() {
+  try {
+    if (sessionStorage.getItem("atg:played:hero")) return;
+    sessionStorage.setItem("atg:played:hero", "1");
+  } catch {
+    /* storage blocked — still log once per load */
+  }
+  fireTrack({ event: "play", file: "Hero · John 19:30 (opening song)" });
+}
 
 /**
  * Hero music — the album's opening track ("John 19:30 — It is finished")
@@ -103,7 +115,10 @@ export default function HeroMusicPlayer() {
         ref={audioRef}
         src={SRC}
         preload="metadata"
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          setPlaying(true);
+          logHeroPlay();
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
       />
