@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
           {/* Headline stats */}
           <div className="dash-col-3">
             <Stat
-              label="Total visits"
+              label="Total views"
               value={data.totalViews.toLocaleString()}
               hint={wowStr}
               tone="amber"
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="dash-col-3">
             <Stat
-              label="Visits today"
+              label="Views today"
               value={data.viewsToday.toLocaleString()}
               hint={data.last7Days[6]?.date}
               tone="calm"
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
 
           {/* Last 7 days — views */}
           <div className="dash-col-8">
-            <Panel eyebrow="Last 7 days" title="Visits per day">
+            <Panel eyebrow="Last 7 days" title="Views per day">
               <DayBars
                 rows={data.last7Days}
                 max={maxViewsBucket}

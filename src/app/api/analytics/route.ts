@@ -134,7 +134,9 @@ export async function GET() {
         .prepare("SELECT path, COUNT(*) AS c FROM events WHERE type='view' AND path IS NOT NULL GROUP BY path ORDER BY c DESC LIMIT 10")
         .all<{ path: string; c: number }>(),
       db
-        .prepare("SELECT country, COUNT(*) AS c FROM events WHERE type='view' AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 10")
+        // Unique visitors per country (distinct sessions), not raw page views —
+        // "Where visitors come from" should count people, not page loads.
+        .prepare("SELECT country, COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS c FROM events WHERE type='view' AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 10")
         .all<{ country: string; c: number }>(),
       db
         .prepare("SELECT ref, COUNT(*) AS c FROM events WHERE type='view' AND ref IS NOT NULL AND ref<>'internal' GROUP BY ref ORDER BY c DESC LIMIT 8")
