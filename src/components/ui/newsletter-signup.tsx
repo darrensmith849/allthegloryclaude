@@ -1,24 +1,19 @@
 "use client";
 
 /**
- * Newsletter signup — submits the email straight to Web3Forms
- * (client-side), the same free service and access key the contact form
- * uses. Their free plan rejects server-to-server calls, so the POST is
- * made from the browser; the access key is public by design. Each
- * sign-up arrives as an email to the inbox linked to the key.
+ * Newsletter signup — posts the email to our own /api/contact route, which
+ * sends the notification through Brevo from our authenticated domain so it
+ * reaches the inbox instead of spam. Each sign-up arrives as an email to the
+ * All The Glory inbox.
  *
- * (Previously this posted to /api/subscribe, which was wired to Resend.
- * Resend was retired, so that endpoint is gone and this talks to
- * Web3Forms directly — no server env vars required.)
+ * (History: posted to /api/subscribe→Resend, then directly to Web3Forms,
+ * now /api/contact→Brevo — matching the contact form.)
  */
 
 import { useState } from "react";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-// Same public Web3Forms access key the contact form uses — routes to the
-// All The Glory inbox.
-const WEB3FORMS_KEY = "0a0492f8-1036-4a26-8c01-e3cbdd7fab32";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function NewsletterSignup() {
@@ -51,19 +46,16 @@ export default function NewsletterSignup() {
     setStatus("loading");
     setMessage("");
     try {
-      const res = await fetch("https://api.web3forms.com/submit", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({
-          access_key: WEB3FORMS_KEY,
-          subject: "New newsletter signup - All The Glory",
-          from_name: "All The Glory website",
-          replyto: trimmed,
+          kind: "newsletter",
           email: trimmed,
-          message: `New "Stay in the loop" subscriber: ${trimmed}`,
+          botcheck: trap || "",
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {

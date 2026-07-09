@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 // Plain-English privacy policy, specific to what this site actually does
-// (contact form + newsletter via Web3Forms, donations via Paystack, light
+// (contact form + newsletter via Brevo, donations via Paystack, light
 // first-party analytics, Cloudflare hosting, YouTube embeds). Not legal
 // advice — review before relying on it.
 
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2 marker:text-[var(--colour-amber)]/60">
               <li>
-                <a href="https://web3forms.com/privacy-policy" target="_blank" rel="noopener noreferrer" className={ext}>Web3Forms</a>{" "}
+                <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer" className={ext}>Brevo</a>{" "}
                 &mdash; delivers contact‑form and newsletter submissions to our
                 inbox.
               </li>

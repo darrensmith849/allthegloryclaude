@@ -66,25 +66,22 @@ export default function ContactPage() {
     const message = (formData.get("message") as string).trim();
 
     try {
-      // Web3Forms is submitted client-side — their free plan rejects
-      // server-to-server calls (403, Pro-only). The access key is public by
-      // design; Web3Forms returns CORS for browser calls and the recipient
-      // inbox is already verified, so there's no activation step. Emails the
-      // submission to the address linked to the access key.
-      const res = await fetch("https://api.web3forms.com/submit", {
+      // Posts to our own /api/contact route, which sends the message through
+      // Brevo from our authenticated domain (SPF/DKIM/DMARC aligned) so it
+      // lands in the inbox rather than spam. (Replaced Web3Forms, whose
+      // shared-server mail kept getting binned by the recipient's spam filter.)
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({
-          access_key: "0a0492f8-1036-4a26-8c01-e3cbdd7fab32",
-          subject: `New message from ${name} (All The Glory)`,
-          from_name: "All The Glory website",
-          replyto: email,
+          kind: "contact",
           name,
           email,
           message,
+          website: (formData.get("website") as string) || "",
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
