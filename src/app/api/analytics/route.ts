@@ -81,6 +81,19 @@ export async function GET() {
   const weekAgo = now - 7 * 86_400_000;
   const twoWeeksAgo = now - 14 * 86_400_000;
 
+  // Launch reset: from 2026-07-17 00:00 SAST (22:00 UTC on the 16th) the
+  // traffic metrics count only from launch forward — a clean baseline on
+  // release day. Before then `since` is 0 (all-time = current behaviour), so
+  // deploying this early changes nothing until the launch moment. Pre-launch
+  // events are preserved (filtered out, not deleted) and can be un-filtered by
+  // moving LAUNCH_BASELINE back. Donations are intentionally NOT reset (they're
+  // financial records — kept all-time).
+  const LAUNCH_BASELINE = Date.UTC(2026, 6, 16, 22, 0, 0);
+  const since = now >= LAUNCH_BASELINE ? LAUNCH_BASELINE : 0;
+  const perDayStart = Math.max(weekStart, since);
+  const weekAgoF = Math.max(weekAgo, since);
+  const twoWeeksAgoF = Math.max(twoWeeksAgo, since);
+
   try {
     const [
       totalsRow,
@@ -104,8 +117,9 @@ export async function GET() {
             "COUNT(CASE WHEN type='download' THEN 1 END) AS downloads, " +
             "COUNT(CASE WHEN type='play' THEN 1 END) AS plays, " +
             "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' THEN sid END) AS uniques " +
-            "FROM events",
+            "FROM events WHERE ts>=?1",
         )
+        .bind(since)
         .first<{ views: number; downloads: number; plays: number; uniques: number }>(),
       db
         .prepare(
@@ -128,31 +142,37 @@ export async function GET() {
             "COUNT(CASE WHEN ts>=?2 AND ts<?1 THEN 1 END) AS lastW " +
             "FROM events WHERE type='view' AND ts>=?2",
         )
-        .bind(weekAgo, twoWeeksAgo)
+        .bind(weekAgoF, twoWeeksAgoF)
         .first<{ thisW: number; lastW: number }>(),
       db
-        .prepare("SELECT path, COUNT(*) AS c FROM events WHERE type='view' AND path IS NOT NULL GROUP BY path ORDER BY c DESC LIMIT 10")
+        .prepare("SELECT path, COUNT(*) AS c FROM events WHERE type='view' AND ts>=?1 AND path IS NOT NULL GROUP BY path ORDER BY c DESC LIMIT 10")
+        .bind(since)
         .all<{ path: string; c: number }>(),
       db
         // Unique visitors per country (distinct sessions), not raw page views —
         // "Where visitors come from" should count people, not page loads.
-        .prepare("SELECT country, COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS c FROM events WHERE type='view' AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 10")
+        .prepare("SELECT country, COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS c FROM events WHERE type='view' AND ts>=?1 AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 10")
+        .bind(since)
         .all<{ country: string; c: number }>(),
       db
-        .prepare("SELECT ref, COUNT(*) AS c FROM events WHERE type='view' AND ref IS NOT NULL AND ref<>'internal' GROUP BY ref ORDER BY c DESC LIMIT 8")
+        .prepare("SELECT ref, COUNT(*) AS c FROM events WHERE type='view' AND ts>=?1 AND ref IS NOT NULL AND ref<>'internal' GROUP BY ref ORDER BY c DESC LIMIT 8")
+        .bind(since)
         .all<{ ref: string; c: number }>(),
       db
-        .prepare("SELECT device, COUNT(*) AS c FROM events WHERE type='view' AND device IS NOT NULL GROUP BY device ORDER BY c DESC")
+        .prepare("SELECT device, COUNT(*) AS c FROM events WHERE type='view' AND ts>=?1 AND device IS NOT NULL GROUP BY device ORDER BY c DESC")
+        .bind(since)
         .all<{ device: string; c: number }>(),
       db
-        .prepare("SELECT file, COUNT(*) AS c FROM events WHERE type='play' AND file IS NOT NULL GROUP BY file ORDER BY c DESC LIMIT 8")
+        .prepare("SELECT file, COUNT(*) AS c FROM events WHERE type='play' AND ts>=?1 AND file IS NOT NULL GROUP BY file ORDER BY c DESC LIMIT 8")
+        .bind(since)
         .all<{ file: string; c: number }>(),
       db
         .prepare("SELECT date(ts/1000,'unixepoch') AS d, type, COUNT(*) AS c FROM events WHERE ts>=?1 GROUP BY d, type")
-        .bind(weekStart)
+        .bind(perDayStart)
         .all<{ d: string; type: string; c: number }>(),
       db
-        .prepare("SELECT type, path, file, country, ts FROM events ORDER BY ts DESC LIMIT 18")
+        .prepare("SELECT type, path, file, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 18")
+        .bind(since)
         .all<{ type: string; path: string | null; file: string | null; country: string | null; ts: number }>(),
       db
         .prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS s, COALESCE(SUM(CASE WHEN ts>=?1 THEN amount END),0) AS today FROM donations")
