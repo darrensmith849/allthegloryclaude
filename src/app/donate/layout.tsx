@@ -10,6 +10,14 @@ export const metadata: Metadata = {
     description:
       "100% of every donation goes to CrossCoders, a venture of the Kingdom Come Foundation.",
     url: "/donate",
+    images: [
+      {
+        url: "/og-dove.jpg",
+        width: 1200,
+        height: 630,
+        alt: "All The Glory - From Darkness To Light",
+      },
+    ],
   },
 };
 

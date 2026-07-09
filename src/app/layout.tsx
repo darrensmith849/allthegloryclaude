@@ -75,6 +75,7 @@ export const metadata: Metadata = {
   },
   description: site.description,
   metadataBase: new URL(site.url),
+  icons: { icon: "/favicon.png", apple: "/favicon.png" },
   alternates: {
     canonical: "/",
   },
