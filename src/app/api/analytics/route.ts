@@ -22,6 +22,8 @@ interface Count {
 interface DayRow {
   date: string;
   views: number;
+  visitors: number;
+  plays: number;
   downloads: number;
 }
 interface DownloadEvent {
@@ -44,22 +46,39 @@ interface Activity {
 export interface AnalyticsPayload {
   setupNeeded?: boolean;
   fetchedAt: number;
+  trackedSince: number;
   totalViews: number;
   viewsToday: number;
   activeNow: number;
   uniqueVisitors: number;
+  visitorsToday: number;
   totalDownloads: number;
   downloadsToday: number;
   totalPlays: number;
   playsToday: number;
+  views7d: number;
+  visitors7d: number;
+  downloads7d: number;
+  plays7d: number;
+  views30d: number;
+  visitors30d: number;
+  downloads30d: number;
+  plays30d: number;
   viewsThisWeek: number;
   viewsLastWeek: number;
+  downloadsThisWeek: number;
+  downloadsLastWeek: number;
+  playsThisWeek: number;
+  playsLastWeek: number;
   topPages: { path: string; count: number }[];
   topCountries: { code: string; count: number }[];
+  topDownloadCountries: { code: string; count: number }[];
   topSources: Count[];
   deviceSplit: Count[];
   topTracks: Count[];
+  topDownloads: Count[];
   last7Days: DayRow[];
+  last30Days: DayRow[];
   recentDownloads: DownloadEvent[];
   recentActivity: Activity[];
   // Donations
@@ -80,19 +99,13 @@ export async function GET() {
   const weekStart = startOfUtcDayMs(new Date(now - 6 * 86_400_000));
   const weekAgo = now - 7 * 86_400_000;
   const twoWeeksAgo = now - 14 * 86_400_000;
+  const thirtyDaysAgo = now - 30 * 86_400_000;
+  const thirtyDayStart = startOfUtcDayMs(new Date(thirtyDaysAgo));
 
-  // Launch reset: from 2026-07-17 00:00 SAST (22:00 UTC on the 16th) the
-  // traffic metrics count only from launch forward — a clean baseline on
-  // release day. Before then `since` is 0 (all-time = current behaviour), so
-  // deploying this early changes nothing until the launch moment. Pre-launch
-  // events are preserved (filtered out, not deleted) and can be un-filtered by
-  // moving LAUNCH_BASELINE back. Donations are intentionally NOT reset (they're
-  // financial records — kept all-time).
-  const LAUNCH_BASELINE = Date.UTC(2026, 6, 16, 22, 0, 0);
-  const since = now >= LAUNCH_BASELINE ? LAUNCH_BASELINE : 0;
-  const perDayStart = Math.max(weekStart, since);
-  const weekAgoF = Math.max(weekAgo, since);
-  const twoWeeksAgoF = Math.max(twoWeeksAgo, since);
+  // Owner dashboard wants true lifetime numbers: "all time" means every row
+  // stored in D1, not a launch-day reset. Keep any filtering decision in the UI
+  // layer later if a campaign view is needed.
+  const since = 0;
 
   try {
     const [
@@ -100,12 +113,16 @@ export async function GET() {
       todayRow,
       activeRow,
       weekRow,
+      periodRow,
       topPathsRes,
       topCountriesRes,
+      topDownloadCountriesRes,
       topSourcesRes,
       deviceRes,
       topTracksRes,
+      topDownloadsRes,
       perDayRes,
+      perDay30Res,
       recentEventsRes,
       donRow,
       recentDonationsRes,
@@ -142,8 +159,48 @@ export async function GET() {
             "COUNT(CASE WHEN ts>=?2 AND ts<?1 THEN 1 END) AS lastW " +
             "FROM events WHERE type='view' AND ts>=?2",
         )
-        .bind(weekAgoF, twoWeeksAgoF)
+        .bind(weekAgo, twoWeeksAgo)
         .first<{ thisW: number; lastW: number }>(),
+      db
+        .prepare(
+          "SELECT " +
+            "COUNT(CASE WHEN type='view' AND ts>=?1 THEN 1 END) AS viewsToday, " +
+            "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' AND ts>=?1 THEN sid END) AS visitorsToday, " +
+            "COUNT(CASE WHEN type='download' AND ts>=?1 THEN 1 END) AS downloadsToday, " +
+            "COUNT(CASE WHEN type='play' AND ts>=?1 THEN 1 END) AS playsToday, " +
+            "COUNT(CASE WHEN type='view' AND ts>=?2 THEN 1 END) AS views7d, " +
+            "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' AND ts>=?2 THEN sid END) AS visitors7d, " +
+            "COUNT(CASE WHEN type='download' AND ts>=?2 THEN 1 END) AS downloads7d, " +
+            "COUNT(CASE WHEN type='play' AND ts>=?2 THEN 1 END) AS plays7d, " +
+            "COUNT(CASE WHEN type='view' AND ts>=?3 THEN 1 END) AS views30d, " +
+            "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' AND ts>=?3 THEN sid END) AS visitors30d, " +
+            "COUNT(CASE WHEN type='download' AND ts>=?3 THEN 1 END) AS downloads30d, " +
+            "COUNT(CASE WHEN type='play' AND ts>=?3 THEN 1 END) AS plays30d, " +
+            "COUNT(CASE WHEN type='download' AND ts>=?2 THEN 1 END) AS downloadsThisWeek, " +
+            "COUNT(CASE WHEN type='download' AND ts>=?4 AND ts<?2 THEN 1 END) AS downloadsLastWeek, " +
+            "COUNT(CASE WHEN type='play' AND ts>=?2 THEN 1 END) AS playsThisWeek, " +
+            "COUNT(CASE WHEN type='play' AND ts>=?4 AND ts<?2 THEN 1 END) AS playsLastWeek " +
+            "FROM events",
+        )
+        .bind(todayStart, weekAgo, thirtyDayStart, twoWeeksAgo)
+        .first<{
+          viewsToday: number;
+          visitorsToday: number;
+          downloadsToday: number;
+          playsToday: number;
+          views7d: number;
+          visitors7d: number;
+          downloads7d: number;
+          plays7d: number;
+          views30d: number;
+          visitors30d: number;
+          downloads30d: number;
+          plays30d: number;
+          downloadsThisWeek: number;
+          downloadsLastWeek: number;
+          playsThisWeek: number;
+          playsLastWeek: number;
+        }>(),
       db
         .prepare("SELECT path, COUNT(*) AS c FROM events WHERE type='view' AND ts>=?1 AND path IS NOT NULL GROUP BY path ORDER BY c DESC LIMIT 10")
         .bind(since)
@@ -152,6 +209,10 @@ export async function GET() {
         // Unique visitors per country (distinct sessions), not raw page views —
         // "Where visitors come from" should count people, not page loads.
         .prepare("SELECT country, COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS c FROM events WHERE type='view' AND ts>=?1 AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 10")
+        .bind(since)
+        .all<{ country: string; c: number }>(),
+      db
+        .prepare("SELECT country, COUNT(*) AS c FROM events WHERE type='download' AND ts>=?1 AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 8")
         .bind(since)
         .all<{ country: string; c: number }>(),
       db
@@ -167,9 +228,17 @@ export async function GET() {
         .bind(since)
         .all<{ file: string; c: number }>(),
       db
-        .prepare("SELECT date(ts/1000,'unixepoch') AS d, type, COUNT(*) AS c FROM events WHERE ts>=?1 GROUP BY d, type")
-        .bind(perDayStart)
-        .all<{ d: string; type: string; c: number }>(),
+        .prepare("SELECT COALESCE(file,'Album download') AS file, COUNT(*) AS c FROM events WHERE type='download' AND ts>=?1 GROUP BY file ORDER BY c DESC LIMIT 8")
+        .bind(since)
+        .all<{ file: string; c: number }>(),
+      db
+        .prepare("SELECT date(ts/1000,'unixepoch') AS d, type, COUNT(*) AS c, COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' THEN sid END) AS visitors FROM events WHERE ts>=?1 GROUP BY d, type")
+        .bind(weekStart)
+        .all<{ d: string; type: string; c: number; visitors: number }>(),
+      db
+        .prepare("SELECT date(ts/1000,'unixepoch') AS d, type, COUNT(*) AS c, COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' THEN sid END) AS visitors FROM events WHERE ts>=?1 GROUP BY d, type")
+        .bind(thirtyDayStart)
+        .all<{ d: string; type: string; c: number; visitors: number }>(),
       db
         .prepare("SELECT type, path, file, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 18")
         .bind(since)
@@ -185,21 +254,41 @@ export async function GET() {
 
     const topPages = (topPathsRes.results ?? []).map((r) => ({ path: r.path, count: Number(r.c) }));
     const topCountries = (topCountriesRes.results ?? []).map((r) => ({ code: r.country, count: Number(r.c) }));
+    const topDownloadCountries = (topDownloadCountriesRes.results ?? []).map((r) => ({ code: r.country, count: Number(r.c) }));
     const topSources: Count[] = (topSourcesRes.results ?? []).map((r) => ({ label: r.ref, count: Number(r.c) }));
     const deviceSplit: Count[] = (deviceRes.results ?? []).map((r) => ({ label: r.device, count: Number(r.c) }));
     const topTracks: Count[] = (topTracksRes.results ?? []).map((r) => ({ label: r.file, count: Number(r.c) }));
+    const topDownloads: Count[] = (topDownloadsRes.results ?? []).map((r) => ({ label: r.file, count: Number(r.c) }));
 
     const last7Days: DayRow[] = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setUTCDate(d.getUTCDate() - (6 - i));
-      return { date: utcDayKey(d), views: 0, downloads: 0 };
+      return { date: utcDayKey(d), views: 0, visitors: 0, plays: 0, downloads: 0 };
     });
     const byDate = new Map(last7Days.map((r) => [r.date, r]));
     for (const row of perDayRes.results ?? []) {
       const t = byDate.get(row.d);
       if (!t) continue;
       if (row.type === "view") t.views = Number(row.c);
+      if (row.type === "view") t.visitors = Number(row.visitors ?? 0);
       else if (row.type === "download") t.downloads = Number(row.c);
+      else if (row.type === "play") t.plays = Number(row.c);
+    }
+
+    const last30Days: DayRow[] = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - (29 - i));
+      return { date: utcDayKey(d), views: 0, visitors: 0, plays: 0, downloads: 0 };
+    });
+    const byDate30 = new Map(last30Days.map((r) => [r.date, r]));
+    for (const row of perDay30Res.results ?? []) {
+      const t = byDate30.get(row.d);
+      if (!t) continue;
+      if (row.type === "view") {
+        t.views = Number(row.c);
+        t.visitors = Number(row.visitors ?? 0);
+      } else if (row.type === "download") t.downloads = Number(row.c);
+      else if (row.type === "play") t.plays = Number(row.c);
     }
 
     const recentDownloads: DownloadEvent[] = (recentEventsRes.results ?? [])
@@ -232,22 +321,39 @@ export async function GET() {
 
     const payload: AnalyticsPayload = {
       fetchedAt: now,
+      trackedSince: since,
       totalViews: Number(totalsRow?.views ?? 0),
-      viewsToday: Number(todayRow?.views ?? 0),
+      viewsToday: Number(periodRow?.viewsToday ?? todayRow?.views ?? 0),
       activeNow: Number(activeRow?.c ?? 0),
       uniqueVisitors: Number(totalsRow?.uniques ?? 0),
+      visitorsToday: Number(periodRow?.visitorsToday ?? 0),
       totalDownloads: Number(totalsRow?.downloads ?? 0),
-      downloadsToday: Number(todayRow?.downloads ?? 0),
+      downloadsToday: Number(periodRow?.downloadsToday ?? todayRow?.downloads ?? 0),
       totalPlays: Number(totalsRow?.plays ?? 0),
-      playsToday: Number(todayRow?.plays ?? 0),
+      playsToday: Number(periodRow?.playsToday ?? todayRow?.plays ?? 0),
+      views7d: Number(periodRow?.views7d ?? 0),
+      visitors7d: Number(periodRow?.visitors7d ?? 0),
+      downloads7d: Number(periodRow?.downloads7d ?? 0),
+      plays7d: Number(periodRow?.plays7d ?? 0),
+      views30d: Number(periodRow?.views30d ?? 0),
+      visitors30d: Number(periodRow?.visitors30d ?? 0),
+      downloads30d: Number(periodRow?.downloads30d ?? 0),
+      plays30d: Number(periodRow?.plays30d ?? 0),
       viewsThisWeek: Number(weekRow?.thisW ?? 0),
       viewsLastWeek: Number(weekRow?.lastW ?? 0),
+      downloadsThisWeek: Number(periodRow?.downloadsThisWeek ?? 0),
+      downloadsLastWeek: Number(periodRow?.downloadsLastWeek ?? 0),
+      playsThisWeek: Number(periodRow?.playsThisWeek ?? 0),
+      playsLastWeek: Number(periodRow?.playsLastWeek ?? 0),
       topPages,
       topCountries,
+      topDownloadCountries,
       topSources,
       deviceSplit,
       topTracks,
+      topDownloads,
       last7Days,
+      last30Days,
       recentDownloads,
       recentActivity: activity,
       totalDonations: Number(donRow?.n ?? 0),

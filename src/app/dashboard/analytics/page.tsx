@@ -1,17 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Panel, Stat } from "@/components/dashboard/panel";
+import type { ReactNode } from "react";
+import { Panel } from "@/components/dashboard/panel";
 import type { AnalyticsPayload } from "@/app/api/analytics/route";
 
 const POLL_MS = 12_000;
 
-// Best-effort country flag emoji from a 2-letter ISO code. Falls back
-// to the code itself for "??" and other malformed values.
 function flagFromCode(code: string): string {
   if (!code || code.length !== 2) return code || "??";
   const upper = code.toUpperCase();
-  // ASCII A-Z → regional-indicator codepoints
   return upper
     .split("")
     .map((c) =>
@@ -23,10 +21,17 @@ function flagFromCode(code: string): string {
 }
 
 function shortDay(iso: string) {
-  // "2026-06-12" → "Fri 12"
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(undefined, {
     weekday: "short",
+    day: "numeric",
+  });
+}
+
+function shortDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    month: "short",
     day: "numeric",
   });
 }
@@ -37,6 +42,28 @@ function timeAgo(ms: number) {
   if (s < 3600) return `${Math.round(s / 60)}m ago`;
   if (s < 86_400) return `${Math.round(s / 3600)}h ago`;
   return `${Math.round(s / 86_400)}d ago`;
+}
+
+function n(value: number) {
+  return value.toLocaleString();
+}
+
+function pct(value: number, digits = 1) {
+  if (!Number.isFinite(value)) return "0%";
+  return `${value.toFixed(digits).replace(/\.0$/, "")}%`;
+}
+
+function trend(current: number, previous: number) {
+  if (previous <= 0 && current <= 0) return "flat";
+  if (previous <= 0) return "new activity";
+  const change = Math.round(((current - previous) / previous) * 100);
+  if (change === 0) return "flat vs previous 7d";
+  return `${change > 0 ? "up" : "down"} ${Math.abs(change)}% vs previous 7d`;
+}
+
+function money(amount: number, currency: string) {
+  const prefix = currency === "ZAR" ? "R" : `${currency} `;
+  return `${prefix}${amount.toLocaleString()}`;
 }
 
 export default function AnalyticsPage() {
@@ -76,30 +103,32 @@ export default function AnalyticsPage() {
     };
   }, [fetchOnce]);
 
-  // Largest 7-day bucket — used to normalise the bar chart heights.
-  const maxViewsBucket = data
-    ? Math.max(1, ...data.last7Days.map((d) => d.views))
+  const downloadRate =
+    data && data.uniqueVisitors > 0
+      ? (data.totalDownloads / data.uniqueVisitors) * 100
+      : 0;
+  const playRate =
+    data && data.uniqueVisitors > 0 ? (data.totalPlays / data.uniqueVisitors) * 100 : 0;
+  const downloadFromPlay =
+    data && data.totalPlays > 0 ? (data.totalDownloads / data.totalPlays) * 100 : 0;
+  const viewsPerVisitor =
+    data && data.uniqueVisitors > 0 ? data.totalViews / data.uniqueVisitors : 0;
+  const max30 = data
+    ? Math.max(
+        1,
+        ...data.last30Days.map((d) => Math.max(d.views, d.plays, d.downloads)),
+      )
     : 1;
-  const maxDlBucket = data
+  const max7Downloads = data
     ? Math.max(1, ...data.last7Days.map((d) => d.downloads))
     : 1;
-  // Week-over-week visit trend (this rolling 7 days vs the previous 7).
-  const wowPct =
-    data && data.viewsLastWeek > 0
-      ? Math.round(
-          ((data.viewsThisWeek - data.viewsLastWeek) / data.viewsLastWeek) * 100,
-        )
-      : data && data.viewsThisWeek > 0
-        ? 100
-        : 0;
-  const wowStr = `${wowPct >= 0 ? "↑" : "↓"} ${Math.abs(wowPct)}% vs last week`;
 
   return (
     <>
       <div className="dash-pagehead">
         <div>
           <div className="eyebrow eyebrow-amber">Analytics</div>
-          <h1 className="dash-title mt-1">Site activity</h1>
+          <h1 className="dash-title mt-1">Site command centre</h1>
           <div className="dash-subtitle flex items-center gap-2 flex-wrap">
             <span
               className="inline-flex h-2 w-2 rounded-full"
@@ -110,10 +139,10 @@ export default function AnalyticsPage() {
               }}
               aria-hidden="true"
             />
-            <span>Live · refreshes every {POLL_MS / 1000}s</span>
+            <span>Live data · refreshes every {POLL_MS / 1000}s</span>
             {lastFetched && (
               <span className="text-[var(--colour-ink-quiet)]">
-                · last update {timeAgo(lastFetched)}
+                · updated {timeAgo(lastFetched)}
               </span>
             )}
           </div>
@@ -130,295 +159,223 @@ export default function AnalyticsPage() {
 
       {setupNeeded && <SetupCard />}
       {error && !setupNeeded && (
-        <div className="dash-panel" style={{ padding: "16px 20px", marginBottom: 18, borderColor: "rgba(216,178,90,0.35)" }}>
+        <div
+          className="dash-panel"
+          style={{
+            padding: "16px 20px",
+            marginBottom: 18,
+            borderColor: "rgba(216,178,90,0.35)",
+          }}
+        >
           <div className="eyebrow eyebrow-amber">Heads up</div>
           <p className="text-[13px] text-[var(--colour-ink-soft)] mt-1">
-            Couldn&apos;t reach the analytics store: <code className="text-[var(--colour-amber-soft)]">{error}</code>. Will keep retrying.
+            Couldn&apos;t reach the analytics store:{" "}
+            <code className="text-[var(--colour-amber-soft)]">{error}</code>.
+            Will keep retrying.
           </p>
         </div>
       )}
 
       {data && !setupNeeded && (
         <div className="dash-grid">
-          {/* Headline stats */}
-          <div className="dash-col-3">
-            <Stat
-              label="Total views"
-              value={data.totalViews.toLocaleString()}
-              hint={wowStr}
-              tone="amber"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Unique visitors"
-              value={data.uniqueVisitors.toLocaleString()}
-              hint="Distinct people, all time"
-              tone="calm"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Visiting now"
-              value={data.activeNow}
-              hint="Active in the last 5 minutes"
-              tone="ok"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Views today"
-              value={data.viewsToday.toLocaleString()}
-              hint={data.last7Days[6]?.date}
-              tone="calm"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Music plays"
-              value={data.totalPlays.toLocaleString()}
-              hint={`${data.playsToday.toLocaleString()} today`}
-              tone="amber"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Downloads today"
-              value={data.downloadsToday.toLocaleString()}
-              hint={`${data.totalDownloads.toLocaleString()} all-time`}
-              tone="warn"
-            />
+          <div className="dash-col-12">
+            <Panel
+              eyebrow="Lifetime"
+              title="What has happened on the site, all time"
+              action={
+                <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--colour-ink-quiet)]">
+                  Since tracking began
+                </span>
+              }
+            >
+              <div className="grid gap-3 md:grid-cols-4">
+                <HeroMetric
+                  label="Album downloads"
+                  value={n(data.totalDownloads)}
+                  hint={`${n(data.downloadsToday)} today · ${n(data.downloads7d)} last 7d`}
+                  tone="gold"
+                />
+                <HeroMetric
+                  label="Music plays"
+                  value={n(data.totalPlays)}
+                  hint={`${n(data.playsToday)} today · ${trend(data.playsThisWeek, data.playsLastWeek)}`}
+                  tone="warm"
+                />
+                <HeroMetric
+                  label="Unique visitors"
+                  value={n(data.uniqueVisitors)}
+                  hint={`${n(data.visitors30d)} in the last 30 days`}
+                  tone="calm"
+                />
+                <HeroMetric
+                  label="Total page views"
+                  value={n(data.totalViews)}
+                  hint={`${viewsPerVisitor.toFixed(1)} views per visitor`}
+                  tone="cool"
+                />
+              </div>
+            </Panel>
           </div>
 
-          {/* Donations — money given via the Give page (to CrossCoders). */}
-          <div className="dash-col-3">
-            <Stat
-              label="Total given"
-              value={`${data.raisedCurrency === "ZAR" ? "R" : data.raisedCurrency + " "}${data.totalRaised.toLocaleString()}`}
-              hint={`${data.totalDonations.toLocaleString()} gift${data.totalDonations === 1 ? "" : "s"} · all time`}
-              tone="amber"
-            />
-          </div>
-          <div className="dash-col-3">
-            <Stat
-              label="Given today"
-              value={`${data.raisedCurrency === "ZAR" ? "R" : data.raisedCurrency + " "}${data.raisedToday.toLocaleString()}`}
-              hint="Donations to CrossCoders"
-              tone="ok"
-            />
+          <div className="dash-col-12">
+            <div className="grid gap-3 md:grid-cols-5">
+              <PulseMetric
+                label="Active now"
+                value={n(data.activeNow)}
+                hint="Last 5 minutes"
+                glow
+              />
+              <PulseMetric
+                label="Visitors today"
+                value={n(data.visitorsToday)}
+                hint={`${n(data.viewsToday)} views`}
+              />
+              <PulseMetric
+                label="Plays today"
+                value={n(data.playsToday)}
+                hint={`${n(data.plays7d)} last 7d`}
+              />
+              <PulseMetric
+                label="Downloads today"
+                value={n(data.downloadsToday)}
+                hint={`${n(data.downloads7d)} last 7d`}
+              />
+              <PulseMetric
+                label="30-day downloads"
+                value={n(data.downloads30d)}
+                hint={`${pct(downloadRate)} visitor-to-download`}
+              />
+            </div>
           </div>
 
-          {/* Last 7 days — views */}
-          <div className="dash-col-8">
-            <Panel eyebrow="Last 7 days" title="Views per day">
-              <DayBars
-                rows={data.last7Days}
-                max={maxViewsBucket}
-                pick={(r) => r.views}
-                colour="var(--colour-amber)"
+          <div className="dash-col-7">
+            <Panel eyebrow="Last 30 days" title="Traffic, plays and downloads">
+              <CompactBars rows={data.last30Days} max={max30} />
+              <div className="mt-5 grid gap-2 md:grid-cols-3">
+                <MicroStat label="Views" value={n(data.views30d)} />
+                <MicroStat label="Plays" value={n(data.plays30d)} />
+                <MicroStat label="Downloads" value={n(data.downloads30d)} />
+              </div>
+            </Panel>
+          </div>
+
+          <div className="dash-col-5">
+            <Panel eyebrow="Music funnel" title="Visitor behaviour">
+              <FunnelRows
+                rows={[
+                  {
+                    label: "Visitor to download",
+                    value: pct(downloadRate),
+                    detail: `${n(data.totalDownloads)} downloads / ${n(data.uniqueVisitors)} visitors`,
+                  },
+                  {
+                    label: "Visitor to play",
+                    value: pct(playRate),
+                    detail: `${n(data.totalPlays)} plays / ${n(data.uniqueVisitors)} visitors`,
+                  },
+                  {
+                    label: "Download per play",
+                    value: pct(downloadFromPlay),
+                    detail: `${n(data.totalDownloads)} downloads / ${n(data.totalPlays)} plays`,
+                  },
+                  {
+                    label: "Downloads this week",
+                    value: n(data.downloadsThisWeek),
+                    detail: trend(data.downloadsThisWeek, data.downloadsLastWeek),
+                  },
+                  {
+                    label: "Page views this week",
+                    value: n(data.viewsThisWeek),
+                    detail: trend(data.viewsThisWeek, data.viewsLastWeek),
+                  },
+                ]}
               />
             </Panel>
           </div>
 
-          {/* Top pages */}
-          <div className="dash-col-4">
-            <Panel eyebrow="Top pages" title="Most visited">
-              {data.topPages.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No traffic recorded yet.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.topPages.map((p) => (
-                    <div
-                      key={p.path}
-                      className="flex items-baseline justify-between gap-2"
-                    >
-                      <span
-                        className="text-[12.5px] text-[var(--colour-ink-soft)] truncate"
-                        title={p.path}
-                      >
-                        {p.path}
-                      </span>
-                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
-                        {p.count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
-
-          {/* Last 7 days — downloads */}
           <div className="dash-col-8">
-            <Panel eyebrow="Last 7 days" title="Album downloads per day">
+            <Panel eyebrow="Downloads" title="Album download momentum">
               <DayBars
                 rows={data.last7Days}
-                max={maxDlBucket}
+                max={max7Downloads}
                 pick={(r) => r.downloads}
                 colour="var(--colour-amber-soft)"
               />
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <RankedList
+                  title="Top downloaded files"
+                  empty="No downloads recorded yet."
+                  rows={data.topDownloads}
+                />
+                <CountryList
+                  title="Download countries"
+                  empty="No download countries yet."
+                  rows={data.topDownloadCountries}
+                />
+              </div>
             </Panel>
           </div>
 
-          {/* Top countries */}
           <div className="dash-col-4">
-            <Panel eyebrow="Top countries" title="Where visitors come from">
-              {data.topCountries.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No traffic recorded yet.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.topCountries.map((c) => (
-                    <div
-                      key={c.code}
-                      className="flex items-baseline justify-between gap-2"
-                    >
-                      <span className="text-[13px] text-[var(--colour-ink-soft)] flex items-center gap-2">
-                        <span aria-hidden="true">{flagFromCode(c.code)}</span>
-                        {c.code}
-                      </span>
-                      <span className="font-display text-[13px] text-[var(--colour-glow)]">
-                        {c.count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <Panel eyebrow="Pages" title="What people read">
+              <RankedList
+                empty="No page views yet."
+                rows={data.topPages.map((p) => ({ label: p.path, count: p.count }))}
+              />
             </Panel>
           </div>
 
-          {/* Traffic sources */}
-          <div className="dash-col-4">
-            <Panel eyebrow="Traffic sources" title="How they arrived">
-              {data.topSources.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No external sources yet.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.topSources.map((s) => (
-                    <div key={s.label} className="flex items-baseline justify-between gap-2">
-                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] truncate" title={s.label}>
-                        {s.label}
-                      </span>
-                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
-                        {s.count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
-
-          {/* Most played */}
           <div className="dash-col-4">
             <Panel eyebrow="Music" title="Most played">
-              {data.topTracks.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No plays yet.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.topTracks.map((t) => (
-                    <div key={t.label} className="flex items-baseline justify-between gap-2">
-                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] truncate" title={t.label}>
-                        {t.label}
-                      </span>
-                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
-                        {t.count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <RankedList empty="No plays yet." rows={data.topTracks} />
             </Panel>
           </div>
 
-          {/* Devices */}
           <div className="dash-col-4">
-            <Panel eyebrow="Devices" title="What they browse on">
-              {data.deviceSplit.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No data yet.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.deviceSplit.map((d) => (
-                    <div key={d.label} className="flex items-baseline justify-between gap-2">
-                      <span className="text-[12.5px] text-[var(--colour-ink-soft)] capitalize">
-                        {d.label}
-                      </span>
-                      <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
-                        {d.count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <Panel eyebrow="Audience" title="Visitor countries">
+              <CountryList empty="No visitor countries yet." rows={data.topCountries} />
             </Panel>
           </div>
 
-          {/* Live activity feed */}
-          <div className="dash-col-12">
+          <div className="dash-col-4">
+            <Panel eyebrow="Acquisition" title="How they arrived">
+              <RankedList empty="No external sources yet." rows={data.topSources} />
+            </Panel>
+          </div>
+
+          <div className="dash-col-4">
+            <Panel eyebrow="Devices" title="Browsing split">
+              <RankedList empty="No device data yet." rows={data.deviceSplit} capitalize />
+            </Panel>
+          </div>
+
+          <div className="dash-col-8">
             <Panel eyebrow="Live" title="Recent activity">
-              {data.recentActivity.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  Nothing yet — visits, plays, downloads and gifts appear here
-                  in real time.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.recentActivity.map((a, i) => (
-                    <div
-                      key={`${a.time}-${i}`}
-                      className="flex items-baseline justify-between gap-3 text-[12.5px]"
-                    >
-                      <span className="text-[var(--colour-ink-soft)] truncate">
-                        {a.country ? (
-                          <span aria-hidden="true">{flagFromCode(a.country)} </span>
-                        ) : null}
-                        <span
-                          className={a.kind === "donation" ? "text-[var(--colour-glow)]" : ""}
-                        >
-                          {a.label}
-                        </span>
-                      </span>
-                      <span className="text-[var(--colour-ink-quiet)] shrink-0">
-                        {timeAgo(a.time)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ActivityList rows={data.recentActivity} />
             </Panel>
           </div>
 
-          {/* Recent downloads */}
-          <div className="dash-col-12">
-            <Panel eyebrow="Recent downloads" title="Last 20 download events">
+          <div className="dash-col-4">
+            <Panel eyebrow="Recent downloads" title="Latest album saves">
               {data.recentDownloads.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No downloads recorded yet. Once a visitor downloads the
-                  album, the event lands here within seconds.
-                </div>
+                <EmptyState>No downloads recorded yet.</EmptyState>
               ) : (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {data.recentDownloads.map((d, i) => (
                     <div
                       key={`${d.time}-${i}`}
-                      className="flex items-baseline justify-between gap-3 text-[12.5px]"
+                      className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5"
                     >
-                      <span className="text-[var(--colour-ink-soft)] truncate">
+                      <div
+                        className="truncate text-[12.5px] text-[var(--colour-ink-soft)]"
+                        title={d.file}
+                      >
                         <span aria-hidden="true">{flagFromCode(d.country)}</span>{" "}
-                        <span title={d.file}>{d.file}</span>
-                      </span>
-                      <span className="text-[var(--colour-ink-quiet)] shrink-0">
+                        {d.file}
+                      </div>
+                      <div className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[var(--colour-ink-quiet)]">
                         {timeAgo(d.time)}
-                      </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -426,34 +383,26 @@ export default function AnalyticsPage() {
             </Panel>
           </div>
 
-          {/* Recent donations */}
-          <div className="dash-col-12">
-            <Panel eyebrow="Recent donations" title="Latest gifts to CrossCoders">
-              {data.recentDonations.length === 0 ? (
-                <div className="text-[12px] text-[var(--colour-ink-quiet)]">
-                  No donations yet. When someone gives on the Give page, the
-                  gift lands here within seconds.
+          {data.totalDonations > 0 && (
+            <div className="dash-col-12">
+              <Panel eyebrow="Legacy giving" title="Donation history">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <MicroStat
+                    label="Total given"
+                    value={money(data.totalRaised, data.raisedCurrency)}
+                  />
+                  <MicroStat
+                    label="Gifts"
+                    value={n(data.totalDonations)}
+                  />
+                  <MicroStat
+                    label="Given today"
+                    value={money(data.raisedToday, data.raisedCurrency)}
+                  />
                 </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {data.recentDonations.map((d, i) => (
-                    <div
-                      key={`${d.time}-${i}`}
-                      className="flex items-baseline justify-between gap-3 text-[12.5px]"
-                    >
-                      <span className="text-[var(--colour-ink-soft)]">
-                        {d.currency === "ZAR" ? "R" : d.currency + " "}
-                        {d.amount.toLocaleString()}
-                      </span>
-                      <span className="text-[var(--colour-ink-quiet)] shrink-0">
-                        {timeAgo(d.time)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
+              </Panel>
+            </div>
+          )}
         </div>
       )}
 
@@ -467,7 +416,272 @@ export default function AnalyticsPage() {
   );
 }
 
-// ── 7-day bar chart ──────────────────────────────────────────────
+function HeroMetric({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: ReactNode;
+  hint: string;
+  tone: "gold" | "warm" | "calm" | "cool";
+}) {
+  const colours = {
+    gold: "rgba(216,178,90,0.18)",
+    warm: "rgba(241,194,125,0.14)",
+    calm: "rgba(210,200,184,0.12)",
+    cool: "rgba(183,228,199,0.10)",
+  };
+  return (
+    <div
+      className="rounded-2xl border border-white/10 px-4 py-4"
+      style={{
+        background: `linear-gradient(135deg, ${colours[tone]}, rgba(255,255,255,0.025))`,
+      }}
+    >
+      <div className="eyebrow">{label}</div>
+      <div className="font-display mt-2 text-[34px] leading-none tracking-tight text-white/95">
+        {value}
+      </div>
+      <div className="mt-2 text-[12px] leading-relaxed text-[var(--colour-ink-quiet)]">
+        {hint}
+      </div>
+    </div>
+  );
+}
+
+function PulseMetric({
+  label,
+  value,
+  hint,
+  glow = false,
+}: {
+  label: string;
+  value: ReactNode;
+  hint: string;
+  glow?: boolean;
+}) {
+  return (
+    <div className="dash-stat">
+      <div className="eyebrow">{label}</div>
+      <div
+        className="dash-stat-value font-display"
+        style={{ color: glow ? "#b7e4c7" : undefined }}
+      >
+        {value}
+      </div>
+      <div className="dash-stat-hint">{hint}</div>
+    </div>
+  );
+}
+
+function MicroStat({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-3">
+      <div className="text-[10.5px] uppercase tracking-[0.2em] text-[var(--colour-ink-quiet)]">
+        {label}
+      </div>
+      <div className="font-display mt-1 text-[20px] text-[var(--colour-glow)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function FunnelRows({
+  rows,
+}: {
+  rows: { label: string; value: ReactNode; detail: string }[];
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="flex items-start justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.025] px-3 py-3"
+        >
+          <div className="min-w-0">
+            <div className="text-[12.5px] text-[var(--colour-ink-soft)]">
+              {row.label}
+            </div>
+            <div className="mt-1 text-[11.5px] leading-relaxed text-[var(--colour-ink-quiet)]">
+              {row.detail}
+            </div>
+          </div>
+          <div className="font-display text-[20px] text-[var(--colour-glow)] shrink-0">
+            {row.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RankedList({
+  title,
+  rows,
+  empty,
+  capitalize = false,
+}: {
+  title?: string;
+  rows: { label: string; count: number }[];
+  empty: string;
+  capitalize?: boolean;
+}) {
+  if (rows.length === 0) return <EmptyState>{empty}</EmptyState>;
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  return (
+    <div>
+      {title && (
+        <div className="mb-2 text-[10.5px] uppercase tracking-[0.2em] text-[var(--colour-ink-quiet)]">
+          {title}
+        </div>
+      )}
+      <div className="flex flex-col gap-2">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <div className="flex items-baseline justify-between gap-3">
+              <span
+                className={`truncate text-[12.5px] text-[var(--colour-ink-soft)] ${capitalize ? "capitalize" : ""}`}
+                title={row.label}
+              >
+                {row.label}
+              </span>
+              <span className="font-display text-[13px] text-[var(--colour-glow)] shrink-0">
+                {n(row.count)}
+              </span>
+            </div>
+            <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[var(--colour-amber)]/75"
+                style={{ width: `${Math.max(5, (row.count / max) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CountryList({
+  title,
+  rows,
+  empty,
+}: {
+  title?: string;
+  rows: { code: string; count: number }[];
+  empty: string;
+}) {
+  return (
+    <RankedList
+      title={title}
+      empty={empty}
+      rows={rows.map((row) => ({
+        label: `${flagFromCode(row.code)} ${row.code}`,
+        count: row.count,
+      }))}
+    />
+  );
+}
+
+function ActivityList({ rows }: { rows: AnalyticsPayload["recentActivity"] }) {
+  if (rows.length === 0) {
+    return (
+      <EmptyState>
+        Visits, plays and downloads appear here within seconds.
+      </EmptyState>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((a, i) => (
+        <div
+          key={`${a.time}-${i}`}
+          className="flex items-baseline justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5 text-[12.5px]"
+        >
+          <span className="min-w-0 truncate text-[var(--colour-ink-soft)]">
+            {a.country ? (
+              <span aria-hidden="true">{flagFromCode(a.country)} </span>
+            ) : null}
+            <span className={a.kind === "download" ? "text-[var(--colour-glow)]" : ""}>
+              {a.label}
+            </span>
+          </span>
+          <span className="text-[var(--colour-ink-quiet)] shrink-0">
+            {timeAgo(a.time)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CompactBars({
+  rows,
+  max,
+}: {
+  rows: AnalyticsPayload["last30Days"];
+  max: number;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-4 text-[10.5px] uppercase tracking-[0.18em] text-[var(--colour-ink-quiet)] mb-3">
+        <Legend colour="var(--colour-amber)" label="Views" />
+        <Legend colour="#b7e4c7" label="Plays" />
+        <Legend colour="var(--colour-amber-soft)" label="Downloads" />
+      </div>
+      <div className="grid grid-cols-[repeat(30,minmax(0,1fr))] gap-1 items-end h-44">
+        {rows.map((r, i) => {
+          const values = [
+            { key: "views", value: r.views, colour: "var(--colour-amber)" },
+            { key: "plays", value: r.plays, colour: "#b7e4c7" },
+            { key: "downloads", value: r.downloads, colour: "var(--colour-amber-soft)" },
+          ];
+          return (
+            <div key={r.date} className="h-full min-w-0 flex flex-col justify-end">
+              <div className="grid h-full grid-cols-3 items-end gap-px">
+                {values.map((v) => (
+                  <div
+                    key={v.key}
+                    className="rounded-[2px]"
+                    style={{
+                      height: `${Math.max(v.value > 0 ? 4 : 1, (v.value / max) * 100)}%`,
+                      minHeight: v.value > 0 ? 4 : 1,
+                      background: v.colour,
+                      opacity: v.value > 0 ? 0.82 : 0.12,
+                    }}
+                    title={`${shortDate(r.date)} ${v.key}: ${v.value}`}
+                  />
+                ))}
+              </div>
+              {(i === 0 || i === rows.length - 1) && (
+                <div className="mt-1 text-[9px] text-[var(--colour-ink-quiet)] -rotate-45 origin-top-left whitespace-nowrap">
+                  {shortDate(r.date)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Legend({ colour, label }: { colour: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className="inline-block h-2 w-2 rounded-full"
+        style={{ background: colour }}
+        aria-hidden="true"
+      />
+      {label}
+    </span>
+  );
+}
+
 function DayBars({
   rows,
   max,
@@ -483,13 +697,13 @@ function DayBars({
     <div className="grid grid-cols-7 gap-2 items-end" style={{ minHeight: 140 }}>
       {rows.map((r) => {
         const v = pick(r);
-        const pct = Math.max(2, Math.round((v / max) * 100));
+        const height = Math.max(2, Math.round((v / max) * 100));
         return (
           <div key={r.date} className="flex flex-col items-center gap-1.5">
             <div
               className="w-full rounded-sm transition-all duration-500"
               style={{
-                height: `${pct}%`,
+                height: `${height}%`,
                 minHeight: 6,
                 background: colour,
                 opacity: v === 0 ? 0.18 : 0.9,
@@ -509,7 +723,14 @@ function DayBars({
   );
 }
 
-// ── Setup card (shown when Vercel KV isn't provisioned yet) ──────
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-3 text-[12.5px] leading-relaxed text-[var(--colour-ink-quiet)]">
+      {children}
+    </div>
+  );
+}
+
 function SetupCard() {
   return (
     <div
@@ -522,46 +743,15 @@ function SetupCard() {
           "linear-gradient(135deg, rgba(216,178,90,0.10), rgba(216,178,90,0.02) 60%, transparent)",
       }}
     >
-      <div className="eyebrow eyebrow-amber">Setup needed · ~2 minutes</div>
+      <div className="eyebrow eyebrow-amber">Setup needed</div>
       <h2 className="font-display mt-2 text-[22px] md:text-[24px] tracking-tight text-white/95">
-        Connect Upstash Redis to start collecting analytics.
+        Connect the Cloudflare D1 analytics binding.
       </h2>
       <p className="text-[13.5px] text-[var(--colour-ink-soft)] mt-3 leading-relaxed max-w-xl">
-        The tracking + dashboard code is wired up. It needs a Redis store
-        on Vercel to keep the counts. The Upstash free tier covers every
-        realistic traffic level for this site.
-      </p>
-      <ol className="text-[13px] text-[var(--colour-ink-soft)] mt-4 leading-relaxed space-y-2 pl-5 list-decimal">
-        <li>
-          Open the project on{" "}
-          <a
-            href="https://vercel.com/dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--colour-amber)] hover:text-[var(--colour-glow)] underline"
-          >
-            vercel.com/dashboard
-          </a>
-          .
-        </li>
-        <li>
-          Open the <strong>Storage</strong> tab → <strong>Marketplace</strong> →
-          search <strong>Upstash</strong> → install the <strong>Redis</strong> integration. Accept the free plan.
-        </li>
-        <li>
-          Connect the integration to the{" "}
-          <code className="text-[var(--colour-amber-soft)]">allthegloryclaude</code> project.
-          Vercel auto-pushes <code className="text-[var(--colour-amber-soft)]">UPSTASH_REDIS_REST_URL</code> +{" "}
-          <code className="text-[var(--colour-amber-soft)]">UPSTASH_REDIS_REST_TOKEN</code> and triggers a redeploy.
-        </li>
-        <li>
-          Refresh this page — real numbers will start flowing in.
-        </li>
-      </ol>
-      <p className="text-[12px] text-[var(--colour-ink-quiet)] mt-4">
-        Until the store is connected, page-view and download events get
-        silently dropped (no errors for visitors), so it&apos;s safe to
-        sit in this state as long as you want.
+        The dashboard expects the Cloudflare D1 binding named{" "}
+        <code className="text-[var(--colour-amber-soft)]">DB</code>. Once the
+        Worker is deployed with that binding, page views, plays and downloads
+        will start flowing in.
       </p>
     </div>
   );
