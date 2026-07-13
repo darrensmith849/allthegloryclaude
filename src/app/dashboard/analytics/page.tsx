@@ -14,6 +14,16 @@ type ChartMetric = "visitors" | "pageViews" | "musicPlays" | "primaryCtaClicks";
 type PageSort = "views" | "uniqueVisitors" | "path";
 type Change = AnalyticsPayload["changes"]["pageViews"];
 
+const SETUP_ACTIONS = [
+  "Connect page views tracking",
+  "Track outbound Spotify clicks",
+  "Add UTM campaign links",
+  "Track Show.co / pre-save traffic",
+  "Track press kit downloads",
+  "Track email signups",
+  "Track QR code scans",
+];
+
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
@@ -103,6 +113,34 @@ function changeTone(change: Change | null): "up" | "down" | "flat" | "none" {
   if (change.direction === "up" || change.direction === "new") return "up";
   if (change.direction === "down") return "down";
   return "flat";
+}
+
+function hasActivity(data: AnalyticsPayload): boolean {
+  return (
+    data.summary.pageViews > 0 ||
+    data.summary.uniqueVisitors > 0 ||
+    data.summary.musicPlays > 0 ||
+    data.summary.primaryCtaClicks > 0
+  );
+}
+
+function releasePageViews(data: AnalyticsPayload): number {
+  return data.topPagesDetailed
+    .filter((row) => /album|release|from-darkness|darkness-to-light/i.test(`${row.path} ${row.title}`))
+    .reduce((sum, row) => sum + row.views, 0);
+}
+
+function strongestSource(data: AnalyticsPayload) {
+  return data.trafficSources.find((row) => row.visitors > 0) ?? null;
+}
+
+function strongestPage(data: AnalyticsPayload) {
+  return data.topPagesDetailed.find((row) => row.views > 0) ?? null;
+}
+
+function previousValue(change: Change | null): string | null {
+  if (!change || change.previous === null) return null;
+  return n(change.previous);
 }
 
 function money(amount: number, currency: string) {
@@ -341,6 +379,10 @@ function AnalyticsPageInner() {
       {data && !setupNeeded && (
         <div className="dash-grid">
           <div className="dash-col-12">
+            <WeeklyInsightPanel data={data} />
+          </div>
+
+          <div className="dash-col-12">
             <KpiGrid data={data} />
           </div>
 
@@ -375,22 +417,12 @@ function AnalyticsPageInner() {
           </div>
 
           <div className="dash-col-4">
-            <Panel eyebrow="Attention" title="Key insights">
-              <InsightsList rows={data.insights} />
-            </Panel>
+            <RecommendedActions data={data} />
           </div>
 
           <div className="dash-col-5">
-            <Panel eyebrow="Acquisition" title="How people found you">
+            <Panel eyebrow="Acquisition" title="Traffic sources">
               <TrafficSources rows={data.trafficSources} />
-              <div className="mt-5">
-                <div className="analytics-subhead">Campaign links</div>
-                {data.campaigns.length > 0 ? (
-                  <CampaignTable rows={data.campaigns} />
-                ) : (
-                  <EmptyState>Not enough data yet. UTM campaign fields are not currently captured.</EmptyState>
-                )}
-              </div>
             </Panel>
           </div>
 
@@ -429,17 +461,22 @@ function AnalyticsPageInner() {
           </div>
 
           <div className="dash-col-12">
+            <CampaignsPanel rows={data.campaigns} />
+          </div>
+
+          <div className="dash-col-12">
             <MusicEngagement data={data} />
           </div>
 
           <div className="dash-col-6">
-            <Panel eyebrow="Journey" title="Visitor journey">
+            <Panel eyebrow="Journey" title="Release funnel">
               <Funnel rows={data.funnel.steps} overall={data.funnel.overallConversionPct} largest={data.funnel.largestDropoff} />
+              <ReleaseSetupPrompts />
             </Panel>
           </div>
 
           <div className="dash-col-6">
-            <Panel eyebrow="Audience" title="Devices and locations">
+            <Panel eyebrow="Audience" title="Audience details">
               <div className="grid gap-4 md:grid-cols-2">
                 <Breakdown title="Devices" rows={data.breakdowns.devices} empty="No device data yet." />
                 <Breakdown title="Countries" rows={data.breakdowns.countries} empty="No country data yet." country />
@@ -462,7 +499,7 @@ function AnalyticsPageInner() {
           </div>
 
           <div className="dash-col-5">
-            <Panel eyebrow="Data quality" title="Tracking audit">
+            <Panel eyebrow="Data quality" title="Tracking health">
               <TrackingAudit rows={data.trackingAudit} />
             </Panel>
           </div>
@@ -512,6 +549,88 @@ function AnalyticsPageInner() {
           padding: 4px 10px;
           color: var(--colour-amber-soft);
           background: rgba(216,178,90,0.06);
+        }
+        .analytics-week-panel {
+          display: grid;
+          grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+          gap: 16px;
+          border-radius: 24px;
+          border: 1px solid rgba(216,178,90,0.18);
+          background:
+            radial-gradient(700px 260px at 10% 0%, rgba(216,178,90,0.13), transparent 70%),
+            rgba(255,255,255,0.04);
+          box-shadow:
+            0 18px 60px rgba(0,0,0,0.28),
+            inset 0 1px 0 rgba(255,255,255,0.05);
+          padding: 22px;
+        }
+        .analytics-week-support {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .analytics-week-card,
+        .analytics-action-card,
+        .analytics-builder,
+        .analytics-setup-row {
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.025);
+          border-radius: 14px;
+        }
+        .analytics-week-card {
+          padding: 13px;
+        }
+        .analytics-week-value {
+          margin-top: 6px;
+          font-family: var(--font-display), serif;
+          font-size: 18px;
+          line-height: 1.1;
+          color: var(--colour-glow);
+          overflow-wrap: anywhere;
+        }
+        .analytics-action-card {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 10px;
+          padding: 12px;
+        }
+        .analytics-action-dot {
+          width: 8px;
+          height: 8px;
+          margin-top: 5px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.24);
+        }
+        .analytics-action-dot-up { background: #b7e4c7; }
+        .analytics-action-dot-down { background: #f1a07d; }
+        .analytics-action-dot-flat { background: var(--colour-amber-soft); }
+        .analytics-builder {
+          padding: 14px;
+        }
+        .analytics-tracked-url {
+          min-height: 42px;
+          border-radius: 12px;
+          border: 1px solid rgba(216,178,90,0.18);
+          background: rgba(0,0,0,0.18);
+          color: var(--colour-ink-soft);
+          font-size: 12px;
+          line-height: 1.45;
+          overflow-wrap: anywhere;
+          padding: 10px 12px;
+        }
+        .analytics-setup-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 10px;
+          color: var(--colour-ink-soft);
+          font-size: 12px;
+          line-height: 1.35;
+        }
+        .analytics-previous {
+          margin-top: 2px;
+          font-size: 11px;
+          color: var(--colour-ink-faint);
         }
         .analytics-alert {
           padding: 16px 20px;
@@ -601,6 +720,13 @@ function AnalyticsPageInner() {
             flex-direction: column;
             align-items: stretch;
           }
+          .analytics-week-panel {
+            grid-template-columns: 1fr;
+            padding: 18px;
+          }
+          .analytics-week-support {
+            grid-template-columns: 1fr;
+          }
           .analytics-controls {
             justify-content: flex-start;
             width: 100%;
@@ -620,6 +746,38 @@ function AnalyticsPageInner() {
           .analytics-search {
             width: 100%;
           }
+          .analytics-table {
+            min-width: 0;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+          }
+          .analytics-table thead {
+            display: none;
+          }
+          .analytics-table tr {
+            display: block;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.025);
+            padding: 8px 10px;
+          }
+          .analytics-table td {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            border-bottom: 0;
+            padding: 7px 0;
+            text-align: right;
+          }
+          .analytics-table td::before {
+            content: attr(data-label);
+            flex: 0 0 auto;
+            color: var(--colour-ink-quiet);
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            text-align: left;
+          }
         }
       `}</style>
     </>
@@ -627,59 +785,60 @@ function AnalyticsPageInner() {
 }
 
 function KpiGrid({ data }: { data: AnalyticsPayload }) {
+  const albumViews = releasePageViews(data);
   const kpis = [
     {
-      label: "Unique visitors",
+      label: "Website visitors",
       value: n(data.summary.uniqueVisitors),
-      rawValue: data.summary.uniqueVisitors,
       change: data.changes.uniqueVisitors,
+      previous: previousValue(data.changes.uniqueVisitors),
       tooltip: "Distinct anonymous sessions with at least one page view in the selected range.",
       metric: "visitors" as ChartMetric,
       supported: true,
     },
     {
-      label: "Total page views",
+      label: "Public site page views",
       value: n(data.summary.pageViews),
-      rawValue: data.summary.pageViews,
       change: data.changes.pageViews,
+      previous: previousValue(data.changes.pageViews),
       tooltip: "All tracked page view events in the selected range.",
       metric: "pageViews" as ChartMetric,
       supported: true,
     },
     {
-      label: "Music plays",
+      label: "Album / release views",
+      value: n(albumViews),
+      change: null,
+      previous: null,
+      tooltip: "Real views on pages whose path or title looks like an album or release page.",
+      metric: "pageViews" as ChartMetric,
+      supported: true,
+    },
+    {
+      label: "Music play clicks",
       value: n(data.summary.musicPlays),
-      rawValue: data.summary.musicPlays,
       change: data.changes.musicPlays,
+      previous: previousValue(data.changes.musicPlays),
       tooltip: "Play-click events from the hero player and song previews. These are not verified completed streams.",
       metric: "musicPlays" as ChartMetric,
       supported: true,
     },
     {
-      label: "Primary CTA clicks",
+      label: "Album download clicks",
       value: n(data.summary.primaryCtaClicks),
-      rawValue: data.summary.primaryCtaClicks,
       change: data.changes.primaryCtaClicks,
+      previous: previousValue(data.changes.primaryCtaClicks),
       tooltip: "Currently measured as album download clicks, the primary tracked call to action.",
       metric: "primaryCtaClicks" as ChartMetric,
       supported: true,
     },
     {
-      label: "Avg engagement time",
-      value: duration(data.summary.avgEngagementTimeSec),
-      rawValue: 0,
+      label: "Spotify / pre-save clicks",
+      value: "Needs setup",
       change: null,
-      tooltip: "Needs a duration or heartbeat event before it can be calculated reliably.",
-      metric: "pageViews" as ChartMetric,
-      supported: false,
-    },
-    {
-      label: "Returning visitor %",
-      value: pct(data.summary.returningVisitorPct),
-      rawValue: 0,
-      change: null,
-      tooltip: "Needs a longer-lived anonymous visitor identifier. Current session ids reset by tab.",
-      metric: "visitors" as ChartMetric,
+      previous: null,
+      tooltip: "Add outbound event tracking to Spotify / pre-save links to populate this.",
+      metric: "primaryCtaClicks" as ChartMetric,
       supported: false,
     },
   ];
@@ -692,6 +851,7 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
           label={kpi.label}
           value={kpi.value}
           change={kpi.change}
+          previous={kpi.previous}
           tooltip={kpi.tooltip}
           supported={kpi.supported}
           sparkline={kpi.supported ? data.series.current.map((row) => row[kpi.metric]) : []}
@@ -701,10 +861,179 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
   );
 }
 
+function WeeklyInsightPanel({ data }: { data: AnalyticsPayload }) {
+  const active = hasActivity(data);
+  const topSource = strongestSource(data);
+  const topPage = strongestPage(data);
+  const mainInsight =
+    data.insights[0] ??
+    (active
+      ? {
+          title: "Activity is being tracked.",
+          detail: "Use the sections below to see which pages, sources and clicks are strongest in this range.",
+        }
+      : null);
+  const support = [
+    data.changes.pageViews.previous !== null
+      ? {
+          label: "Changed",
+          value: changeLabel(data.changes.pageViews),
+          detail: `${n(data.summary.pageViews)} public page views in ${data.range.label.toLowerCase()}.`,
+          tone: changeTone(data.changes.pageViews),
+        }
+      : {
+          label: "Changed",
+          value: "No comparison",
+          detail: data.comparison?.available === false ? data.comparison.reason ?? "Comparison unavailable." : "Not enough earlier data yet.",
+          tone: "none" as const,
+        },
+    topSource
+      ? {
+          label: "Worked",
+          value: topSource.label,
+          detail: `${n(topSource.visitors)} visitors · ${pct(topSource.percentage)} of tracked traffic.`,
+          tone: "up" as const,
+        }
+      : {
+          label: "Worked",
+          value: "Waiting",
+          detail: "Traffic source insight appears once visitors arrive.",
+          tone: "none" as const,
+        },
+    topPage
+      ? {
+          label: "Strong page",
+          value: topPage.title || topPage.path,
+          detail: `${n(topPage.views)} views · ${n(topPage.uniqueVisitors)} visitors.`,
+          tone: changeTone(topPage.change),
+        }
+      : {
+          label: "Strong page",
+          value: "Waiting",
+          detail: "Top page insight appears after page views are tracked.",
+          tone: "none" as const,
+        },
+  ];
+
+  return (
+    <section className="analytics-week-panel">
+      <div className="analytics-week-main">
+        <div className="eyebrow eyebrow-amber">This week</div>
+        <h2 className="font-display mt-2 text-[28px] leading-tight tracking-tight">
+          {mainInsight?.title ?? "Connect analytics data to surface weekly insights."}
+        </h2>
+        <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[var(--colour-ink-soft)]">
+          {mainInsight?.detail ??
+            "Once page views, outbound clicks and campaign tags are flowing, this panel will summarize what changed and what to do next."}
+        </p>
+      </div>
+      <div className="analytics-week-support">
+        {support.map((item) => (
+          <div key={item.label} className="analytics-week-card">
+            <div className="analytics-subhead">{item.label}</div>
+            <div className={`analytics-week-value analytics-change-${item.tone}`}>{item.value}</div>
+            <div className="mt-1 text-[12px] leading-relaxed text-[var(--colour-ink-quiet)]">
+              {item.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RecommendedActions({ data }: { data: AnalyticsPayload }) {
+  const actions: { title: string; detail: string; tone?: "up" | "down" | "flat" | "none" }[] = [];
+  const source = strongestSource(data);
+  const topPage = strongestPage(data);
+
+  if (!hasActivity(data)) {
+    return (
+      <Panel eyebrow="Mission next steps" title="Recommended next actions">
+        <SetupChecklist />
+      </Panel>
+    );
+  }
+
+  if (source) {
+    actions.push({
+      title: `${source.label} is the clearest traffic path.`,
+      detail: source.key === "direct"
+        ? "Use tracked links for the next share so direct traffic can be separated from WhatsApp, Instagram and QR scans."
+        : `Repeat what brought people from ${source.label.toLowerCase()}: share the strongest release link there again.`,
+      tone: "up",
+    });
+  }
+
+  if (topPage) {
+    actions.push({
+      title: `${topPage.title || topPage.path} is carrying attention.`,
+      detail: "Keep the primary streaming / contact action high on that page and remove any friction around it.",
+      tone: changeTone(topPage.change),
+    });
+  }
+
+  if (data.summary.musicPlays > 0 && data.summary.primaryCtaClicks === 0) {
+    actions.push({
+      title: "People are engaging with music, but not clicking the main CTA yet.",
+      detail: "Bring the Spotify / save / download action closer to the player and repeat it after the track list.",
+      tone: "flat",
+    });
+  }
+
+  if (data.campaigns.length === 0) {
+    actions.push({
+      title: "No UTM campaigns detected.",
+      detail: "Use the campaign URL builder below before the next Instagram, WhatsApp or church flyer share.",
+      tone: "none",
+    });
+  }
+
+  if (actions.length < 4) {
+    actions.push({
+      title: "Tighten tracking health.",
+      detail: "Prioritize Spotify/pre-save clicks, QR scans and email signups so the funnel tells the full story.",
+      tone: "none",
+    });
+  }
+
+  return (
+    <Panel eyebrow="Mission next steps" title="Recommended next actions">
+      <div className="flex flex-col gap-2">
+        {actions.slice(0, 4).map((action) => (
+          <div key={action.title} className="analytics-action-card">
+            <div className={`analytics-action-dot analytics-action-dot-${action.tone ?? "none"}`} />
+            <div>
+              <div className="text-[13px] text-[var(--colour-ink-strong)]">{action.title}</div>
+              <div className="mt-1 text-[12px] leading-relaxed text-[var(--colour-ink-quiet)]">
+                {action.detail}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function SetupChecklist() {
+  return (
+    <div className="flex flex-col gap-2">
+      {SETUP_ACTIONS.map((item) => (
+        <div key={item} className="analytics-setup-row">
+          <span aria-hidden="true">□</span>
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function KpiCard({
   label,
   value,
   change,
+  previous,
   tooltip,
   supported,
   sparkline,
@@ -712,6 +1041,7 @@ function KpiCard({
   label: string;
   value: ReactNode;
   change: Change | null;
+  previous: string | null;
   tooltip: string;
   supported: boolean;
   sparkline: number[];
@@ -736,6 +1066,9 @@ function KpiCard({
       </div>
       <div className={`analytics-change analytics-change-${tone}`}>
         {supported ? changeLabel(change) : "Not enough data yet"}
+      </div>
+      <div className="analytics-previous">
+        {previous ? `Previous: ${previous}` : supported ? "Previous: no comparison" : "Tracking missing"}
       </div>
       {supported && <MiniSparkline values={sparkline} />}
     </div>
@@ -868,6 +1201,76 @@ function TrafficSources({ rows }: { rows: AnalyticsPayload["trafficSources"] }) 
   );
 }
 
+function CampaignsPanel({ rows }: { rows: AnalyticsPayload["campaigns"] }) {
+  return (
+    <Panel eyebrow="Campaign tracking" title="Campaigns">
+      <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <div className="analytics-subhead">Detected campaign links</div>
+          {rows.length > 0 ? (
+            <CampaignTable rows={rows} />
+          ) : (
+            <EmptyState>
+              No UTM campaign traffic in this range yet. Build tracked links before the next Instagram bio, WhatsApp share, QR flyer or Show.co push.
+            </EmptyState>
+          )}
+        </div>
+        <CampaignUrlBuilder />
+      </div>
+    </Panel>
+  );
+}
+
+function CampaignUrlBuilder() {
+  const [destination, setDestination] = useState("https://www.alltheglory.co.za/album/from-darkness-to-light");
+  const [source, setSource] = useState("instagram");
+  const [medium, setMedium] = useState("bio");
+  const [campaign, setCampaign] = useState("from-darkness-to-light");
+  const [content, setContent] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const trackedUrl = useMemo(() => {
+    try {
+      const url = new URL(destination);
+      url.searchParams.set("utm_source", source.trim() || "source");
+      url.searchParams.set("utm_medium", medium.trim() || "medium");
+      url.searchParams.set("utm_campaign", campaign.trim() || "campaign");
+      if (content.trim()) url.searchParams.set("utm_content", content.trim());
+      return url.toString();
+    } catch {
+      return "";
+    }
+  }, [campaign, content, destination, medium, source]);
+
+  async function copy() {
+    if (!trackedUrl) return;
+    await navigator.clipboard?.writeText(trackedUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  return (
+    <div className="analytics-builder">
+      <div className="analytics-subhead">UTM helper</div>
+      <div className="grid gap-2">
+        <input className="dash-input" value={destination} onChange={(e) => setDestination(e.target.value)} aria-label="Destination URL" />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input className="dash-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label="UTM source" placeholder="source" />
+          <input className="dash-input" value={medium} onChange={(e) => setMedium(e.target.value)} aria-label="UTM medium" placeholder="medium" />
+          <input className="dash-input" value={campaign} onChange={(e) => setCampaign(e.target.value)} aria-label="UTM campaign" placeholder="campaign" />
+          <input className="dash-input" value={content} onChange={(e) => setContent(e.target.value)} aria-label="UTM content" placeholder="content (optional)" />
+        </div>
+        <div className="analytics-tracked-url">
+          {trackedUrl || "Enter a valid https:// URL to generate a campaign link."}
+        </div>
+        <button type="button" className="dash-btn dash-btn-primary" onClick={copy} disabled={!trackedUrl}>
+          {copied ? "Copied" : "Copy tracked URL"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CampaignTable({ rows }: { rows: AnalyticsPayload["campaigns"] }) {
   return (
     <div className="analytics-table-wrap">
@@ -886,13 +1289,13 @@ function CampaignTable({ rows }: { rows: AnalyticsPayload["campaigns"] }) {
         <tbody>
           {rows.map((row) => (
             <tr key={`${row.campaign}-${row.source}-${row.medium}`}>
-              <td>{row.campaign}</td>
-              <td>{row.source}</td>
-              <td>{row.medium}</td>
-              <td>{n(row.visitors)}</td>
-              <td>{n(row.musicPlays)}</td>
-              <td>{n(row.primaryCtaClicks)}</td>
-              <td>{pct(row.conversionRate)}</td>
+              <td data-label="Campaign">{row.campaign}</td>
+              <td data-label="Source">{row.source}</td>
+              <td data-label="Medium">{row.medium}</td>
+              <td data-label="Visitors">{n(row.visitors)}</td>
+              <td data-label="Music plays">{n(row.musicPlays)}</td>
+              <td data-label="CTA clicks">{n(row.primaryCtaClicks)}</td>
+              <td data-label="Conversion">{pct(row.conversionRate)}</td>
             </tr>
           ))}
         </tbody>
@@ -942,13 +1345,13 @@ function TopPagesTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.path}>
-              <td className="text-[var(--colour-ink-soft)]">{row.title}</td>
-              <td className="analytics-muted">{row.path}</td>
-              <td>{n(row.views)}</td>
-              <td>{n(row.uniqueVisitors)}</td>
-              <td className="analytics-muted">Not enough data yet</td>
-              <td className="analytics-muted">Not enough data yet</td>
-              <td className={`analytics-change-${changeTone(row.change)}`}>{changeLabel(row.change)}</td>
+              <td data-label="Page" className="text-[var(--colour-ink-soft)]">{row.title}</td>
+              <td data-label="Path" className="analytics-muted">{row.path}</td>
+              <td data-label="Views">{n(row.views)}</td>
+              <td data-label="Visitors">{n(row.uniqueVisitors)}</td>
+              <td data-label="Avg engagement" className="analytics-muted">Not enough data yet</td>
+              <td data-label="CTA clicks" className="analytics-muted">Not enough data yet</td>
+              <td data-label="Change" className={`analytics-change-${changeTone(row.change)}`}>{changeLabel(row.change)}</td>
             </tr>
           ))}
         </tbody>
@@ -1013,13 +1416,13 @@ function MusicEngagement({ data }: { data: AnalyticsPayload }) {
             <tbody>
               {data.music.tracks.map((track) => (
                 <tr key={track.title}>
-                  <td className="text-[var(--colour-ink-soft)]">{track.title}</td>
-                  <td>{n(track.playClicks)}</td>
-                  <td>{track.uniqueListenersSupported && track.uniqueListeners !== null ? n(track.uniqueListeners) : "Not enough data yet"}</td>
-                  <td className="analytics-muted">Not enough data yet</td>
-                  <td className="analytics-muted">Not enough data yet</td>
-                  <td className="analytics-muted">Not enough data yet</td>
-                  <td className={`analytics-change-${changeTone(track.change)}`}>{changeLabel(track.change)}</td>
+                  <td data-label="Track" className="text-[var(--colour-ink-soft)]">{track.title}</td>
+                  <td data-label="Play clicks">{n(track.playClicks)}</td>
+                  <td data-label="Unique listeners">{track.uniqueListenersSupported && track.uniqueListeners !== null ? n(track.uniqueListeners) : "Not enough data yet"}</td>
+                  <td data-label="Avg listening time" className="analytics-muted">Not enough data yet</td>
+                  <td data-label="Completion" className="analytics-muted">Not enough data yet</td>
+                  <td data-label="External clicks" className="analytics-muted">Not enough data yet</td>
+                  <td data-label="Change" className={`analytics-change-${changeTone(track.change)}`}>{changeLabel(track.change)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1039,6 +1442,28 @@ function MusicEngagement({ data }: { data: AnalyticsPayload }) {
         </div>
       </div>
     </Panel>
+  );
+}
+
+function ReleaseSetupPrompts() {
+  const prompts = [
+    "Add tracking to Spotify buttons",
+    "Add UTM tags to Show.co / pre-save links",
+    "Track QR code scans from flyers",
+    "Track email signups as a funnel step",
+  ];
+  return (
+    <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+      <div className="analytics-subhead">Setup prompts</div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {prompts.map((prompt) => (
+          <div key={prompt} className="analytics-setup-row">
+            <span aria-hidden="true">□</span>
+            <span>{prompt}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
