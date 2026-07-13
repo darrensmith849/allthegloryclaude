@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
@@ -138,9 +138,74 @@ function strongestPage(data: AnalyticsPayload) {
   return data.topPagesDetailed.find((row) => row.views > 0) ?? null;
 }
 
-function previousValue(change: Change | null): string | null {
-  if (!change || change.previous === null) return null;
-  return n(change.previous);
+function formatChangePct(value: number): string {
+  return `${Math.abs(value).toFixed(1).replace(/\.0$/, "")}%`;
+}
+
+function unitFor(value: number, singular: string, plural: string): string {
+  return value === 1 ? singular : plural;
+}
+
+function aboutLabel(label: string): string {
+  return `About ${label.toLowerCase()}`;
+}
+
+function comparisonCopy({
+  change,
+  comparisonEnabled,
+  compareLabel,
+  missingMessage,
+  unitSingular,
+  unitPlural,
+}: {
+  change: Change | null;
+  comparisonEnabled: boolean;
+  compareLabel: string;
+  missingMessage: string;
+  unitSingular: string;
+  unitPlural: string;
+}): { tone: "up" | "down" | "flat" | "none"; primary: string; secondary: string | null } {
+  if (!comparisonEnabled) {
+    return {
+      tone: "none",
+      primary: "Enable comparison to view period changes",
+      secondary: null,
+    };
+  }
+
+  if (!change || change.previous === null) {
+    return { tone: "none", primary: missingMessage, secondary: null };
+  }
+
+  if (change.current === 0 && change.previous === 0) {
+    return {
+      tone: "none",
+      primary: `No ${unitPlural.toLowerCase()} recorded in either period`,
+      secondary: null,
+    };
+  }
+
+  if (change.previous === 0 && change.current > 0) {
+    return {
+      tone: "flat",
+      primary: `${unitPlural} recorded - no previous baseline`,
+      secondary: `Previous period: 0 ${unitPlural.toLowerCase()}`,
+    };
+  }
+
+  if (change.changePct === null) {
+    return { tone: "none", primary: missingMessage, secondary: null };
+  }
+
+  const arrow = change.changePct > 0 ? "↑" : change.changePct < 0 ? "↓" : "→";
+  const tone = change.changePct > 0 ? "up" : change.changePct < 0 ? "down" : "flat";
+  const previousUnit = unitFor(change.previous, unitSingular, unitPlural).toLowerCase();
+
+  return {
+    tone,
+    primary: `${arrow} ${formatChangePct(change.changePct)} vs ${compareLabel.toLowerCase()}`,
+    secondary: `Previous period: ${n(change.previous)} ${previousUnit}`,
+  };
 }
 
 function money(amount: number, currency: string) {
@@ -383,7 +448,11 @@ function AnalyticsPageInner() {
           </div>
 
           <div className="dash-col-12">
-            <KpiGrid data={data} />
+            <KpiGrid
+              data={data}
+              comparisonEnabled={compare !== "none"}
+              compareLabel={data.comparison?.label ?? "Previous period"}
+            />
           </div>
 
           <div className="dash-col-8">
@@ -542,6 +611,108 @@ function AnalyticsPageInner() {
         .analytics-select {
           width: auto;
           min-width: 156px;
+        }
+        .analytics-kpi {
+          position: relative;
+          display: flex;
+          min-height: 184px;
+          flex-direction: column;
+          overflow: visible;
+        }
+        .analytics-kpi-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .analytics-kpi-title {
+          margin: 0;
+        }
+        .analytics-kpi-unit {
+          margin-top: 2px;
+          color: var(--colour-ink-quiet);
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          line-height: 1.2;
+          text-transform: uppercase;
+        }
+        .analytics-small-value {
+          font-size: clamp(22px, 1.85vw, 28px);
+          line-height: 1.05;
+        }
+        .analytics-change {
+          margin-top: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+        }
+        .analytics-change-up { color: #b7e4c7; }
+        .analytics-change-down { color: #f1a07d; }
+        .analytics-change-flat { color: var(--colour-amber-soft); }
+        .analytics-change-none { color: var(--colour-ink-quiet); }
+        .analytics-info-wrap {
+          position: relative;
+          z-index: 5;
+          flex: 0 0 auto;
+        }
+        .analytics-info-button {
+          display: inline-grid;
+          width: 27px;
+          height: 27px;
+          place-items: center;
+          border: 1px solid rgba(216,178,90,0.24);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          color: var(--colour-amber-soft);
+          cursor: pointer;
+          transition:
+            border-color 160ms ease,
+            background 160ms ease,
+            color 160ms ease;
+        }
+        .analytics-info-button:hover,
+        .analytics-info-button:focus-visible,
+        .analytics-info-button[aria-expanded="true"] {
+          border-color: rgba(216,178,90,0.5);
+          background: rgba(216,178,90,0.12);
+          color: var(--colour-glow);
+          outline: none;
+        }
+        .analytics-info-button svg {
+          width: 17px;
+          height: 17px;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 1.75;
+        }
+        .analytics-tooltip {
+          position: absolute;
+          top: -4px;
+          right: calc(100% + 8px);
+          width: min(260px, calc(100vw - 48px));
+          border: 1px solid rgba(216,178,90,0.22);
+          border-radius: 12px;
+          background:
+            linear-gradient(135deg, rgba(36,31,24,0.94), rgba(22,19,16,0.94)),
+            rgba(255,255,255,0.08);
+          box-shadow: 0 14px 40px rgba(0,0,0,0.38);
+          color: var(--colour-ink-soft);
+          font-size: 12px;
+          line-height: 1.45;
+          opacity: 0;
+          padding: 10px 11px;
+          pointer-events: none;
+          transform: translateY(-2px);
+          transition:
+            opacity 140ms ease,
+            transform 140ms ease;
+        }
+        .analytics-tooltip.is-open {
+          opacity: 1;
+          transform: translateY(0);
         }
         .analytics-note-pill {
           border: 1px solid rgba(216,178,90,0.25);
@@ -746,6 +917,10 @@ function AnalyticsPageInner() {
           .analytics-search {
             width: 100%;
           }
+          .analytics-tooltip {
+            right: 0;
+            top: calc(100% + 8px);
+          }
           .analytics-table {
             min-width: 0;
             border-collapse: separate;
@@ -784,23 +959,37 @@ function AnalyticsPageInner() {
   );
 }
 
-function KpiGrid({ data }: { data: AnalyticsPayload }) {
+function KpiGrid({
+  data,
+  comparisonEnabled,
+  compareLabel,
+}: {
+  data: AnalyticsPayload;
+  comparisonEnabled: boolean;
+  compareLabel: string;
+}) {
   const albumViews = releasePageViews(data);
   const kpis = [
     {
       label: "Website visitors",
       value: n(data.summary.uniqueVisitors),
+      unitLabel: "Visitors",
+      unitSingular: "Visitor",
+      unitPlural: "Visitors",
       change: data.changes.uniqueVisitors,
-      previous: previousValue(data.changes.uniqueVisitors),
-      tooltip: "Distinct anonymous sessions with at least one page view in the selected range.",
+      comparisonMissing: "No visitor data for the previous period",
+      tooltip: "Total visits recorded during the selected date range. A person may be counted more than once if they visit on different occasions.",
       metric: "visitors" as ChartMetric,
       supported: true,
     },
     {
       label: "Public site page views",
       value: n(data.summary.pageViews),
+      unitLabel: "Views",
+      unitSingular: "View",
+      unitPlural: "Views",
       change: data.changes.pageViews,
-      previous: previousValue(data.changes.pageViews),
+      comparisonMissing: "No page view data for the previous period",
       tooltip: "All tracked page view events in the selected range.",
       metric: "pageViews" as ChartMetric,
       supported: true,
@@ -808,8 +997,11 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
     {
       label: "Album / release views",
       value: n(albumViews),
+      unitLabel: "Views",
+      unitSingular: "View",
+      unitPlural: "Views",
       change: null,
-      previous: null,
+      comparisonMissing: "No release-page comparison is available yet",
       tooltip: "Real views on pages whose path or title looks like an album or release page.",
       metric: "pageViews" as ChartMetric,
       supported: true,
@@ -817,8 +1009,11 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
     {
       label: "Music play clicks",
       value: n(data.summary.musicPlays),
+      unitLabel: "Clicks",
+      unitSingular: "Click",
+      unitPlural: "Clicks",
       change: data.changes.musicPlays,
-      previous: previousValue(data.changes.musicPlays),
+      comparisonMissing: "No music click data for the previous period",
       tooltip: "Play-click events from the hero player and song previews. These are not verified completed streams.",
       metric: "musicPlays" as ChartMetric,
       supported: true,
@@ -826,8 +1021,11 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
     {
       label: "Album download clicks",
       value: n(data.summary.primaryCtaClicks),
+      unitLabel: "Clicks",
+      unitSingular: "Click",
+      unitPlural: "Clicks",
       change: data.changes.primaryCtaClicks,
-      previous: previousValue(data.changes.primaryCtaClicks),
+      comparisonMissing: "No download click data for the previous period",
       tooltip: "Currently measured as album download clicks, the primary tracked call to action.",
       metric: "primaryCtaClicks" as ChartMetric,
       supported: true,
@@ -835,8 +1033,11 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
     {
       label: "Spotify / pre-save clicks",
       value: "Needs setup",
+      unitLabel: "Tracking setup",
+      unitSingular: "Click",
+      unitPlural: "Clicks",
       change: null,
-      previous: null,
+      comparisonMissing: "Add event tracking before this can be compared",
       tooltip: "Add outbound event tracking to Spotify / pre-save links to populate this.",
       metric: "primaryCtaClicks" as ChartMetric,
       supported: false,
@@ -850,11 +1051,17 @@ function KpiGrid({ data }: { data: AnalyticsPayload }) {
           key={kpi.label}
           label={kpi.label}
           value={kpi.value}
+          unitLabel={kpi.unitLabel}
+          unitSingular={kpi.unitSingular}
+          unitPlural={kpi.unitPlural}
           change={kpi.change}
-          previous={kpi.previous}
+          comparisonEnabled={comparisonEnabled}
+          compareLabel={compareLabel}
+          comparisonMissing={kpi.comparisonMissing}
           tooltip={kpi.tooltip}
           supported={kpi.supported}
           sparkline={kpi.supported ? data.series.current.map((row) => row[kpi.metric]) : []}
+          sparklineLabel={`${kpi.label} trend for ${data.range.label}`}
         />
       ))}
     </div>
@@ -1032,50 +1239,125 @@ function SetupChecklist() {
 function KpiCard({
   label,
   value,
+  unitLabel,
+  unitSingular,
+  unitPlural,
   change,
-  previous,
+  comparisonEnabled,
+  compareLabel,
+  comparisonMissing,
   tooltip,
   supported,
   sparkline,
+  sparklineLabel,
 }: {
   label: string;
   value: ReactNode;
+  unitLabel: string;
+  unitSingular: string;
+  unitPlural: string;
   change: Change | null;
-  previous: string | null;
+  comparisonEnabled: boolean;
+  compareLabel: string;
+  comparisonMissing: string;
   tooltip: string;
   supported: boolean;
   sparkline: number[];
+  sparklineLabel: string;
 }) {
-  const tone = changeTone(change);
+  const comparison = supported
+    ? comparisonCopy({
+        change,
+        comparisonEnabled,
+        compareLabel,
+        missingMessage: comparisonMissing,
+        unitSingular,
+        unitPlural,
+      })
+    : {
+        tone: "none" as const,
+        primary: "Tracking missing",
+        secondary: "Add event tracking to populate this card.",
+      };
+
   return (
     <div className="dash-stat analytics-kpi">
-      <div className="flex items-start justify-between gap-2">
-        <div className="eyebrow">{label}</div>
-        <span
-          tabIndex={0}
-          role="note"
-          aria-label={tooltip}
-          title={tooltip}
-          className="analytics-help"
-        >
-          ?
-        </span>
+      <div className="analytics-kpi-head">
+        <h2 className="eyebrow analytics-kpi-title">{label}</h2>
+        <InfoTooltip ariaLabel={aboutLabel(label)} tooltip={tooltip} />
       </div>
       <div className={`dash-stat-value font-display ${supported ? "" : "analytics-small-value"}`}>
         {value}
       </div>
-      <div className={`analytics-change analytics-change-${tone}`}>
-        {supported ? changeLabel(change) : "Not enough data yet"}
+      <div className="analytics-kpi-unit">{unitLabel}</div>
+      <div className={`analytics-change analytics-change-${comparison.tone}`}>
+        {comparison.primary}
       </div>
-      <div className="analytics-previous">
-        {previous ? `Previous: ${previous}` : supported ? "Previous: no comparison" : "Tracking missing"}
-      </div>
-      {supported && <MiniSparkline values={sparkline} />}
+      {comparison.secondary && <div className="analytics-previous">{comparison.secondary}</div>}
+      {supported && <MiniSparkline values={sparkline} label={sparklineLabel} />}
     </div>
   );
 }
 
-function MiniSparkline({ values }: { values: number[] }) {
+function InfoTooltip({ ariaLabel, tooltip }: { ariaLabel: string; tooltip: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="analytics-info-wrap"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="analytics-info-button"
+        aria-label={ariaLabel}
+        aria-describedby={tooltipId}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <circle cx="10" cy="10" r="8" />
+          <path d="M10 9.2v4.5" />
+          <path d="M10 6.1h.01" />
+        </svg>
+      </button>
+      <div id={tooltipId} role="tooltip" className={`analytics-tooltip ${open ? "is-open" : ""}`}>
+        {tooltip}
+      </div>
+    </div>
+  );
+}
+
+function MiniSparkline({ values, label }: { values: number[]; label: string }) {
   if (values.length < 2 || values.every((value) => value === 0)) {
     return <div className="mt-3 h-7 rounded-md bg-white/[0.025]" aria-hidden="true" />;
   }
@@ -1088,7 +1370,8 @@ function MiniSparkline({ values }: { values: number[] }) {
     })
     .join(" ");
   return (
-    <svg className="mt-3 h-7 w-full" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+    <svg className="mt-3 h-7 w-full" viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label={label}>
+      <title>{label}</title>
       <polyline points={points} fill="none" stroke="var(--colour-amber)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
     </svg>
   );
