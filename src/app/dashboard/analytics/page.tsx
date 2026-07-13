@@ -485,6 +485,16 @@ function AnalyticsPageInner() {
         .analytics-pagehead {
           align-items: flex-start;
         }
+        .analytics-pagehead,
+        .analytics-pagehead > div,
+        .analytics-controls,
+        .dash-main,
+        .dash-grid,
+        .dash-grid > [class*="dash-col-"],
+        .analytics-table-wrap,
+        .analytics-kpi {
+          min-width: 0;
+        }
         .analytics-controls {
           display: flex;
           align-items: center;
@@ -587,6 +597,10 @@ function AnalyticsPageInner() {
           color: var(--colour-ink-quiet);
         }
         @media (max-width: 760px) {
+          .analytics-pagehead {
+            flex-direction: column;
+            align-items: stretch;
+          }
           .analytics-controls {
             justify-content: flex-start;
             width: 100%;
