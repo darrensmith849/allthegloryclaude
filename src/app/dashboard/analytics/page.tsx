@@ -12,6 +12,7 @@ type RangeKey = "7d" | "30d" | "90d" | "ytd" | "all";
 type CompareKey = "previous" | "year" | "none";
 type ChartMetric = "visitors" | "pageViews" | "musicPlays" | "primaryCtaClicks";
 type PageSort = "views" | "uniqueVisitors" | "path";
+type AnalyticsSection = "overview" | "traffic" | "content" | "music" | "tracking";
 type Change = AnalyticsPayload["changes"]["pageViews"];
 
 const SETUP_ACTIONS = [
@@ -43,6 +44,14 @@ const CHART_METRICS: { key: ChartMetric; label: string }[] = [
   { key: "pageViews", label: "Page views" },
   { key: "musicPlays", label: "Music plays" },
   { key: "primaryCtaClicks", label: "CTA clicks" },
+];
+
+const ANALYTICS_SECTIONS: { key: AnalyticsSection; label: string; detail: string }[] = [
+  { key: "overview", label: "Overview", detail: "Start here" },
+  { key: "traffic", label: "Traffic", detail: "Where visits come from" },
+  { key: "content", label: "Content", detail: "Pages and funnel" },
+  { key: "music", label: "Music", detail: "Songs and clicks" },
+  { key: "tracking", label: "Tracking", detail: "Health and logs" },
 ];
 
 function normaliseRange(value: string | null): RangeKey {
@@ -272,6 +281,7 @@ function AnalyticsPageInner() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastFetched, setLastFetched] = useState<number | null>(null);
   const [chartMetric, setChartMetric] = useState<ChartMetric>("visitors");
+  const [activeSection, setActiveSection] = useState<AnalyticsSection>("overview");
   const [pageQuery, setPageQuery] = useState("");
   const [pageSort, setPageSort] = useState<PageSort>("views");
   const [pageIndex, setPageIndex] = useState(0);
@@ -448,141 +458,163 @@ function AnalyticsPageInner() {
           </div>
 
           <div className="dash-col-12">
-            <KpiGrid
-              data={data}
-              comparisonEnabled={compare !== "none"}
-              compareLabel={data.comparison?.label ?? "Previous period"}
-            />
+            <AnalyticsSectionTabs activeSection={activeSection} onChange={setActiveSection} />
           </div>
 
-          <div className="dash-col-8">
-            <Panel
-              eyebrow={data.range.label}
-              title="Performance over time"
-              action={
-                <div className="analytics-segment" role="tablist" aria-label="Chart metric">
-                  {CHART_METRICS.map((metric) => (
-                    <button
-                      key={metric.key}
-                      type="button"
-                      role="tab"
-                      aria-selected={chartMetric === metric.key}
-                      className={chartMetric === metric.key ? "is-active" : ""}
-                      onClick={() => setChartMetric(metric.key)}
-                    >
-                      {metric.label}
-                    </button>
-                  ))}
-                </div>
-              }
-            >
-              <PerformanceChart
-                metric={chartMetric}
-                rows={data.series.current}
-                comparisonRows={data.series.comparison}
-                comparisonLabel={data.comparison?.available ? data.comparison.label : null}
-              />
-            </Panel>
-          </div>
-
-          <div className="dash-col-4">
-            <RecommendedActions data={data} />
-          </div>
-
-          <div className="dash-col-5">
-            <Panel eyebrow="Acquisition" title="Traffic sources">
-              <TrafficSources rows={data.trafficSources} />
-            </Panel>
-          </div>
-
-          <div className="dash-col-7">
-            <Panel
-              eyebrow="Content"
-              title="Most viewed pages"
-              action={
-                <input
-                  className="dash-input analytics-search"
-                  value={pageQuery}
-                  onChange={(e) => {
-                    setPageQuery(e.target.value);
-                    setPageIndex(0);
-                  }}
-                  placeholder="Search pages"
-                  aria-label="Search pages"
+          {activeSection === "overview" && (
+            <>
+              <div className="dash-col-12">
+                <KpiGrid
+                  data={data}
+                  comparisonEnabled={compare !== "none"}
+                  compareLabel={data.comparison?.label ?? "Previous period"}
                 />
-              }
-            >
-              <TopPagesTable
-                rows={visiblePages}
-                totalRows={filteredPages.length}
-                sort={pageSort}
-                setSort={setPageSort}
-              />
-              {filteredPages.length > pageSize && (
-                <Pagination
-                  pageIndex={pageIndex}
-                  pageCount={pageCount}
-                  onPrev={() => setPageIndex((value) => Math.max(0, value - 1))}
-                  onNext={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))}
-                />
-              )}
-            </Panel>
-          </div>
-
-          <div className="dash-col-12">
-            <CampaignsPanel rows={data.campaigns} />
-          </div>
-
-          <div className="dash-col-12">
-            <MusicEngagement data={data} />
-          </div>
-
-          <div className="dash-col-6">
-            <Panel eyebrow="Journey" title="Release funnel">
-              <Funnel rows={data.funnel.steps} overall={data.funnel.overallConversionPct} largest={data.funnel.largestDropoff} />
-              <ReleaseSetupPrompts />
-            </Panel>
-          </div>
-
-          <div className="dash-col-6">
-            <Panel eyebrow="Audience" title="Audience details">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Breakdown title="Devices" rows={data.breakdowns.devices} empty="No device data yet." />
-                <Breakdown title="Countries" rows={data.breakdowns.countries} empty="No country data yet." country />
-                <div>
-                  <div className="analytics-subhead">Browsers</div>
-                  <EmptyState>Not enough data yet. Browsers are not stored.</EmptyState>
-                </div>
-                <div>
-                  <div className="analytics-subhead">Cities</div>
-                  <EmptyState>Not enough data yet. City-level location is not stored.</EmptyState>
-                </div>
               </div>
-            </Panel>
-          </div>
 
-          <div className="dash-col-7">
-            <Panel eyebrow="Last 24 hours" title="Recent activity">
-              <ActivityList rows={data.recentActivity} />
-            </Panel>
-          </div>
+              <div className="dash-col-8">
+                <Panel
+                  eyebrow={data.range.label}
+                  title="Performance over time"
+                  action={
+                    <div className="analytics-segment" role="tablist" aria-label="Chart metric">
+                      {CHART_METRICS.map((metric) => (
+                        <button
+                          key={metric.key}
+                          type="button"
+                          role="tab"
+                          aria-selected={chartMetric === metric.key}
+                          className={chartMetric === metric.key ? "is-active" : ""}
+                          onClick={() => setChartMetric(metric.key)}
+                        >
+                          {metric.label}
+                        </button>
+                      ))}
+                    </div>
+                  }
+                >
+                  <PerformanceChart
+                    metric={chartMetric}
+                    rows={data.series.current}
+                    comparisonRows={data.series.comparison}
+                    comparisonLabel={data.comparison?.available ? data.comparison.label : null}
+                  />
+                </Panel>
+              </div>
 
-          <div className="dash-col-5">
-            <Panel eyebrow="Data quality" title="Tracking health">
-              <TrackingAudit rows={data.trackingAudit} />
-            </Panel>
-          </div>
+              <div className="dash-col-4">
+                <RecommendedActions data={data} />
+              </div>
+            </>
+          )}
 
-          {data.totalDonations > 0 && (
+          {activeSection === "traffic" && (
+            <>
+              <div className="dash-col-5">
+                <Panel eyebrow="Acquisition" title="Traffic sources">
+                  <TrafficSources rows={data.trafficSources} />
+                </Panel>
+              </div>
+
+              <div className="dash-col-7">
+                <Panel eyebrow="Audience" title="Audience details">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Breakdown title="Devices" rows={data.breakdowns.devices} empty="No device data yet." />
+                    <Breakdown title="Countries" rows={data.breakdowns.countries} empty="No country data yet." country />
+                    <div>
+                      <div className="analytics-subhead">Browsers</div>
+                      <EmptyState>Not enough data yet. Browsers are not stored.</EmptyState>
+                    </div>
+                    <div>
+                      <div className="analytics-subhead">Cities</div>
+                      <EmptyState>Not enough data yet. City-level location is not stored.</EmptyState>
+                    </div>
+                  </div>
+                </Panel>
+              </div>
+
+              <div className="dash-col-12">
+                <CampaignsPanel rows={data.campaigns} />
+              </div>
+            </>
+          )}
+
+          {activeSection === "content" && (
+            <>
+              <div className="dash-col-7">
+                <Panel
+                  eyebrow="Content"
+                  title="Most viewed pages"
+                  action={
+                    <input
+                      className="dash-input analytics-search"
+                      value={pageQuery}
+                      onChange={(e) => {
+                        setPageQuery(e.target.value);
+                        setPageIndex(0);
+                      }}
+                      placeholder="Search pages"
+                      aria-label="Search pages"
+                    />
+                  }
+                >
+                  <TopPagesTable
+                    rows={visiblePages}
+                    totalRows={filteredPages.length}
+                    sort={pageSort}
+                    setSort={setPageSort}
+                  />
+                  {filteredPages.length > pageSize && (
+                    <Pagination
+                      pageIndex={pageIndex}
+                      pageCount={pageCount}
+                      onPrev={() => setPageIndex((value) => Math.max(0, value - 1))}
+                      onNext={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))}
+                    />
+                  )}
+                </Panel>
+              </div>
+
+              <div className="dash-col-5">
+                <Panel eyebrow="Journey" title="Release funnel">
+                  <Funnel rows={data.funnel.steps} overall={data.funnel.overallConversionPct} largest={data.funnel.largestDropoff} />
+                  <ReleaseSetupPrompts />
+                </Panel>
+              </div>
+            </>
+          )}
+
+          {activeSection === "music" && (
             <div className="dash-col-12">
-              <Panel eyebrow="Legacy giving" title="Donation history">
-                <div className="grid gap-3 md:grid-cols-3">
-                  <MicroStat label="Total given" value={money(data.totalRaised, data.raisedCurrency)} />
-                  <MicroStat label="Gifts" value={n(data.totalDonations)} />
-                  <MicroStat label="Given today" value={money(data.raisedToday, data.raisedCurrency)} />
-                </div>
-              </Panel>
+              <MusicEngagement data={data} />
             </div>
+          )}
+
+          {activeSection === "tracking" && (
+            <>
+              <div className="dash-col-7">
+                <Panel eyebrow="Last 24 hours" title="Recent activity">
+                  <ActivityList rows={data.recentActivity} />
+                </Panel>
+              </div>
+
+              <div className="dash-col-5">
+                <Panel eyebrow="Data quality" title="Tracking health">
+                  <TrackingAudit rows={data.trackingAudit} />
+                </Panel>
+              </div>
+
+              {data.totalDonations > 0 && (
+                <div className="dash-col-12">
+                  <Panel eyebrow="Legacy giving" title="Donation history">
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <MicroStat label="Total given" value={money(data.totalRaised, data.raisedCurrency)} />
+                      <MicroStat label="Gifts" value={n(data.totalDonations)} />
+                      <MicroStat label="Given today" value={money(data.raisedToday, data.raisedCurrency)} />
+                    </div>
+                  </Panel>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -611,6 +643,60 @@ function AnalyticsPageInner() {
         .analytics-select {
           width: auto;
           min-width: 156px;
+        }
+        .analytics-section-tabs {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 9px;
+        }
+        .analytics-section-tab {
+          min-height: 70px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
+          color: var(--colour-ink-quiet);
+          cursor: pointer;
+          padding: 12px 13px;
+          text-align: left;
+          transition:
+            border-color 160ms ease,
+            background 160ms ease,
+            color 160ms ease,
+            transform 160ms ease;
+        }
+        .analytics-section-tab:hover,
+        .analytics-section-tab:focus-visible {
+          border-color: rgba(216,178,90,0.28);
+          background: rgba(216,178,90,0.06);
+          color: var(--colour-ink-soft);
+          outline: none;
+          transform: translateY(-1px);
+        }
+        .analytics-section-tab.is-active {
+          border-color: rgba(216,178,90,0.42);
+          background:
+            linear-gradient(135deg, rgba(216,178,90,0.14), rgba(255,255,255,0.035)),
+            rgba(255,255,255,0.04);
+          color: var(--colour-glow);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .analytics-section-tab span {
+          display: block;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          line-height: 1.2;
+          text-transform: uppercase;
+        }
+        .analytics-section-tab small {
+          display: block;
+          margin-top: 7px;
+          color: var(--colour-ink-quiet);
+          font-size: 11.5px;
+          line-height: 1.25;
+        }
+        .analytics-section-tab.is-active small {
+          color: var(--colour-ink-soft);
         }
         .analytics-kpi {
           position: relative;
@@ -734,6 +820,12 @@ function AnalyticsPageInner() {
             0 18px 60px rgba(0,0,0,0.28),
             inset 0 1px 0 rgba(255,255,255,0.05);
           padding: 22px;
+        }
+        .analytics-week-main h2 {
+          max-width: 760px;
+        }
+        .analytics-week-main p {
+          max-width: 680px;
         }
         .analytics-week-support {
           display: grid;
@@ -886,6 +978,11 @@ function AnalyticsPageInner() {
         .analytics-muted {
           color: var(--colour-ink-quiet);
         }
+        @media (max-width: 1100px) {
+          .analytics-section-tabs {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
         @media (max-width: 760px) {
           .analytics-pagehead {
             flex-direction: column;
@@ -896,6 +993,9 @@ function AnalyticsPageInner() {
             padding: 18px;
           }
           .analytics-week-support {
+            grid-template-columns: 1fr;
+          }
+          .analytics-section-tabs {
             grid-template-columns: 1fr;
           }
           .analytics-controls {
@@ -956,6 +1056,32 @@ function AnalyticsPageInner() {
         }
       `}</style>
     </>
+  );
+}
+
+function AnalyticsSectionTabs({
+  activeSection,
+  onChange,
+}: {
+  activeSection: AnalyticsSection;
+  onChange: (section: AnalyticsSection) => void;
+}) {
+  return (
+    <div className="analytics-section-tabs" role="tablist" aria-label="Analytics sections">
+      {ANALYTICS_SECTIONS.map((section) => (
+        <button
+          key={section.key}
+          type="button"
+          role="tab"
+          aria-selected={activeSection === section.key}
+          className={`analytics-section-tab ${activeSection === section.key ? "is-active" : ""}`}
+          onClick={() => onChange(section.key)}
+        >
+          <span>{section.label}</span>
+          <small>{section.detail}</small>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -1045,7 +1171,7 @@ function KpiGrid({
   ];
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {kpis.map((kpi) => (
         <KpiCard
           key={kpi.label}
@@ -1085,39 +1211,39 @@ function WeeklyInsightPanel({ data }: { data: AnalyticsPayload }) {
       ? {
           label: "Changed",
           value: changeLabel(data.changes.pageViews),
-          detail: `${n(data.summary.pageViews)} public page views in ${data.range.label.toLowerCase()}.`,
+          detail: `${n(data.summary.pageViews)} page views`,
           tone: changeTone(data.changes.pageViews),
         }
       : {
           label: "Changed",
           value: "No comparison",
-          detail: data.comparison?.available === false ? data.comparison.reason ?? "Comparison unavailable." : "Not enough earlier data yet.",
+          detail: data.comparison?.available === false ? "Previous data missing" : "Waiting for earlier data",
           tone: "none" as const,
         },
     topSource
       ? {
           label: "Worked",
           value: topSource.label,
-          detail: `${n(topSource.visitors)} visitors · ${pct(topSource.percentage)} of tracked traffic.`,
+          detail: `${n(topSource.visitors)} visitors`,
           tone: "up" as const,
         }
       : {
           label: "Worked",
           value: "Waiting",
-          detail: "Traffic source insight appears once visitors arrive.",
+          detail: "No source yet",
           tone: "none" as const,
         },
     topPage
       ? {
           label: "Strong page",
           value: topPage.title || topPage.path,
-          detail: `${n(topPage.views)} views · ${n(topPage.uniqueVisitors)} visitors.`,
+          detail: `${n(topPage.views)} views`,
           tone: changeTone(topPage.change),
         }
       : {
           label: "Strong page",
           value: "Waiting",
-          detail: "Top page insight appears after page views are tracked.",
+          detail: "No top page yet",
           tone: "none" as const,
         },
   ];
@@ -1125,8 +1251,8 @@ function WeeklyInsightPanel({ data }: { data: AnalyticsPayload }) {
   return (
     <section className="analytics-week-panel">
       <div className="analytics-week-main">
-        <div className="eyebrow eyebrow-amber">This week</div>
-        <h2 className="font-display mt-2 text-[28px] leading-tight tracking-tight">
+        <div className="eyebrow eyebrow-amber">Quick read</div>
+        <h2 className="font-display mt-2 text-[24px] leading-tight tracking-tight md:text-[28px]">
           {mainInsight?.title ?? "Connect analytics data to surface weekly insights."}
         </h2>
         <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[var(--colour-ink-soft)]">
@@ -1924,7 +2050,7 @@ function AnalyticsShellSkeleton() {
       </div>
       <div className="dash-grid">
         <div className="dash-col-12">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="dash-stat">
                 <div className="h-3 w-24 rounded bg-white/5" />
