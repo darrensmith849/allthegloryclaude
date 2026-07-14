@@ -20,15 +20,14 @@ export const album = {
    *  "NN - All The Glory - <track>.mp3" inside it, so they extract
    *  in album order in any music app or file browser.
    *
-   *  Served directly from Cloudflare R2 (the file is ~75MB — too big for
-   *  Workers static assets, and too big to proxy through the app worker
-   *  without buffering). The R2 object carries its own Content-Disposition
-   *  so it downloads with the pretty filename below.
-   *  TODO: swap this r2.dev host for a custom domain (e.g.
-   *  downloads.alltheglory.co.za) once DNS is on Cloudflare — r2.dev is
-   *  rate-limited and not meant for production traffic. */
+   *  Served from R2 through the custom domain downloads.alltheglory.co.za
+   *  (proxied by Cloudflare — no r2.dev rate limit, so it holds up under a
+   *  launch-day traffic spike). The file is ~75MB — too big for Workers
+   *  static assets and too big to proxy through the app worker without
+   *  buffering. The R2 object carries its own Content-Disposition so it
+   *  downloads with the pretty filename below. */
   downloadZipSrc:
-    "https://pub-91847a4aabb9494e851b604d906414a7.r2.dev/from-darkness-to-light.zip",
+    "https://downloads.alltheglory.co.za/from-darkness-to-light.zip",
   /** Filename the browser shows when the user downloads the zip. */
   downloadZipFilename: "All The Glory - From Darkness To Light.zip",
 
