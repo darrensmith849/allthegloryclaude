@@ -153,7 +153,7 @@ export const album = {
         "/lyrics/2-corinthians-5-vs-21/04.jpg",
       ],
       lyricCardsPdf: "/lyrics/2-corinthians-5-vs-21/lyric-cards.pdf",
-      lyricCardAspect: "1200 / 2132",
+      lyricCardAspect: "1400 / 3200",
     },
   ],
 };
