@@ -1029,8 +1029,8 @@ async function fixedWindowSummary(db: D1Db, now: number, days: number): Promise<
   return getSummary(db, start, now);
 }
 
-async function fixedDailyRows(db: D1Db, now: number, days: number): Promise<DayRow[]> {
-  const start = startOfDashboardDayMs(now) - (days - 1) * DAY_MS;
+async function fixedDailyRows(db: D1Db, now: number, days: number, floor = 0): Promise<DayRow[]> {
+  const start = Math.max(startOfDashboardDayMs(now) - (days - 1) * DAY_MS, floor);
   const rows = await getSeries(db, start, now, "day");
   return rows.map((row) => ({
     date: row.key,
@@ -1076,6 +1076,21 @@ export async function GET(req: Request) {
     const rawComparison = resolveComparison(requestedComparison, range, bounds.first);
     const comparison = rawComparison?.available ? rawComparison : rawComparison;
     const comparisonForQuery = rawComparison?.available ? rawComparison : null;
+
+    // Launch reset: from 2026-07-17 00:00 SAST (22:00 UTC on the 16th) every
+    // displayed metric counts only from launch forward — a clean baseline on
+    // release day. Before then launchFloor is 0 (no effect at all, so deploying
+    // early is safe). Non-destructive: pre-launch events are filtered out, not
+    // deleted, and can be un-filtered by moving LAUNCH_BASELINE back. Donations
+    // are intentionally exempt (kept all-time as financial records).
+    const LAUNCH_BASELINE = Date.UTC(2026, 6, 16, 22, 0, 0);
+    const launchFloor = now >= LAUNCH_BASELINE ? LAUNCH_BASELINE : 0;
+    if (launchFloor > range.start) range.start = launchFloor;
+    if (comparisonForQuery) {
+      if (launchFloor > comparisonForQuery.start) comparisonForQuery.start = launchFloor;
+      if (launchFloor > comparisonForQuery.end) comparisonForQuery.end = launchFloor;
+    }
+
     const todayStart = startOfDashboardDayMs(now);
     const weekStart = todayStart - 6 * DAY_MS;
     const previousWeekStart = todayStart - 13 * DAY_MS;
@@ -1126,8 +1141,8 @@ export async function GET(req: Request) {
       getSummary(db, 0, now),
       getSummary(db, weekStart, now),
       getSummary(db, previousWeekStart, weekStart),
-      fixedDailyRows(db, now, 7),
-      fixedDailyRows(db, now, 30),
+      fixedDailyRows(db, now, 7, launchFloor),
+      fixedDailyRows(db, now, 30, launchFloor),
     ]);
 
     const changes = buildChanges(summary, previousSummary);
