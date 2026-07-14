@@ -43,7 +43,7 @@ const CHART_METRICS: { key: ChartMetric; label: string }[] = [
   { key: "visitors", label: "Visitors" },
   { key: "pageViews", label: "Page views" },
   { key: "musicPlays", label: "Music plays" },
-  { key: "primaryCtaClicks", label: "CTA clicks" },
+  { key: "primaryCtaClicks", label: "Album downloads" },
   { key: "linkClicks", label: "Link clicks" },
 ];
 
@@ -508,6 +508,10 @@ function AnalyticsPageInner() {
 
               <div className="dash-col-4">
                 <RecommendedActions data={data} />
+              </div>
+
+              <div className="dash-col-12">
+                <DownloadsPerDay rows={data.last30Days} />
               </div>
             </>
           )}
@@ -991,6 +995,56 @@ function AnalyticsPageInner() {
         .analytics-muted {
           color: var(--colour-ink-quiet);
         }
+        .download-bars {
+          display: flex;
+          align-items: flex-end;
+          gap: 6px;
+          padding: 6px 2px 0;
+        }
+        .download-bar-col {
+          flex: 1 1 0;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 7px;
+        }
+        .download-bar-count {
+          min-height: 13px;
+          font-family: var(--font-display), serif;
+          font-size: 12.5px;
+          line-height: 1;
+          color: var(--colour-glow);
+        }
+        .download-bar-track {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          width: 100%;
+          height: 132px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .download-bar-fill {
+          width: 60%;
+          max-width: 22px;
+          min-height: 3px;
+          border-radius: 4px 4px 0 0;
+          background: linear-gradient(180deg, var(--colour-amber), var(--colour-amber-soft));
+        }
+        .download-bar-day {
+          font-size: 10px;
+          letter-spacing: 0.03em;
+          color: var(--colour-ink-quiet);
+          white-space: nowrap;
+        }
+        @media (max-width: 620px) {
+          .download-bars {
+            gap: 4px;
+          }
+          .download-bar-day {
+            font-size: 8.5px;
+          }
+        }
         @media (max-width: 1100px) {
           .analytics-section-tabs {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1158,14 +1212,14 @@ function KpiGrid({
       supported: true,
     },
     {
-      label: "Album download clicks",
+      label: "Album downloads",
       value: n(data.summary.primaryCtaClicks),
-      unitLabel: "Clicks",
-      unitSingular: "Click",
-      unitPlural: "Clicks",
+      unitLabel: "Downloads",
+      unitSingular: "Download",
+      unitPlural: "Downloads",
       change: data.changes.primaryCtaClicks,
-      comparisonMissing: "No download click data for the previous period",
-      tooltip: "Currently measured as album download clicks, the primary tracked call to action.",
+      comparisonMissing: "No download data for the previous period",
+      tooltip: "Album download events — each time someone downloads the album zip from the site. See the day-by-day breakdown in the 'Album downloads per day' chart below.",
       metric: "primaryCtaClicks" as ChartMetric,
       supported: true,
     },
@@ -1671,6 +1725,57 @@ function ClickedLinksPanel({ rows }: { rows: AnalyticsPayload["clickedLinks"] })
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function DownloadsPerDay({ rows }: { rows: AnalyticsPayload["last30Days"] }) {
+  const days = rows.slice(-14);
+  const total = days.reduce((sum, row) => sum + row.downloads, 0);
+  const max = Math.max(1, ...days.map((row) => row.downloads));
+
+  return (
+    <Panel
+      eyebrow="Downloads"
+      title="Album downloads per day"
+      action={
+        total > 0 ? (
+          <span className="text-[12px] text-[var(--colour-ink-quiet)]">
+            {n(total)} in the last 14 days
+          </span>
+        ) : undefined
+      }
+    >
+      {total === 0 ? (
+        <EmptyState>
+          No album downloads tracked yet. Each day&apos;s count shows here as a bar the moment people start downloading the album.
+        </EmptyState>
+      ) : (
+        <div
+          className="download-bars"
+          role="img"
+          aria-label="Album downloads per day for the last 14 days"
+        >
+          {days.map((row) => {
+            const parts = row.date.split("-");
+            const dayLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}` : row.date;
+            const height = row.downloads === 0 ? 0 : Math.max(8, (row.downloads / max) * 100);
+            return (
+              <div
+                key={row.date}
+                className="download-bar-col"
+                title={`${row.date}: ${n(row.downloads)} download${row.downloads === 1 ? "" : "s"}`}
+              >
+                <div className="download-bar-count">{row.downloads > 0 ? n(row.downloads) : ""}</div>
+                <div className="download-bar-track">
+                  <div className="download-bar-fill" style={{ height: `${height}%` }} />
+                </div>
+                <div className="download-bar-day">{dayLabel}</div>
+              </div>
+            );
+          })}
         </div>
       )}
     </Panel>
