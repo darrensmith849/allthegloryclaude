@@ -27,7 +27,7 @@ export const album = {
    *  buffering. The R2 object carries its own Content-Disposition so it
    *  downloads with the pretty filename below. */
   downloadZipSrc:
-    "https://downloads.alltheglory.co.za/from-darkness-to-light.zip",
+    "https://downloads.alltheglory.co.za/from-darkness-to-light.zip?v=2",
   /** Filename the browser shows when the user downloads the zip. */
   downloadZipFilename: "All The Glory - From Darkness To Light.zip",
 
