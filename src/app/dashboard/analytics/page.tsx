@@ -476,6 +476,10 @@ function AnalyticsPageInner() {
                 />
               </div>
 
+              <div className="dash-col-12">
+                <CountBoard data={data} />
+              </div>
+
               <div className="dash-col-8">
                 <Panel
                   eyebrow={data.range.label}
@@ -1044,6 +1048,37 @@ function AnalyticsPageInner() {
           .download-bar-day {
             font-size: 8.5px;
           }
+        }
+        .count-board-list {
+          display: flex;
+          flex-direction: column;
+        }
+        .count-board-row {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 10px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .count-board-row:last-child {
+          border-bottom: 0;
+        }
+        .count-board-label {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: var(--colour-ink-soft);
+          font-size: 13.5px;
+        }
+        .count-board-num {
+          flex-shrink: 0;
+          font-family: var(--font-display), serif;
+          font-size: 17px;
+          line-height: 1;
+          color: var(--colour-glow);
+          font-variant-numeric: tabular-nums;
         }
         @media (max-width: 1100px) {
           .analytics-section-tabs {
@@ -1727,6 +1762,67 @@ function ClickedLinksPanel({ rows }: { rows: AnalyticsPayload["clickedLinks"] })
           </table>
         </div>
       )}
+    </Panel>
+  );
+}
+
+function CountBoard({ data }: { data: AnalyticsPayload }) {
+  // Link opens tallied by platform — "Instagram opened 100 times" -> 100.
+  const byPlatform = new Map<string, number>();
+  for (const link of data.clickedLinks) {
+    byPlatform.set(link.platform, (byPlatform.get(link.platform) ?? 0) + link.clicks);
+  }
+  const opens = [...byPlatform.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .filter((row) => row.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  // Page views tallied by page — "viewed /contact" as one number, not a log.
+  const pages = data.topPagesDetailed
+    .filter((row) => row.views > 0)
+    .slice(0, 8)
+    .map((row) => ({ label: row.path, count: row.views }));
+
+  return (
+    <Panel
+      eyebrow="At a glance"
+      title="Everything, counted"
+      action={
+        <span className="text-[12px] text-[var(--colour-ink-quiet)]">{data.range.label}</span>
+      }
+    >
+      <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
+        <div>
+          <div className="analytics-subhead">Link opens by platform</div>
+          {opens.length === 0 ? (
+            <EmptyState>No link opens tracked in this period yet.</EmptyState>
+          ) : (
+            <div className="count-board-list">
+              {opens.map((row) => (
+                <div key={row.label} className="count-board-row">
+                  <span className="count-board-label" title={row.label}>{row.label}</span>
+                  <span className="count-board-num">{n(row.count)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="analytics-subhead">Page views by page</div>
+          {pages.length === 0 ? (
+            <EmptyState>No page views tracked in this period yet.</EmptyState>
+          ) : (
+            <div className="count-board-list">
+              {pages.map((row) => (
+                <div key={row.label} className="count-board-row">
+                  <span className="count-board-label" title={row.label}>{row.label}</span>
+                  <span className="count-board-num">{n(row.count)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </Panel>
   );
 }
