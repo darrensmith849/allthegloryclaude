@@ -5,6 +5,7 @@
  *   - { event: "view",     path, sid?, ref? }
  *   - { event: "download", file }
  *   - { event: "play",     file, sid? }   ← music plays (hero track / previews)
+ *   - { event: "link",     label, href, path?, sid? } ← outbound/social clicks
  *
  * Always returns 204 (even on error / when D1 is unavailable) so the client
  * can fire-and-forget without ever blocking the visitor. Country + device are
@@ -58,6 +59,17 @@ export async function POST(req: NextRequest) {
           "INSERT INTO events (type, file, country, sid, ts, device) VALUES ('play', ?1, ?2, ?3, ?4, ?5)",
         )
         .bind(file, country, sid, ts, device)
+        .run();
+    } else if (event === "link") {
+      const label = String(body.label ?? "External link").slice(0, 160);
+      const href = String(body.href ?? "").slice(0, 500);
+      const path = String(body.path ?? "/").slice(0, 200);
+      const sid = String(body.sid ?? "").slice(0, 64);
+      await db
+        .prepare(
+          "INSERT INTO events (type, path, file, country, sid, ts, ref, device) VALUES ('link', ?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )
+        .bind(path, label, country, sid, ts, href, device)
         .run();
     }
   } catch {

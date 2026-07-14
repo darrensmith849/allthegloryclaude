@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import NewsletterSignup from "@/components/ui/newsletter-signup";
 import { site } from "@/content/site";
+import { fireLinkClick } from "@/lib/track-event";
 
 const CONTACT_INBOX = "daniel@alltheglory.co.za";
 
@@ -187,6 +188,7 @@ export default function ContactPage() {
                 <a
                   href={`mailto:${CONTACT_INBOX}`}
                   className="text-[var(--colour-amber)] underline"
+                  onClick={() => fireLinkClick("Contact email", `mailto:${CONTACT_INBOX}`)}
                 >
                   {CONTACT_INBOX}
                 </a>{" "}
@@ -373,6 +375,7 @@ export default function ContactPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
+                  onClick={() => fireLinkClick("YouTube subscribe", site.socials.youtube)}
                 >
                   Subscribe on YouTube →
                 </a>
@@ -389,6 +392,7 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                      onClick={() => fireLinkClick("Instagram", site.socials.instagram)}
                     >
                       Instagram ↗
                     </a>
@@ -401,6 +405,7 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                      onClick={() => fireLinkClick("Spotify", site.socials.spotify)}
                     >
                       Spotify ↗
                     </a>
@@ -413,6 +418,7 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                      onClick={() => fireLinkClick("Facebook", site.socials.facebook)}
                     >
                       Facebook ↗
                     </a>
@@ -425,6 +431,7 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
+                      onClick={() => fireLinkClick("TikTok", site.socials.tiktok)}
                     >
                       TikTok ↗
                     </a>

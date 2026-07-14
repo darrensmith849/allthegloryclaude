@@ -10,7 +10,7 @@ const POLL_MS = 30_000;
 
 type RangeKey = "7d" | "30d" | "90d" | "ytd" | "all";
 type CompareKey = "previous" | "year" | "none";
-type ChartMetric = "visitors" | "pageViews" | "musicPlays" | "primaryCtaClicks";
+type ChartMetric = "visitors" | "pageViews" | "musicPlays" | "primaryCtaClicks" | "linkClicks";
 type PageSort = "views" | "uniqueVisitors" | "path";
 type AnalyticsSection = "overview" | "traffic" | "content" | "music" | "tracking";
 type Change = AnalyticsPayload["changes"]["pageViews"];
@@ -44,6 +44,7 @@ const CHART_METRICS: { key: ChartMetric; label: string }[] = [
   { key: "pageViews", label: "Page views" },
   { key: "musicPlays", label: "Music plays" },
   { key: "primaryCtaClicks", label: "CTA clicks" },
+  { key: "linkClicks", label: "Link clicks" },
 ];
 
 const ANALYTICS_SECTIONS: { key: AnalyticsSection; label: string; detail: string }[] = [
@@ -237,11 +238,15 @@ function exportAnalyticsCsv(data: AnalyticsPayload) {
     ["summary", "Page views", "count", data.summary.pageViews, ""],
     ["summary", "Music play clicks", "count", data.summary.musicPlays, ""],
     ["summary", "Album download CTA clicks", "count", data.summary.primaryCtaClicks, ""],
+    ["summary", "Outbound link clicks", "count", data.summary.linkClicks, ""],
     ...data.series.current.map((row) => ["series", row.label, "visitors", row.visitors, row.key]),
     ...data.series.current.map((row) => ["series", row.label, "page_views", row.pageViews, row.key]),
     ...data.series.current.map((row) => ["series", row.label, "music_play_clicks", row.musicPlays, row.key]),
     ...data.series.current.map((row) => ["series", row.label, "cta_clicks", row.primaryCtaClicks, row.key]),
+    ...data.series.current.map((row) => ["series", row.label, "link_clicks", row.linkClicks, row.key]),
+    ...data.last30Days.map((row) => ["daily", row.date, "downloads", row.downloads, `links:${row.links}; plays:${row.plays}; views:${row.views}`]),
     ...data.trafficSources.map((row) => ["source", row.label, "visitors", row.visitors, `${row.percentage.toFixed(1)}%`]),
+    ...data.clickedLinks.map((row) => ["clicked_link", row.label, "clicks", row.clicks, `${row.platform}; ${row.target}`]),
     ...data.topPagesDetailed.map((row) => ["page", row.path, "views", row.views, row.title]),
     ...data.music.tracks.map((row) => ["track", row.title, "play_clicks", row.playClicks, row.rawLabels.join("; ")]),
     ...data.breakdowns.devices.map((row) => ["device", row.label, "visitors", row.count, `${row.percentage.toFixed(1)}%`]),
@@ -535,6 +540,10 @@ function AnalyticsPageInner() {
               <div className="dash-col-12">
                 <CampaignsPanel rows={data.campaigns} />
               </div>
+
+              <div className="dash-col-12">
+                <ClickedLinksPanel rows={data.clickedLinks} />
+              </div>
             </>
           )}
 
@@ -579,6 +588,10 @@ function AnalyticsPageInner() {
                   <Funnel rows={data.funnel.steps} overall={data.funnel.overallConversionPct} largest={data.funnel.largestDropoff} />
                   <ReleaseSetupPrompts />
                 </Panel>
+              </div>
+
+              <div className="dash-col-12">
+                <DailyActivityPanel rows={data.last30Days} />
               </div>
             </>
           )}
@@ -1157,16 +1170,16 @@ function KpiGrid({
       supported: true,
     },
     {
-      label: "Spotify / pre-save clicks",
-      value: "Needs setup",
-      unitLabel: "Tracking setup",
+      label: "Outbound link clicks",
+      value: n(data.summary.linkClicks),
+      unitLabel: "Clicks",
       unitSingular: "Click",
       unitPlural: "Clicks",
-      change: null,
-      comparisonMissing: "Add event tracking before this can be compared",
-      tooltip: "Add outbound event tracking to Spotify / pre-save links to populate this.",
-      metric: "primaryCtaClicks" as ChartMetric,
-      supported: false,
+      change: data.changes.linkClicks,
+      comparisonMissing: "No outbound link data for the previous period",
+      tooltip: "Tracked opens of public outbound links such as Instagram, Spotify, Apple Music, YouTube, TikTok and partner links.",
+      metric: "linkClicks" as ChartMetric,
+      supported: true,
     },
   ];
 
@@ -1580,6 +1593,16 @@ function labelStops(length: number) {
   return [0, Math.floor((length - 1) / 2), length - 1];
 }
 
+function targetLabel(target: string): string {
+  if (!target) return "Unknown target";
+  try {
+    const url = new URL(target);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return target.replace(/^mailto:/, "");
+  }
+}
+
 function TrafficSources({ rows }: { rows: AnalyticsPayload["trafficSources"] }) {
   const max = Math.max(1, ...rows.map((row) => row.visitors));
   return (
@@ -1607,6 +1630,88 @@ function TrafficSources({ rows }: { rows: AnalyticsPayload["trafficSources"] }) 
         </div>
       ))}
     </div>
+  );
+}
+
+function ClickedLinksPanel({ rows }: { rows: AnalyticsPayload["clickedLinks"] }) {
+  return (
+    <Panel eyebrow="Outbound" title="Clicked links">
+      {rows.length === 0 ? (
+        <EmptyState>
+          No outbound link clicks in this range yet. New clicks on Instagram, Spotify, Apple Music, YouTube and other public links will appear here.
+        </EmptyState>
+      ) : (
+        <div className="analytics-table-wrap">
+          <table className="analytics-table">
+            <thead>
+              <tr>
+                <th>Link</th>
+                <th>Platform</th>
+                <th>Clicks</th>
+                <th>Visitors</th>
+                <th>Opened from</th>
+                <th>Last opened</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={`${row.label}-${row.target}`}>
+                  <td data-label="Link" className="text-[var(--colour-ink-soft)]">
+                    <div>{row.label}</div>
+                    <div className="mt-0.5 text-[11px] text-[var(--colour-ink-quiet)]">{targetLabel(row.target)}</div>
+                  </td>
+                  <td data-label="Platform">{row.platform}</td>
+                  <td data-label="Clicks">{n(row.clicks)}</td>
+                  <td data-label="Visitors">{row.uniqueVisitors > 0 ? n(row.uniqueVisitors) : "Not enough data yet"}</td>
+                  <td data-label="Opened from" className="analytics-muted">{row.sourcePath ?? "Unknown"}</td>
+                  <td data-label="Last opened" className="analytics-muted">{row.lastClicked ? timeAgo(row.lastClicked) : "Not yet"}</td>
+                  <td data-label="Change" className={`analytics-change-${changeTone(row.change)}`}>{changeLabel(row.change)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function DailyActivityPanel({ rows }: { rows: AnalyticsPayload["last30Days"] }) {
+  const visibleRows = rows.slice(-14).reverse();
+  return (
+    <Panel eyebrow="Daily" title="Daily downloads & activity">
+      {visibleRows.length === 0 ? (
+        <EmptyState>No daily activity has been tracked yet.</EmptyState>
+      ) : (
+        <div className="analytics-table-wrap">
+          <table className="analytics-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Downloads</th>
+                <th>Link clicks</th>
+                <th>Music plays</th>
+                <th>Page views</th>
+                <th>Visitors</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row) => (
+                <tr key={row.date}>
+                  <td data-label="Date" className="text-[var(--colour-ink-soft)]">{row.date}</td>
+                  <td data-label="Downloads">{n(row.downloads)}</td>
+                  <td data-label="Link clicks">{n(row.links)}</td>
+                  <td data-label="Music plays">{n(row.plays)}</td>
+                  <td data-label="Page views">{n(row.views)}</td>
+                  <td data-label="Visitors">{n(row.visitors)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
   );
 }
 
@@ -1796,6 +1901,17 @@ function Pagination({
 }
 
 function MusicEngagement({ data }: { data: AnalyticsPayload }) {
+  const platformCounts = ["Spotify", "Apple Music", "YouTube", "Instagram"].map((platform) => ({
+    label: platform === "Instagram" ? "Social links" : platform,
+    count: data.clickedLinks
+      .filter((row) =>
+        platform === "Instagram"
+          ? ["Instagram", "Facebook", "TikTok"].includes(row.platform)
+          : row.platform === platform,
+      )
+      .reduce((sum, row) => sum + row.clicks, 0),
+  }));
+
   return (
     <Panel eyebrow="Music" title="Music engagement">
       <div className="grid gap-3 md:grid-cols-4">
@@ -1805,7 +1921,7 @@ function MusicEngagement({ data }: { data: AnalyticsPayload }) {
           value={data.music.uniqueListenersSupported && data.music.uniqueListeners !== null ? n(data.music.uniqueListeners) : "Not enough data yet"}
         />
         <MicroStat label="Completion rate" value="Not enough data yet" />
-        <MicroStat label="External platform clicks" value="Not enough data yet" />
+        <MicroStat label="External link clicks" value={n(data.summary.linkClicks)} />
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_280px]">
@@ -1841,10 +1957,10 @@ function MusicEngagement({ data }: { data: AnalyticsPayload }) {
         <div>
           <div className="analytics-subhead">Platform clicks</div>
           <div className="flex flex-col gap-2">
-            {["Spotify", "Apple Music", "YouTube", "Other platforms"].map((label) => (
-              <div key={label} className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-3">
-                <div className="text-[12.5px] text-[var(--colour-ink-soft)]">{label}</div>
-                <div className="mt-1 text-[11.5px] text-[var(--colour-ink-quiet)]">Not enough data yet</div>
+            {platformCounts.map((item) => (
+              <div key={item.label} className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-3">
+                <div className="text-[12.5px] text-[var(--colour-ink-soft)]">{item.label}</div>
+                <div className="mt-1 text-[11.5px] text-[var(--colour-ink-quiet)]">{n(item.count)} clicks</div>
               </div>
             ))}
           </div>
@@ -1981,7 +2097,7 @@ function ActivityList({ rows }: { rows: AnalyticsPayload["recentActivity"] }) {
         <div key={`${activity.time}-${index}`} className="flex items-baseline justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5 text-[12.5px]">
           <span className="min-w-0 truncate text-[var(--colour-ink-soft)]">
             {activity.country ? <span aria-hidden="true">{flagFromCode(activity.country)} </span> : null}
-            <span className={activity.kind === "download" ? "text-[var(--colour-glow)]" : ""}>
+            <span className={activity.kind === "download" || activity.kind === "link" ? "text-[var(--colour-glow)]" : ""}>
               {activity.label}
             </span>
           </span>

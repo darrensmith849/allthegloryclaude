@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
 import { site } from "@/content/site";
-import { fireTrack } from "@/lib/track-event";
+import { fireLinkClick, fireTrack } from "@/lib/track-event";
 import DownloadModal from "./DownloadModal";
 
 function TrackRow({
@@ -499,6 +499,7 @@ function AlbumArt({
             target="_blank"
             rel="noreferrer"
             className="text-white/80 hover:text-white transition-colors"
+            onClick={() => fireLinkClick("Debbie Clarke Artwork", "https://debbieclarkart.com/")}
           >
             Debbie Clarke ↗
           </a>
@@ -843,6 +844,7 @@ export default function AlbumPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                  onClick={() => fireLinkClick("Simba Moyo", "https://www.optimusik.com/")}
                 >
                   Simba Moyo ↗
                 </a>
@@ -852,6 +854,7 @@ export default function AlbumPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                  onClick={() => fireLinkClick("Riffi Wacho", "https://soundbetter.com/profiles/9495-riffi-wacho")}
                 >
                   Riffi Wacho ↗
                 </a>
@@ -863,6 +866,7 @@ export default function AlbumPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                  onClick={() => fireLinkClick("Christina Ribeiro", "https://www.endgamestrategylab.co.za")}
                 >
                   Christina Ribeiro ↗
                 </a>
@@ -872,6 +876,7 @@ export default function AlbumPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                  onClick={() => fireLinkClick("Dimakatso Machingaifa", "https://music.apple.com/za/album/thought-i-was-over-you-radio-edit-single/1643703974")}
                 >
                   Dimakatso Machingaifa ↗
                 </a>
@@ -883,6 +888,7 @@ export default function AlbumPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
+                  onClick={() => fireLinkClick("Darnell Howard Instagram", "https://www.instagram.com/dhowardondrums")}
                 >
                   Darnell Howard ↗
                 </a>
@@ -899,6 +905,7 @@ export default function AlbumPage() {
                 target="_blank"
                 rel="noreferrer"
                 className="text-white/70 hover:text-white transition-colors"
+                onClick={() => fireLinkClick("Debbie Clarke Artwork", "https://debbieclarkart.com/")}
               >
                 Debbie Clarke ↗
               </a>
@@ -1052,6 +1059,7 @@ function StreamingRow({ reduce }: { reduce: boolean }) {
             aria-label={l.label}
             title={l.label}
             className="text-white/55 hover:text-[var(--colour-amber)] transition-colors duration-300"
+            onClick={() => fireLinkClick(l.label, l.href)}
           >
             <span className="inline-flex h-10 w-10 items-center justify-center">
               {l.icon}

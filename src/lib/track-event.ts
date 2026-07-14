@@ -23,3 +23,14 @@ export function fireTrack(payload: Record<string, unknown>): void {
     /* never bubble */
   }
 }
+
+export function fireLinkClick(label: string, href: string): void {
+  if (typeof window === "undefined") return;
+  const path = `${window.location.pathname}${window.location.search}`;
+  fireTrack({
+    event: "link",
+    label,
+    href,
+    path,
+  });
+}

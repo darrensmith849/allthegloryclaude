@@ -47,6 +47,7 @@ interface DayRow {
   visitors: number;
   plays: number;
   downloads: number;
+  links: number;
 }
 
 interface DownloadEvent {
@@ -62,7 +63,7 @@ interface DonationRow {
 }
 
 interface Activity {
-  kind: "view" | "download" | "play" | "donation";
+  kind: "view" | "download" | "play" | "link" | "donation";
   label: string;
   time: number;
   country?: string;
@@ -73,6 +74,7 @@ interface SummaryMetrics {
   pageViews: number;
   musicPlays: number;
   primaryCtaClicks: number;
+  linkClicks: number;
   uniqueListeners: number;
   avgEngagementTimeSec: number | null;
   returningVisitorPct: number | null;
@@ -83,6 +85,7 @@ interface AnalyticsChangeSet {
   pageViews: MetricComparison;
   musicPlays: MetricComparison;
   primaryCtaClicks: MetricComparison;
+  linkClicks: MetricComparison;
   avgEngagementTimeSec: null;
   returningVisitorPct: null;
 }
@@ -96,6 +99,7 @@ interface SeriesBucket {
   pageViews: number;
   musicPlays: number;
   primaryCtaClicks: number;
+  linkClicks: number;
 }
 
 interface TrafficSourceRow {
@@ -184,6 +188,17 @@ interface TrackingAuditRow {
   note: string;
 }
 
+interface LinkClickRow {
+  label: string;
+  target: string;
+  platform: string;
+  sourcePath: string | null;
+  clicks: number;
+  uniqueVisitors: number;
+  lastClicked: number;
+  change: MetricComparison;
+}
+
 export interface AnalyticsPayload {
   setupNeeded?: boolean;
   fetchedAt: number;
@@ -209,6 +224,7 @@ export interface AnalyticsPayload {
     cities: BreakdownRow[];
   };
   recentActivity: Activity[];
+  clickedLinks: LinkClickRow[];
   insights: Insight[];
   trackingAudit: TrackingAuditRow[];
   unsupportedMetrics: string[];
@@ -281,7 +297,6 @@ const UNSUPPORTED_METRICS = [
   "Returning visitor percentage needs a longer-lived anonymous visitor identifier; the current session id resets by tab.",
   "Browser split is not available because full user agents are not stored.",
   "Track completion and listening time need start/progress/end audio events.",
-  "Spotify, Apple Music, YouTube and social follow clicks are not currently tracked.",
   "City-level location is not stored; only aggregate countries are available.",
   "UTM campaign reporting needs campaign fields to be captured on the entry event.",
 ];
@@ -292,6 +307,7 @@ function emptySummary(): SummaryMetrics {
     pageViews: 0,
     musicPlays: 0,
     primaryCtaClicks: 0,
+    linkClicks: 0,
     uniqueListeners: 0,
     avgEngagementTimeSec: null,
     returningVisitorPct: null,
@@ -304,6 +320,7 @@ function buildChanges(current: SummaryMetrics, previous: SummaryMetrics | null):
     pageViews: compareMetric(current.pageViews, previous?.pageViews ?? null),
     musicPlays: compareMetric(current.musicPlays, previous?.musicPlays ?? null),
     primaryCtaClicks: compareMetric(current.primaryCtaClicks, previous?.primaryCtaClicks ?? null),
+    linkClicks: compareMetric(current.linkClicks, previous?.linkClicks ?? null),
     avgEngagementTimeSec: null,
     returningVisitorPct: null,
   };
@@ -327,7 +344,8 @@ async function getSummary(db: D1Db, start: number, end: number): Promise<Summary
         "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' THEN sid END) AS uniqueVisitors, " +
         "COUNT(CASE WHEN type='play' THEN 1 END) AS musicPlays, " +
         "COUNT(DISTINCT CASE WHEN type='play' AND sid<>'' THEN sid END) AS uniqueListeners, " +
-        "COUNT(CASE WHEN type='download' THEN 1 END) AS primaryCtaClicks " +
+        "COUNT(CASE WHEN type='download' THEN 1 END) AS primaryCtaClicks, " +
+        "COUNT(CASE WHEN type='link' THEN 1 END) AS linkClicks " +
         "FROM events WHERE ts>=?1 AND ts<?2",
     )
     .bind(start, end)
@@ -337,6 +355,7 @@ async function getSummary(db: D1Db, start: number, end: number): Promise<Summary
       musicPlays: number;
       uniqueListeners: number;
       primaryCtaClicks: number;
+      linkClicks: number;
     }>();
 
   return {
@@ -344,6 +363,7 @@ async function getSummary(db: D1Db, start: number, end: number): Promise<Summary
     pageViews: Number(row?.pageViews ?? 0),
     musicPlays: Number(row?.musicPlays ?? 0),
     primaryCtaClicks: Number(row?.primaryCtaClicks ?? 0),
+    linkClicks: Number(row?.linkClicks ?? 0),
     uniqueListeners: Number(row?.uniqueListeners ?? 0),
     avgEngagementTimeSec: null,
     returningVisitorPct: null,
@@ -370,6 +390,7 @@ async function getSeries(
     pageViews: 0,
     musicPlays: 0,
     primaryCtaClicks: 0,
+    linkClicks: 0,
   }));
   const byKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
   if (buckets.length === 0) return buckets;
@@ -395,6 +416,8 @@ async function getSeries(
       bucket.musicPlays = count;
     } else if (row.type === "download") {
       bucket.primaryCtaClicks = count;
+    } else if (row.type === "link") {
+      bucket.linkClicks = count;
     }
   }
 
@@ -629,6 +652,82 @@ function trackTitleForFile(file: string): string {
   return file || "Unknown track";
 }
 
+function linkPlatform(label: string, target: string): string {
+  const raw = `${label} ${target}`.toLowerCase();
+  if (/instagram/.test(raw)) return "Instagram";
+  if (/spotify/.test(raw)) return "Spotify";
+  if (/apple|itunes/.test(raw)) return "Apple Music";
+  if (/youtube|youtu\.be/.test(raw)) return "YouTube";
+  if (/facebook|fb\./.test(raw)) return "Facebook";
+  if (/tiktok/.test(raw)) return "TikTok";
+  if (/soundbetter/.test(raw)) return "SoundBetter";
+  if (/optimusik/.test(raw)) return "Optimusik";
+  if (/mailto:|email/.test(raw)) return "Email";
+  if (/debbieclarkart/.test(raw)) return "Artwork";
+  try {
+    const url = new URL(target);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return label || "External link";
+  }
+}
+
+async function getClickedLinks(
+  db: D1Db,
+  start: number,
+  end: number,
+  comparison: AnalyticsComparison | null,
+): Promise<LinkClickRow[]> {
+  const [currentRows, previousRows] = await Promise.all([
+    db
+      .prepare(
+        "SELECT COALESCE(file,'External link') AS label, COALESCE(ref,'') AS target, " +
+          "MIN(path) AS sourcePath, COUNT(*) AS clicks, " +
+          "COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS uniqueVisitors, MAX(ts) AS lastClicked " +
+          "FROM events WHERE type='link' AND ts>=?1 AND ts<?2 " +
+          "GROUP BY COALESCE(file,'External link'), COALESCE(ref,'') " +
+          "ORDER BY clicks DESC, lastClicked DESC LIMIT 40",
+      )
+      .bind(start, end)
+      .all<{
+        label: string;
+        target: string;
+        sourcePath: string | null;
+        clicks: number;
+        uniqueVisitors: number;
+        lastClicked: number;
+      }>(),
+    comparison
+      ? db
+          .prepare(
+            "SELECT COALESCE(file,'External link') AS label, COALESCE(ref,'') AS target, COUNT(*) AS clicks " +
+              "FROM events WHERE type='link' AND ts>=?1 AND ts<?2 " +
+              "GROUP BY COALESCE(file,'External link'), COALESCE(ref,'')",
+          )
+          .bind(comparison.start, comparison.end)
+          .all<{ label: string; target: string; clicks: number }>()
+      : Promise.resolve({ results: [] as { label: string; target: string; clicks: number }[] }),
+  ]);
+
+  const previousByLink = new Map(
+    (previousRows.results ?? []).map((row) => [`${row.label}\u0000${row.target}`, Number(row.clicks ?? 0)]),
+  );
+
+  return (currentRows.results ?? []).map((row) => {
+    const clicks = Number(row.clicks ?? 0);
+    return {
+      label: row.label || "External link",
+      target: row.target || "",
+      platform: linkPlatform(row.label, row.target),
+      sourcePath: row.sourcePath || null,
+      clicks,
+      uniqueVisitors: Number(row.uniqueVisitors ?? 0),
+      lastClicked: Number(row.lastClicked ?? 0),
+      change: compareMetric(clicks, comparison ? previousByLink.get(`${row.label}\u0000${row.target}`) ?? 0 : null),
+    };
+  });
+}
+
 async function getFunnel(db: D1Db, start: number, end: number, summary: SummaryMetrics): Promise<FunnelAnalytics> {
   const engagedRow = await db
     .prepare(
@@ -785,9 +884,9 @@ async function getRecentDownloads(db: D1Db, start: number, end: number): Promise
 
 async function getRecentActivity(db: D1Db, now: number, recentDonations: DonationRow[]): Promise<Activity[]> {
   const rows = await db
-    .prepare("SELECT type, path, file, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 24")
+    .prepare("SELECT type, path, file, ref, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 24")
     .bind(now - DAY_MS)
-    .all<{ type: string; path: string | null; file: string | null; country: string | null; ts: number }>();
+    .all<{ type: string; path: string | null; file: string | null; ref: string | null; country: string | null; ts: number }>();
 
   return [
     ...(rows.results ?? []).map((row): Activity => {
@@ -796,6 +895,14 @@ async function getRecentActivity(db: D1Db, now: number, recentDonations: Donatio
       }
       if (row.type === "play") {
         return { kind: "play", label: `Played ${row.file ?? "music"}`, time: Number(row.ts), country: row.country ?? undefined };
+      }
+      if (row.type === "link") {
+        return {
+          kind: "link",
+          label: `Opened ${row.file ?? linkPlatform("", row.ref ?? "")}`,
+          time: Number(row.ts),
+          country: row.country ?? undefined,
+        };
       }
       return { kind: "view", label: `Viewed ${row.path ?? "/"}`, time: Number(row.ts), country: row.country ?? undefined };
     }),
@@ -887,6 +994,13 @@ function buildInsights(
     });
   }
 
+  if (summary.linkClicks > 0 && insights.length < 4) {
+    insights.push({
+      title: "Outbound interest",
+      detail: `${summary.linkClicks.toLocaleString()} external link click${summary.linkClicks === 1 ? "" : "s"} happened in this range.`,
+    });
+  }
+
   return insights.slice(0, 4);
 }
 
@@ -897,13 +1011,13 @@ function trackingAudit(): TrackingAuditRow[] {
     { event: "Track started", status: "partial", note: "A play click is captured, but there is no separate audio-start event schema." },
     { event: "Track progress", status: "missing", note: "No progress or heartbeat events exist yet." },
     { event: "Track completed", status: "missing", note: "No end/completion event exists yet." },
-    { event: "Spotify clicks", status: "missing", note: "External platform links are not currently tracked." },
-    { event: "Apple Music clicks", status: "missing", note: "External platform links are not currently tracked." },
-    { event: "YouTube clicks", status: "missing", note: "External platform links are not currently tracked." },
-    { event: "Contact clicks", status: "missing", note: "Contact form and email actions are not currently written to analytics." },
-    { event: "Email clicks", status: "missing", note: "Mail actions are not currently written to analytics." },
+    { event: "Spotify clicks", status: "tracked", note: "Tracked when visitors open Spotify links from the public site." },
+    { event: "Apple Music clicks", status: "tracked", note: "Tracked when visitors open Apple Music links from the public site." },
+    { event: "YouTube clicks", status: "tracked", note: "Tracked when visitors open YouTube or YouTube Music links from the public site." },
+    { event: "Contact clicks", status: "partial", note: "Public email/contact links are tracked; submitted contact forms are still handled separately." },
+    { event: "Email clicks", status: "tracked", note: "Mailto links on the contact and press pages are tracked as outbound link clicks." },
     { event: "Donation or support clicks", status: "partial", note: "Legacy donation confirmations exist, but support clicks are not tracked and public donations are no longer offered." },
-    { event: "Social follow clicks", status: "missing", note: "Social link clicks are not currently written to analytics." },
+    { event: "Social follow clicks", status: "tracked", note: "Instagram, Facebook, TikTok and other public social links are tracked as outbound link clicks." },
     { event: "Newsletter signup", status: "missing", note: "No newsletter signup event is present in the current schema." },
     { event: "QR or campaign visits", status: "missing", note: "Referrer host is stored, but UTM campaign fields are not captured yet." },
     { event: "File or press-kit downloads", status: "partial", note: "Album zip downloads are tracked; press-kit or other file downloads are not." },
@@ -924,6 +1038,7 @@ async function fixedDailyRows(db: D1Db, now: number, days: number): Promise<DayR
     visitors: row.visitors,
     plays: row.musicPlays,
     downloads: row.primaryCtaClicks,
+    links: row.linkClicks,
   }));
 }
 
@@ -980,6 +1095,7 @@ export async function GET(req: Request) {
       countries,
       topDownloads,
       music,
+      clickedLinks,
       funnel,
       donationSummary,
       todaySummary,
@@ -1001,6 +1117,7 @@ export async function GET(req: Request) {
       getBreakdown(db, range.start, range.end, comparisonForQuery, "country"),
       getTopDownloads(db, range.start, range.end),
       getTrackMetrics(db, range.start, range.end, comparisonForQuery, summary),
+      getClickedLinks(db, range.start, range.end, comparisonForQuery),
       getFunnel(db, range.start, range.end, summary),
       getDonationSummary(db, todayStart),
       getSummary(db, todayStart, now),
@@ -1050,6 +1167,7 @@ export async function GET(req: Request) {
         cities: [],
       },
       recentActivity,
+      clickedLinks,
       insights,
       trackingAudit: trackingAudit(),
       unsupportedMetrics: UNSUPPORTED_METRICS,

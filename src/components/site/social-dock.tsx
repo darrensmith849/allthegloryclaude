@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { site } from "@/content/site";
 import type { ReactNode } from "react";
+import { fireLinkClick } from "@/lib/track-event";
 
 /** Inline SVG icons — same glyphs as the painted footer's social row,
  *  so the dock and the footer read as the same iconography rather than
@@ -114,6 +115,7 @@ function Item({
       aria-label={label}
       title={label}
       className="social-link"
+      onClick={() => fireLinkClick(label, href)}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.6, delay, ease: "easeOut" }}

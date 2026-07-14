@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { assets } from "@/content/assets";
+import { fireLinkClick, fireTrack } from "@/lib/track-event";
 
 // Access code for the press-kit landing. Stored client-side, validated
 // against this constant on the gate. Case-insensitive on input so press
@@ -463,6 +464,7 @@ export default function PressKitPage() {
                 <a
                   href={`mailto:${PRESS.contactEmail}`}
                   className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4 break-all"
+                  onClick={() => fireLinkClick("Press email", `mailto:${PRESS.contactEmail}`)}
                 >
                   {PRESS.contactEmail}
                 </a>
@@ -476,6 +478,7 @@ export default function PressKitPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4"
+                  onClick={() => fireLinkClick("Press website", PRESS.websiteUrl)}
                 >
                   www.alltheglory.co.za
                 </a>
@@ -489,6 +492,7 @@ export default function PressKitPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4 break-all"
+                  onClick={() => fireLinkClick("SoundCloud preview", PRESS.soundCloudPreview)}
                 >
                   on.soundcloud.com / preview link
                 </a>
@@ -594,6 +598,15 @@ function AssetCard({
       href={href}
       {...linkProps}
       className="rounded-xl border border-white/10 bg-white/[0.025] p-4 flex items-center justify-between gap-3 hover:border-[var(--colour-amber)]/35 hover:bg-white/[0.04] transition-colors group"
+      onClick={() => {
+        if (download) {
+          fireTrack({ event: "download", file: download });
+          return;
+        }
+        if (external && href) {
+          fireLinkClick(label, href);
+        }
+      }}
     >
       <div className="flex flex-col gap-1 min-w-0">
         <div className="text-[14px] text-white/85 font-semibold truncate">
@@ -699,6 +712,7 @@ function PressGate({
           <a
             href="mailto:daniel@alltheglory.co.za"
             className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] underline decoration-[var(--colour-amber)]/30 underline-offset-4 transition-colors"
+            onClick={() => fireLinkClick("Press access email", "mailto:daniel@alltheglory.co.za")}
           >
             daniel@alltheglory.co.za
           </a>

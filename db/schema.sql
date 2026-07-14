@@ -3,7 +3,7 @@
 -- Page views + album downloads. One row per event.
 CREATE TABLE IF NOT EXISTS events (
   id      INTEGER PRIMARY KEY AUTOINCREMENT,
-  type    TEXT NOT NULL,          -- 'view' | 'download' | 'play'
+  type    TEXT NOT NULL,          -- 'view' | 'download' | 'play' | 'link'
   path    TEXT,                   -- request path (views)
   file    TEXT,                   -- file key (downloads) / track (plays)
   country TEXT,                   -- cf-ipcountry, best effort
