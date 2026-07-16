@@ -7,7 +7,7 @@ import FeaturedVideoHero from "./FeaturedVideoHero";
 /**
  * Minimal Videos page - the video itself is the hero.
  *
- *   eyebrow → headline → one-line description → autoplaying video → one
+ *   eyebrow → headline → one-line description → click-to-play video → one
  *   Watch-on-YouTube CTA below.
  *
  * Deliberately spare; the channel is the destination.
@@ -50,9 +50,9 @@ export default function VideosPage() {
           </p>
         </motion.div>
 
-        {/* Featured video - autoplays muted; viewer unmutes with one click.
-            Soft amber glow anchors it in the page atmosphere instead of
-            having it sit on top of the page. */}
+        {/* Featured video - thumbnail with a play button; nothing plays
+            until the viewer clicks. Soft amber glow anchors it in the page
+            atmosphere instead of having it sit on top of the page. */}
         <motion.div
           initial={
             reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 18 }
