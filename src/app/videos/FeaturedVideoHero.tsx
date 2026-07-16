@@ -10,11 +10,14 @@ type Props = {
 /**
  * Interactive hero for the Videos page.
  *
- * Shows the static cover with a play button - nothing loads or plays
- * until the viewer clicks. The click swaps in the YouTube embed with
+ * A cinematic still of the album artwork with the dove mark floating at
+ * its centre - the dove IS the play control (no chrome, no play
+ * triangle). It breathes with a soft amber glow, lifts on hover, and a
+ * quiet "watch" caption confirms the affordance. Nothing loads or plays
+ * until the viewer clicks; the click swaps in the YouTube embed with
  * autoplay, which is allowed with sound because it is user-initiated.
- * The cover also serves as the permanent fallback for the placeholder +
- * load-failure cases (no videoId, network error, embed restriction).
+ * The artwork also serves as the permanent fallback for the placeholder
+ * + load-failure cases (no videoId, network error, embed restriction).
  */
 export default function FeaturedVideoHero({ videoId }: Props) {
   const [playing, setPlaying] = useState(false);
@@ -27,15 +30,23 @@ export default function FeaturedVideoHero({ videoId }: Props) {
 
   return (
     <figure className="relative overflow-hidden rounded-2xl border border-white/10 panel-scrim aspect-video">
-      {/* Static cover sits behind everything - visible until the viewer
-          presses play, and visible permanently if the iframe fails. */}
+      {/* Album artwork as the cinematic backdrop - darkened towards the
+          centre so the dove reads clearly against the storm. */}
       <Image
-        src="/media/videos-cover.webp"
+        src="/media/ocean.jpg"
         alt=""
         fill
         priority
         sizes="(max-width: 768px) 100vw, 960px"
         className="object-cover"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.55) 100%)",
+        }}
       />
 
       {!showVideo && Boolean(videoId) && (
@@ -43,25 +54,20 @@ export default function FeaturedVideoHero({ videoId }: Props) {
           type="button"
           onClick={() => setPlaying(true)}
           aria-label="Play the featured video"
-          className="group absolute inset-0 flex items-center justify-center"
+          className="group absolute inset-0 flex flex-col items-center justify-center"
         >
+          <Image
+            src="/media/logo-dove.png"
+            alt=""
+            width={160}
+            height={160}
+            className="dove-play h-28 w-28 md:h-40 md:w-40 transition-transform duration-300 ease-out group-hover:scale-110"
+          />
           <span
-            className="flex h-16 w-16 items-center justify-center rounded-full border transition-transform duration-200 group-hover:scale-110"
-            style={{
-              background: "rgba(0, 0, 0, 0.55)",
-              borderColor: "var(--colour-amber)",
-            }}
+            className="mt-1 text-[10px] uppercase tracking-[0.42em] opacity-50 transition-opacity duration-300 group-hover:opacity-90"
+            style={{ color: "var(--colour-amber)" }}
           >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="var(--colour-amber)"
-              aria-hidden="true"
-              className="ml-1"
-            >
-              <path d="M8 5.14v13.72L19 12 8 5.14z" />
-            </svg>
+            Watch
           </span>
         </button>
       )}

@@ -191,6 +191,27 @@ video::-webkit-media-controls-overlay-play-button {
   display: inline-block;
 }
 
+/* Dove play control (Videos page hero) - the mark breathes with a soft
+   amber glow so it reads as alive/pressable without any button chrome. */
+.dove-play {
+  animation: dove-breathe 3.6s ease-in-out infinite;
+}
+@keyframes dove-breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px rgba(214, 168, 86, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 26px rgba(214, 168, 86, 0.7));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dove-play {
+    animation: none;
+    filter: drop-shadow(0 0 16px rgba(214, 168, 86, 0.5));
+  }
+}
+
 /* Grain overlay */
 .grain-overlay {
   position: fixed;
