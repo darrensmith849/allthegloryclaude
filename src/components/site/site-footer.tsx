@@ -282,9 +282,9 @@ export default function SiteFooter() {
                 credits both without competing with the album. */}
             <div className="flex flex-wrap items-start justify-center gap-x-9 gap-y-5 mb-5 pb-5 border-b border-white/10">
               {/* Kingdom Come Foundation — the album's parent non-profit. No
-                  external site yet, so it stays unlinked for now.
-                  TODO: swap this text lockup for the real logo once
-                  /media/kingdom-come.png is added to the repo. */}
+                  external site yet, so it stays unlinked for now. Mark cropped
+                  from the foundation's brand lockup (/media/kingdom-come-mark.png),
+                  laid out to match the CrossCoders credit beside it. */}
               <div className="flex flex-col items-center gap-2">
                 <span
                   className="text-[9px] uppercase tracking-[0.26em]"
@@ -292,15 +292,24 @@ export default function SiteFooter() {
                 >
                   Presented by
                 </span>
-                <div className="text-center leading-none" style={{ opacity: 0.78 }}>
-                  <div className="font-display text-[17px]" style={{ color: "var(--colour-glow)" }}>
-                    Kingdom Come
-                  </div>
-                  <div
-                    className="text-[8px] uppercase tracking-[0.36em] mt-1"
-                    style={{ color: "var(--colour-amber)" }}
-                  >
-                    Foundation
+                <div className="flex items-center gap-2" style={{ opacity: 0.78 }}>
+                  <Image
+                    src="/media/kingdom-come-mark.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7"
+                  />
+                  <div className="text-center leading-none">
+                    <div className="font-display text-[17px]" style={{ color: "var(--colour-glow)" }}>
+                      Kingdom Come
+                    </div>
+                    <div
+                      className="text-[8px] uppercase tracking-[0.36em] mt-1"
+                      style={{ color: "var(--colour-amber)" }}
+                    >
+                      Foundation
+                    </div>
                   </div>
                 </div>
               </div>
