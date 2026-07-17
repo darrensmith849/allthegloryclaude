@@ -87,8 +87,8 @@ export const metadata: Metadata = {
     siteName: site.name,
     images: [
       {
-        url: "/og-dove.jpg",
-        secureUrl: `${site.url}/og-dove.jpg`,
+        url: "/og-card.jpg",
+        secureUrl: `${site.url}/og-card.jpg`,
         width: 1200,
         height: 630,
         type: "image/jpeg",
@@ -102,7 +102,7 @@ export const metadata: Metadata = {
     description: site.description,
     images: [
       {
-        url: `${site.url}/og-dove.jpg`,
+        url: `${site.url}/og-card.jpg`,
         width: 1200,
         height: 630,
         alt: "All The Glory - From Darkness To Light",
