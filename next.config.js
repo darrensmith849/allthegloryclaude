@@ -11,14 +11,16 @@ const nextConfig = {
     unoptimized: true,
   },
   async redirects() {
-    // /donate is a live donation page again (gifts go to CrossCoders, a
-    // venture of the Kingdom Come Foundation). Keep the old donate-adjacent
-    // aliases pointing at it so bookmarked links land in the right place.
+    // The giving page lives at /give so the URL matches the "Give" nav label.
+    // It was previously served at /donate, so that (and the other
+    // donate-adjacent aliases) now redirect forward to /give — bookmarked and
+    // shared links, plus any in-flight Paystack callback, still land right.
     return [
-      { source: '/give', destination: '/donate', permanent: true },
-      { source: '/sow', destination: '/donate', permanent: true },
+      { source: '/donate', destination: '/give', permanent: true },
+      { source: '/donate/success', destination: '/give/success', permanent: true },
+      { source: '/sow', destination: '/give', permanent: true },
       // /success and /cancel were the old Stripe return URLs — point them at
-      // home since they have no successor (the new flow uses /donate/success).
+      // home since they have no successor (the new flow uses /give/success).
       { source: '/success', destination: '/', permanent: true },
       { source: '/cancel', destination: '/', permanent: true },
       // The commissioned-work page used to live at /events. Permanent so any

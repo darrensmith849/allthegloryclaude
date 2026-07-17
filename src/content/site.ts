@@ -19,6 +19,6 @@ export const site = {
     { label: "Testimony", href: "/testimony" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
-    { label: "Give", href: "/donate" },
+    { label: "Give", href: "/give" },
   ],
 };

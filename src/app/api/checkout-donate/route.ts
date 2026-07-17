@@ -75,7 +75,7 @@ export async function POST(req: Request) {
         email,
         amount: amountMinor,
         currency: CURRENCY,
-        callback_url: `${origin}/donate/success`,
+        callback_url: `${origin}/give/success`,
         metadata: {
           purpose: "Donation to CrossCoders (Kingdom Come Foundation)",
           donor_name: name || undefined,

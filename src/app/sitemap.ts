@@ -11,7 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/commissions",
     "/testimony",
     "/contact",
-    "/donate",
+    "/give",
     "/privacy",
   ];
 

@@ -4,12 +4,12 @@ export const metadata: Metadata = {
   title: "Give",
   description:
     "Support the mission. 100% of every donation goes to CrossCoders — free software for under-resourced churches, a venture of the Kingdom Come Foundation.",
-  alternates: { canonical: "/donate" },
+  alternates: { canonical: "/give" },
   openGraph: {
     title: "Give — All The Glory",
     description:
       "100% of every donation goes to CrossCoders, a venture of the Kingdom Come Foundation.",
-    url: "/donate",
+    url: "/give",
     images: [
       {
         url: "/og-dove.jpg",

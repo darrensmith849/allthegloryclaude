@@ -314,7 +314,7 @@ video::-webkit-media-controls-overlay-play-button {
   .hero-music-btn  { transition: none; }
 }
 
-/* Donation preset chips — used by /donate */
+/* Donation preset chips — used by /give */
 .chip {
   display: inline-flex;
   align-items: center;

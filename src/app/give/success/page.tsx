@@ -119,7 +119,7 @@ export default function DonateSuccessPage() {
             </Link>
             {result.state !== "success" && (
               <Link
-                href="/donate"
+                href="/give"
                 className="btn"
                 style={{ border: "1px solid rgba(255,255,255,0.18)" }}
               >
