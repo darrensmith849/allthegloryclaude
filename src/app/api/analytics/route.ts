@@ -20,6 +20,7 @@ import {
   normaliseComparisonKey,
   normaliseDevice,
   normaliseRangeKey,
+  pickBucketGranularity,
   resolveAnalyticsRange,
   resolveComparison,
   safeHost,
@@ -1114,6 +1115,11 @@ export async function GET(req: Request) {
       if (launchFloor > comparisonForQuery.start) comparisonForQuery.start = launchFloor;
       if (launchFloor > comparisonForQuery.end) comparisonForQuery.end = launchFloor;
     }
+    // Granularity was picked from the *requested* window; the launch floor may
+    // have just shrunk that window to a few hours (e.g. "last 30 days" on
+    // release day), which would leave a single daily point and no line to
+    // draw. Re-pick it against the window we actually query.
+    range.granularity = pickBucketGranularity(range.start, range.end);
 
     const todayStart = startOfDashboardDayMs(now);
     const weekStart = todayStart - 6 * DAY_MS;

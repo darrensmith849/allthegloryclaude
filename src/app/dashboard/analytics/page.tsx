@@ -1668,6 +1668,13 @@ function PerformanceChart({
 
 function pointsFor(values: number[], max: number) {
   if (values.length === 0) return "";
+  // A polyline needs two points to draw anything, so a single bucket would
+  // render as an invisible line next to a lone dot. Repeat it at both ends so
+  // it reads as a flat line at that value instead of looking broken.
+  if (values.length === 1) {
+    const y = 224 - (values[0] / max) * 188;
+    return `28,${y} 626,${y}`;
+  }
   return values
     .map((value, index) => {
       const x = 28 + (index / Math.max(1, values.length - 1)) * 598;

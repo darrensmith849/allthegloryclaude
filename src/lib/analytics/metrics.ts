@@ -1,11 +1,12 @@
 export const ANALYTICS_TIME_ZONE = "Africa/Johannesburg";
 export const DAY_MS = 86_400_000;
+export const HOUR_MS = 3_600_000;
 
 const JOHANNESBURG_OFFSET_MS = 2 * 60 * 60 * 1000;
 
 export type AnalyticsRangeKey = "7d" | "30d" | "90d" | "ytd" | "all";
 export type AnalyticsComparisonKey = "previous" | "year" | "none";
-export type BucketGranularity = "day" | "month";
+export type BucketGranularity = "hour" | "day" | "month";
 export type MetricDirection = "up" | "down" | "flat" | "new" | "none";
 
 export interface AnalyticsRange {
@@ -81,6 +82,20 @@ function monthKey(ms: number): string {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
 }
 
+/** Must match sqliteBucketExpression("hour") exactly: 2026-07-17T08 */
+function hourKey(ms: number): string {
+  const d = shiftedDate(ms);
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}`;
+}
+
+function startOfDashboardHourMs(ms: number): number {
+  const d = shiftedDate(ms);
+  return (
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours()) -
+    JOHANNESBURG_OFFSET_MS
+  );
+}
+
 export function startOfDashboardDayMs(ms: number = Date.now()): number {
   const d = shiftedDate(ms);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - JOHANNESBURG_OFFSET_MS;
@@ -139,6 +154,11 @@ export function normaliseComparisonKey(value: string | null | undefined): Analyt
 }
 
 export function pickBucketGranularity(start: number, end: number): BucketGranularity {
+  // A window of a couple of days or less (launch day itself, once the launch
+  // floor clamps the range to "today") yields only one daily point, and a
+  // single point cannot draw a line. Bucket by hour so the chart is a real
+  // curve from the first day, then widen automatically as history builds up.
+  if (end - start <= 2 * DAY_MS) return "hour";
   const days = Math.max(1, Math.ceil((end - start) / DAY_MS));
   return days > 120 ? "month" : "day";
 }
@@ -264,14 +284,34 @@ export function normaliseDevice(device: string | null | undefined): "mobile" | "
 
 export function buildTimeBuckets(start: number, end: number, granularity: BucketGranularity): TimeBucket[] {
   const buckets: TimeBucket[] = [];
-  let cursor = granularity === "month" ? startOfDashboardMonthMs(start) : startOfDashboardDayMs(start);
+  let cursor =
+    granularity === "month"
+      ? startOfDashboardMonthMs(start)
+      : granularity === "hour"
+        ? startOfDashboardHourMs(start)
+        : startOfDashboardDayMs(start);
 
   while (cursor < end) {
-    const next = granularity === "month" ? addDashboardMonths(cursor, 1) : cursor + DAY_MS;
-    const key = granularity === "month" ? monthKey(cursor) : localDateKey(cursor);
+    const next =
+      granularity === "month"
+        ? addDashboardMonths(cursor, 1)
+        : granularity === "hour"
+          ? cursor + HOUR_MS
+          : cursor + DAY_MS;
+    const key =
+      granularity === "month"
+        ? monthKey(cursor)
+        : granularity === "hour"
+          ? hourKey(cursor)
+          : localDateKey(cursor);
     buckets.push({
       key,
-      label: granularity === "month" ? formatMonthLabel(cursor) : formatDayLabel(cursor),
+      label:
+        granularity === "month"
+          ? formatMonthLabel(cursor)
+          : granularity === "hour"
+            ? formatHourLabel(cursor)
+            : formatDayLabel(cursor),
       start: cursor,
       end: next,
     });
@@ -282,14 +322,29 @@ export function buildTimeBuckets(start: number, end: number, granularity: Bucket
 }
 
 export function bucketKeyForTimestamp(ms: number, granularity: BucketGranularity): string {
-  return granularity === "month" ? monthKey(ms) : localDateKey(ms);
+  if (granularity === "month") return monthKey(ms);
+  if (granularity === "hour") return hourKey(ms);
+  return localDateKey(ms);
 }
 
 export function sqliteBucketExpression(granularity: BucketGranularity): string {
   if (granularity === "month") {
     return "strftime('%Y-%m', (ts / 1000) + 7200, 'unixepoch')";
   }
+  if (granularity === "hour") {
+    // Matches hourKey(): 2026-07-17T08, in SAST (+7200s).
+    return "strftime('%Y-%m-%dT%H', (ts / 1000) + 7200, 'unixepoch')";
+  }
   return "date((ts / 1000) + 7200, 'unixepoch')";
+}
+
+function formatHourLabel(ms: number): string {
+  return new Intl.DateTimeFormat("en-ZA", {
+    timeZone: ANALYTICS_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(ms);
 }
 
 function formatDayLabel(ms: number): string {
