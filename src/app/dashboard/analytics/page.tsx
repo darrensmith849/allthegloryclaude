@@ -2295,14 +2295,23 @@ function ActivityList({ rows }: { rows: AnalyticsPayload["recentActivity"] }) {
   return (
     <div className="flex flex-col gap-2">
       {rows.map((activity, index) => (
-        <div key={`${activity.time}-${index}`} className="flex items-baseline justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5 text-[12.5px]">
+        <div key={`${activity.time}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5 text-[12.5px]">
           <span className="min-w-0 truncate text-[var(--colour-ink-soft)]">
             {activity.country ? <span aria-hidden="true">{flagFromCode(activity.country)} </span> : null}
             <span className={activity.kind === "download" || activity.kind === "link" ? "text-[var(--colour-glow)]" : ""}>
               {activity.label}
             </span>
           </span>
-          <span className="shrink-0 text-[var(--colour-ink-quiet)]">{timeAgo(activity.time)}</span>
+          <span className="flex shrink-0 items-center gap-2.5">
+            <span className="text-[10.5px] text-[var(--colour-ink-quiet)]">{timeAgo(activity.time)}</span>
+            <span
+              className="min-w-[1.75rem] rounded-md bg-white/[0.06] px-1.5 py-0.5 text-center font-display text-[13px] font-semibold text-[var(--colour-glow)]"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+              title={`${activity.count} time${activity.count === 1 ? "" : "s"}`}
+            >
+              {activity.count > 999 ? "999+" : activity.count}
+            </span>
+          </span>
         </div>
       ))}
     </div>

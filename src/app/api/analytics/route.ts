@@ -67,6 +67,10 @@ interface Activity {
   label: string;
   time: number;
   country?: string;
+  /** How many times this exact action (same label + country) happened in
+   *  the window. Repeats are tallied into one row instead of listing each
+   *  event, so the feed stays short and reads as running counts. */
+  count: number;
 }
 
 interface SummaryMetrics {
@@ -883,37 +887,57 @@ async function getRecentDownloads(db: D1Db, start: number, end: number): Promise
 }
 
 async function getRecentActivity(db: D1Db, now: number, recentDonations: DonationRow[]): Promise<Activity[]> {
+  // Tally the last 24h: repeats of the same action from the same country
+  // collapse into one row with a running count, so the feed reads as
+  // numbers (one "Viewed / 🇿🇼" row that climbs 1 → 2 → 3) instead of a
+  // long line of identical events. We group on the *displayed label*
+  // (not raw columns like referrer) so visually-identical rows merge;
+  // the newest occurrence keeps the row sorted to the top.
   const rows = await db
-    .prepare("SELECT type, path, file, ref, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 24")
+    .prepare("SELECT type, path, file, ref, country, ts FROM events WHERE ts>=?1 ORDER BY ts DESC LIMIT 2000")
     .bind(now - DAY_MS)
     .all<{ type: string; path: string | null; file: string | null; ref: string | null; country: string | null; ts: number }>();
 
+  const tally = new Map<string, Activity>();
+  for (const row of rows.results ?? []) {
+    let kind: Activity["kind"];
+    let label: string;
+    if (row.type === "download") {
+      kind = "download";
+      label = "Album download clicked";
+    } else if (row.type === "play") {
+      kind = "play";
+      label = `Played ${row.file ?? "music"}`;
+    } else if (row.type === "link") {
+      kind = "link";
+      label = `Opened ${row.file ?? linkPlatform("", row.ref ?? "")}`;
+    } else {
+      kind = "view";
+      label = `Viewed ${row.path ?? "/"}`;
+    }
+    const country = row.country ?? undefined;
+    const key = `${kind}|${label}|${country ?? ""}`;
+    const existing = tally.get(key);
+    if (existing) {
+      existing.count += 1;
+      const time = Number(row.ts);
+      if (time > existing.time) existing.time = time;
+    } else {
+      tally.set(key, { kind, label, time: Number(row.ts), country, count: 1 });
+    }
+  }
+
   return [
-    ...(rows.results ?? []).map((row): Activity => {
-      if (row.type === "download") {
-        return { kind: "download", label: "Album download clicked", time: Number(row.ts), country: row.country ?? undefined };
-      }
-      if (row.type === "play") {
-        return { kind: "play", label: `Played ${row.file ?? "music"}`, time: Number(row.ts), country: row.country ?? undefined };
-      }
-      if (row.type === "link") {
-        return {
-          kind: "link",
-          label: `Opened ${row.file ?? linkPlatform("", row.ref ?? "")}`,
-          time: Number(row.ts),
-          country: row.country ?? undefined,
-        };
-      }
-      return { kind: "view", label: `Viewed ${row.path ?? "/"}`, time: Number(row.ts), country: row.country ?? undefined };
-    }),
+    ...tally.values(),
     ...recentDonations.map((donation): Activity => ({
       kind: "donation",
       label: `Legacy gift - ${donation.currency === "ZAR" ? "R" : donation.currency + " "}${donation.amount.toLocaleString()}`,
       time: donation.time,
+      count: 1,
     })),
   ]
     .sort((a, b) => b.time - a.time)
-    .slice(0, 18);
+    .slice(0, 24);
 }
 
 async function getDonationSummary(db: D1Db, todayStart: number): Promise<{
