@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
+import { isTrackingOptedOut, setTrackingOptOut } from "@/lib/track-event";
+
 /**
  * Fires a single fire-and-forget POST to /api/track every time the
  * pathname changes. Lives at the root layout so every public-site
@@ -12,6 +14,12 @@ import { useEffect } from "react";
  *   - /dashboard/* (private app chrome — visiting your own dashboard
  *     should never inflate the visitor numbers)
  *   - /api/*       (server-only routes)
+ *   - any browser marked as the owner's own (see below) — so checking
+ *     the live site all day never shows up as real traffic.
+ *
+ * Owner opt-out: opening the private dashboard marks this browser
+ * permanently (localStorage), and ?notrack=1 / ?notrack=0 toggles it by
+ * hand on any page. It is per-browser, so each device must be marked once.
  *
  * Session ID is a random 12-char token stored in sessionStorage so the
  * "active now" gauge can dedupe a single visitor across multiple page
@@ -22,8 +30,26 @@ export default function PageViewTracker() {
 
   useEffect(() => {
     if (!pathname) return;
-    if (pathname.startsWith("/dashboard")) return;
+
+    // Explicit manual toggle, usable from any page: ?notrack=1 marks this
+    // browser as the owner's, ?notrack=0 undoes it. Read straight off
+    // location so this needs no Suspense boundary.
+    try {
+      const flag = new URLSearchParams(window.location.search).get("notrack");
+      if (flag === "1") setTrackingOptOut(true);
+      else if (flag === "0") setTrackingOptOut(false);
+    } catch {
+      /* malformed URL / blocked storage — ignore */
+    }
+
+    // Opening the private dashboard is a reliable "this is my browser"
+    // signal, so mark it and stop counting this device from then on.
+    if (pathname.startsWith("/dashboard")) {
+      setTrackingOptOut(true);
+      return;
+    }
     if (pathname.startsWith("/api")) return;
+    if (isTrackingOptedOut()) return;
 
     let sid = "";
     // Referrer source is recorded once per session (on the entry page); later

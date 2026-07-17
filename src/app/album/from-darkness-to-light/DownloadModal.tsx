@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { album } from "@/content/album";
+import { fireTrack } from "@/lib/track-event";
 
 type Props = {
   onClose: () => void;
@@ -148,18 +149,9 @@ export default function DownloadModal({ onClose }: Props) {
           className="mt-7 btn btn-primary w-full justify-center inline-flex"
           onClick={() => {
             // Fire-and-forget download event for the private analytics
-            // dashboard. Never blocks the actual download.
-            try {
-              fetch("/api/track", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                  event: "download",
-                  file: album.downloadZipFilename,
-                }),
-                keepalive: true,
-              }).catch(() => {});
-            } catch {}
+            // dashboard. Never blocks the actual download. Goes through
+            // fireTrack so the owner's own browser (opted out) isn't logged.
+            fireTrack({ event: "download", file: album.downloadZipFilename });
             // Close the modal shortly after the browser starts the download,
             // so the user lands back on the album page.
             setTimeout(onClose, 300);
