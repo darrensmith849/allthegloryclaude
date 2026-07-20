@@ -62,6 +62,18 @@ export default function AboutPage() {
               </div>
             </motion.figure>
 
+            {/* Intro line sits between the two photos - the present-day
+                portrait above it, the childhood photo below. */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={heroTextTransition}
+              className="px-2 py-1 text-center text-base md:text-lg text-white/70 leading-relaxed md:py-2"
+            >
+              The story behind the music - a testimony of grace, surrender, and
+              the relentless pursuit of light in the darkest places.
+            </motion.p>
+
             <motion.figure
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -81,16 +93,6 @@ export default function AboutPage() {
               </div>
             </motion.figure>
           </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={heroTextTransition}
-            className="mt-8 md:mt-10 text-center text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
-          >
-            The story behind the music - a testimony of grace, surrender, and the
-            relentless pursuit of light in the darkest places.
-          </motion.p>
         </div>
       </section>
 
