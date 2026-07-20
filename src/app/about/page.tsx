@@ -35,13 +35,12 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Lead images - the new portrait opens the page, with the
-              childhood photo of Daniel and his dad beneath it. Stacked
-              rather than side-by-side because the two frames are very
-              different shapes (tall portrait vs wide 3:2); a shared max
-              width keeps their edges aligned, and both go full-bleed on
-              mobile. */}
-          <div className="mx-auto mt-10 md:mt-14 flex max-w-2xl flex-col gap-5 md:gap-6">
+          {/* Lead images - the new portrait alongside the childhood photo
+              of Daniel and his dad. Side-by-side (smaller) on tablet/desktop,
+              vertically centred so the wide 3:2 frame balances against the
+              taller portrait; they stack full-width on phones so neither
+              gets squeezed too small. */}
+          <div className="mx-auto mt-10 md:mt-14 grid max-w-3xl grid-cols-1 items-center gap-4 sm:grid-cols-2 sm:gap-5">
             <motion.figure
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -54,7 +53,7 @@ export default function AboutPage() {
                   alt="Daniel smiling at a cafe table"
                   fill
                   priority
-                  sizes="(max-width: 1024px) 100vw, 672px"
+                  sizes="(max-width: 640px) 100vw, 370px"
                   className="object-cover"
                   style={{ objectPosition: "55% 38%" }}
                 />
@@ -73,7 +72,7 @@ export default function AboutPage() {
                   src="/media/dad.jpg"
                   alt="Daniel as a child with his dad"
                   fill
-                  sizes="(max-width: 1024px) 100vw, 672px"
+                  sizes="(max-width: 640px) 100vw, 370px"
                   className="object-cover"
                   style={{ objectPosition: "50% 40%" }}
                 />
