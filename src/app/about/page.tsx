@@ -35,13 +35,13 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Lead images - the new portrait alongside the childhood photo of
-              Daniel and his dad. On tablet/desktop they sit side-by-side at a
-              MATCHED height: the columns are sized to each frame's shape
-              (8fr for the 4:5 portrait, 15fr for the 3:2 photo), so their tops
-              and bottoms line up cleanly and neither floats in empty space -
-              no cropping needed. They stack full-width on phones. */}
-          <div className="mx-auto mt-10 md:mt-14 grid max-w-4xl grid-cols-1 items-center gap-4 sm:grid-cols-[8fr_15fr] sm:items-start sm:gap-5">
+          {/* Lead images - the new portrait opens the page, with the
+              childhood photo of Daniel and his dad beneath it. Stacked
+              rather than side-by-side because the two frames are very
+              different shapes (tall portrait vs wide 3:2); a shared max
+              width keeps their edges aligned, and both go full-bleed on
+              mobile. */}
+          <div className="mx-auto mt-10 md:mt-14 flex max-w-2xl flex-col gap-5 md:gap-6">
             <motion.figure
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -54,7 +54,7 @@ export default function AboutPage() {
                   alt="Daniel smiling at a cafe table"
                   fill
                   priority
-                  sizes="(max-width: 640px) 100vw, 370px"
+                  sizes="(max-width: 1024px) 100vw, 672px"
                   className="object-cover"
                   style={{ objectPosition: "55% 38%" }}
                 />
@@ -73,7 +73,7 @@ export default function AboutPage() {
                   src="/media/dad.jpg"
                   alt="Daniel as a child with his dad"
                   fill
-                  sizes="(max-width: 640px) 100vw, 370px"
+                  sizes="(max-width: 1024px) 100vw, 672px"
                   className="object-cover"
                   style={{ objectPosition: "50% 40%" }}
                 />
