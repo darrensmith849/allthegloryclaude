@@ -35,27 +35,52 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Lead image - the dad photo, treated as the rightful
-              opening visual. Natural 3:2 fit for the source frame. */}
-          <motion.figure
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={heroImageTransition}
-            className="relative mx-auto mt-10 md:mt-14 max-w-3xl"
-          >
-            <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 panel-scrim aspect-[3/2]">
-              <Image
-                src="/media/dad.jpg"
-                alt="Daniel as a child with his dad"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 820px"
-                className="object-cover"
-                style={{ objectPosition: "50% 40%" }}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/45" />
-            </div>
-          </motion.figure>
+          {/* Lead images - the new portrait opens the page, with the
+              childhood photo of Daniel and his dad beneath it. Stacked
+              rather than side-by-side because the two frames are very
+              different shapes (tall portrait vs wide 3:2); a shared max
+              width keeps their edges aligned, and both go full-bleed on
+              mobile. */}
+          <div className="mx-auto mt-10 md:mt-14 flex max-w-2xl flex-col gap-5 md:gap-6">
+            <motion.figure
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={heroImageTransition}
+              className="relative"
+            >
+              <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 panel-scrim aspect-[4/5]">
+                <Image
+                  src="/media/daniel-cafe.jpg"
+                  alt="Daniel smiling at a cafe table"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 672px"
+                  className="object-cover"
+                  style={{ objectPosition: "55% 38%" }}
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/40" />
+              </div>
+            </motion.figure>
+
+            <motion.figure
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={heroImageTransition}
+              className="relative"
+            >
+              <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 panel-scrim aspect-[3/2]">
+                <Image
+                  src="/media/dad.jpg"
+                  alt="Daniel as a child with his dad"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 672px"
+                  className="object-cover"
+                  style={{ objectPosition: "50% 40%" }}
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/45" />
+              </div>
+            </motion.figure>
+          </div>
 
           <motion.p
             initial={{ opacity: 0 }}
