@@ -35,12 +35,13 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Lead images - the new portrait alongside the childhood photo
-              of Daniel and his dad. Side-by-side (smaller) on tablet/desktop,
-              vertically centred so the wide 3:2 frame balances against the
-              taller portrait; they stack full-width on phones so neither
-              gets squeezed too small. */}
-          <div className="mx-auto mt-10 md:mt-14 grid max-w-3xl grid-cols-1 items-center gap-4 sm:grid-cols-2 sm:gap-5">
+          {/* Lead images - the new portrait alongside the childhood photo of
+              Daniel and his dad. On tablet/desktop they sit side-by-side at a
+              MATCHED height: the columns are sized to each frame's shape
+              (8fr for the 4:5 portrait, 15fr for the 3:2 photo), so their tops
+              and bottoms line up cleanly and neither floats in empty space -
+              no cropping needed. They stack full-width on phones. */}
+          <div className="mx-auto mt-10 md:mt-14 grid max-w-4xl grid-cols-1 items-center gap-4 sm:grid-cols-[8fr_15fr] sm:items-start sm:gap-5">
             <motion.figure
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
