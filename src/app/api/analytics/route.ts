@@ -1099,8 +1099,8 @@ export async function GET(req: Request) {
     const trackedSince = bounds.first ?? now;
     const range = resolveAnalyticsRange(requestedRange, now, bounds.first);
     const rawComparison = resolveComparison(requestedComparison, range, bounds.first);
-    const comparison = rawComparison?.available ? rawComparison : rawComparison;
-    const comparisonForQuery = rawComparison?.available ? rawComparison : null;
+    let comparison = rawComparison?.available ? rawComparison : rawComparison;
+    let comparisonForQuery = rawComparison?.available ? rawComparison : null;
 
     // Launch reset: from 2026-07-17 00:00 SAST (22:00 UTC on the 16th) every
     // displayed metric counts only from launch forward — a clean baseline on
@@ -1111,9 +1111,21 @@ export async function GET(req: Request) {
     const LAUNCH_BASELINE = Date.UTC(2026, 6, 16, 22, 0, 0);
     const launchFloor = now >= LAUNCH_BASELINE ? LAUNCH_BASELINE : 0;
     if (launchFloor > range.start) range.start = launchFloor;
-    if (comparisonForQuery) {
-      if (launchFloor > comparisonForQuery.start) comparisonForQuery.start = launchFloor;
-      if (launchFloor > comparisonForQuery.end) comparisonForQuery.end = launchFloor;
+    // A comparison window that reaches back before launch isn't a complete
+    // like-for-like period yet (pre-launch data is intentionally hidden), so a
+    // % delta against it is misleading — e.g. the 4-day launch spike shown as
+    // "-90%" against a full 7-day week, or "Previous data missing" when it's
+    // entirely pre-launch. Suppress it until there's enough post-launch history
+    // for a full prior period; a neutral "building history" note shows instead.
+    if (comparisonForQuery && comparisonForQuery.start < launchFloor) {
+      comparisonForQuery = null;
+      if (comparison) {
+        comparison = {
+          ...comparison,
+          available: false,
+          reason: "Building history since launch — no full prior period to compare yet.",
+        };
+      }
     }
     // Granularity was picked from the *requested* window; the launch floor may
     // have just shrunk that window to a few hours (e.g. "last 30 days" on

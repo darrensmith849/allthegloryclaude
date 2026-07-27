@@ -1319,7 +1319,7 @@ function WeeklyInsightPanel({ data }: { data: AnalyticsPayload }) {
       : {
           label: "Changed",
           value: "No comparison",
-          detail: data.comparison?.available === false ? "Previous data missing" : "Waiting for earlier data",
+          detail: data.comparison?.available === false ? "Building history since launch" : "Waiting for earlier data",
           tone: "none" as const,
         },
     topSource
