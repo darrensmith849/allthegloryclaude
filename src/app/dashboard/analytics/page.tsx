@@ -537,10 +537,11 @@ function AnalyticsPageInner() {
                       <div className="analytics-subhead">Browsers</div>
                       <EmptyState>Not enough data yet. Browsers are not stored.</EmptyState>
                     </div>
-                    <div>
-                      <div className="analytics-subhead">Cities</div>
-                      <EmptyState>Not enough data yet. City-level location is not stored.</EmptyState>
-                    </div>
+                    <Breakdown
+                      title="Cities"
+                      rows={data.breakdowns.cities}
+                      empty="No city data yet — this fills in from new visits (older visits were country-only)."
+                    />
                   </div>
                 </Panel>
               </div>

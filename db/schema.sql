@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS events (
   sid     TEXT,                   -- anonymous session id (visitor de-dupe)
   ts      INTEGER NOT NULL,       -- epoch ms
   ref     TEXT,                   -- referrer source hostname / 'direct' (views)
-  device  TEXT                    -- 'mobile' | 'tablet' | 'desktop' (views)
+  device  TEXT,                   -- 'mobile' | 'tablet' | 'desktop' (views)
+  city    TEXT,                   -- Cloudflare cf.city, best effort (may be null)
+  region  TEXT                    -- Cloudflare cf.region (state/province)
 );
 CREATE INDEX IF NOT EXISTS idx_events_type_ts ON events(type, ts);
 CREATE INDEX IF NOT EXISTS idx_events_sid_ts  ON events(sid, ts);

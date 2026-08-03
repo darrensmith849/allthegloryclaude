@@ -12,9 +12,24 @@
  * sniffed from Cloudflare / the User-Agent so the client stays tiny.
  */
 import type { NextRequest } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/lib/analytics/store";
 
 export const dynamic = "force-dynamic";
+
+/** Best-effort city + region from Cloudflare's edge geo (never throws).
+ *  Older events predate this, so both may be null — that's expected. */
+async function geoCity(): Promise<{ city: string | null; region: string | null }> {
+  try {
+    const { cf } = await getCloudflareContext({ async: true });
+    const c = cf as unknown as { city?: string; region?: string } | undefined;
+    const city = (c?.city || "").slice(0, 120) || null;
+    const region = (c?.region || "").slice(0, 120) || null;
+    return { city, region };
+  } catch {
+    return { city: null, region: null };
+  }
+}
 
 function deviceFromUA(ua: string): string {
   if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return "tablet";
@@ -31,6 +46,7 @@ export async function POST(req: NextRequest) {
     const event = String(body.event ?? "");
     const country = (req.headers.get("cf-ipcountry") || "??").slice(0, 4);
     const device = deviceFromUA(req.headers.get("user-agent") || "");
+    const { city, region } = await geoCity();
     const ts = Date.now();
 
     if (event === "view") {
@@ -39,26 +55,26 @@ export async function POST(req: NextRequest) {
       const ref = String(body.ref ?? "direct").slice(0, 120) || "direct";
       await db
         .prepare(
-          "INSERT INTO events (type, path, country, sid, ts, ref, device) VALUES ('view', ?1, ?2, ?3, ?4, ?5, ?6)",
+          "INSERT INTO events (type, path, country, sid, ts, ref, device, city, region) VALUES ('view', ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         )
-        .bind(path, country, sid, ts, ref, device)
+        .bind(path, country, sid, ts, ref, device, city, region)
         .run();
     } else if (event === "download") {
       const file = String(body.file ?? "").slice(0, 200);
       await db
         .prepare(
-          "INSERT INTO events (type, file, country, ts, device) VALUES ('download', ?1, ?2, ?3, ?4)",
+          "INSERT INTO events (type, file, country, ts, device, city, region) VALUES ('download', ?1, ?2, ?3, ?4, ?5, ?6)",
         )
-        .bind(file, country, ts, device)
+        .bind(file, country, ts, device, city, region)
         .run();
     } else if (event === "play") {
       const file = String(body.file ?? "").slice(0, 200);
       const sid = String(body.sid ?? "").slice(0, 64);
       await db
         .prepare(
-          "INSERT INTO events (type, file, country, sid, ts, device) VALUES ('play', ?1, ?2, ?3, ?4, ?5)",
+          "INSERT INTO events (type, file, country, sid, ts, device, city, region) VALUES ('play', ?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         )
-        .bind(file, country, sid, ts, device)
+        .bind(file, country, sid, ts, device, city, region)
         .run();
     } else if (event === "link") {
       const label = String(body.label ?? "External link").slice(0, 160);
@@ -67,9 +83,9 @@ export async function POST(req: NextRequest) {
       const sid = String(body.sid ?? "").slice(0, 64);
       await db
         .prepare(
-          "INSERT INTO events (type, path, file, country, sid, ts, ref, device) VALUES ('link', ?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+          "INSERT INTO events (type, path, file, country, sid, ts, ref, device, city, region) VALUES ('link', ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         )
-        .bind(path, label, country, sid, ts, href, device)
+        .bind(path, label, country, sid, ts, href, device, city, region)
         .run();
     }
   } catch {

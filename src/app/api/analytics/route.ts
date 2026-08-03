@@ -302,7 +302,7 @@ const UNSUPPORTED_METRICS = [
   "Returning visitor percentage needs a longer-lived anonymous visitor identifier; the current session id resets by tab.",
   "Browser split is not available because full user agents are not stored.",
   "Track completion and listening time need start/progress/end audio events.",
-  "City-level location is not stored; only aggregate countries are available.",
+  "City-level location is captured from new visits onward; visits before that are country-only.",
   "UTM campaign reporting needs campaign fields to be captured on the entry event.",
 ];
 
@@ -821,15 +821,19 @@ async function getBreakdown(
   start: number,
   end: number,
   comparison: AnalyticsComparison | null,
-  kind: "device" | "country",
+  kind: "device" | "country" | "city",
 ): Promise<BreakdownRow[]> {
-  const column = kind === "device" ? "device" : "country";
+  const column = kind === "device" ? "device" : kind === "city" ? "city" : "country";
+  // Cities were only captured from the day this shipped; older rows are null.
+  // Excluding blanks means the Cities panel shows its friendly empty note
+  // until real cities arrive, instead of one giant "Unknown".
+  const extra = kind === "city" ? ` AND ${column} IS NOT NULL AND ${column}<>''` : "";
   const [currentRows, previousRows] = await Promise.all([
     db
       .prepare(
         `SELECT COALESCE(${column},'unknown') AS label, ` +
           "COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS visitors, COUNT(*) AS views " +
-          "FROM events WHERE type='view' AND ts>=?1 AND ts<?2 GROUP BY label ORDER BY visitors DESC, views DESC LIMIT 12",
+          `FROM events WHERE type='view' AND ts>=?1 AND ts<?2${extra} GROUP BY label ORDER BY visitors DESC, views DESC LIMIT 12`,
       )
       .bind(start, end)
       .all<{ label: string; visitors: number; views: number }>(),
@@ -838,7 +842,7 @@ async function getBreakdown(
           .prepare(
             `SELECT COALESCE(${column},'unknown') AS label, ` +
               "COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS visitors, COUNT(*) AS views " +
-              "FROM events WHERE type='view' AND ts>=?1 AND ts<?2 GROUP BY label",
+              `FROM events WHERE type='view' AND ts>=?1 AND ts<?2${extra} GROUP BY label`,
           )
           .bind(comparison.start, comparison.end)
           .all<{ label: string; visitors: number; views: number }>()
@@ -862,10 +866,15 @@ async function getBreakdown(
   }));
 }
 
-function cleanBreakdownLabel(label: string, kind: "device" | "country"): string {
+function cleanBreakdownLabel(label: string, kind: "device" | "country" | "city"): string {
   if (kind === "device") {
     const device = normaliseDevice(label);
     return device === "unknown" ? "Unknown" : device[0].toUpperCase() + device.slice(1);
+  }
+  if (kind === "city") {
+    // Cloudflare already returns proper-case names ("Cape Town"); older rows
+    // predate city capture and come through as null → "unknown".
+    return label && label !== "unknown" ? label : "Unknown";
   }
   return label && label !== "??" ? label.toUpperCase() : "Unknown";
 }
@@ -1173,6 +1182,7 @@ export async function GET(req: Request) {
       topPagesDetailed,
       devices,
       countries,
+      cities,
       topDownloads,
       music,
       clickedLinks,
@@ -1195,6 +1205,7 @@ export async function GET(req: Request) {
       getTopPageRows(db, range.start, range.end, comparisonForQuery),
       getBreakdown(db, range.start, range.end, comparisonForQuery, "device"),
       getBreakdown(db, range.start, range.end, comparisonForQuery, "country"),
+      getBreakdown(db, range.start, range.end, comparisonForQuery, "city"),
       getTopDownloads(db, range.start, range.end),
       getTrackMetrics(db, range.start, range.end, comparisonForQuery, summary),
       getClickedLinks(db, range.start, range.end, comparisonForQuery),
@@ -1244,7 +1255,7 @@ export async function GET(req: Request) {
         devices,
         browsers: [],
         countries,
-        cities: [],
+        cities,
       },
       recentActivity,
       clickedLinks,
