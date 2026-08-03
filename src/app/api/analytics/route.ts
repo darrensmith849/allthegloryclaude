@@ -677,6 +677,29 @@ function linkPlatform(label: string, target: string): string {
   }
 }
 
+/** Turn a raw request path into a human page name for the activity feed,
+ *  so "/" reads as "the Home page" instead of a bare slash. */
+function friendlyPage(path: string | null): string {
+  const p = (path ?? "/").split("?")[0].replace(/\/+$/, "") || "/";
+  const named: Record<string, string> = {
+    "/": "the Home page",
+    "/album/from-darkness-to-light": "the Album page",
+    "/testimony": "the Testimony page",
+    "/commissions": "the Commissions page",
+    "/videos": "the Videos page",
+    "/about": "the About page",
+    "/contact": "the Contact page",
+    "/give": "the Give page",
+    "/donate": "the Give page",
+    "/privacy": "the Privacy page",
+  };
+  if (named[p]) return named[p];
+  // Unknown path: title-case the last segment, e.g. "/album/foo-bar" -> "Foo Bar".
+  const seg = p.split("/").filter(Boolean).pop() ?? "";
+  const pretty = seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return pretty ? `the ${pretty} page` : p;
+}
+
 async function getClickedLinks(
   db: D1Db,
   start: number,
@@ -914,7 +937,7 @@ async function getRecentActivity(db: D1Db, now: number, recentDonations: Donatio
       label = `Opened ${row.file ?? linkPlatform("", row.ref ?? "")}`;
     } else {
       kind = "view";
-      label = `Viewed ${row.path ?? "/"}`;
+      label = `Viewed ${friendlyPage(row.path)}`;
     }
     const country = row.country ?? undefined;
     const key = `${kind}|${label}|${country ?? ""}`;
