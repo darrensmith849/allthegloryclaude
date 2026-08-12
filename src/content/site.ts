@@ -3,13 +3,10 @@ export const site = {
   url: "https://www.alltheglory.co.za",
   description: "From Darkness To Light - a testimony of truth and freedom in Jesus.",
   socials: {
-    instagram: "https://www.instagram.com/allthe_glory",
     youtube: "https://www.youtube.com/@Allthe_glory",
     spotify: "https://open.spotify.com/artist/31qIQqqntN5cVt0NGK8uUa",
     appleMusic: "https://music.apple.com/za/album/from-darkness-to-light/6781827636",
     youtubeMusic: "", // TODO: paste the YouTube Music artist URL when live (CD Baby distribution)
-    facebook: "https://www.facebook.com/allthegloryy",
-    tiktok: "https://www.tiktok.com/@allthe_glory",
   },
   nav: [
     { label: "Home", href: "/" },

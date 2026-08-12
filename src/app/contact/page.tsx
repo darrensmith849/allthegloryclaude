@@ -385,19 +385,6 @@ export default function ContactPage() {
                 Or follow along here
               </div>
               <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.22em]">
-                {site.socials.instagram && (
-                  <li>
-                    <a
-                      href={site.socials.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
-                      onClick={() => fireLinkClick("Instagram", site.socials.instagram)}
-                    >
-                      Instagram ↗
-                    </a>
-                  </li>
-                )}
                 {site.socials.spotify && (
                   <li>
                     <a
@@ -408,32 +395,6 @@ export default function ContactPage() {
                       onClick={() => fireLinkClick("Spotify", site.socials.spotify)}
                     >
                       Spotify ↗
-                    </a>
-                  </li>
-                )}
-                {site.socials.facebook && (
-                  <li>
-                    <a
-                      href={site.socials.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
-                      onClick={() => fireLinkClick("Facebook", site.socials.facebook)}
-                    >
-                      Facebook ↗
-                    </a>
-                  </li>
-                )}
-                {site.socials.tiktok && (
-                  <li>
-                    <a
-                      href={site.socials.tiktok}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/70 hover:text-[var(--colour-amber)] transition-colors"
-                      onClick={() => fireLinkClick("TikTok", site.socials.tiktok)}
-                    >
-                      TikTok ↗
                     </a>
                   </li>
                 )}
