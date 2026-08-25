@@ -10,6 +10,23 @@ import { fireLinkClick } from "@/lib/track-event";
  *  so the dock and the footer read as the same iconography rather than
  *  two different visual vocabularies. */
 const Icons: Record<string, ReactNode> = {
+  Instagram: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  ),
   YouTube: (
     <svg
       width="20"
@@ -84,7 +101,7 @@ function Item({
       {/* Mobile / tablet: the platform icon inside a 44×44 wrapper so each
           social hits the Apple HIG / Material tap-target minimum.
           Desktop (lg+): the original uppercase word marks the artist
-          preferred — "APPLE MUSIC ↗", "YOUTUBE ↗", … stacked vertically. */}
+          preferred — "APPLE MUSIC ↗", "INSTAGRAM ↗", … stacked vertically. */}
       <span className="lg:hidden inline-flex h-11 w-11 items-center justify-center">
         {Icons[label]}
       </span>
@@ -124,6 +141,7 @@ export default function SocialDock() {
           apart so the rail visibly assembles itself top-to-bottom
           after the hero settles. */}
       <Item href={appleMusicHref} label="Apple Music" delay={0.6} />
+      <Item href={site.socials.instagram} label="Instagram" delay={0.78} />
       <Item href={site.socials.youtube} label="YouTube" delay={0.96} />
       <Item href={site.socials.spotify} label="Spotify" delay={1.14} />
     </div>
