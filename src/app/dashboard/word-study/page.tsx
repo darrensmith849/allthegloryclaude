@@ -173,8 +173,8 @@ function WordJournal() {
   const [filling, setFilling] = useState(false);
   const [fillNote, setFillNote] = useState<string | null>(null);
   const [slots, setSlots] = useState<Slots>({});
-  // False once a fill came back without AI (no key set) - the life line
-  // can't be written for the user then.
+  // False once a fill came back without a life line (AI unavailable or out
+  // of today's allowance) - the placeholder then asks the user to write it.
   const [aiWrites, setAiWrites] = useState(true);
 
   // ── Library ───────────────────────────────────────────────────
@@ -625,7 +625,7 @@ function WordJournal() {
                       placeholder={
                         aiWrites
                           ? "Fills in when you tap Fill it in for me."
-                          : "Write your own line here - this fills in automatically once the AI key is added."
+                          : "Write your own line here."
                       }
                       value={draft.application}
                       onChange={(e) => set("application", e.target.value)}

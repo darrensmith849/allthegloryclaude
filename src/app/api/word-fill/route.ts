@@ -10,12 +10,17 @@
 // chesed and eleos, not words only occasionally translated that way. The
 // English meaning comes from Wiktionary.
 //
-// With ANTHROPIC_API_KEY set (a Worker secret in production), Claude picks
-// the best candidate in each language for the verse and writes all the
-// text in plain English. Without it - or if the call fails - meanings come
-// from Strong's and the life line is left for the user.
+// Writing, in order of preference:
+//   - ANTHROPIC_API_KEY set (Worker secret): Claude picks the best word in
+//     each language for the verse and writes all the text.
+//   - Otherwise Cloudflare Workers AI (the AI binding, free daily allowance)
+//     writes the life line and puts dry Strong's definitions into plain
+//     English. Hand-written notes and the dictionary meaning are kept.
+//   - If neither answers, meanings come from Strong's and the life line is
+//     left for the user.
 
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAllStrongs, searchStrongs, StrongsEntry } from "@/lib/dashboard/strongs";
 import {
   kjvRenderings,
@@ -34,6 +39,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const MODEL = "claude-opus-5-5";
+const WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const PER_LANGUAGE = 6;
 
 function toCandidate(e: StrongsEntry): WordCandidate {
@@ -152,10 +158,9 @@ function stripHtml(html: string): string {
 
 const FAITH_SENSE = /\b(God|divine|Christian|Christianity|theology|religion|religious|Bible|biblical|spiritual|Jesus|Christ|sin|church)\b/i;
 
-// The word's main current sense from Wiktionary (free, no key), plus its
-// Christian / biblical sense when there is one - "grace" should give
-// "free and undeserved favour of God", not just "charm".
-async function englishDefinition(word: string, followed = false): Promise<string> {
+// Current senses of the word from Wiktionary (free, no key), nouns first,
+// following "plural of ..." to the base word.
+async function englishSenses(word: string, followed = false): Promise<string[]> {
   try {
     const r = await fetch(
       `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word.trim().toLowerCase())}`,
@@ -167,7 +172,7 @@ async function englishDefinition(word: string, followed = false): Promise<string
         signal: AbortSignal.timeout(6000),
       },
     );
-    if (!r.ok) return "";
+    if (!r.ok) return [];
     const data = (await r.json()) as {
       en?: { partOfSpeech?: string; definitions?: { definition?: string }[] }[];
     };
@@ -183,17 +188,25 @@ async function englishDefinition(word: string, followed = false): Promise<string
       }
       if (current.length) break; // first part of speech only (noun, verb...)
     }
-    if (!current.length) return "";
+    if (!current.length) return [];
     // "Mercies" -> "plural of mercy": define the base word instead.
     const base = current[0].match(
       /^(?:plural|third-person singular|simple past|past participle|present participle|alternative (?:form|spelling)|comparative|superlative)(?: form)? of ([a-z][a-z' -]*?)[.;]?$/i,
     );
-    if (base && !followed) return englishDefinition(base[1], true);
-    const faith = current.slice(1, 10).find((t) => FAITH_SENSE.test(t));
-    return [current[0], faith ?? current[1]].filter(Boolean).join(" ");
+    if (base && !followed) return englishSenses(base[1], true);
+    return current.slice(0, 8);
   } catch {
-    return "";
+    return [];
   }
+}
+
+// The main sense plus the Christian / biblical one when there is one -
+// "grace" should give "free and undeserved favour of God", not just
+// "charm". Used when no AI picks the sense.
+function dictionaryText(senses: string[]): string {
+  if (!senses.length) return "";
+  const faith = senses.slice(1).find((t) => FAITH_SENSE.test(t));
+  return [senses[0], faith ?? senses[1]].filter(Boolean).join(" ");
 }
 
 // ── Claude ───────────────────────────────────────────────────────
@@ -320,6 +333,148 @@ async function writeWithClaude(
   return text ? (JSON.parse(text) as Written) : null;
 }
 
+// ── Cloudflare Workers AI ────────────────────────────────────────
+
+interface WorkersAI {
+  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+}
+
+async function workersAI(): Promise<WorkersAI | null> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    return (env as unknown as { AI?: WorkersAI }).AI ?? null;
+  } catch {
+    return null; // not running on Cloudflare (e.g. next dev)
+  }
+}
+
+interface Plain {
+  hebrewMeaning?: string;
+  greekMeaning?: string;
+  englishMeaning?: string;
+  application?: string;
+}
+
+const PLAIN_SYSTEM = `You write short, accurate entries for a personal Bible word journal, in plain modern English - warm, never preachy. Use only the information you are given. Never invent roots, word pictures, Bible verses or Strong's numbers. Reply with the requested labelled lines only.`;
+
+const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
+
+// A life line we'll show: one complete first-person sentence, short.
+function goodApplication(s: string): string {
+  const t = s.replace(/^["'“]+|["'”]+$/g, "").trim();
+  const n = words(t);
+  if (n < 6 || n > 28 || !/^I\b/.test(t)) return "";
+  if (/[.!?]\s+\S/.test(t)) return ""; // more than one sentence
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
+// A meaning we'll show instead of the Strong's text: a real explanation.
+function goodMeaning(s: string): string {
+  const t = s.trim();
+  return words(t) >= 10 && /[.!?]$/.test(t) ? t : "";
+}
+
+function parseLabelled(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  let key = "";
+  for (const line of text.split("\n")) {
+    const m = line.match(/^\s*\**\s*(LIFE|HEBREW|GREEK|ENGLISH)\s*\**\s*:\s*(.*)$/i);
+    if (m) {
+      key = m[1].toUpperCase();
+      out[key] = m[2].trim();
+    } else if (key && line.trim()) {
+      out[key] = `${out[key]} ${line.trim()}`.trim();
+    }
+  }
+  return out;
+}
+
+// Writes the life line, and plain-English meanings only where they help:
+// Strong's definitions without a hand-written note, and a missing
+// dictionary meaning. Anything that fails the checks above is dropped, so
+// the caller falls back to the Strong's / dictionary text.
+async function writeWithWorkersAI(
+  ai: WorkersAI,
+  word: string,
+  reference: string,
+  hebrew: StrongsEntry | null,
+  greek: StrongsEntry | null,
+  senses: string[],
+  curated: Set<string>,
+): Promise<Plain> {
+  const context: string[] = [];
+  const asks: string[] = [
+    'LIFE: one sentence of 8 to 20 words, starting with "I", applying what this word means in the Bible (its Hebrew or Greek meaning above) to everyday life today.',
+  ];
+  for (const [e, lang] of [
+    [hebrew, "Hebrew"],
+    [greek, "Greek"],
+  ] as const) {
+    if (!e) continue;
+    context.push(
+      [
+        `${lang} word: ${e.original} ${e.translit} (${e.number})`,
+        `Strong's definition: ${lexiconDefinition(e.number) || e.gloss}`,
+        `Translated in the KJV as: ${kjvRenderings(e.number).slice(0, 8).join(", ") || "-"}`,
+      ].join("\n"),
+    );
+    if (!curated.has(e.number)) {
+      asks.push(
+        `${lang.toUpperCase()}: two plain-English sentences on what ${e.translit} means, based only on its Strong's definition and KJV translations.`,
+      );
+    }
+  }
+  asks.push(
+    senses.length
+      ? "ENGLISH: one or two plain sentences defining the English word in the sense the Bible uses it, chosen from the dictionary senses above."
+      : "ENGLISH: one plain sentence defining the English word in the sense the Bible uses it.",
+  );
+
+  const prompt = [
+    `English word: ${word}`,
+    `Verse: ${reference || "(not given)"}`,
+    senses.length
+      ? `Dictionary senses:\n${senses.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+      : "",
+    ...context,
+    `Write exactly these lines and nothing else:\n${asks.join("\n")}`,
+    `Example of the format, for a different word ("Hope"):\nLIFE: I can face today's uncertainty calmly, because my hope rests on what God has promised.\nGREEK: Elpis is a confident expectation of something good. In the New Testament it is not wishful thinking but settled trust in God's promises.`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const ask = async () => {
+    const out = (await ai.run(WORKERS_AI_MODEL, {
+      messages: [
+        { role: "system", content: PLAIN_SYSTEM },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 500,
+      temperature: 0.3,
+    })) as { response?: unknown };
+    return parseLabelled(typeof out?.response === "string" ? out.response : "");
+  };
+
+  let got = await ask();
+  if (!goodApplication(got.LIFE ?? "")) {
+    const retry = await ask();
+    if (goodApplication(retry.LIFE ?? "")) got = { ...retry, ...pick(got, ["HEBREW", "GREEK", "ENGLISH"]), LIFE: retry.LIFE };
+  }
+  return {
+    application: goodApplication(got.LIFE ?? ""),
+    hebrewMeaning: goodMeaning(got.HEBREW ?? ""),
+    greekMeaning: goodMeaning(got.GREEK ?? ""),
+    englishMeaning: goodMeaning(got.ENGLISH ?? ""),
+  };
+}
+
+// Keep the first attempt's meanings when only the life line needed a retry.
+function pick(src: Record<string, string>, keys: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of keys) if (goodMeaning(src[k] ?? "")) out[k] = src[k];
+  return out;
+}
+
 // ── Route ────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
@@ -350,7 +505,8 @@ export async function POST(req: Request) {
     ? { [picked.language]: picked }
     : {};
 
-  const dictionaryPromise = englishDefinition(word);
+  const sensesPromise = englishSenses(word);
+  const dictionaryPromise = sensesPromise.then(dictionaryText);
 
   const key = process.env.ANTHROPIC_API_KEY;
   let written: Written | null = null;
@@ -393,6 +549,35 @@ export async function POST(req: Request) {
   };
   const hebrew = fillFor("hebrew");
   const greek = fillFor("greek");
+  const dictionary = await dictionaryPromise;
+
+  // No Claude: let Cloudflare's AI write the life line and plain meanings.
+  let plain: Plain | null = null;
+  const ai = !written && (hebrew || greek) ? await workersAI() : null;
+  if (ai) {
+    const entryOf = (f: LanguageFill | null) =>
+      f ? (lists[f.entry.language].find((e) => e.number === f.entry.number) ?? pinned[f.entry.language] ?? null) : null;
+    try {
+      plain = await writeWithWorkersAI(
+        ai,
+        word,
+        reference,
+        entryOf(hebrew),
+        entryOf(greek),
+        await sensesPromise,
+        ranked.curated,
+      );
+      if (plain?.hebrewMeaning && hebrew) hebrew.meaning = plain.hebrewMeaning;
+      if (plain?.greekMeaning && greek) greek.meaning = plain.greekMeaning;
+      if (!plain?.application) note = "Couldn't write the “For my life” line this time - tap Fill it in again, or write your own.";
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("word-fill (workers ai):", msg);
+      note = /4006|neuron|allocation/i.test(msg)
+        ? "Today's free AI allowance is used up - the “For my life” line will fill in again tomorrow. Write your own for now."
+        : "Couldn't write the “For my life” line this time - tap Fill it in again, or write your own.";
+    }
+  }
 
   let primary: WordLanguage =
     (picked?.language as WordLanguage | undefined) ??
@@ -402,21 +587,21 @@ export async function POST(req: Request) {
     "hebrew";
   if (!(primary === "hebrew" ? hebrew : greek)) primary = primary === "hebrew" ? "greek" : "hebrew";
 
-  const dictionary = await dictionaryPromise;
+  const application = written?.application.trim() || plain?.application || "";
   const result: WordFill = {
     primary,
     hebrew,
     greek,
-    englishMeaning: written?.englishMeaning.trim() || dictionary,
-    application: written?.application.trim() ?? "",
-    ai: Boolean(written),
+    englishMeaning: written?.englishMeaning.trim() || plain?.englishMeaning || dictionary,
+    application,
+    ai: Boolean(application),
     note:
       note ??
       (!hebrew && !greek
         ? `Couldn't find “${word}” in Strong's. Try the singular form, or a Strong's number like H2617.`
-        : written
+        : application
           ? undefined
-          : "Hebrew and Greek from Strong's, English meaning from the dictionary. The “For my life” line needs the AI key - write your own for now."),
+          : "The “For my life” line couldn't be written automatically - write your own for now."),
   };
   return NextResponse.json(result);
 }

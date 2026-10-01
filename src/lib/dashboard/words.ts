@@ -29,7 +29,7 @@ export interface WordFill {
   greek: LanguageFill | null;
   englishMeaning: string;
   application: string;
-  ai: boolean; // false = Strong's + dictionary only, no life line
+  ai: boolean; // true = an AI wrote the life line
   note?: string;
 }
 
