@@ -1483,61 +1483,56 @@
 .dash-word-link:hover { color: var(--colour-glow); }
 .dash-word-link.is-danger:hover { color: rgba(255, 160, 160, 0.92); }
 
-/* Strong's lookup picks */
-.dash-word-hits {
+/* Form - fill it in, save it */
+.dash-word-input { font-size: 17px; padding: 12px 14px; }
+.dash-word-fill-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 13px 16px;
+  font-size: 13px;
+}
+.dash-word-fill-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.dash-word-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(216, 178, 90, 0.22);
-  background: rgba(216, 178, 90, 0.04);
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-.dash-word-hit {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  padding: 9px 10px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  transition: background 140ms ease, border-color 140ms ease;
-}
-.dash-word-hit:hover,
-.dash-word-hit:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(216, 178, 90, 0.35);
-  outline: none;
-}
-.dash-word-hit-orig {
-  flex: 0 0 auto;
-  min-width: 64px;
-  font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif;
-  font-size: 22px;
-  line-height: 1.1;
-  color: var(--colour-glow);
-}
-.dash-word-hit-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.dash-word-hit-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.dash-word-hit-translit {
-  font-family: var(--font-display), serif;
+.dash-word-field { min-height: 0; overflow: hidden; resize: none; }
+.dash-word-field::placeholder,
+.dash-word-orig-row .dash-input::placeholder {
   font-style: italic;
-  font-size: 15px;
-  color: var(--colour-ink-strong);
+  color: var(--colour-ink-faint);
 }
-.dash-word-hit-num {
-  font-size: 10.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.dash-word-alts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
   color: var(--colour-ink-quiet);
 }
-.dash-word-hit-gloss {
+.dash-word-alt {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 12.5px;
   color: var(--colour-ink-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.dash-word-alt:hover { border-color: rgba(216, 178, 90, 0.5); color: var(--colour-glow); }
+.dash-word-alt:disabled { opacity: 0.5; }
+.dash-word-saved {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(183, 228, 199, 0.4);
+  background: rgba(183, 228, 199, 0.10);
+  color: #cdeed8;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .dash-word-orig-row {
@@ -1573,6 +1568,11 @@
 }
 .dash-word-card:hover { border-color: rgba(255, 255, 255, 0.14); }
 .dash-word-card.is-editing { border-color: rgba(216, 178, 90, 0.55); }
+.dash-word-card.is-new { animation: dash-word-glow 2.4s ease-out 1; border-color: rgba(216, 178, 90, 0.7); }
+@keyframes dash-word-glow {
+  0% { box-shadow: 0 0 0 0 rgba(216, 178, 90, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(216, 178, 90, 0); }
+}
 
 .dash-word-head {
   display: flex;
@@ -1662,6 +1662,20 @@
   font-style: italic;
   font-size: 17px;
   line-height: 1.45;
+  color: var(--colour-ink-strong);
+  white-space: pre-line;
+}
+
+.dash-word-comment {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+.dash-word-comment p {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--colour-ink-strong);
   white-space: pre-line;
 }

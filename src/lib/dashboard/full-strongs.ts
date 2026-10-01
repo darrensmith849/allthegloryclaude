@@ -5,7 +5,7 @@
 // Strong's dictionary (CC-BY-SA, derived from public-domain 1890 text).
 //
 // The JSON is 1.7 MB and is imported once at module-load on the server.
-// It is never shipped to the browser - the /api/word-study route reads
+// It is never shipped to the browser - the /api/word-fill route reads
 // it server-side and returns only the matches.
 
 import { StrongsEntry } from "./strongs";

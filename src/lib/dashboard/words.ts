@@ -1,7 +1,28 @@
 // Helpers for the word journal - search, the daily word, and dating entries.
 
-import { BibleWord, ISODate } from "./types";
+import { BibleWord, ISODate, WordLanguage } from "./types";
 import { diffDays, todayISO } from "./dates";
+
+// A Strong's entry offered as the original word behind an English word.
+export interface WordCandidate {
+  number: string;
+  language: WordLanguage;
+  translit: string;
+  original: string;
+  gloss: string;
+}
+
+// What /api/word-fill returns to fill in the journal form.
+export interface WordFill {
+  entry: WordCandidate | null;
+  language: WordLanguage;
+  originalMeaning: string;
+  englishMeaning: string;
+  application: string;
+  alternatives: WordCandidate[];
+  ai: boolean; // false = Strong's + dictionary only, no life line
+  note?: string;
+}
 
 // Lower-case and strip accents, breathing marks and Hebrew vowel points so
 // "chesed" finds "chésed" and "חסד" finds "חֶסֶד".
@@ -20,6 +41,7 @@ function haystack(w: BibleWord): string {
       w.englishMeaning,
       w.application,
       w.reference,
+      w.comment,
     ]
       .filter(Boolean)
       .join(" \n "),

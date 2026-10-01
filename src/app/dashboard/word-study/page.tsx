@@ -1,13 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { BibleWord, WordLanguage } from "@/lib/dashboard/types";
-import { StrongsEntry } from "@/lib/dashboard/strongs";
 import { formatShort } from "@/lib/dashboard/dates";
-import { languageLabel, matchesWord, wordDate, wordRank } from "@/lib/dashboard/words";
+import {
+  languageLabel,
+  matchesWord,
+  wordDate,
+  wordRank,
+  WordCandidate,
+  WordFill,
+} from "@/lib/dashboard/words";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -23,6 +29,7 @@ interface Draft {
   englishMeaning: string;
   application: string;
   reference: string;
+  comment: string;
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -35,6 +42,7 @@ const EMPTY_DRAFT: Draft = {
   englishMeaning: "",
   application: "",
   reference: "",
+  comment: "",
 };
 
 function toDraft(w: BibleWord): Draft {
@@ -48,7 +56,24 @@ function toDraft(w: BibleWord): Draft {
     englishMeaning: w.englishMeaning ?? "",
     application: w.application ?? "",
     reference: w.reference ?? "",
+    comment: w.comment ?? "",
   };
+}
+
+// A textarea that grows to fit what was filled in, so every word is
+// readable without scrolling inside the box.
+function GrowingTextarea({
+  minRows = 2,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { minRows?: number }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [props.value]);
+  return <textarea ref={ref} rows={minRows} {...props} />;
 }
 
 type LangFilter = "all" | WordLanguage;
@@ -84,17 +109,18 @@ function WordJournal() {
   // ── Entry form ────────────────────────────────────────────────
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [saved, setSaved] = useState<{ id: string; word: string; updated: boolean } | null>(null);
   const wordInput = useRef<HTMLInputElement>(null);
   const formTop = useRef<HTMLDivElement>(null);
 
-  // ── Strong's lookup (fills the original-language fields) ─────
-  const [hits, setHits] = useState<StrongsEntry[] | null>(null);
-  const [lookupBusy, setLookupBusy] = useState(false);
-  const [lookupNote, setLookupNote] = useState<string | null>(null);
-  // The meaning text a lookup last filled in - lets a second pick replace
-  // it without clobbering anything the user typed themselves.
-  const autoMeaning = useRef("");
+  // ── Auto-fill ─────────────────────────────────────────────────
+  const [filling, setFilling] = useState(false);
+  const [fillNote, setFillNote] = useState<string | null>(null);
+  const [alternatives, setAlternatives] = useState<WordCandidate[]>([]);
+  // False once a fill came back without AI (no key set) - the life line
+  // can't be written for the user then.
+  const [aiWrites, setAiWrites] = useState(true);
 
   // ── Library ───────────────────────────────────────────────────
   const [query, setQuery] = useState("");
@@ -117,11 +143,14 @@ function WordJournal() {
     router.replace("/dashboard/word-study", { scroll: false });
   }, [ready, params, router]);
 
+  // After a save, bring the saved card into view and let it glow briefly.
   useEffect(() => {
-    if (!flash) return;
-    const t = window.setTimeout(() => setFlash(null), 2600);
+    if (!saved) return;
+    const el = document.getElementById(`word-${saved.id}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = window.setTimeout(() => setSaved(null), 6000);
     return () => window.clearTimeout(t);
-  }, [flash]);
+  }, [saved]);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -129,9 +158,46 @@ function WordJournal() {
   function resetForm() {
     setDraft(EMPTY_DRAFT);
     setEditingId(null);
-    setHits(null);
-    setLookupNote(null);
-    autoMeaning.current = "";
+    setShowDetails(false);
+    setFillNote(null);
+    setAlternatives([]);
+  }
+
+  async function fill(pick?: string) {
+    const word = draft.word.trim();
+    if (!word) {
+      wordInput.current?.focus();
+      return;
+    }
+    setFilling(true);
+    setFillNote(null);
+    try {
+      const r = await fetch("/api/word-fill", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ word, reference: draft.reference, pick }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+      const data = (await r.json()) as WordFill;
+      setDraft((d) => ({
+        ...d,
+        language: data.language,
+        original: data.entry?.original ?? "",
+        translit: data.entry?.translit ?? "",
+        strongs: data.entry?.number ?? "",
+        originalMeaning: data.originalMeaning,
+        englishMeaning: data.englishMeaning,
+        application: data.application || d.application,
+      }));
+      setAlternatives(data.alternatives ?? []);
+      setAiWrites(data.ai);
+      setFillNote(data.note ?? null);
+      setShowDetails(true);
+    } catch {
+      setFillNote("Couldn't fill it in just now - check your connection and try again.");
+    } finally {
+      setFilling(false);
+    }
   }
 
   function save(e?: React.FormEvent) {
@@ -151,8 +217,10 @@ function WordJournal() {
       englishMeaning: draft.englishMeaning.trim(),
       application: draft.application.trim(),
       reference: draft.reference.trim() || undefined,
+      comment: draft.comment.trim() || undefined,
     };
     const now = new Date().toISOString();
+    const id = editingId ?? uid();
     update((d) => {
       if (!Array.isArray(d.words)) d.words = [];
       if (editingId) {
@@ -160,21 +228,23 @@ function WordJournal() {
           w.id === editingId ? { ...w, ...fields, updatedAt: now } : w,
         );
       } else {
-        d.words.unshift({ id: uid(), createdAt: now, ...fields });
+        d.words.unshift({ id, createdAt: now, ...fields });
       }
     });
-    setFlash(editingId ? `Updated “${word}”` : `Saved “${word}”`);
+    // Make sure the saved card is on screen, whatever was being searched.
+    setQuery("");
+    setLang("all");
+    setSaved({ id, word, updated: Boolean(editingId) });
     resetForm();
   }
 
   function startEdit(w: BibleWord) {
     setEditingId(w.id);
     setDraft(toDraft(w));
-    setHits(null);
-    setLookupNote(null);
-    autoMeaning.current = "";
+    setShowDetails(true);
+    setFillNote(null);
+    setAlternatives([]);
     formTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    wordInput.current?.focus({ preventScroll: true });
   }
 
   function remove(w: BibleWord) {
@@ -190,54 +260,6 @@ function WordJournal() {
     setDraft({ ...EMPTY_DRAFT, word: query.trim() });
     formTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     wordInput.current?.focus({ preventScroll: true });
-  }
-
-  async function lookup() {
-    const q = draft.strongs.trim() || draft.word.trim();
-    if (!q) {
-      wordInput.current?.focus();
-      return;
-    }
-    setLookupBusy(true);
-    setLookupNote(null);
-    try {
-      const r = await fetch("/api/word-study", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: q, useAi: false }),
-      });
-      const data = (await r.json()) as { results?: StrongsEntry[] };
-      const results = (data.results ?? []).slice(0, 6);
-      setHits(results);
-      if (!results.length) {
-        setLookupNote(
-          `No Strong's match for “${q}”. Fill it in by hand, or try a Strong's number like H2617.`,
-        );
-      }
-    } catch {
-      setHits(null);
-      setLookupNote("Lookup failed - check your connection and try again.");
-    } finally {
-      setLookupBusy(false);
-    }
-  }
-
-  function pick(h: StrongsEntry) {
-    const meaning = [h.gloss?.replace(/[.;\s]+$/, ""), h.usage?.trim()]
-      .filter(Boolean)
-      .join(". ");
-    const replaceMeaning =
-      !draft.originalMeaning.trim() || draft.originalMeaning === autoMeaning.current;
-    setDraft({
-      ...draft,
-      language: h.language,
-      original: h.original ?? "",
-      translit: h.translit ?? "",
-      strongs: h.number ?? "",
-      originalMeaning: replaceMeaning ? meaning : draft.originalMeaning,
-    });
-    if (replaceMeaning) autoMeaning.current = meaning;
-    setHits(null);
   }
 
   async function toggleVerse(w: BibleWord) {
@@ -301,11 +323,11 @@ function WordJournal() {
     <>
       <div className="dash-pagehead">
         <div>
-          <div className="eyebrow eyebrow-amber">Hebrew &amp; Greek · in your own words</div>
+          <div className="eyebrow eyebrow-amber">Hebrew &amp; Greek · filled in for you</div>
           <h1 className="dash-title mt-1">Word Journal</h1>
           <div className="dash-subtitle">
-            Words from the Bible you want to understand deeper - what the original means,
-            what it means in English, and what it means for your life.
+            Type a word from the Bible and tap Fill it in. The Hebrew or Greek, both meanings
+            and a line for your life are written for you. Add your own comment, then save.
           </div>
         </div>
       </div>
@@ -314,7 +336,7 @@ function WordJournal() {
         {/* ── Add / edit a word ─────────────────────────────── */}
         <div className="dash-col-5" ref={formTop} style={{ scrollMarginTop: 24 }}>
           <Panel
-            eyebrow={editingId ? "Editing" : "New entry"}
+            eyebrow={editingId ? "Editing" : "New word"}
             title={editingId ? "Edit word" : "Add a word"}
             action={
               editingId ? (
@@ -324,202 +346,215 @@ function WordJournal() {
               ) : null
             }
           >
+            {saved && (
+              <div className="dash-word-saved" role="status">
+                ✓ {saved.updated ? "Updated" : "Saved"} “{saved.word}” in your journal
+              </div>
+            )}
+
             <form onSubmit={save} className="flex flex-col gap-4">
               <div>
                 <label className="dash-label" htmlFor="wj-word">
                   The word
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    id="wj-word"
-                    ref={wordInput}
-                    className="dash-input"
-                    placeholder="e.g. Mercy, Grace, Shalom"
-                    value={draft.word}
-                    onChange={(e) => set("word", e.target.value)}
-                    autoComplete="off"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="dash-btn shrink-0"
-                    onClick={lookup}
-                    disabled={lookupBusy}
-                    title="Find the Hebrew or Greek behind this word in Strong's"
-                  >
-                    {lookupBusy ? "Looking…" : "Look up"}
-                  </button>
-                </div>
-                <div className="dash-word-hint">
-                  Look up pulls the original word from Strong&apos;s. Keep what helps and
-                  rewrite the rest in your own words.
-                </div>
-              </div>
-
-              {hits && hits.length > 0 && (
-                <div className="dash-word-hits">
-                  <div className="flex items-baseline justify-between mb-1.5">
-                    <span className="eyebrow">Pick the original word</span>
-                    <button
-                      type="button"
-                      className="dash-word-link"
-                      onClick={() => setHits(null)}
-                    >
-                      None of these
-                    </button>
-                  </div>
-                  {hits.map((h, i) => (
-                    <button
-                      key={`${h.number}-${i}`}
-                      type="button"
-                      className="dash-word-hit"
-                      onClick={() => pick(h)}
-                    >
-                      <span className="dash-word-hit-orig" dir="auto">
-                        {h.original}
-                      </span>
-                      <span className="dash-word-hit-body">
-                        <span className="dash-word-hit-top">
-                          <span className="dash-word-hit-translit">{h.translit}</span>
-                          <span className="dash-word-hit-num">
-                            {h.language === "greek" ? "Greek" : "Hebrew"} · {h.number}
-                          </span>
-                        </span>
-                        <span className="dash-word-hit-gloss">{h.gloss}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {lookupNote && <div className="dash-word-note">{lookupNote}</div>}
-
-              <div>
-                <span className="dash-label">Original language</span>
-                <div className="dash-toggle" role="group" aria-label="Original language">
-                  <button
-                    type="button"
-                    className={draft.language === "hebrew" ? "is-on" : ""}
-                    aria-pressed={draft.language === "hebrew"}
-                    onClick={() => set("language", "hebrew")}
-                  >
-                    Hebrew
-                  </button>
-                  <button
-                    type="button"
-                    className={draft.language === "greek" ? "is-on" : ""}
-                    aria-pressed={draft.language === "greek"}
-                    onClick={() => set("language", "greek")}
-                  >
-                    Greek
-                  </button>
-                </div>
-              </div>
-
-              <div className="dash-word-orig-row">
-                <div>
-                  <label className="dash-label" htmlFor="wj-original">
-                    {langName} word
-                  </label>
-                  <input
-                    id="wj-original"
-                    className="dash-input dash-word-script-input"
-                    placeholder={draft.language === "greek" ? "χάρις" : "חֶסֶד"}
-                    value={draft.original}
-                    onChange={(e) => set("original", e.target.value)}
-                    dir="auto"
-                  />
-                </div>
-                <div>
-                  <label className="dash-label" htmlFor="wj-translit">
-                    Sounds like
-                  </label>
-                  <input
-                    id="wj-translit"
-                    className="dash-input"
-                    placeholder={draft.language === "greek" ? "charis" : "chesed"}
-                    value={draft.translit}
-                    onChange={(e) => set("translit", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="dash-label" htmlFor="wj-strongs">
-                    Strong&apos;s
-                  </label>
-                  <input
-                    id="wj-strongs"
-                    className="dash-input"
-                    placeholder={draft.language === "greek" ? "G5485" : "H2617"}
-                    value={draft.strongs}
-                    onChange={(e) => set("strongs", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="dash-label" htmlFor="wj-orig-meaning">
-                  {langName} meaning
-                </label>
-                <textarea
-                  id="wj-orig-meaning"
-                  className="dash-textarea"
-                  style={{ minHeight: 88 }}
-                  placeholder="What the original word carries - its root, its picture, its weight."
-                  value={draft.originalMeaning}
-                  onChange={(e) => set("originalMeaning", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="dash-label" htmlFor="wj-en-meaning">
-                  English meaning
-                </label>
-                <textarea
-                  id="wj-en-meaning"
-                  className="dash-textarea"
-                  style={{ minHeight: 64 }}
-                  placeholder="What the word means in plain English."
-                  value={draft.englishMeaning}
-                  onChange={(e) => set("englishMeaning", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="dash-label" htmlFor="wj-apply">
-                  For my life
-                </label>
-                <textarea
-                  id="wj-apply"
-                  className="dash-textarea"
-                  style={{ minHeight: 60 }}
-                  placeholder="One short sentence - how this changes the way I live today."
-                  value={draft.application}
-                  onChange={(e) => set("application", e.target.value)}
+                <input
+                  id="wj-word"
+                  ref={wordInput}
+                  className="dash-input dash-word-input"
+                  placeholder="Type a word, e.g. Mercy"
+                  value={draft.word}
+                  onChange={(e) => set("word", e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter fills it in rather than saving a half-empty entry.
+                    if (e.key === "Enter" && !showDetails) {
+                      e.preventDefault();
+                      fill();
+                    }
+                  }}
+                  autoComplete="off"
+                  required
                 />
               </div>
 
               <div>
                 <label className="dash-label" htmlFor="wj-ref">
-                  Found in · optional
+                  Verse · optional
                 </label>
                 <input
                   id="wj-ref"
                   className="dash-input"
-                  placeholder="e.g. Psalm 136:1"
+                  placeholder="e.g. Psalm 136:1 - helps pick the right original word"
                   value={draft.reference}
                   onChange={(e) => set("reference", e.target.value)}
                 />
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
-                <button type="submit" className="dash-btn dash-btn-primary">
-                  {editingId ? "Save changes" : "Save word"}
-                </button>
-                {flash && (
-                  <span className="text-[12.5px] text-[var(--colour-amber-soft)]" role="status">
-                    ✓ {flash}
-                  </span>
-                )}
+              <button
+                type="button"
+                className="dash-btn dash-btn-primary dash-word-fill-btn"
+                onClick={() => fill()}
+                disabled={filling || !draft.word.trim()}
+              >
+                {filling
+                  ? "Filling it in…"
+                  : showDetails
+                    ? "✦ Fill it in again"
+                    : "✦ Fill it in for me"}
+              </button>
+
+              {fillNote && <div className="dash-word-note">{fillNote}</div>}
+
+              {!showDetails && !filling && (
+                <div className="dash-word-hint text-center">
+                  Or{" "}
+                  <button
+                    type="button"
+                    className="underline underline-offset-2 hover:text-[var(--colour-glow)]"
+                    onClick={() => setShowDetails(true)}
+                  >
+                    write it in yourself
+                  </button>
+                  .
+                </div>
+              )}
+
+              {showDetails && (
+                <div className="dash-word-details">
+                  <div>
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <span className="dash-label" style={{ marginBottom: 0 }}>
+                        Original word
+                      </span>
+                      <div className="dash-toggle" role="group" aria-label="Original language">
+                        <button
+                          type="button"
+                          className={draft.language === "hebrew" ? "is-on" : ""}
+                          aria-pressed={draft.language === "hebrew"}
+                          onClick={() => set("language", "hebrew")}
+                        >
+                          Hebrew
+                        </button>
+                        <button
+                          type="button"
+                          className={draft.language === "greek" ? "is-on" : ""}
+                          aria-pressed={draft.language === "greek"}
+                          onClick={() => set("language", "greek")}
+                        >
+                          Greek
+                        </button>
+                      </div>
+                    </div>
+                    <div className="dash-word-orig-row">
+                      <input
+                        className="dash-input dash-word-script-input"
+                        aria-label={`${langName} word`}
+                        placeholder={`${langName} word`}
+                        value={draft.original}
+                        onChange={(e) => set("original", e.target.value)}
+                        dir="auto"
+                      />
+                      <input
+                        className="dash-input"
+                        aria-label="Sounds like"
+                        placeholder="Sounds like"
+                        value={draft.translit}
+                        onChange={(e) => set("translit", e.target.value)}
+                      />
+                      <input
+                        className="dash-input"
+                        aria-label="Strong's number"
+                        placeholder="Strong's"
+                        value={draft.strongs}
+                        onChange={(e) => set("strongs", e.target.value)}
+                      />
+                    </div>
+                    {alternatives.length > 0 && (
+                      <div className="dash-word-alts">
+                        <span>Not the right word? Try</span>
+                        {alternatives.map((a) => (
+                          <button
+                            key={a.number}
+                            type="button"
+                            className="dash-word-alt"
+                            onClick={() => fill(a.number)}
+                            disabled={filling}
+                            title={a.gloss}
+                          >
+                            <span dir="auto">{a.original}</span> {a.translit}
+                            <span className="opacity-60"> · {a.number}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="dash-label" htmlFor="wj-orig-meaning">
+                      {langName} meaning
+                    </label>
+                    <GrowingTextarea
+                      id="wj-orig-meaning"
+                      className="dash-textarea dash-word-field"
+                      minRows={3}
+                      placeholder="Fills in when you tap Fill it in for me."
+                      value={draft.originalMeaning}
+                      onChange={(e) => set("originalMeaning", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="dash-label" htmlFor="wj-en-meaning">
+                      English meaning
+                    </label>
+                    <GrowingTextarea
+                      id="wj-en-meaning"
+                      className="dash-textarea dash-word-field"
+                      placeholder="Fills in when you tap Fill it in for me."
+                      value={draft.englishMeaning}
+                      onChange={(e) => set("englishMeaning", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="dash-label" htmlFor="wj-apply">
+                      For my life
+                    </label>
+                    <GrowingTextarea
+                      id="wj-apply"
+                      className="dash-textarea dash-word-field"
+                      placeholder={
+                        aiWrites
+                          ? "Fills in when you tap Fill it in for me."
+                          : "Write your own line here - this fills in automatically once the AI key is added."
+                      }
+                      value={draft.application}
+                      onChange={(e) => set("application", e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="dash-label" htmlFor="wj-comment">
+                  My comment · optional
+                </label>
+                <GrowingTextarea
+                  id="wj-comment"
+                  className="dash-textarea dash-word-field"
+                  minRows={3}
+                  placeholder="Your own thoughts - what struck you, a prayer, a question."
+                  value={draft.comment}
+                  onChange={(e) => set("comment", e.target.value)}
+                />
               </div>
+
+              <button
+                type="submit"
+                className="dash-btn dash-btn-primary dash-word-fill-btn"
+                disabled={!draft.word.trim() || filling}
+              >
+                {editingId ? "Save changes" : "Save to my journal"}
+              </button>
             </form>
           </Panel>
         </div>
@@ -555,7 +590,7 @@ function WordJournal() {
                 <input
                   type="search"
                   className="dash-input"
-                  placeholder="Search words, meanings, verses…"
+                  placeholder="Search words, meanings, comments…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label="Search your word journal"
@@ -615,7 +650,10 @@ function WordJournal() {
                   return (
                     <article
                       key={w.id}
-                      className={`dash-word-card ${editingId === w.id ? "is-editing" : ""}`}
+                      id={`word-${w.id}`}
+                      className={`dash-word-card ${editingId === w.id ? "is-editing" : ""} ${
+                        saved?.id === w.id ? "is-new" : ""
+                      }`}
                     >
                       <div className="dash-word-head">
                         <div className="min-w-0">
@@ -666,6 +704,13 @@ function WordJournal() {
                         <div className="dash-word-apply">
                           <span className="eyebrow eyebrow-amber">For my life</span>
                           <p>{w.application}</p>
+                        </div>
+                      )}
+
+                      {w.comment && (
+                        <div className="dash-word-comment">
+                          <span className="eyebrow">My comment</span>
+                          <p>{w.comment}</p>
                         </div>
                       )}
 

@@ -247,7 +247,8 @@ export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
 // ─── Word journal ─────────────────────────────────────────────────
 // Words from the Bible saved for deeper study: the word as it reads in
 // English, what the Hebrew/Greek original means, the plain English
-// meaning, and one short line applying it to life.
+// meaning, one short line applying it to life (all filled in for the
+// user by /api/word-fill), and an optional comment of their own.
 export type WordLanguage = "hebrew" | "greek";
 
 export interface BibleWord {
@@ -261,6 +262,7 @@ export interface BibleWord {
   englishMeaning: string; // plain English meaning
   application: string; // one short sentence applying it to life
   reference?: string; // where it was found, e.g. "Psalm 136:1"
+  comment?: string; // the user's own note, added at the end
   createdAt: string;
   updatedAt?: string;
 }
