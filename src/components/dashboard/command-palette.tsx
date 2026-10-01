@@ -1,20 +1,23 @@
 "use client";
 
 // Cmd+K command palette for the dashboard. Press ⌘K (or Ctrl+K) anywhere
-// to search routes and quick actions. Keyboard-driven: arrow keys move,
-// Enter activates, Esc closes.
+// to search routes, quick actions and saved journal words. Keyboard-driven:
+// arrow keys move, Enter activates, Esc closes.
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "@/lib/dashboard/storage";
-import { emptyHabits, resolveHabits, resolveSchedule } from "@/lib/dashboard/types";
+import { emptyHabits, getScheduleForDate } from "@/lib/dashboard/types";
 import { todayISO } from "@/lib/dashboard/dates";
+import { languageLabel, matchesWord } from "@/lib/dashboard/words";
+
+const GROUPS = ["Words", "Navigate", "Action"] as const;
 
 interface Command {
   id: string;
   title: string;
   hint?: string;
-  group: "Navigate" | "Action";
+  group: (typeof GROUPS)[number];
   run: () => void;
 }
 
@@ -47,37 +50,42 @@ export default function CommandPalette() {
       setOpen(false);
       router.push(href);
     };
-    const tracked = resolveHabits(state.settings);
-    const sched = resolveSchedule(state.settings);
+    const sched = getScheduleForDate(today, state.settings, state.scheduleExtras);
     return [
       // ── Navigation ─────────────────────────────────────────
       { id: "go-welcome", title: "Who am I?", group: "Navigate", run: go("/dashboard") },
-      { id: "go-today", title: "Today", hint: "Daily schedule + habits", group: "Navigate", run: go("/dashboard/today") },
-      { id: "go-bible", title: "Bible Reading", hint: "Chronological plan + journal", group: "Navigate", run: go("/dashboard/bible") },
-      { id: "go-word", title: "Word Study", hint: "Greek / Hebrew + verse lookup", group: "Navigate", run: go("/dashboard/word-study") },
-      { id: "go-habits", title: "Habits & Streaks", group: "Navigate", run: go("/dashboard/habits") },
-      { id: "go-self", title: "Self-Control", hint: "Clean streak", group: "Navigate", run: go("/dashboard/self-control") },
+      { id: "go-word", title: "Word Journal", hint: "Hebrew / Greek words you're studying", group: "Navigate", run: go("/dashboard/word-study") },
+      { id: "go-today", title: "Today", hint: "Daily schedule", group: "Navigate", run: go("/dashboard/today") },
       { id: "go-cal", title: "Calendar", group: "Navigate", run: go("/dashboard/calendar") },
       { id: "go-tasks", title: "Tasks", group: "Navigate", run: go("/dashboard/tasks") },
       { id: "go-guitar", title: "Guitar", hint: "Course + weekly plan", group: "Navigate", run: go("/dashboard/guitar") },
       { id: "go-book", title: "Book", group: "Navigate", run: go("/dashboard/book") },
       { id: "go-rem", title: "Reminders", group: "Navigate", run: go("/dashboard/reminders") },
-      { id: "go-rew", title: "Rewards", group: "Navigate", run: go("/dashboard/rewards") },
+      { id: "go-analytics", title: "Analytics", group: "Navigate", run: go("/dashboard/analytics") },
       { id: "go-set", title: "Settings", group: "Navigate", run: go("/dashboard/settings") },
       // ── Actions ──────────────────────────────────────────
       {
+        id: "act-add-word",
+        title: "Add a word to the journal",
+        hint: "Hebrew / Greek meaning, English meaning, for my life",
+        group: "Action",
+        run: go("/dashboard/word-study?new=1"),
+      },
+      {
         id: "act-mark-all",
         title: "Mark all done for today",
-        hint: "Tick every habit + schedule row",
+        hint: "Tick every schedule row",
         group: "Action",
         run: () => {
           update((draft) => {
             const h = draft.habits[today] ?? emptyHabits();
-            for (const habit of tracked) h[habit.id] = true;
-            draft.habits[today] = h;
             if (!draft.scheduleChecks) draft.scheduleChecks = {};
             const day = draft.scheduleChecks[today] ?? {};
-            for (const row of sched) if (!row.habitId) day[row.id] = true;
+            for (const row of sched) {
+              if (row.habitId) h[row.habitId] = true;
+              else day[row.id] = true;
+            }
+            draft.habits[today] = h;
             draft.scheduleChecks[today] = day;
           });
           setOpen(false);
@@ -90,7 +98,7 @@ export default function CommandPalette() {
         run: () => {
           update((draft) => {
             const h = draft.habits[today] ?? emptyHabits();
-            for (const habit of tracked) h[habit.id] = false;
+            for (const row of sched) if (row.habitId) h[row.habitId] = false;
             draft.habits[today] = h;
             if (!draft.scheduleChecks) draft.scheduleChecks = {};
             draft.scheduleChecks[today] = {};
@@ -112,32 +120,6 @@ export default function CommandPalette() {
         },
       },
       {
-        id: "act-bible-read",
-        title: "Mark Bible read today",
-        group: "Action",
-        run: () => {
-          update((draft) => {
-            const h = draft.habits[today] ?? emptyHabits();
-            h["bibleRead"] = true;
-            draft.habits[today] = h;
-          });
-          setOpen(false);
-        },
-      },
-      {
-        id: "act-clean",
-        title: "Mark today clean",
-        group: "Action",
-        run: () => {
-          update((draft) => {
-            const h = draft.habits[today] ?? emptyHabits();
-            h["noPorn"] = true;
-            draft.habits[today] = h;
-          });
-          setOpen(false);
-        },
-      },
-      {
         id: "act-back-to-public",
         title: "Back to the public site",
         group: "Action",
@@ -153,10 +135,28 @@ export default function CommandPalette() {
   const filtered = useMemo(() => {
     const t = norm(q.trim());
     if (!t) return commands;
-    return commands.filter(
-      (c) => norm(c.title).includes(t) || (c.hint && norm(c.hint).includes(t)),
-    );
-  }, [q, commands]);
+    // Saved words only appear once you start typing, so the palette stays
+    // short when it opens.
+    const words: Command[] = (state.words ?? [])
+      .filter((w) => matchesWord(w, q))
+      .slice(0, 6)
+      .map((w) => ({
+        id: `word-${w.id}`,
+        title: w.word,
+        hint: [w.translit, languageLabel(w), w.strongs].filter(Boolean).join(" · "),
+        group: "Words",
+        run: () => {
+          setOpen(false);
+          router.push(`/dashboard/word-study?q=${encodeURIComponent(w.word)}`);
+        },
+      }));
+    return [
+      ...words,
+      ...commands.filter(
+        (c) => norm(c.title).includes(t) || (c.hint && norm(c.hint).includes(t)),
+      ),
+    ];
+  }, [q, commands, state.words, router]);
 
   useEffect(() => setHi(0), [q]);
 
@@ -173,7 +173,7 @@ export default function CommandPalette() {
         <input
           autoFocus
           className="dash-cmdk-input"
-          placeholder="Search routes and actions…"
+          placeholder="Search words, pages and actions…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
@@ -193,7 +193,7 @@ export default function CommandPalette() {
           }}
         />
         <div className="dash-cmdk-list">
-          {(["Navigate", "Action"] as const).map((group) => {
+          {GROUPS.map((group) => {
             const items = filtered.filter((c) => c.group === group);
             if (!items.length) return null;
             return (

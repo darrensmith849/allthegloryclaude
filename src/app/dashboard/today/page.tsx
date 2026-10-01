@@ -5,34 +5,32 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
-import { todayISO, formatHuman } from "@/lib/dashboard/dates";
-import { planDayFor, planForWithOverride } from "@/lib/dashboard/plan";
+import { todayISO, formatHuman, startOfWeek } from "@/lib/dashboard/dates";
 import {
   emptyHabits,
-  getHabitsForDate,
   resolveTaskTags,
   getScheduleForDate,
+  BibleWord,
   ScheduleRow,
 } from "@/lib/dashboard/types";
+import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
+import { languageLabel, wordDate, wordForDate } from "@/lib/dashboard/words";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
-import { currentStreak, habitOn } from "@/lib/dashboard/streaks";
-import { REMINDERS, reminderForDate } from "@/lib/dashboard/reminders";
+
+function countByLanguage(words: BibleWord[], language: BibleWord["language"]) {
+  return words.filter((w) => w.language === language).length;
+}
 
 export default function DashboardHome() {
   const { state, update, ready } = useDashboard();
   const today = todayISO();
   const habits = state.habits[today] ?? emptyHabits();
   const rowChecks = state.scheduleChecks?.[today] ?? {};
-  const planDay = planDayFor(today, state.settings.startDate, state.settings.startPlanDay);
-  const plan = planForWithOverride(planDay, state.settings.planOverrides);
-  const bibleStreak = currentStreak(state, habitOn("bibleRead"));
-  const cleanStreak = currentStreak(state, habitOn("noPorn"));
 
   const schedule = getScheduleForDate(today, state.settings, state.scheduleExtras);
-  const tracked = getHabitsForDate(today, state.settings);
   const TAGS = resolveTaskTags(state.settings);
   const reminder = reminderForDate(today);
 
@@ -41,7 +39,14 @@ export default function DashboardHome() {
     (t) => t.done && t.completedAt?.slice(0, 10) === today,
   ).length;
 
-  // ── Per-row + per-habit toggles ────────────────────────────────
+  const words = state.words;
+  const todaysWord = wordForDate(words, today);
+  const weekStart = startOfWeek(today);
+  const wordsThisWeek = words.filter((w) => wordDate(w) >= weekStart).length;
+
+  // ── Per-row toggles ────────────────────────────────────────────
+  // Rows linked to a habit id keep their done-state in the habits map
+  // (the calendar dots read it); every other row uses scheduleChecks.
   function toggleHabit(key: string) {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
@@ -63,24 +68,24 @@ export default function DashboardHome() {
     });
   }
 
-  // Bulk operations - flip every visible checkbox in a single click.
+  // Bulk operations - flip every schedule row in a single click.
   function markAllDone() {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
-      for (const habit of tracked) h[habit.id] = true;
-      draft.habits[today] = h;
       if (!draft.scheduleChecks) draft.scheduleChecks = {};
       const day = draft.scheduleChecks[today] ?? {};
       for (const row of schedule) {
-        if (!row.habitId) day[row.id] = true;
+        if (row.habitId) h[row.habitId] = true;
+        else day[row.id] = true;
       }
+      draft.habits[today] = h;
       draft.scheduleChecks[today] = day;
     });
   }
   function clearAll() {
     update((draft) => {
       const h = draft.habits[today] ?? emptyHabits();
-      for (const habit of tracked) h[habit.id] = false;
+      for (const row of schedule) if (row.habitId) h[row.habitId] = false;
       draft.habits[today] = h;
       if (!draft.scheduleChecks) draft.scheduleChecks = {};
       draft.scheduleChecks[today] = {};
@@ -214,21 +219,14 @@ export default function DashboardHome() {
   }
 
   // ── Daily completion percentage ───────────────────────────────
-  // Score = every schedule row that's done +
-  //         every tracked habit that's done AND not already counted as
-  //         a schedule row (i.e. surfaced only in the Habits panel).
-  // Total = schedule rows + un-surfaced habits.
-  // That way each visible checkbox contributes exactly 1 to the count.
+  // Each schedule row contributes exactly 1 to the count.
   const completion = useMemo(() => {
-    const scheduleHabitIds = new Set(schedule.map((r) => r.habitId).filter(Boolean));
-    const habitsNotOnSchedule = tracked.filter((h) => !scheduleHabitIds.has(h.id));
-    const total = schedule.length + habitsNotOnSchedule.length;
+    const total = schedule.length;
     let done = 0;
     for (const r of schedule) if (rowDone(r.id, r.habitId)) done++;
-    for (const h of habitsNotOnSchedule) if (habits[h.id]) done++;
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
     return { done, total, pct };
-  }, [schedule, tracked, habits, rowChecks]);
+  }, [schedule, habits, rowChecks]);
 
   if (!ready) return null;
 
@@ -239,12 +237,14 @@ export default function DashboardHome() {
           <div className="eyebrow eyebrow-amber">{formatHuman(today)}</div>
           <h1 className="dash-title mt-1">Good morning, {state.settings.greetingName || "friend"}</h1>
           <div className="dash-subtitle">
-            Day {planDay} of 365 in the chronological plan · {plan.passage}
+            {todaysWord
+              ? `Today's word: ${todaysWord.word}${todaysWord.translit ? ` · ${todaysWord.translit}` : ""}`
+              : "Start your word journal - one word from the Bible at a time."}
           </div>
         </div>
         <div className="flex gap-2">
-          <Link className="dash-btn" href="/dashboard/bible">
-            Open today&apos;s reading →
+          <Link className="dash-btn" href="/dashboard/word-study">
+            Open word journal →
           </Link>
         </div>
       </div>
@@ -316,30 +316,27 @@ export default function DashboardHome() {
       </div>
 
       <div className="dash-grid">
-        <div className="dash-col-3">
-          <Stat label="Word streak" value={`${bibleStreak} days`} hint="Bible read consecutively" />
-        </div>
-        <div className="dash-col-3">
+        <div className="dash-col-4">
           <Stat
-            label="Clean streak"
-            value={`${cleanStreak} days`}
-            hint={`Goal: ${state.settings.goals.cleanStreakTarget}`}
+            label="Word journal"
+            value={`${words.length} ${words.length === 1 ? "word" : "words"}`}
+            hint={`${countByLanguage(words, "hebrew")} Hebrew · ${countByLanguage(words, "greek")} Greek`}
+          />
+        </div>
+        <div className="dash-col-4">
+          <Stat
+            label="Added this week"
+            value={wordsThisWeek}
+            hint={wordsThisWeek ? "Keep digging." : "Add one today."}
             tone="ok"
           />
         </div>
-        <div className="dash-col-3">
+        <div className="dash-col-4">
           <Stat
             label="Tasks done today"
             value={completedToday}
             hint={`${state.tasks.filter((t) => !t.done).length} open`}
             tone="calm"
-          />
-        </div>
-        <div className="dash-col-3">
-          <Stat
-            label="Plan day"
-            value={`${planDay}/365`}
-            hint={`${Math.round((planDay / 365) * 100)}% through the year`}
           />
         </div>
 
@@ -555,60 +552,76 @@ export default function DashboardHome() {
           </Panel>
         </div>
 
-        {/* Today's habits */}
+        {/* Today's word - one saved word, rotating daily */}
         <div className="dash-col-4">
           <Panel
-            eyebrow="Disciplines"
-            title="Today's habits"
+            eyebrow="From your journal"
+            title="Today's word"
             action={
-              <Link href="/dashboard/settings#habits" className="text-[12px] eyebrow">
-                Edit →
+              <Link href="/dashboard/word-study?new=1" className="text-[12px] eyebrow">
+                + Add →
               </Link>
             }
           >
-            <div className="flex flex-col gap-2">
-              {tracked.map((h) => {
-                const on = Boolean(habits[h.id]);
-                return (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => toggleHabit(h.id)}
-                    className={`dash-check ${on ? "is-on" : ""}`}
-                  >
-                    <span className="dash-check-dot">{on ? "✓" : ""}</span>
-                    <span className="dash-check-label">{h.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="dash-divider" />
-            <Link href="/dashboard/habits" className="text-[12.5px] text-[var(--colour-amber-soft)]">
-              See all streaks →
-            </Link>
-          </Panel>
-        </div>
-
-        {/* Today's reading preview */}
-        <div className="dash-col-6">
-          <Panel eyebrow={`Chronological - Day ${planDay}`} title={plan.passage}>
-            <p className="text-[14px] text-[var(--colour-ink-soft)] leading-relaxed">
-              {plan.theme ?? ""}
-            </p>
-            <div className="dash-divider" />
-            <div className="flex flex-wrap gap-2">
-              <Link href="/dashboard/bible" className="dash-btn dash-btn-primary">
-                Open reading &amp; journal
-              </Link>
-              <Link href="/dashboard/word-study" className="dash-btn">
-                Study a word
-              </Link>
-            </div>
+            {todaysWord ? (
+              <div className="dash-word-today">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="dash-word-title">{todaysWord.word}</div>
+                    {(todaysWord.original || todaysWord.translit) && (
+                      <div className="dash-word-orig">
+                        {todaysWord.original && (
+                          <span className="dash-word-script" dir="auto">
+                            {todaysWord.original}
+                          </span>
+                        )}
+                        {todaysWord.translit && (
+                          <span className="dash-word-translit">{todaysWord.translit}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="dash-word-meta">
+                    <span className={`dash-word-lang is-${todaysWord.language}`}>
+                      {languageLabel(todaysWord)}
+                    </span>
+                  </div>
+                </div>
+                {todaysWord.originalMeaning && (
+                  <p className="mt-3 text-[13.5px] text-[var(--colour-ink-soft)] leading-relaxed line-clamp-4">
+                    {todaysWord.originalMeaning}
+                  </p>
+                )}
+                {todaysWord.application && (
+                  <div className="dash-word-apply">
+                    <span className="eyebrow eyebrow-amber">For my life</span>
+                    <p>{todaysWord.application}</p>
+                  </div>
+                )}
+                <div className="dash-divider" />
+                <Link
+                  href={`/dashboard/word-study?q=${encodeURIComponent(todaysWord.word)}`}
+                  className="text-[12.5px] text-[var(--colour-amber-soft)]"
+                >
+                  Open in journal →
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col items-start gap-3">
+                <p className="text-[13.5px] text-[var(--colour-ink-soft)] leading-relaxed">
+                  Save a word from your reading - its Hebrew or Greek meaning, the English
+                  meaning, and one line for your life. A different one shows up here each day.
+                </p>
+                <Link href="/dashboard/word-study?new=1" className="dash-btn dash-btn-primary">
+                  Add your first word
+                </Link>
+              </div>
+            )}
           </Panel>
         </div>
 
         {/* Open tasks preview */}
-        <div className="dash-col-6">
+        <div className="dash-col-12">
           <Panel
             eyebrow="What's next"
             title="Open tasks"

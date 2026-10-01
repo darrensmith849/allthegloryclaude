@@ -1,7 +1,7 @@
 {
   "name": "All The Glory — Dashboard",
   "short_name": "ATG Dashboard",
-  "description": "Private discipline + Bible-reading dashboard.",
+  "description": "Private dashboard and Bible word journal.",
   "start_url": "/dashboard",
   "scope": "/dashboard",
   "display": "standalone",

@@ -5,14 +5,11 @@ import { Panel } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
 import {
   resolveSchedule,
-  resolveHabits,
   resolveGuitarWeek,
   DEFAULT_SCHEDULE,
-  DEFAULT_HABITS,
   DEFAULT_GUITAR_WEEK,
   DEFAULT_TASK_TAGS,
   ScheduleRow,
-  HabitDef,
   GuitarWeekRow,
   TaskTag,
 } from "@/lib/dashboard/types";
@@ -23,8 +20,6 @@ function uid() {
 
 export default function SettingsPage() {
   const { state, update, ready } = useDashboard();
-  const [planText, setPlanText] = useState("");
-  const [planMsg, setPlanMsg] = useState<string | null>(null);
 
   function patchSettings(patch: Partial<typeof state.settings>) {
     update((d) => {
@@ -62,24 +57,6 @@ export default function SettingsPage() {
     patchSchedule(DEFAULT_SCHEDULE);
   }
 
-  // ── Habits ──────────────────────────────────────────────────
-  const habits = resolveHabits(state.settings);
-  function patchHabits(rows: HabitDef[]) {
-    patchSettings({ habits: rows });
-  }
-  function addHabit() {
-    patchHabits([...habits, { id: `h-${uid()}`, label: "New discipline" }]);
-  }
-  function removeHabit(id: string) {
-    patchHabits(habits.filter((r) => r.id !== id));
-  }
-  function updateHabit(id: string, patch: Partial<HabitDef>) {
-    patchHabits(habits.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  }
-  function resetHabits() {
-    patchHabits(DEFAULT_HABITS);
-  }
-
   // ── Guitar week ─────────────────────────────────────────────
   const week = resolveGuitarWeek(state.settings);
   function patchWeek(rows: GuitarWeekRow[]) {
@@ -106,46 +83,6 @@ export default function SettingsPage() {
   function removeTag(id: string) {
     patchTags(customTags.filter((r) => r.id !== id));
   }
-
-  // ── Bulk plan import ────────────────────────────────────────
-  // One line per day. Format options:
-  //   "Numbers 16:50 - Numbers 18:end"          (current/next day from cursor)
-  //   "63: Numbers 21-22"                       (explicit day number prefix)
-  //   "63 Numbers 21-22"
-  // Lines starting with "#" are ignored.
-  function applyPlanImport() {
-    const lines = planText.split("\n").map((s) => s.trim()).filter(Boolean).filter((l) => !l.startsWith("#"));
-    if (!lines.length) {
-      setPlanMsg("Nothing to import.");
-      return;
-    }
-    update((d) => {
-      const overrides = { ...(d.settings.planOverrides ?? {}) };
-      // Anchor: if the first line is day-prefixed use that, else start at user's current planDay
-      let cursor = d.settings.startPlanDay;
-      for (const raw of lines) {
-        const m = raw.match(/^(\d{1,3})\s*[:.\-]?\s*(.+)$/);
-        if (m && Number(m[1]) >= 1 && Number(m[1]) <= 365) {
-          cursor = Number(m[1]);
-          overrides[cursor] = m[2].trim();
-        } else {
-          overrides[cursor] = raw;
-        }
-        cursor = Math.min(365, cursor + 1);
-      }
-      d.settings.planOverrides = overrides;
-    });
-    setPlanMsg(`Imported ${lines.length} entries.`);
-    setPlanText("");
-  }
-
-  function clearAllOverrides() {
-    if (!confirm("Reset every day to the default chronological plan?")) return;
-    patchSettings({ planOverrides: {} });
-    setPlanMsg("All overrides cleared.");
-  }
-
-  const overrideCount = Object.keys(state.settings.planOverrides ?? {}).length;
 
   // ── Goals + rules ───────────────────────────────────────────
   const s = state.settings;
@@ -186,7 +123,7 @@ export default function SettingsPage() {
 
   // ── Wipe ────────────────────────────────────────────────────
   function wipeAll() {
-    if (!confirm("Wipe every habit, log, task, session, and reset settings to defaults? This cannot be undone.")) return;
+    if (!confirm("Wipe every word, task, session, and reset settings to defaults? This cannot be undone.")) return;
     if (!confirm("Are you absolutely sure?")) return;
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("atg:dashboard:v1");
@@ -203,7 +140,7 @@ export default function SettingsPage() {
           <div className="eyebrow eyebrow-amber">Everything tunable</div>
           <h1 className="dash-title mt-1">Settings</h1>
           <div className="dash-subtitle">
-            Edit the schedule, the habits, the plan - make it yours.
+            Edit the schedule, the tags, the guitar plan - make it yours.
           </div>
         </div>
       </div>
@@ -220,15 +157,6 @@ export default function SettingsPage() {
             />
             <div className="grid grid-cols-2 gap-3 mt-3">
               <div>
-                <label className="dash-label">Bible reading hour (24h)</label>
-                <input
-                  type="number"
-                  className="dash-input"
-                  value={s.bibleReadingHour}
-                  onChange={(e) => patchSettings({ bibleReadingHour: Number(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
                 <label className="dash-label">Phone off hour (24h)</label>
                 <input
                   type="number"
@@ -242,59 +170,8 @@ export default function SettingsPage() {
         </div>
 
         <div className="dash-col-6">
-          <Panel eyebrow="Allowed-day quotas" title="Social &amp; trading">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="dash-label">Social media days / week</label>
-                <input
-                  type="number"
-                  className="dash-input"
-                  value={s.socialMediaPerWeek}
-                  onChange={(e) => patchSettings({ socialMediaPerWeek: Number(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
-                <label className="dash-label">Trading days / month</label>
-                <input
-                  type="number"
-                  className="dash-input"
-                  value={s.tradingChartsPerMonth}
-                  onChange={(e) => patchSettings({ tradingChartsPerMonth: Number(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-            <div className="text-[12px] text-[var(--colour-ink-quiet)] mt-3 leading-relaxed">
-              The Habits page enforces these counts. Mark a day as “allowed” in the week grid to
-              use one of your quota.
-            </div>
-          </Panel>
-        </div>
-
-        <div className="dash-col-12">
           <Panel eyebrow="Targets" title="Goals">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="dash-label">Bible streak goal</label>
-                <input
-                  type="number"
-                  className="dash-input"
-                  value={s.goals.bibleStreakTarget}
-                  onChange={(e) =>
-                    patchSettings({ goals: { ...s.goals, bibleStreakTarget: Number(e.target.value) || 0 } })
-                  }
-                />
-              </div>
-              <div>
-                <label className="dash-label">Clean streak goal</label>
-                <input
-                  type="number"
-                  className="dash-input"
-                  value={s.goals.cleanStreakTarget}
-                  onChange={(e) =>
-                    patchSettings({ goals: { ...s.goals, cleanStreakTarget: Number(e.target.value) || 0 } })
-                  }
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="dash-label">Book word target</label>
                 <input
@@ -342,7 +219,7 @@ export default function SettingsPage() {
                 <div
                   key={row.id}
                   className="grid items-center gap-2 p-2.5 rounded-md border border-white/8 bg-white/[0.02]"
-                  style={{ gridTemplateColumns: "50px 70px 70px 1fr 1.4fr 140px 30px" }}
+                  style={{ gridTemplateColumns: "50px 70px 70px 1fr 1.4fr 30px" }}
                 >
                   <div className="flex flex-col gap-1">
                     <button
@@ -392,20 +269,6 @@ export default function SettingsPage() {
                     onChange={(e) => updateScheduleRow(row.id, { sub: e.target.value })}
                     placeholder="Subtitle"
                   />
-                  <select
-                    className="dash-select"
-                    value={row.habitId ?? ""}
-                    onChange={(e) =>
-                      updateScheduleRow(row.id, { habitId: e.target.value || undefined })
-                    }
-                  >
-                    <option value="">No habit</option>
-                    {habits.map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.label}
-                      </option>
-                    ))}
-                  </select>
                   <button
                     className="opacity-50 hover:opacity-100"
                     onClick={() => removeScheduleRow(row.id)}
@@ -419,118 +282,8 @@ export default function SettingsPage() {
           </Panel>
         </div>
 
-        {/* ── Habits editor ────────────────────────────── */}
-        <div className="dash-col-6" id="habits">
-          <Panel
-            eyebrow="Disciplines"
-            title="Habit list"
-            action={
-              <div className="flex gap-2">
-                <button className="dash-btn dash-btn-ghost" onClick={resetHabits}>
-                  Reset
-                </button>
-                <button className="dash-btn dash-btn-primary" onClick={addHabit}>
-                  + Add
-                </button>
-              </div>
-            }
-          >
-            <div className="flex flex-col gap-2">
-              {habits.map((h) => {
-                const days = h.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6];
-                const toggleDay = (d: number) => {
-                  const next = days.includes(d)
-                    ? days.filter((x) => x !== d)
-                    : [...days, d].sort((a, b) => a - b);
-                  updateHabit(h.id, { daysOfWeek: next });
-                };
-                const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
-                return (
-                  <div
-                    key={h.id}
-                    className="p-2.5 rounded-md border border-white/8 bg-white/[0.02]"
-                  >
-                    <div
-                      className="grid items-center gap-2"
-                      style={{ gridTemplateColumns: "1fr 110px 30px" }}
-                    >
-                      <input
-                        className="dash-input"
-                        value={h.label}
-                        onChange={(e) => updateHabit(h.id, { label: e.target.value })}
-                      />
-                      <label className="flex items-center gap-2 text-[12px] text-[var(--colour-ink-soft)]">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(h.showOnSchedule)}
-                          onChange={(e) =>
-                            updateHabit(h.id, { showOnSchedule: e.target.checked })
-                          }
-                        />
-                        On schedule
-                      </label>
-                      <button
-                        className="opacity-50 hover:opacity-100"
-                        onClick={() => removeHabit(h.id)}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[10.5px] eyebrow">Days</span>
-                      <div className="flex gap-1">
-                        {DAY_LABELS.map((lbl, i) => {
-                          const on = days.includes(i);
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => toggleDay(i)}
-                              className="dash-row-move"
-                              style={
-                                on
-                                  ? {
-                                      background: "rgba(216,178,90,0.18)",
-                                      borderColor: "rgba(216,178,90,0.5)",
-                                      color: "var(--colour-glow)",
-                                      width: 26,
-                                      height: 26,
-                                    }
-                                  : { width: 26, height: 26 }
-                              }
-                              title={
-                                ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i]
-                              }
-                            >
-                              {lbl}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => updateHabit(h.id, { daysOfWeek: [1, 2, 3, 4, 5] })}
-                        className="text-[10.5px] eyebrow opacity-60 hover:opacity-100"
-                      >
-                        Weekdays
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateHabit(h.id, { daysOfWeek: [0, 1, 2, 3, 4, 5, 6] })}
-                        className="text-[10.5px] eyebrow opacity-60 hover:opacity-100"
-                      >
-                        Every day
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Panel>
-        </div>
-
         {/* ── Tags editor ────────────────────────────── */}
-        <div className="dash-col-6" id="tags">
+        <div className="dash-col-12" id="tags">
           <Panel
             eyebrow="Custom tags"
             title="Task tag library"
@@ -661,49 +414,6 @@ export default function SettingsPage() {
           </Panel>
         </div>
 
-        {/* ── Bulk plan import ──────────────────────── */}
-        <div className="dash-col-12" id="plan">
-          <Panel
-            eyebrow={`Bible plan · ${overrideCount} custom day${overrideCount === 1 ? "" : "s"}`}
-            title="Paste your chronological plan"
-            action={
-              overrideCount > 0 ? (
-                <button className="dash-btn dash-btn-ghost" onClick={clearAllOverrides}>
-                  Clear all overrides
-                </button>
-              ) : null
-            }
-          >
-            <p className="text-[13px] text-[var(--colour-ink-soft)] leading-relaxed">
-              One line per day. Optional day prefix anchors the line to a specific day.
-              Without a prefix, the import starts at <strong>Day {s.startPlanDay}</strong> (your current
-              plan day) and advances. Lines beginning with <code>#</code> are skipped.
-            </p>
-            <pre className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-2 mb-3 leading-relaxed whitespace-pre-wrap">
-{`# Examples:
-63: Numbers 16:50 - Numbers 18:end
-64: Numbers 19 - 21
-Numbers 22 - 23
-65 Numbers 24 - 25`}
-            </pre>
-            <textarea
-              className="dash-textarea"
-              style={{ minHeight: 220, fontFamily: "ui-monospace, monospace", fontSize: 13 }}
-              value={planText}
-              onChange={(e) => setPlanText(e.target.value)}
-              placeholder="Paste your full plan here, one passage per line."
-            />
-            <div className="flex items-center gap-3 mt-3">
-              <button className="dash-btn dash-btn-primary" onClick={applyPlanImport}>
-                Import
-              </button>
-              {planMsg && (
-                <span className="text-[12.5px] text-[var(--colour-amber-soft)]">{planMsg}</span>
-              )}
-            </div>
-          </Panel>
-        </div>
-
         {/* ── Backup + restore ────────────────────── */}
         <div className="dash-col-12" id="backup">
           <Panel eyebrow="Backup &amp; restore" title="Save your data">
@@ -742,7 +452,7 @@ Numbers 22 - 23
         <div className="dash-col-12">
           <Panel eyebrow="Danger zone" title="Reset everything">
             <p className="text-[13px] text-[var(--colour-ink-soft)] mb-3">
-              Wipes habits, logs, tasks, sessions, book, settings - every byte of dashboard
+              Wipes words, tasks, sessions, book, settings - every byte of dashboard
               storage in this browser. Cannot be undone.
             </p>
             <button className="dash-btn dash-btn-danger" onClick={wipeAll}>

@@ -16,14 +16,13 @@ import {
 } from "@/lib/dashboard/dates";
 import {
   emptyHabits,
-  getHabitsForDate,
   getScheduleForDate,
   ScheduleRow,
   resolveTaskTags,
   DayHabits,
   Task,
 } from "@/lib/dashboard/types";
-import { planDayFor, planForWithOverride } from "@/lib/dashboard/plan";
+import { languageLabel, wordDate } from "@/lib/dashboard/words";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -32,14 +31,17 @@ function uid() {
 const HEAD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MINI_HEAD = ["M", "T", "W", "T", "F", "S", "S"];
 
+// Done-state dots, read from the per-day habits map that habit-linked
+// schedule rows and the Guitar / Book session logs write to.
 const DOT_MAP: { id: string; colour: string; title: string }[] = [
-  { id: "bibleRead", colour: "#d8b25a", title: "Word" },
-  { id: "noPorn", colour: "#b7e4c7", title: "Clean" },
+  { id: "bibleRead", colour: "#d8b25a", title: "The Word" },
   { id: "gym", colour: "#a4c2f4", title: "Gym" },
   { id: "worship", colour: "#f1d7a6", title: "Worship" },
   { id: "guitar", colour: "#cdb4db", title: "Guitar" },
   { id: "bookWriting", colour: "#cca88c", title: "Book" },
 ];
+// Extra dot for days a word was saved to the journal.
+const WORD_DOT = { colour: "#f4f0e8", title: "Word saved" };
 
 type ViewMode = "month" | "quarter" | "year";
 
@@ -51,9 +53,9 @@ function shortMonth(iso: string) {
   const [y, m] = iso.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short" });
 }
-function dayScore(h: DayHabits | undefined): number {
-  if (!h) return 0;
-  let n = 0;
+function dayScore(h: DayHabits | undefined, savedWord: boolean): number {
+  let n = savedWord ? 1 : 0;
+  if (!h) return n;
   for (const dot of DOT_MAP) if (h[dot.id]) n++;
   return n;
 }
@@ -66,25 +68,20 @@ export default function CalendarPage() {
 
   const selectedHabits = state.habits[selected] ?? emptyHabits();
   const selectedRowChecks = state.scheduleChecks?.[selected] ?? {};
-  const selectedLog = state.bibleLogs[selected];
-  const planDay = planDayFor(selected, state.settings.startDate, state.settings.startPlanDay);
-  const plan = planForWithOverride(planDay, state.settings.planOverrides);
-  const habitDefs = getHabitsForDate(selected, state.settings);
   const schedule = getScheduleForDate(selected, state.settings, state.scheduleExtras);
   const TAGS = resolveTaskTags(state.settings);
 
+  // Days with at least one word saved - drives the extra calendar dot.
+  const wordDays = useMemo(() => new Set(state.words.map(wordDate)), [state.words]);
+
   // Per-day completion percentage (mirrors the Today progress bar logic, but
   // for whatever day the user picked).
-  const scheduleHabitIds = new Set(schedule.map((r) => r.habitId).filter(Boolean));
-  const habitsNotOnSchedule = habitDefs.filter((h) => !scheduleHabitIds.has(h.id));
   const rowDoneForSelected = (rowId: string, habitId?: string): boolean => {
     if (habitId) return Boolean(selectedHabits[habitId]);
     return Boolean(selectedRowChecks[rowId]);
   };
-  const completionDone =
-    schedule.filter((r) => rowDoneForSelected(r.id, r.habitId)).length +
-    habitsNotOnSchedule.filter((h) => selectedHabits[h.id]).length;
-  const completionTotal = schedule.length + habitsNotOnSchedule.length;
+  const completionDone = schedule.filter((r) => rowDoneForSelected(r.id, r.habitId)).length;
+  const completionTotal = schedule.length;
   const completionPct =
     completionTotal === 0 ? 0 : Math.round((completionDone / completionTotal) * 100);
 
@@ -113,24 +110,11 @@ export default function CalendarPage() {
     () => state.book.sessions.filter((s) => s.date === selected),
     [state.book.sessions, selected],
   );
-  const habitsKeptThatDay = habitDefs.filter((h) => selectedHabits[h.id]);
+  const wordsThatDay = useMemo(
+    () => state.words.filter((w) => wordDate(w) === selected),
+    [state.words, selected],
+  );
 
-  const hasAnything =
-    Boolean(selectedLog) ||
-    habitsKeptThatDay.length > 0 ||
-    tasksCompletedThatDay.length > 0 ||
-    tasksDueThatDay.length > 0 ||
-    guitarThatDay.length > 0 ||
-    bookThatDay.length > 0;
-
-  // Inline-edit helpers - save journal fields straight into state from the calendar panel.
-  function patchLog(patch: Partial<typeof selectedLog>) {
-    update((d) => {
-      const planDayLocal = planDayFor(selected, d.settings.startDate, d.settings.startPlanDay);
-      const prev = d.bibleLogs[selected] ?? { planDay: planDayLocal };
-      d.bibleLogs[selected] = { ...prev, ...patch, planDay: planDayLocal };
-    });
-  }
   function toggleHabitForSelected(habitId: string) {
     update((d) => {
       const h = d.habits[selected] ?? emptyHabits();
@@ -300,7 +284,7 @@ export default function CalendarPage() {
           <div className="eyebrow eyebrow-amber">{view} view</div>
           <h1 className="dash-title mt-1">Calendar</h1>
           <div className="dash-subtitle">
-            Click any day to see everything you logged - readings, habits, tasks, sessions.
+            Click any day to see everything you logged - schedule, words, tasks, sessions.
           </div>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
@@ -367,6 +351,13 @@ export default function CalendarPage() {
                                 style={{ background: dot.colour }}
                               />
                             ))}
+                          {wordDays.has(d) && (
+                            <span
+                              className="dash-cal-dot"
+                              title={WORD_DOT.title}
+                              style={{ background: WORD_DOT.colour }}
+                            />
+                          )}
                         </div>
                       </button>
                     );
@@ -374,7 +365,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="dash-divider" />
                 <div className="flex flex-wrap gap-3 text-[11.5px] text-[var(--colour-ink-quiet)]">
-                  {DOT_MAP.map((dot) => (
+                  {[...DOT_MAP, { id: "word", ...WORD_DOT }].map((dot) => (
                     <span key={dot.id} className="flex items-center gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full" style={{ background: dot.colour }} />
                       {dot.title}
@@ -392,6 +383,7 @@ export default function CalendarPage() {
                     start={m.start}
                     grid={m.grid}
                     habits={state.habits}
+                    wordDays={wordDays}
                     selected={selected}
                     onSelect={setSelected}
                   />
@@ -407,6 +399,7 @@ export default function CalendarPage() {
                     start={m.start}
                     grid={m.grid}
                     habits={state.habits}
+                    wordDays={wordDays}
                     selected={selected}
                     onSelect={setSelected}
                   />
@@ -418,21 +411,8 @@ export default function CalendarPage() {
 
         {/* DAY-REVIEW PANEL */}
         <div className="dash-col-4">
-          <Panel
-            eyebrow={`Selected day · Day ${planDay}`}
-            title={formatHuman(selected)}
-            action={
-              <Link
-                href={`/dashboard/bible?date=${selected}`}
-                className="text-[12px] eyebrow text-[var(--colour-amber-soft)]"
-              >
-                Open journal →
-              </Link>
-            }
-          >
-            <div className="text-[12.5px] text-[var(--colour-ink-quiet)] mb-3">{plan.passage}</div>
-
-            {/* Per-day completion bar - fills as you tick blocks + habits */}
+          <Panel eyebrow="Selected day" title={formatHuman(selected)}>
+            {/* Per-day completion bar - fills as you tick schedule blocks */}
             <div className="dash-mini-progress">
               <div className="dash-mini-progress-head">
                 <span className="eyebrow eyebrow-amber">Day progress</span>
@@ -580,110 +560,30 @@ export default function CalendarPage() {
                 </div>
               </section>
 
-              {/* Habits - every one toggleable, not just the kept ones */}
-              <section>
-                <div className="eyebrow mb-2">Disciplines</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {habitDefs.map((h) => {
-                    const on = Boolean(selectedHabits[h.id]);
-                    return (
-                      <button
-                        key={h.id}
-                        type="button"
-                        onClick={() => toggleHabitForSelected(h.id)}
-                        className="dash-tag"
-                        style={{
-                          cursor: "pointer",
-                          background: on ? "rgba(216,178,90,0.16)" : "transparent",
-                          color: on ? "var(--colour-glow)" : "var(--colour-ink-quiet)",
-                          borderColor: on
-                            ? "rgba(216,178,90,0.45)"
-                            : "rgba(255,255,255,0.10)",
-                        }}
+              {/* Words saved to the journal on this day */}
+              {wordsThatDay.length > 0 && (
+                <section>
+                  <div className="eyebrow eyebrow-amber mb-2">Words saved</div>
+                  <div className="flex flex-col gap-1.5">
+                    {wordsThatDay.map((w) => (
+                      <Link
+                        key={w.id}
+                        href={`/dashboard/word-study?q=${encodeURIComponent(w.word)}`}
+                        className="flex items-baseline gap-2 text-[13px] rounded px-1.5 py-1 hover:bg-white/5 transition"
                       >
-                        {on ? "✓ " : ""}
-                        {h.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Bible journal - fully inline-editable, even if empty */}
-              <section>
-                <div className="eyebrow eyebrow-amber mb-2">Bible journal</div>
-                <label className="dash-label" style={{ marginTop: 6 }}>
-                  What I read
-                </label>
-                <input
-                  className="dash-input"
-                  placeholder={plan.passage}
-                  value={selectedLog?.passage ?? ""}
-                  onChange={(e) => patchLog({ passage: e.target.value })}
-                />
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div>
-                    <label className="dash-label">Minutes</label>
-                    <input
-                      type="number"
-                      className="dash-input"
-                      placeholder="e.g. 30"
-                      value={selectedLog?.minutes ?? ""}
-                      onChange={(e) =>
-                        patchLog({ minutes: Number(e.target.value) || 0 })
-                      }
-                    />
+                        <span className="text-[var(--colour-ink-strong)]">{w.word}</span>
+                        {w.translit && (
+                          <span className="font-display italic text-[var(--colour-amber-soft)]">
+                            {w.translit}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[10.5px] uppercase tracking-[0.18em] text-[var(--colour-ink-quiet)]">
+                          {languageLabel(w)}
+                        </span>
+                      </Link>
+                    ))}
                   </div>
-                  <div>
-                    <label className="dash-label">Verse</label>
-                    <input
-                      className="dash-input"
-                      placeholder="e.g. Numbers 21:8"
-                      value={selectedLog?.verseOfTheDay ?? ""}
-                      onChange={(e) => patchLog({ verseOfTheDay: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <label className="dash-label" style={{ marginTop: 10 }}>
-                  What I learnt
-                </label>
-                <textarea
-                  className="dash-textarea"
-                  placeholder="One sentence is enough."
-                  style={{ minHeight: 64 }}
-                  value={selectedLog?.learned ?? ""}
-                  onChange={(e) => patchLog({ learned: e.target.value })}
-                />
-                <label className="dash-label" style={{ marginTop: 10 }}>
-                  Journal
-                </label>
-                <textarea
-                  className="dash-textarea"
-                  placeholder="Wrestle, marvel, lament, give thanks."
-                  style={{ minHeight: 90 }}
-                  value={selectedLog?.notes ?? ""}
-                  onChange={(e) => patchLog({ notes: e.target.value })}
-                />
-                <label className="dash-label" style={{ marginTop: 10 }}>
-                  Prayer
-                </label>
-                <textarea
-                  className="dash-textarea"
-                  placeholder="What I'm asking God for."
-                  style={{ minHeight: 64 }}
-                  value={selectedLog?.prayer ?? ""}
-                  onChange={(e) => patchLog({ prayer: e.target.value })}
-                />
-                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] mt-2">
-                  Saves as you type. Click another day to switch.
-                </div>
-              </section>
-
-              {!hasAnything && (
-                <div className="text-[11.5px] text-[var(--colour-ink-quiet)] -mt-2">
-                  Tip - clicking any past or future day works the same. The fields
-                  above belong to <strong>{formatHuman(selected)}</strong>.
-                </div>
+                </section>
               )}
 
                 {/* Tasks - quick-add for this day + clickable existing ones */}
@@ -822,15 +722,6 @@ export default function CalendarPage() {
                   </section>
                 )}
 
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Link
-                  href={`/dashboard/bible?date=${selected}`}
-                  className="dash-btn"
-                  style={{ padding: "8px 14px", fontSize: 11 }}
-                >
-                  Open full journal page →
-                </Link>
-              </div>
             </div>
           </Panel>
         </div>
@@ -843,16 +734,20 @@ function MiniMonth({
   start,
   grid,
   habits,
+  wordDays,
   selected,
   onSelect,
 }: {
   start: string;
   grid: string[];
   habits: Record<string, DayHabits>;
+  wordDays: Set<string>;
   selected: string;
   onSelect: (d: string) => void;
 }) {
-  const kept = grid.filter((d) => isSameMonth(d, start) && dayScore(habits[d]) > 0).length;
+  const kept = grid.filter(
+    (d) => isSameMonth(d, start) && dayScore(habits[d], wordDays.has(d)) > 0,
+  ).length;
   return (
     <div className="dash-mini-month">
       <div className="dash-mini-month-head">
@@ -866,7 +761,7 @@ function MiniMonth({
           </div>
         ))}
         {grid.map((d) => {
-          const score = dayScore(habits[d]);
+          const score = dayScore(habits[d], wordDays.has(d));
           const other = !isSameMonth(d, start);
           return (
             <button

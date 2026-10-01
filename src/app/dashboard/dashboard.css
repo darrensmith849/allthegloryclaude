@@ -280,11 +280,6 @@
   border-color: var(--colour-amber);
 }
 .dash-check-label { font-size: 14px; }
-.dash-check-meta {
-  font-size: 11.5px;
-  color: var(--colour-ink-quiet);
-  margin-left: auto;
-}
 
 /* Inputs */
 .dash-input,
@@ -494,24 +489,7 @@
   margin-top: 4px;
 }
 
-/* Rewards */
-.dash-reward {
-  padding: 18px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.dash-reward.is-unlocked {
-  border-color: rgba(216, 178, 90, 0.5);
-  background: linear-gradient(
-    180deg,
-    rgba(216, 178, 90, 0.10) 0%,
-    rgba(216, 178, 90, 0.02) 100%
-  );
-}
+/* Thin amber progress bar (Book word count) */
 .dash-reward-progress {
   height: 6px;
   border-radius: 999px;
@@ -1065,39 +1043,6 @@
   cursor: not-allowed;
 }
 
-/* Clean-streak heatmap — 13 rows of 7 cells each. */
-.dash-clean-heatmap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.dash-clean-week {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-.dash-clean-cell {
-  aspect-ratio: 1 / 1;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.025);
-  cursor: pointer;
-  transition: transform 120ms ease, background 140ms ease, border-color 140ms ease;
-}
-.dash-clean-cell:hover {
-  transform: scale(1.1);
-  border-color: rgba(255, 255, 255, 0.22);
-}
-.dash-clean-cell.is-clean {
-  background: linear-gradient(135deg, rgba(216, 178, 90, 0.65) 0%, rgba(241, 215, 166, 0.45) 100%);
-  border-color: rgba(216, 178, 90, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-.dash-clean-cell.is-today {
-  outline: 1px solid rgba(216, 178, 90, 0.85);
-  outline-offset: 1px;
-}
-
 /* Mini per-day progress in the calendar panel */
 .dash-mini-progress {
   padding: 10px 12px;
@@ -1511,3 +1456,244 @@
 .dash-toggle button:hover {
   color: var(--colour-ink-strong);
 }
+
+/* ── Word journal ─────────────────────────────────────────────── */
+.dash-word-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--colour-ink-quiet);
+}
+.dash-word-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--colour-ink-soft);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.dash-word-link {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+  transition: color 140ms ease;
+}
+.dash-word-link:hover { color: var(--colour-glow); }
+.dash-word-link.is-danger:hover { color: rgba(255, 160, 160, 0.92); }
+
+/* Strong's lookup picks */
+.dash-word-hits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(216, 178, 90, 0.22);
+  background: rgba(216, 178, 90, 0.04);
+}
+.dash-word-hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.dash-word-hit:hover,
+.dash-word-hit:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(216, 178, 90, 0.35);
+  outline: none;
+}
+.dash-word-hit-orig {
+  flex: 0 0 auto;
+  min-width: 64px;
+  font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--colour-glow);
+}
+.dash-word-hit-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dash-word-hit-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.dash-word-hit-translit {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--colour-ink-strong);
+}
+.dash-word-hit-num {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+}
+.dash-word-hit-gloss {
+  font-size: 12.5px;
+  color: var(--colour-ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-word-orig-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 10px;
+}
+@media (max-width: 520px) {
+  .dash-word-orig-row { grid-template-columns: 1fr 1fr; }
+  .dash-word-orig-row > :first-child { grid-column: span 2; }
+}
+.dash-word-script-input {
+  font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif;
+  font-size: 17px;
+}
+
+/* Library */
+.dash-word-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.dash-word-tools .dash-input { flex: 1 1 220px; width: auto; }
+
+.dash-word-card {
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 160ms ease;
+}
+.dash-word-card:hover { border-color: rgba(255, 255, 255, 0.14); }
+.dash-word-card.is-editing { border-color: rgba(216, 178, 90, 0.55); }
+
+.dash-word-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.dash-word-title {
+  font-family: var(--font-display), serif;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--colour-ink-strong);
+  overflow-wrap: anywhere;
+}
+.dash-word-orig {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 6px;
+}
+.dash-word-script {
+  font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--colour-glow);
+}
+.dash-word-translit {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--colour-amber-soft);
+}
+.dash-word-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+}
+.dash-word-lang {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 178, 90, 0.32);
+  background: rgba(216, 178, 90, 0.10);
+  color: var(--colour-glow);
+}
+.dash-word-lang.is-greek {
+  border-color: rgba(164, 194, 244, 0.32);
+  background: rgba(164, 194, 244, 0.10);
+  color: #c9dbf7;
+}
+
+.dash-word-defs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 22px;
+  margin-top: 16px;
+}
+.dash-word-defs dt {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+  margin-bottom: 4px;
+}
+.dash-word-defs dd {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--colour-ink-soft);
+  white-space: pre-line;
+}
+
+.dash-word-apply {
+  margin-top: 16px;
+  padding: 10px 0 2px 14px;
+  border-left: 2px solid var(--colour-amber);
+}
+.dash-word-apply p {
+  margin-top: 4px;
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--colour-ink-strong);
+  white-space: pre-line;
+}
+
+.dash-word-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.dash-word-foot > :first-child { margin-right: auto; }
+.dash-word-ref {
+  font-size: 13px;
+  color: var(--colour-amber-soft);
+  transition: color 140ms ease;
+}
+.dash-word-ref:hover { color: var(--colour-glow); }
+.dash-word-date {
+  font-size: 11.5px;
+  color: var(--colour-ink-faint);
+}
+.dash-word-verse {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.dash-word-verse .dash-verse { font-size: 16px; }
+
+/* Today's word - the daily card on the Today page */
+.dash-word-today .dash-word-script { font-size: 26px; }
+.dash-word-today .dash-word-apply p { font-size: 16px; }
+

@@ -76,13 +76,6 @@ export function recommendedDaysFor(habitId: string): number[] {
   return RECOMMENDED_DAYS[habitId] ?? ALL_DAYS;
 }
 
-// Special-purpose flags that aren't toggled by the user as normal habits -
-// these are quota-style "allowed-day" markers.
-export const ALLOWED_FLAGS = {
-  socialMedia: "_socialMediaAllowed",
-  tradingCharts: "_tradingChartsAllowed",
-} as const;
-
 export function emptyHabits(): DayHabits {
   return {};
 }
@@ -251,15 +244,25 @@ export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
   { id: "gw-sun", day: "Sun", focus: "Rest / worship", drill: "Quiet play. No metronome, just worship.", minutes: 20 },
 ];
 
-// ─── Bible reading log ─────────────────────────────────────────────
-export interface BibleDayLog {
-  planDay?: number;
-  passage?: string;
-  minutes?: number;
-  learned?: string;
-  notes?: string;
-  prayer?: string;
-  verseOfTheDay?: string;
+// ─── Word journal ─────────────────────────────────────────────────
+// Words from the Bible saved for deeper study: the word as it reads in
+// English, what the Hebrew/Greek original means, the plain English
+// meaning, and one short line applying it to life.
+export type WordLanguage = "hebrew" | "greek";
+
+export interface BibleWord {
+  id: string;
+  word: string; // as it reads in the English Bible, e.g. "Mercy"
+  language: WordLanguage;
+  original?: string; // original script, e.g. "חֶסֶד"
+  translit?: string; // e.g. "chesed"
+  strongs?: string; // e.g. "H2617"
+  originalMeaning: string; // what the Hebrew / Greek word means
+  englishMeaning: string; // plain English meaning
+  application: string; // one short sentence applying it to life
+  reference?: string; // where it was found, e.g. "Psalm 136:1"
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Sessions ─────────────────────────────────────────────────────
@@ -290,12 +293,7 @@ export interface BookMeta {
 // ─── Settings ─────────────────────────────────────────────────────
 export interface Settings {
   greetingName: string;
-  startDate: ISODate;
-  startPlanDay: number;
-  socialMediaPerWeek: number;
-  tradingChartsPerMonth: number;
   phoneOffHour: number;
-  bibleReadingHour: number;
   schedule: ScheduleRow[];
   habits: HabitDef[];
   guitarWeek: GuitarWeekRow[];
@@ -305,10 +303,7 @@ export interface Settings {
   // shows the future start week until the user actually reaches it.
   guitarCourseStartDate: ISODate;
   taskTags: TaskTag[]; // user-added; concatenated with DEFAULT_TASK_TAGS
-  planOverrides: Record<number, string>; // planDay -> passage override
   goals: {
-    bibleStreakTarget: number;
-    cleanStreakTarget: number;
     bookWordTarget: number;
     guitarMinutesPerWeek: number;
   };
@@ -333,22 +328,14 @@ function computeNextMonday(): ISODate {
 export function defaultSettings(): Settings {
   return {
     greetingName: "Daniel",
-    startDate: new Date().toISOString().slice(0, 10),
-    startPlanDay: 63,
-    socialMediaPerWeek: 2,
-    tradingChartsPerMonth: 1,
     phoneOffHour: 19,
-    bibleReadingHour: 7,
     schedule: DEFAULT_SCHEDULE,
     habits: DEFAULT_HABITS,
     guitarWeek: DEFAULT_GUITAR_WEEK,
     guitarCourse: DEFAULT_GUITAR_COURSE,
     guitarCourseStartDate: computeNextMonday(),
     taskTags: [],
-    planOverrides: {},
     goals: {
-      bibleStreakTarget: 30,
-      cleanStreakTarget: 90,
       bookWordTarget: 60_000,
       guitarMinutesPerWeek: 180,
     },
@@ -395,41 +382,6 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
   return settings.guitarCourse?.length ? settings.guitarCourse : DEFAULT_GUITAR_COURSE;
 }
 
-// ─── 40-Day Fast ──────────────────────────────────────────────────
-// A bounded streak plan — typically 40 days, the biblical fast length —
-// where the user abstains from a small set of categories (social media,
-// movies, etc.) and ticks each one off per day. Separate from the
-// open-ended habit system so it has its own start date + length + grid
-// and doesn't pollute the daily habits map.
-export interface FastCategory {
-  id: string;
-  label: string;
-}
-
-export interface Fast {
-  startDate: ISODate;
-  days: number; // 40 by default
-  categories: FastCategory[];
-  // per-date → per-categoryId boolean. true = kept clean that day.
-  checks: Record<ISODate, Record<string, boolean>>;
-}
-
-export const DEFAULT_FAST_CATEGORIES: FastCategory[] = [
-  { id: "socials", label: "Social media" },
-  { id: "movies", label: "Movies & TV" },
-  { id: "youtube", label: "YouTube" },
-  { id: "news", label: "News" },
-];
-
-export function defaultFast(startDate: ISODate): Fast {
-  return {
-    startDate,
-    days: 40,
-    categories: DEFAULT_FAST_CATEGORIES,
-    checks: {},
-  };
-}
-
 // ─── Root state ───────────────────────────────────────────────────
 export interface DashboardState {
   tasks: Task[];
@@ -443,7 +395,8 @@ export interface DashboardState {
   // Per-date custom rows the user adds directly on a specific day
   // (e.g. weekend plans). Merged after the global day-of-week schedule.
   scheduleExtras: Record<ISODate, ScheduleRow[]>;
-  bibleLogs: Record<ISODate, BibleDayLog>;
+  // The word journal - newest first.
+  words: BibleWord[];
   // When the user clicks "Complete the day" we stamp this map with the ISO
   // timestamp it was sealed at. A day key in here means the day is "closed"
   // - Today shows a recap instead of the action buttons, and the calendar
@@ -452,10 +405,6 @@ export interface DashboardState {
   guitar: GuitarSession[];
   book: { meta: BookMeta; sessions: BookSession[] };
   settings: Settings;
-  rewardsClaimed: Record<string, ISODate>;
-  // Active 40-day fast (null when no fast has been started). Populated
-  // on first visit to /dashboard/fast.
-  fast: Fast | null;
 }
 
 export function emptyState(): DashboardState {
@@ -464,7 +413,7 @@ export function emptyState(): DashboardState {
     habits: {},
     scheduleChecks: {},
     scheduleExtras: {},
-    bibleLogs: {},
+    words: [],
     dayCompleted: {},
     guitar: [],
     book: {
@@ -476,7 +425,5 @@ export function emptyState(): DashboardState {
       sessions: [],
     },
     settings: defaultSettings(),
-    rewardsClaimed: {},
-    fast: null,
   };
 }

@@ -5,18 +5,13 @@ import { usePathname } from "next/navigation";
 
 const NAV = [
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
+  { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/today", label: "Today", glyph: "✦" },
-  { href: "/dashboard/bible", label: "Bible Reading", glyph: "✠" },
-  { href: "/dashboard/word-study", label: "Word Study", glyph: "α" },
-  { href: "/dashboard/habits", label: "Habits & Streaks", glyph: "△" },
-  { href: "/dashboard/self-control", label: "Self-Control", glyph: "⌬" },
-  { href: "/dashboard/fast", label: "40-Day Fast", glyph: "✦" },
   { href: "/dashboard/calendar", label: "Calendar", glyph: "▦" },
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },
   { href: "/dashboard/guitar", label: "Guitar", glyph: "♪" },
   { href: "/dashboard/book", label: "Book", glyph: "❦" },
   { href: "/dashboard/reminders", label: "Reminders", glyph: "☼" },
-  { href: "/dashboard/rewards", label: "Rewards", glyph: "✧" },
   { href: "/dashboard/analytics", label: "Analytics", glyph: "◔" },
   { href: "/dashboard/settings", label: "Settings", glyph: "⚙" },
 ];

@@ -47,6 +47,7 @@ function read(): DashboardState {
     }
     merged.settings.schedule = migrated;
     if (!merged.scheduleExtras) merged.scheduleExtras = {};
+    if (!Array.isArray(merged.words)) merged.words = [];
 
     // ── Habit day-of-week migration ────────────────────────────
     // Existing habits without daysOfWeek inherit the recommended default for
