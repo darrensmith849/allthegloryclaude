@@ -11,6 +11,7 @@ import {
   matchesWord,
   wordDate,
   wordRank,
+  LanguageFill,
   WordCandidate,
   WordFill,
 } from "@/lib/dashboard/words";
@@ -76,6 +77,60 @@ function GrowingTextarea({
   return <textarea ref={ref} rows={minRows} {...props} />;
 }
 
+// One language's original word and meaning, kept so the Hebrew / Greek
+// switch can swap between them without losing edits. null = looked up but
+// nothing found in that language; missing = not looked up yet.
+interface LangSlot {
+  original: string;
+  translit: string;
+  strongs: string;
+  meaning: string;
+  alternatives: WordCandidate[];
+}
+type Slots = Partial<Record<WordLanguage, LangSlot | null>>;
+
+function slotFrom(f: LanguageFill | null): LangSlot | null {
+  return f
+    ? {
+        original: f.entry.original,
+        translit: f.entry.translit,
+        strongs: f.entry.number,
+        meaning: f.meaning,
+        alternatives: f.alternatives,
+      }
+    : null;
+}
+
+// The visible original-word fields for a language's slot.
+function fieldsFrom(language: WordLanguage, slot: LangSlot | null | undefined) {
+  return {
+    language,
+    original: slot?.original ?? "",
+    translit: slot?.translit ?? "",
+    strongs: slot?.strongs ?? "",
+    originalMeaning: slot?.meaning ?? "",
+  };
+}
+
+// Keep whatever is showing (including edits) in the current language's slot.
+function stash(d: Draft, slots: Slots): Slots {
+  const current = slots[d.language];
+  const hasText = d.original || d.translit || d.strongs || d.originalMeaning;
+  if (!current && !hasText) return slots;
+  return {
+    ...slots,
+    [d.language]: {
+      original: d.original,
+      translit: d.translit,
+      strongs: d.strongs,
+      meaning: d.originalMeaning,
+      alternatives: current?.alternatives ?? [],
+    },
+  };
+}
+
+const LANG_NAME: Record<WordLanguage, string> = { hebrew: "Hebrew", greek: "Greek" };
+
 type LangFilter = "all" | WordLanguage;
 type SortMode = "newest" | "az";
 
@@ -117,7 +172,7 @@ function WordJournal() {
   // ── Auto-fill ─────────────────────────────────────────────────
   const [filling, setFilling] = useState(false);
   const [fillNote, setFillNote] = useState<string | null>(null);
-  const [alternatives, setAlternatives] = useState<WordCandidate[]>([]);
+  const [slots, setSlots] = useState<Slots>({});
   // False once a fill came back without AI (no key set) - the life line
   // can't be written for the user then.
   const [aiWrites, setAiWrites] = useState(true);
@@ -160,10 +215,20 @@ function WordJournal() {
     setEditingId(null);
     setShowDetails(false);
     setFillNote(null);
-    setAlternatives([]);
+    setSlots({});
   }
 
-  async function fill(pick?: string) {
+  const noneFound = (language: WordLanguage) =>
+    `No ${LANG_NAME[language]} word found for “${draft.word.trim()}” in Strong's. Type one in, or switch back.`;
+
+  // fresh  - "Fill it in" button: replace everything with the new lookup.
+  // pick   - a "Try ..." option: replace just that language's word.
+  // switch - Hebrew / Greek switch before anything was looked up (e.g. when
+  //          editing an old entry): fetch, keep what's already written.
+  async function fill(
+    mode: "fresh" | "pick" | "switch",
+    opts: { pick?: string; want?: WordLanguage } = {},
+  ) {
     const word = draft.word.trim();
     if (!word) {
       wordInput.current?.focus();
@@ -175,23 +240,36 @@ function WordJournal() {
       const r = await fetch("/api/word-fill", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ word, reference: draft.reference, pick }),
+        body: JSON.stringify({ word, reference: draft.reference, pick: opts.pick }),
       });
       if (!r.ok) throw new Error(String(r.status));
       const data = (await r.json()) as WordFill;
+      const fetched: Slots = { hebrew: slotFrom(data.hebrew), greek: slotFrom(data.greek) };
+
+      let next: Slots;
+      let target: WordLanguage;
+      if (mode === "pick") {
+        target = data.hebrew?.entry.number === opts.pick ? "hebrew" : "greek";
+        next = { ...stash(draft, slots), [target]: fetched[target] };
+      } else if (mode === "switch") {
+        target = opts.want ?? data.primary;
+        next = stash(draft, fetched); // keep the word already showing
+      } else {
+        target = data.primary;
+        next = fetched;
+      }
+      if (mode !== "switch" && !next[target]) target = target === "hebrew" ? "greek" : "hebrew";
+
+      const keepText = mode !== "fresh";
+      setSlots(next);
       setDraft((d) => ({
         ...d,
-        language: data.language,
-        original: data.entry?.original ?? "",
-        translit: data.entry?.translit ?? "",
-        strongs: data.entry?.number ?? "",
-        originalMeaning: data.originalMeaning,
-        englishMeaning: data.englishMeaning,
-        application: data.application || d.application,
+        ...fieldsFrom(target, next[target]),
+        englishMeaning: keepText && d.englishMeaning ? d.englishMeaning : data.englishMeaning || d.englishMeaning,
+        application: keepText && d.application ? d.application : data.application || d.application,
       }));
-      setAlternatives(data.alternatives ?? []);
       setAiWrites(data.ai);
-      setFillNote(data.note ?? null);
+      setFillNote(next[target] ? (data.note ?? null) : noneFound(target));
       setShowDetails(true);
     } catch {
       setFillNote("Couldn't fill it in just now - check your connection and try again.");
@@ -199,6 +277,25 @@ function WordJournal() {
       setFilling(false);
     }
   }
+
+  // The Hebrew / Greek switch swaps in that language's word and meaning.
+  function switchLanguage(to: WordLanguage) {
+    if (to === draft.language || filling) return;
+    const kept = stash(draft, slots);
+    if (to in kept) {
+      setSlots(kept);
+      setDraft((d) => ({ ...d, ...fieldsFrom(to, kept[to]) }));
+      setFillNote(kept[to] ? null : noneFound(to));
+      return;
+    }
+    if (draft.word.trim()) {
+      fill("switch", { want: to });
+    } else {
+      setDraft((d) => ({ ...d, language: to }));
+    }
+  }
+
+  const alternatives = slots[draft.language]?.alternatives ?? [];
 
   function save(e?: React.FormEvent) {
     e?.preventDefault();
@@ -243,7 +340,7 @@ function WordJournal() {
     setDraft(toDraft(w));
     setShowDetails(true);
     setFillNote(null);
-    setAlternatives([]);
+    setSlots({});
     formTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -363,12 +460,15 @@ function WordJournal() {
                   className="dash-input dash-word-input"
                   placeholder="Type a word, e.g. Mercy"
                   value={draft.word}
-                  onChange={(e) => set("word", e.target.value)}
+                  onChange={(e) => {
+                    set("word", e.target.value);
+                    setSlots({}); // a different word needs a fresh lookup
+                  }}
                   onKeyDown={(e) => {
                     // Enter fills it in rather than saving a half-empty entry.
                     if (e.key === "Enter" && !showDetails) {
                       e.preventDefault();
-                      fill();
+                      fill("fresh");
                     }
                   }}
                   autoComplete="off"
@@ -392,7 +492,7 @@ function WordJournal() {
               <button
                 type="button"
                 className="dash-btn dash-btn-primary dash-word-fill-btn"
-                onClick={() => fill()}
+                onClick={() => fill("fresh")}
                 disabled={filling || !draft.word.trim()}
               >
                 {filling
@@ -430,7 +530,7 @@ function WordJournal() {
                           type="button"
                           className={draft.language === "hebrew" ? "is-on" : ""}
                           aria-pressed={draft.language === "hebrew"}
-                          onClick={() => set("language", "hebrew")}
+                          onClick={() => switchLanguage("hebrew")}
                         >
                           Hebrew
                         </button>
@@ -438,7 +538,7 @@ function WordJournal() {
                           type="button"
                           className={draft.language === "greek" ? "is-on" : ""}
                           aria-pressed={draft.language === "greek"}
-                          onClick={() => set("language", "greek")}
+                          onClick={() => switchLanguage("greek")}
                         >
                           Greek
                         </button>
@@ -476,7 +576,7 @@ function WordJournal() {
                             key={a.number}
                             type="button"
                             className="dash-word-alt"
-                            onClick={() => fill(a.number)}
+                            onClick={() => fill("pick", { pick: a.number })}
                             disabled={filling}
                             title={a.gloss}
                           >

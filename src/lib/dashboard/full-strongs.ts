@@ -21,10 +21,26 @@ interface LexEntry {
 const greek = (lex as { greek: Record<string, LexEntry> }).greek;
 const hebrew = (lex as { hebrew: Record<string, LexEntry> }).hebrew;
 
+// Close or drop unmatched brackets left behind by trimming, so
+// "compassion (human or divine, especially active" reads properly.
+function balanceParens(s: string): string {
+  let depth = 0;
+  let out = "";
+  for (const ch of s) {
+    if (ch === "(") depth++;
+    if (ch === ")") {
+      if (depth === 0) continue;
+      depth--;
+    }
+    out += ch;
+  }
+  return out + ")".repeat(depth);
+}
+
 function toEntry(num: string, e: LexEntry, lang: "greek" | "hebrew"): StrongsEntry {
   // Strong's definitions arrive with quirky whitespace and a habit of starting
   // with "{ ... }" for cross-references. Strip those wrappers up front.
-  const rawDef = (e.d ?? "").trim().replace(/^[{(]+|[}.)]+$/g, "").trim();
+  const rawDef = balanceParens((e.d ?? "").trim().replace(/^[{(]+|[}.]+$/g, "").trim());
 
   // KJV translations clean-up: split on common separators, drop punctuation-
   // only fragments, strip stray dashes ("-uously" -> "uously"), keep at most 6.
@@ -133,3 +149,52 @@ export function searchFullLexicon(query: string, limit = 16): StrongsEntry[] {
 
   return [...exact, ...partial].slice(0, limit);
 }
+
+function lookup(number: string): LexEntry | undefined {
+  const n = number.toUpperCase();
+  return n.startsWith("G") ? greek[n] : n.startsWith("H") ? hebrew[n] : undefined;
+}
+
+// How the KJV renders a word, qualifiers stripped:
+// "(+ tender) mercy" -> ["mercy"]; "holy, mercy, shalt be" -> ["holy", "mercy", "shalt be"].
+export function kjvRenderings(number: string): string[] {
+  const e = lookup(number);
+  if (!e?.k) return [];
+  const out: string[] = [];
+  for (const raw of e.k
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .split(/[,;]/)) {
+    const s = raw
+      .replace(/[+.×()]/g, " ")
+      .replace(/^\s*x\s+/i, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    if (s.length > 1 && /[a-z]/.test(s) && !out.includes(s)) out.push(s);
+  }
+  return out;
+}
+
+// Strong's definition made readable: the derivation clause before "i.e."
+// (full of cross-reference numbers) is dropped, stray numbers removed,
+// brackets balanced, and it ends as a sentence.
+export function lexiconDefinition(number: string): string {
+  const e = lookup(number);
+  if (!e?.d) return "";
+  let d = e.d.trim().replace(/^[{]+|[}]+$/g, "");
+  const ie = d.indexOf("i.e.");
+  if (ie > 0 && /[GH]\d+/.test(d.slice(0, ie))) d = d.slice(ie + 4);
+  d = d
+    .replace(/\b[GH]\d+\b\s*(\([^)]*\))?/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+([,;.)])/g, "$1")
+    .replace(/^[\s,;:.)-]+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  d = balanceParens(d).replace(/[,;:\s]+$/, "");
+  if (!d) return "";
+  d = d.charAt(0).toUpperCase() + d.slice(1);
+  return /[.!?]$/.test(d) ? d : `${d}.`;
+}
+

@@ -12,14 +12,23 @@ export interface WordCandidate {
   gloss: string;
 }
 
-// What /api/word-fill returns to fill in the journal form.
+// The best original word in one language, with its meaning and the other
+// candidates in that language ("Not the right word? Try ...").
+export interface LanguageFill {
+  entry: WordCandidate;
+  meaning: string;
+  alternatives: WordCandidate[];
+}
+
+// What /api/word-fill returns: the best Hebrew and the best Greek word
+// (either can be missing), which one to show first, and the shared
+// English meaning and life line.
 export interface WordFill {
-  entry: WordCandidate | null;
-  language: WordLanguage;
-  originalMeaning: string;
+  primary: WordLanguage;
+  hebrew: LanguageFill | null;
+  greek: LanguageFill | null;
   englishMeaning: string;
   application: string;
-  alternatives: WordCandidate[];
   ai: boolean; // false = Strong's + dictionary only, no life line
   note?: string;
 }
