@@ -1,24 +1,19 @@
 // Private-dashboard gate: every /dashboard page and the dashboard's own
 // APIs need a valid admin session cookie (see src/lib/admin-auth.ts).
-// Pages without one go to /dashboard/login; APIs answer 401. If no
-// DASHBOARD_PASSWORD secret is set, everything stays locked.
+// Pages without one go to /dashboard/login - which asks for a new password
+// the first time - and APIs answer 401.
 //
 // The public site and its APIs (track, contact, verse, donations) are not
 // matched and stay open. The dashboard is also kept out of search engines
 // via `robots` in src/app/dashboard/layout.tsx.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { adminPassword, SESSION_COOKIE, verifySession } from "@/lib/admin-auth";
+import { isSignedIn } from "@/lib/admin-auth";
 
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   if (pathname === "/dashboard/login") return NextResponse.next();
-
-  const password = adminPassword();
-  const signedIn = password
-    ? await verifySession(req.cookies.get(SESSION_COOKIE)?.value, password)
-    : false;
-  if (signedIn) return NextResponse.next();
+  if (await isSignedIn(req.headers.get("cookie"))) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Please log in to the dashboard." }, { status: 401 });

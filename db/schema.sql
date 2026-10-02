@@ -62,3 +62,13 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   ts INTEGER NOT NULL             -- epoch ms
 );
 CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_ts ON login_attempts(ip, ts);
+
+-- Dashboard admin password, set on the dashboard's login screen. Only a
+-- PBKDF2-SHA256 hash with a random salt is stored. One row: id='owner'.
+CREATE TABLE IF NOT EXISTS admin_auth (
+  id         TEXT PRIMARY KEY,
+  hash       TEXT NOT NULL,       -- base64url
+  salt       TEXT NOT NULL,       -- base64url
+  iterations INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL     -- epoch ms
+);

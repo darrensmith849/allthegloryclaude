@@ -6,12 +6,7 @@
  * More than MAX_FAILURES wrong passwords from one address within
  * LOCKOUT_MS locks that address out until the window passes.
  */
-import {
-  adminPassword,
-  createSession,
-  passwordMatches,
-  sessionCookie,
-} from "@/lib/admin-auth";
+import { checkPassword, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
 import { getDb } from "@/lib/analytics/store";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +15,9 @@ const MAX_FAILURES = 8;
 const LOCKOUT_MS = 15 * 60_000;
 
 export async function POST(req: Request) {
-  const password = adminPassword();
-  if (!password) {
-    return Response.json(
-      { error: "No admin password has been set yet. Run: npx wrangler secret put DASHBOARD_PASSWORD" },
-      { status: 503 },
-    );
+  const rec = await getAdminRecord(true);
+  if (!rec) {
+    return Response.json({ error: "No password has been set yet.", setup: true }, { status: 409 });
   }
 
   const body = (await req.json().catch(() => ({}))) as { password?: unknown };
@@ -48,7 +40,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!attempt || !(await passwordMatches(attempt, password))) {
+  if (!attempt || !(await checkPassword(attempt, rec))) {
     if (db) {
       await db
         .batch([
@@ -66,6 +58,6 @@ export async function POST(req: Request) {
   }
   return Response.json(
     { ok: true },
-    { headers: { "set-cookie": sessionCookie(await createSession(password)), "cache-control": "no-store" } },
+    { headers: { "set-cookie": sessionCookie(await createSession(rec)), "cache-control": "no-store" } },
   );
 }

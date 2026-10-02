@@ -87,6 +87,38 @@ export default function SettingsPage() {
   // ── Goals + rules ───────────────────────────────────────────
   const s = state.settings;
 
+  // ── Admin password ──────────────────────────────────────────
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pwBusy, setPwBusy] = useState(false);
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (pw.next !== pw.confirm) {
+      setPwMsg({ ok: false, text: "The new passwords don't match." });
+      return;
+    }
+    setPwBusy(true);
+    setPwMsg(null);
+    try {
+      const r = await fetch("/api/admin/password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ current: pw.current, next: pw.next }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { error?: string };
+      if (r.ok) {
+        setPw({ current: "", next: "", confirm: "" });
+        setPwMsg({ ok: true, text: "Password changed. Other devices will need to log in again." });
+      } else {
+        setPwMsg({ ok: false, text: data.error ?? "Couldn't change the password." });
+      }
+    } catch {
+      setPwMsg({ ok: false, text: "Couldn't reach the server. Try again." });
+    } finally {
+      setPwBusy(false);
+    }
+  }
+
   // ── Backup + restore ────────────────────────────────────────
   // The dashboard is localStorage-only - clearing the browser wipes
   // everything. Export/import gives the user a manual safety net.
@@ -411,6 +443,61 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+          </Panel>
+        </div>
+
+        {/* ── Admin password ─────────────────────── */}
+        <div className="dash-col-12" id="password">
+          <Panel eyebrow="Admin login" title="Change password">
+            <form onSubmit={changePassword} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <input type="text" name="username" autoComplete="username" value="admin" readOnly hidden />
+              <div>
+                <label className="dash-label" htmlFor="pw-current">Current password</label>
+                <input
+                  id="pw-current"
+                  type="password"
+                  autoComplete="current-password"
+                  className="dash-input"
+                  value={pw.current}
+                  onChange={(e) => setPw({ ...pw, current: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="dash-label" htmlFor="pw-next">New password</label>
+                <input
+                  id="pw-next"
+                  type="password"
+                  autoComplete="new-password"
+                  className="dash-input"
+                  value={pw.next}
+                  onChange={(e) => setPw({ ...pw, next: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="dash-label" htmlFor="pw-confirm">New password again</label>
+                <input
+                  id="pw-confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  className="dash-input"
+                  value={pw.confirm}
+                  onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="md:col-span-3 flex items-center gap-3 flex-wrap">
+                <button type="submit" className="dash-btn dash-btn-primary" disabled={pwBusy}>
+                  {pwBusy ? "Saving…" : "Change password"}
+                </button>
+                {pwMsg && (
+                  <span className={`text-[12.5px] ${pwMsg.ok ? "text-[var(--colour-amber-soft)]" : "text-[#f1a07d]"}`}>
+                    {pwMsg.text}
+                  </span>
+                )}
+              </div>
+            </form>
           </Panel>
         </div>
 
