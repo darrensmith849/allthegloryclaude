@@ -54,3 +54,11 @@ CREATE TABLE IF NOT EXISTS study_notes (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);
+
+-- Failed dashboard logins, for brute-force lockout (/api/admin/login).
+-- Rows older than a day are cleared on each failure.
+CREATE TABLE IF NOT EXISTS login_attempts (
+  ip TEXT NOT NULL,
+  ts INTEGER NOT NULL             -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_ts ON login_attempts(ip, ts);

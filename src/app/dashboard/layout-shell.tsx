@@ -12,6 +12,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isWelcome = pathname === "/dashboard";
 
+  // The login page stands alone - no sidebar, and no command palette (it
+  // loads dashboard data, which needs a session).
+  if (pathname === "/dashboard/login") return <div className="dash-welcome-root">{children}</div>;
+
   if (isWelcome) {
     return (
       <div className="dash-welcome-root">
