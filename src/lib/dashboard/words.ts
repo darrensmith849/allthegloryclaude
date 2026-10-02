@@ -1,6 +1,6 @@
 // Helpers for the word journal - search, the daily word, and dating entries.
 
-import { BibleWord, ISODate, WordLanguage } from "./types";
+import { BibleWord, ISODate, KeyVerse, WordLanguage } from "./types";
 import { diffDays, todayISO } from "./dates";
 
 // A Strong's entry offered as the original word behind an English word.
@@ -12,24 +12,27 @@ export interface WordCandidate {
   gloss: string;
 }
 
-// The best original word in one language, with its meaning and the other
-// candidates in that language ("Not the right word? Try ...").
+// The best original word in one language: its meaning (from a Bible
+// lexicon), verses that use it, a reflection drawn from both, and the
+// other candidates in that language ("Not the right word? Try ...").
 export interface LanguageFill {
   entry: WordCandidate;
   meaning: string;
+  meaningSource: string; // "Thayer's Greek Lexicon", "Brown-Driver-Briggs", ...
+  keyVerses: KeyVerse[];
+  application: string; // "" when no AI could write it
   alternatives: WordCandidate[];
 }
 
 // What /api/word-fill returns: the best Hebrew and the best Greek word
 // (either can be missing), which one to show first, and the shared
-// English meaning and life line.
+// English meaning.
 export interface WordFill {
   primary: WordLanguage;
   hebrew: LanguageFill | null;
   greek: LanguageFill | null;
   englishMeaning: string;
-  application: string;
-  ai: boolean; // true = an AI wrote the life line
+  ai: boolean; // true = an AI wrote the reflections
   note?: string;
 }
 
@@ -51,6 +54,7 @@ function haystack(w: BibleWord): string {
       w.application,
       w.reference,
       w.comment,
+      ...(w.keyVerses ?? []).map((v) => `${v.ref} ${v.text}`),
     ]
       .filter(Boolean)
       .join(" \n "),

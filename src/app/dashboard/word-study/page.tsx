@@ -4,7 +4,7 @@ import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
-import { BibleWord, WordLanguage } from "@/lib/dashboard/types";
+import { BibleWord, KeyVerse, WordLanguage } from "@/lib/dashboard/types";
 import { formatShort } from "@/lib/dashboard/dates";
 import {
   languageLabel,
@@ -27,7 +27,9 @@ interface Draft {
   translit: string;
   strongs: string;
   originalMeaning: string;
+  meaningSource: string;
   englishMeaning: string;
+  keyVerses: KeyVerse[];
   application: string;
   reference: string;
   comment: string;
@@ -40,7 +42,9 @@ const EMPTY_DRAFT: Draft = {
   translit: "",
   strongs: "",
   originalMeaning: "",
+  meaningSource: "",
   englishMeaning: "",
+  keyVerses: [],
   application: "",
   reference: "",
   comment: "",
@@ -54,7 +58,9 @@ function toDraft(w: BibleWord): Draft {
     translit: w.translit ?? "",
     strongs: w.strongs ?? "",
     originalMeaning: w.originalMeaning ?? "",
+    meaningSource: w.meaningSource ?? "",
     englishMeaning: w.englishMeaning ?? "",
+    keyVerses: w.keyVerses ?? [],
     application: w.application ?? "",
     reference: w.reference ?? "",
     comment: w.comment ?? "",
@@ -77,14 +83,17 @@ function GrowingTextarea({
   return <textarea ref={ref} rows={minRows} {...props} />;
 }
 
-// One language's original word and meaning, kept so the Hebrew / Greek
-// switch can swap between them without losing edits. null = looked up but
-// nothing found in that language; missing = not looked up yet.
+// Everything that belongs to one language's word, kept so the Hebrew /
+// Greek switch can swap between them without losing edits. null = looked
+// up but nothing found in that language; missing = not looked up yet.
 interface LangSlot {
   original: string;
   translit: string;
   strongs: string;
   meaning: string;
+  meaningSource: string;
+  keyVerses: KeyVerse[];
+  application: string;
   alternatives: WordCandidate[];
 }
 type Slots = Partial<Record<WordLanguage, LangSlot | null>>;
@@ -96,12 +105,15 @@ function slotFrom(f: LanguageFill | null): LangSlot | null {
         translit: f.entry.translit,
         strongs: f.entry.number,
         meaning: f.meaning,
+        meaningSource: f.meaningSource,
+        keyVerses: f.keyVerses,
+        application: f.application,
         alternatives: f.alternatives,
       }
     : null;
 }
 
-// The visible original-word fields for a language's slot.
+// The visible language-specific fields for a slot.
 function fieldsFrom(language: WordLanguage, slot: LangSlot | null | undefined) {
   return {
     language,
@@ -109,13 +121,17 @@ function fieldsFrom(language: WordLanguage, slot: LangSlot | null | undefined) {
     translit: slot?.translit ?? "",
     strongs: slot?.strongs ?? "",
     originalMeaning: slot?.meaning ?? "",
+    meaningSource: slot?.meaningSource ?? "",
+    keyVerses: slot?.keyVerses ?? [],
+    application: slot?.application ?? "",
   };
 }
 
 // Keep whatever is showing (including edits) in the current language's slot.
 function stash(d: Draft, slots: Slots): Slots {
   const current = slots[d.language];
-  const hasText = d.original || d.translit || d.strongs || d.originalMeaning;
+  const hasText =
+    d.original || d.translit || d.strongs || d.originalMeaning || d.application || d.keyVerses.length;
   if (!current && !hasText) return slots;
   return {
     ...slots,
@@ -124,12 +140,16 @@ function stash(d: Draft, slots: Slots): Slots {
       translit: d.translit,
       strongs: d.strongs,
       meaning: d.originalMeaning,
+      meaningSource: d.meaningSource,
+      keyVerses: d.keyVerses,
+      application: d.application,
       alternatives: current?.alternatives ?? [],
     },
   };
 }
 
 const LANG_NAME: Record<WordLanguage, string> = { hebrew: "Hebrew", greek: "Greek" };
+const PAGE = 40;
 
 type LangFilter = "all" | WordLanguage;
 type SortMode = "newest" | "az";
@@ -144,6 +164,10 @@ interface VerseView {
   label?: string;
   verses?: Verse[];
   error?: string;
+}
+
+function monthLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 // useSearchParams needs a Suspense boundary so the page can still prerender.
@@ -173,14 +197,13 @@ function WordJournal() {
   const [filling, setFilling] = useState(false);
   const [fillNote, setFillNote] = useState<string | null>(null);
   const [slots, setSlots] = useState<Slots>({});
-  // False once a fill came back without a life line (AI unavailable or out
-  // of today's allowance) - the placeholder then asks the user to write it.
-  const [aiWrites, setAiWrites] = useState(true);
 
-  // ── Library ───────────────────────────────────────────────────
+  // ── Journal list ──────────────────────────────────────────────
   const [query, setQuery] = useState("");
   const [lang, setLang] = useState<LangFilter>("all");
   const [sort, setSort] = useState<SortMode>("newest");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [visible, setVisible] = useState(PAGE);
   const [verses, setVerses] = useState<Record<string, VerseView>>({});
 
   // Deep links from ⌘K and Today: ?q=grace opens a search, ?new=1 jumps to
@@ -198,13 +221,18 @@ function WordJournal() {
     router.replace("/dashboard/word-study", { scroll: false });
   }, [ready, params, router]);
 
-  // After a save, bring the saved card into view and let it glow briefly.
+  // After a save, open the saved word, bring it into view and let it glow.
   useEffect(() => {
     if (!saved) return;
-    const el = document.getElementById(`word-${saved.id}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    const t = window.setTimeout(() => setSaved(null), 6000);
-    return () => window.clearTimeout(t);
+    setOpenId(saved.id);
+    const t1 = window.setTimeout(() => {
+      document.getElementById(`word-${saved.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    const t2 = window.setTimeout(() => setSaved(null), 6000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
   }, [saved]);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -222,9 +250,9 @@ function WordJournal() {
     `No ${LANG_NAME[language]} word found for “${draft.word.trim()}” in Strong's. Type one in, or switch back.`;
 
   // fresh  - "Fill it in" button: replace everything with the new lookup.
-  // pick   - a "Try ..." option: replace just that language's word.
-  // switch - Hebrew / Greek switch before anything was looked up (e.g. when
-  //          editing an old entry): fetch, keep what's already written.
+  // pick   - a "Try ..." option: look up just that language's word again.
+  // switch - Hebrew / Greek switch before that language was looked up (e.g.
+  //          when editing an older entry): fetch it, keep what's showing.
   async function fill(
     mode: "fresh" | "pick" | "switch",
     opts: { pick?: string; want?: WordLanguage } = {},
@@ -240,7 +268,12 @@ function WordJournal() {
       const r = await fetch("/api/word-fill", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ word, reference: draft.reference, pick: opts.pick }),
+        body: JSON.stringify({
+          word,
+          reference: draft.reference,
+          pick: opts.pick,
+          only: mode === "switch" ? opts.want : undefined,
+        }),
       });
       if (!r.ok) throw new Error(String(r.status));
       const data = (await r.json()) as WordFill;
@@ -249,26 +282,24 @@ function WordJournal() {
       let next: Slots;
       let target: WordLanguage;
       if (mode === "pick") {
-        target = data.hebrew?.entry.number === opts.pick ? "hebrew" : "greek";
+        target = data.hebrew ? "hebrew" : "greek";
         next = { ...stash(draft, slots), [target]: fetched[target] };
       } else if (mode === "switch") {
         target = opts.want ?? data.primary;
-        next = stash(draft, fetched); // keep the word already showing
+        next = stash(draft, { ...slots, [target]: fetched[target] });
       } else {
         target = data.primary;
         next = fetched;
+        if (!next[target]) target = target === "hebrew" ? "greek" : "hebrew";
       }
-      if (mode !== "switch" && !next[target]) target = target === "hebrew" ? "greek" : "hebrew";
 
-      const keepText = mode !== "fresh";
       setSlots(next);
       setDraft((d) => ({
         ...d,
         ...fieldsFrom(target, next[target]),
-        englishMeaning: keepText && d.englishMeaning ? d.englishMeaning : data.englishMeaning || d.englishMeaning,
-        application: keepText && d.application ? d.application : data.application || d.application,
+        englishMeaning:
+          mode !== "fresh" && d.englishMeaning ? d.englishMeaning : data.englishMeaning || d.englishMeaning,
       }));
-      setAiWrites(data.ai);
       setFillNote(next[target] ? (data.note ?? null) : noneFound(target));
       setShowDetails(true);
     } catch {
@@ -278,7 +309,8 @@ function WordJournal() {
     }
   }
 
-  // The Hebrew / Greek switch swaps in that language's word and meaning.
+  // The Hebrew / Greek switch swaps in that language's word, meaning, key
+  // verses and reflection.
   function switchLanguage(to: WordLanguage) {
     if (to === draft.language || filling) return;
     const kept = stash(draft, slots);
@@ -289,6 +321,7 @@ function WordJournal() {
       return;
     }
     if (draft.word.trim()) {
+      setSlots(kept);
       fill("switch", { want: to });
     } else {
       setDraft((d) => ({ ...d, language: to }));
@@ -311,7 +344,9 @@ function WordJournal() {
       translit: draft.translit.trim() || undefined,
       strongs: draft.strongs.trim().toUpperCase() || undefined,
       originalMeaning: draft.originalMeaning.trim(),
+      meaningSource: draft.originalMeaning.trim() ? draft.meaningSource || undefined : undefined,
       englishMeaning: draft.englishMeaning.trim(),
+      keyVerses: draft.keyVerses.length ? draft.keyVerses : undefined,
       application: draft.application.trim(),
       reference: draft.reference.trim() || undefined,
       comment: draft.comment.trim() || undefined,
@@ -321,14 +356,12 @@ function WordJournal() {
     update((d) => {
       if (!Array.isArray(d.words)) d.words = [];
       if (editingId) {
-        d.words = d.words.map((w) =>
-          w.id === editingId ? { ...w, ...fields, updatedAt: now } : w,
-        );
+        d.words = d.words.map((w) => (w.id === editingId ? { ...w, ...fields, updatedAt: now } : w));
       } else {
         d.words.unshift({ id, createdAt: now, ...fields });
       }
     });
-    // Make sure the saved card is on screen, whatever was being searched.
+    // Make sure the saved word is on screen, whatever was being searched.
     setQuery("");
     setLang("all");
     setSaved({ id, word, updated: Boolean(editingId) });
@@ -377,11 +410,7 @@ function WordJournal() {
         ...v,
         [w.id]: data.error
           ? { loading: false, error: data.error }
-          : {
-              loading: false,
-              label: `${data.reference} · ${data.translation}`,
-              verses: data.verses,
-            },
+          : { loading: false, label: `${data.reference} · ${data.translation}`, verses: data.verses },
       }));
     } catch {
       setVerses((v) => ({ ...v, [w.id]: { loading: false, error: "Couldn't load that passage." } }));
@@ -412,9 +441,34 @@ function WordJournal() {
       });
   }, [words, lang, query, sort]);
 
+  // A new search or filter starts from the top of the list; a search that
+  // finds exactly one word opens it.
+  useEffect(() => {
+    setVisible(PAGE);
+  }, [query, lang, sort]);
+  useEffect(() => {
+    if (query.trim() && shown.length === 1) setOpenId(shown[0].id);
+  }, [query, shown]);
+
+  // Month headings when newest-first, letter headings when A-Z.
+  const groups = useMemo(() => {
+    const out: { label: string; items: BibleWord[] }[] = [];
+    for (const w of shown.slice(0, visible)) {
+      const label = query.trim()
+        ? ""
+        : sort === "az"
+          ? (w.word.trim()[0] ?? "#").toUpperCase()
+          : monthLabel(w.createdAt);
+      const last = out[out.length - 1];
+      if (last && last.label === label) last.items.push(w);
+      else out.push({ label, items: [w] });
+    }
+    return out;
+  }, [shown, visible, sort, query]);
+
   if (!ready) return null;
 
-  const langName = draft.language === "greek" ? "Greek" : "Hebrew";
+  const langName = LANG_NAME[draft.language];
 
   return (
     <>
@@ -423,8 +477,8 @@ function WordJournal() {
           <div className="eyebrow eyebrow-amber">Hebrew &amp; Greek · filled in for you</div>
           <h1 className="dash-title mt-1">Word Journal</h1>
           <div className="dash-subtitle">
-            Type a word from the Bible and tap Fill it in. The Hebrew or Greek, both meanings
-            and a line for your life are written for you. Add your own comment, then save.
+            Type a word from the Bible and tap Fill it in. You get the Hebrew and Greek, what
+            the lexicons say they mean, verses that use them, and a reflection for your life.
           </div>
         </div>
       </div>
@@ -496,7 +550,7 @@ function WordJournal() {
                 disabled={filling || !draft.word.trim()}
               >
                 {filling
-                  ? "Filling it in…"
+                  ? "Studying the word…"
                   : showDetails
                     ? "✦ Fill it in again"
                     : "✦ Fill it in for me"}
@@ -526,22 +580,17 @@ function WordJournal() {
                         Original word
                       </span>
                       <div className="dash-toggle" role="group" aria-label="Original language">
-                        <button
-                          type="button"
-                          className={draft.language === "hebrew" ? "is-on" : ""}
-                          aria-pressed={draft.language === "hebrew"}
-                          onClick={() => switchLanguage("hebrew")}
-                        >
-                          Hebrew
-                        </button>
-                        <button
-                          type="button"
-                          className={draft.language === "greek" ? "is-on" : ""}
-                          aria-pressed={draft.language === "greek"}
-                          onClick={() => switchLanguage("greek")}
-                        >
-                          Greek
-                        </button>
+                        {(["hebrew", "greek"] as const).map((l) => (
+                          <button
+                            key={l}
+                            type="button"
+                            className={draft.language === l ? "is-on" : ""}
+                            aria-pressed={draft.language === l}
+                            onClick={() => switchLanguage(l)}
+                          >
+                            {LANG_NAME[l]}
+                          </button>
+                        ))}
                       </div>
                     </div>
                     <div className="dash-word-orig-row">
@@ -600,6 +649,9 @@ function WordJournal() {
                       value={draft.originalMeaning}
                       onChange={(e) => set("originalMeaning", e.target.value)}
                     />
+                    {draft.meaningSource && draft.originalMeaning && (
+                      <div className="dash-word-source">Source: {draft.meaningSource}</div>
+                    )}
                   </div>
 
                   <div>
@@ -615,6 +667,21 @@ function WordJournal() {
                     />
                   </div>
 
+                  {draft.keyVerses.length > 0 && (
+                    <div>
+                      <span className="dash-label">Key verses</span>
+                      <KeyVerses
+                        verses={draft.keyVerses}
+                        onRemove={(i) =>
+                          set(
+                            "keyVerses",
+                            draft.keyVerses.filter((_, j) => j !== i),
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="dash-label" htmlFor="wj-apply">
                       For my life
@@ -622,11 +689,7 @@ function WordJournal() {
                     <GrowingTextarea
                       id="wj-apply"
                       className="dash-textarea dash-word-field"
-                      placeholder={
-                        aiWrites
-                          ? "Fills in when you tap Fill it in for me."
-                          : "Write your own line here."
-                      }
+                      placeholder="Fills in when you tap Fill it in for me - or write your own."
                       value={draft.application}
                       onChange={(e) => set("application", e.target.value)}
                     />
@@ -690,7 +753,7 @@ function WordJournal() {
                 <input
                   type="search"
                   className="dash-input"
-                  placeholder="Search words, meanings, comments…"
+                  placeholder="Search words, meanings, verses…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label="Search your word journal"
@@ -703,7 +766,7 @@ function WordJournal() {
                       className={lang === l ? "is-on" : ""}
                       onClick={() => setLang(l)}
                     >
-                      {l === "all" ? "All" : l === "hebrew" ? "Hebrew" : "Greek"}{" "}
+                      {l === "all" ? "All" : LANG_NAME[l]}{" "}
                       <span className="opacity-60">{counts[l]}</span>
                     </button>
                   ))}
@@ -744,134 +807,203 @@ function WordJournal() {
             )}
 
             {shown.length > 0 && (
-              <div className="flex flex-col gap-3">
-                {shown.map((w) => {
-                  const v = verses[w.id];
-                  return (
-                    <article
-                      key={w.id}
-                      id={`word-${w.id}`}
-                      className={`dash-word-card ${editingId === w.id ? "is-editing" : ""} ${
-                        saved?.id === w.id ? "is-new" : ""
-                      }`}
-                    >
-                      <div className="dash-word-head">
-                        <div className="min-w-0">
-                          <h3 className="dash-word-title">{w.word}</h3>
-                          {(w.original || w.translit) && (
-                            <div className="dash-word-orig">
-                              {w.original && (
-                                <span
-                                  className="dash-word-script"
-                                  lang={w.language === "greek" ? "grc" : "he"}
-                                  dir="auto"
-                                >
-                                  {w.original}
-                                </span>
-                              )}
-                              {w.translit && (
-                                <span className="dash-word-translit">{w.translit}</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="dash-word-meta">
-                          <span className={`dash-word-lang is-${w.language}`}>
-                            {languageLabel(w)}
-                          </span>
-                          {w.strongs && <span>{w.strongs}</span>}
-                        </div>
-                      </div>
-
-                      {(w.originalMeaning || w.englishMeaning) && (
-                        <dl className="dash-word-defs">
-                          {w.originalMeaning && (
-                            <div>
-                              <dt>{languageLabel(w)} meaning</dt>
-                              <dd>{w.originalMeaning}</dd>
-                            </div>
-                          )}
-                          {w.englishMeaning && (
-                            <div>
-                              <dt>English meaning</dt>
-                              <dd>{w.englishMeaning}</dd>
-                            </div>
-                          )}
-                        </dl>
-                      )}
-
-                      {w.application && (
-                        <div className="dash-word-apply">
-                          <span className="eyebrow eyebrow-amber">For my life</span>
-                          <p>{w.application}</p>
-                        </div>
-                      )}
-
-                      {w.comment && (
-                        <div className="dash-word-comment">
-                          <span className="eyebrow">My comment</span>
-                          <p>{w.comment}</p>
-                        </div>
-                      )}
-
-                      <div className="dash-word-foot">
-                        {w.reference ? (
-                          <button
-                            type="button"
-                            className="dash-word-ref"
-                            onClick={() => toggleVerse(w)}
-                            aria-expanded={Boolean(v)}
-                            title={v ? "Hide the passage" : "Read the passage"}
-                          >
-                            ↗ {w.reference}
-                          </button>
-                        ) : (
-                          <span />
-                        )}
-                        <span className="dash-word-date">{formatShort(wordDate(w))}</span>
-                        <button
-                          type="button"
-                          className="dash-word-link"
-                          onClick={() => startEdit(w)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="dash-word-link is-danger"
-                          onClick={() => remove(w)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-
-                      {v && (
-                        <div className="dash-word-verse">
-                          {v.loading && <span className="dash-word-hint">Opening the passage…</span>}
-                          {v.error && <span className="text-[12.5px] text-[#f1a07d]">{v.error}</span>}
-                          {v.verses && (
-                            <>
-                              <div className="eyebrow eyebrow-amber mb-1.5">{v.label}</div>
-                              <div className="dash-verse">
-                                {v.verses.map((x) => (
-                                  <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
-                                    <span className="dash-verse-num">{x.verse}</span>
-                                    {x.text}
-                                  </p>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
+              <div className="dash-word-list">
+                {groups.map((g, gi) => (
+                  <div key={`${g.label}-${gi}`}>
+                    {g.label && <div className="dash-word-group">{g.label}</div>}
+                    {g.items.map((w) => (
+                      <WordRow
+                        key={w.id}
+                        w={w}
+                        open={openId === w.id}
+                        isNew={saved?.id === w.id}
+                        editing={editingId === w.id}
+                        verse={verses[w.id]}
+                        onToggle={() => setOpenId((id) => (id === w.id ? null : w.id))}
+                        onVerse={() => toggleVerse(w)}
+                        onEdit={() => startEdit(w)}
+                        onDelete={() => remove(w)}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
+            )}
+
+            {shown.length > visible && (
+              <button
+                type="button"
+                className="dash-btn dash-btn-ghost dash-word-more"
+                onClick={() => setVisible((v) => v + PAGE)}
+              >
+                Show more · {shown.length - visible} left
+              </button>
             )}
           </Panel>
         </div>
       </div>
     </>
+  );
+}
+
+function KeyVerses({ verses, onRemove }: { verses: KeyVerse[]; onRemove?: (i: number) => void }) {
+  return (
+    <ul className="dash-word-keyverses">
+      {verses.map((v, i) => (
+        <li key={`${v.ref}-${i}`}>
+          <span className="dash-word-keyverse-ref">{v.ref}</span>
+          <span className="dash-word-keyverse-text">“{v.text}”</span>
+          {onRemove && (
+            <button
+              type="button"
+              className="dash-word-keyverse-remove"
+              onClick={() => onRemove(i)}
+              aria-label={`Remove ${v.ref}`}
+              title="Remove this verse"
+            >
+              ✕
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// One word in the journal: a compact row that opens to the full entry.
+function WordRow({
+  w,
+  open,
+  isNew,
+  editing,
+  verse,
+  onToggle,
+  onVerse,
+  onEdit,
+  onDelete,
+}: {
+  w: BibleWord;
+  open: boolean;
+  isNew: boolean;
+  editing: boolean;
+  verse?: VerseView;
+  onToggle: () => void;
+  onVerse: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const preview = w.application || w.englishMeaning || w.originalMeaning;
+  return (
+    <article
+      id={`word-${w.id}`}
+      className={`dash-word-row ${open ? "is-open" : ""} ${isNew ? "is-new" : ""} ${editing ? "is-editing" : ""}`}
+    >
+      <button type="button" className="dash-word-row-head" onClick={onToggle} aria-expanded={open}>
+        <span className="dash-word-row-main">
+          <span className="dash-word-row-line">
+            <span className="dash-word-row-title">{w.word}</span>
+            {w.original && (
+              <span className="dash-word-row-orig" dir="auto" lang={w.language === "greek" ? "grc" : "he"}>
+                {w.original}
+              </span>
+            )}
+            {w.translit && <span className="dash-word-row-translit">{w.translit}</span>}
+          </span>
+          {!open && preview && <span className="dash-word-row-sub">{preview}</span>}
+        </span>
+        <span className={`dash-word-lang is-${w.language}`}>{languageLabel(w)}</span>
+        <span className="dash-word-row-chev" aria-hidden>
+          ›
+        </span>
+      </button>
+
+      {open && (
+        <div className="dash-word-row-body">
+          {(w.originalMeaning || w.englishMeaning) && (
+            <dl className="dash-word-defs">
+              {w.originalMeaning && (
+                <div>
+                  <dt>
+                    {languageLabel(w)} meaning{w.strongs ? ` · ${w.strongs}` : ""}
+                  </dt>
+                  <dd>{w.originalMeaning}</dd>
+                  {w.meaningSource && <div className="dash-word-source">{w.meaningSource}</div>}
+                </div>
+              )}
+              {w.englishMeaning && (
+                <div>
+                  <dt>English meaning</dt>
+                  <dd>{w.englishMeaning}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+
+          {w.keyVerses && w.keyVerses.length > 0 && (
+            <div className="mt-4">
+              <div className="eyebrow mb-1.5">Key verses</div>
+              <KeyVerses verses={w.keyVerses} />
+            </div>
+          )}
+
+          {w.application && (
+            <div className="dash-word-apply">
+              <span className="eyebrow eyebrow-amber">For my life</span>
+              <p>{w.application}</p>
+            </div>
+          )}
+
+          {w.comment && (
+            <div className="dash-word-comment">
+              <span className="eyebrow">My comment</span>
+              <p>{w.comment}</p>
+            </div>
+          )}
+
+          <div className="dash-word-foot">
+            {w.reference ? (
+              <button
+                type="button"
+                className="dash-word-ref"
+                onClick={onVerse}
+                aria-expanded={Boolean(verse)}
+                title={verse ? "Hide the passage" : "Read the passage"}
+              >
+                ↗ {w.reference}
+              </button>
+            ) : (
+              <span />
+            )}
+            <span className="dash-word-date">{formatShort(wordDate(w))}</span>
+            <button type="button" className="dash-word-link" onClick={onEdit}>
+              Edit
+            </button>
+            <button type="button" className="dash-word-link is-danger" onClick={onDelete}>
+              Delete
+            </button>
+          </div>
+
+          {verse && (
+            <div className="dash-word-verse">
+              {verse.loading && <span className="dash-word-hint">Opening the passage…</span>}
+              {verse.error && <span className="text-[12.5px] text-[#f1a07d]">{verse.error}</span>}
+              {verse.verses && (
+                <>
+                  <div className="eyebrow eyebrow-amber mb-1.5">{verse.label}</div>
+                  <div className="dash-verse">
+                    {verse.verses.map((x) => (
+                      <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
+                        <span className="dash-verse-num">{x.verse}</span>
+                        {x.text}
+                      </p>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </article>
   );
 }

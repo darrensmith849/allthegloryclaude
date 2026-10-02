@@ -251,6 +251,11 @@ export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
 // user by /api/word-fill), and an optional comment of their own.
 export type WordLanguage = "hebrew" | "greek";
 
+export interface KeyVerse {
+  ref: string; // "Ephesians 2:4"
+  text: string; // Berean Standard Bible
+}
+
 export interface BibleWord {
   id: string;
   word: string; // as it reads in the English Bible, e.g. "Mercy"
@@ -259,9 +264,11 @@ export interface BibleWord {
   translit?: string; // e.g. "chesed"
   strongs?: string; // e.g. "H2617"
   originalMeaning: string; // what the Hebrew / Greek word means
+  meaningSource?: string; // e.g. "Thayer's Greek Lexicon"
   englishMeaning: string; // plain English meaning
   application: string; // one short sentence applying it to life
   reference?: string; // where it was found, e.g. "Psalm 136:1"
+  keyVerses?: KeyVerse[]; // verses that use this Hebrew / Greek word
   comment?: string; // the user's own note, added at the end
   createdAt: string;
   updatedAt?: string;
