@@ -27,7 +27,7 @@ const ALIASES: Record<string, number> = {
   jas: 59, jude: 65, rev: 66, revelations: 66,
 };
 
-function bookId(name: string): number | null {
+export function bookId(name: string): number | null {
   const n = squash(name);
   if (!n) return null;
   if (ALIASES[n]) return ALIASES[n];

@@ -37,3 +37,20 @@ CREATE TABLE IF NOT EXISTS dashboard_state (
   json       TEXT NOT NULL,
   updated_at INTEGER NOT NULL     -- epoch ms; last-write-wins
 );
+
+-- Bible study notes from the private dashboard (/dashboard/notes). One row
+-- per note so the list can grow without limit. Ordered by the page in the
+-- owner's chronological Bible, then by the order they were written (seq).
+CREATE TABLE IF NOT EXISTS study_notes (
+  id         TEXT PRIMARY KEY,
+  page       INTEGER,             -- chronological Bible page (nullable)
+  seq        INTEGER NOT NULL,    -- order written; breaks ties within a page
+  book       INTEGER,             -- 1-66, canonical order (nullable)
+  chapter    INTEGER,
+  verse      INTEGER,
+  verse_end  INTEGER,
+  text       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,    -- epoch ms
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);

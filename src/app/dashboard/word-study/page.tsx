@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
+import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { BibleWord, KeyVerse, WordLanguage } from "@/lib/dashboard/types";
 import { formatShort } from "@/lib/dashboard/dates";
@@ -65,22 +66,6 @@ function toDraft(w: BibleWord): Draft {
     reference: w.reference ?? "",
     comment: w.comment ?? "",
   };
-}
-
-// A textarea that grows to fit what was filled in, so every word is
-// readable without scrolling inside the box.
-function GrowingTextarea({
-  minRows = 2,
-  ...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { minRows?: number }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight + 2}px`;
-  }, [props.value]);
-  return <textarea ref={ref} rows={minRows} {...props} />;
 }
 
 // Everything that belongs to one language's word, kept so the Hebrew /

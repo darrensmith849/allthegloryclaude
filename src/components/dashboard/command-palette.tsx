@@ -55,6 +55,7 @@ export default function CommandPalette() {
       // ── Navigation ─────────────────────────────────────────
       { id: "go-welcome", title: "Who am I?", group: "Navigate", run: go("/dashboard") },
       { id: "go-word", title: "Word Journal", hint: "Hebrew / Greek words you're studying", group: "Navigate", run: go("/dashboard/word-study") },
+      { id: "go-notes", title: "Study Notes", hint: "Notes from your Bible reading, in order", group: "Navigate", run: go("/dashboard/notes") },
       { id: "go-today", title: "Today", hint: "Daily schedule", group: "Navigate", run: go("/dashboard/today") },
       { id: "go-cal", title: "Calendar", group: "Navigate", run: go("/dashboard/calendar") },
       { id: "go-tasks", title: "Tasks", group: "Navigate", run: go("/dashboard/tasks") },
@@ -70,6 +71,13 @@ export default function CommandPalette() {
         hint: "Hebrew / Greek meaning, English meaning, for my life",
         group: "Action",
         run: go("/dashboard/word-study?new=1"),
+      },
+      {
+        id: "act-add-note",
+        title: "Write a study note",
+        hint: "Page, passage and what you saw",
+        group: "Action",
+        run: go("/dashboard/notes"),
       },
       {
         id: "act-mark-all",

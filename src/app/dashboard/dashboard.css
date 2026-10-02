@@ -1824,3 +1824,74 @@
 .dash-word-today .dash-word-script { font-size: 26px; }
 .dash-word-today .dash-word-apply p { font-size: 16px; }
 
+
+/* ── Study notes ──────────────────────────────────────────────── */
+.dash-note-where {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+.dash-note-parsed {
+  grid-column: 1 / -1;
+  min-height: 16px;
+  font-size: 12px;
+  color: var(--colour-amber-soft);
+}
+.dash-note-book { width: auto; flex: 0 0 auto; }
+.dash-note-list { display: flex; flex-direction: column; gap: 18px; }
+.dash-note-page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dash-note-page-num {
+  font-family: var(--font-display), serif;
+  font-size: 19px;
+  color: var(--colour-glow);
+}
+.dash-note-page-range {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+}
+.dash-note {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+.dash-note.is-new { animation: dash-word-glow 2.4s ease-out 1; }
+.dash-note-ref { padding-top: 2px; }
+.dash-note-ref button {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--colour-amber-soft);
+  text-align: left;
+  transition: color 140ms ease;
+}
+.dash-note-ref button:hover { color: var(--colour-glow); }
+.dash-note-text { font-size: 14.5px; line-height: 1.6; color: var(--colour-ink-strong); }
+.dash-note-text p { white-space: pre-line; }
+.dash-note-text p + p,
+.dash-note-text p + ul,
+.dash-note-text ul + p { margin-top: 6px; }
+.dash-note-text ul { list-style: disc; padding-left: 20px; color: var(--colour-ink-soft); }
+.dash-note-text li + li { margin-top: 2px; }
+.dash-note-actions { display: flex; gap: 12px; padding-top: 3px; }
+@media (hover: hover) {
+  .dash-note-actions { opacity: 0; transition: opacity 140ms ease; }
+  .dash-note:hover .dash-note-actions,
+  .dash-note:focus-within .dash-note-actions { opacity: 1; }
+}
+.dash-note-body { min-width: 0; }
+@media (max-width: 720px) {
+  .dash-note { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+  .dash-note-ref { grid-column: 1; grid-row: 1; }
+  .dash-note-actions { grid-column: 2; grid-row: 1; opacity: 1; }
+  .dash-note-body { grid-column: 1 / -1; grid-row: 2; }
+}
