@@ -26,6 +26,12 @@ interface MemberRow {
   notes: number;
   days: number;
   words: number;
+  emailUpdates: boolean;
+}
+interface EmailCounts {
+  total: number;
+  study: number;
+  newsletter: number;
 }
 
 const SIGNUP: { value: SignupMode; label: string; hint: string }[] = [
@@ -83,6 +89,7 @@ export default function MembersPage() {
   const [settings, setSettings] = useState<StudySettings | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
+  const [emailList, setEmailList] = useState<EmailCounts | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [author, setAuthor] = useState("");
@@ -95,13 +102,14 @@ export default function MembersPage() {
   const [showStopped, setShowStopped] = useState(false);
 
   function load() {
-    api<{ settings: StudySettings; invites: Invite[]; members: MemberRow[] }>("GET")
+    api<{ settings: StudySettings; invites: Invite[]; members: MemberRow[]; emailList: EmailCounts }>("GET")
       .then((d) => {
         setSettings(d.settings);
         setAuthor(d.settings.author);
         setIntro(d.settings.intro);
         setInvites(d.invites);
         setMembers(d.members);
+        setEmailList(d.emailList);
         setError(null);
       })
       .catch((e: Error) => setError(e.message));
@@ -348,6 +356,28 @@ export default function MembersPage() {
         </div>
 
         <div className="dash-col-12">
+          <Panel eyebrow="Staying in touch" title="Your email list">
+            <p className="dash-word-hint">
+              {emailList
+                ? `${emailList.total} ${emailList.total === 1 ? "person has" : "people have"} asked for updates - ${emailList.newsletter} from the newsletter box on the site, ${emailList.study} from The Study.`
+                : "Loading…"}
+            </p>
+            <div className="flex gap-2 flex-wrap mt-3">
+              <a className="dash-btn dash-btn-primary" href="/api/members?export=list">
+                Download email list (CSV)
+              </a>
+              <a className="dash-btn dash-btn-ghost" href="/api/members?export=members">
+                Download all members (CSV)
+              </a>
+            </div>
+            <p className="dash-word-hint mt-3">
+              The email list imports straight into Brevo. Only send news and updates to the email list - it&apos;s
+              everyone who said yes. The members file is for messages about their account or the study itself.
+            </p>
+          </Panel>
+        </div>
+
+        <div className="dash-col-12">
           <Panel eyebrow={`${members.length} ${members.length === 1 ? "person" : "people"}`} title="Members">
             {members.length === 0 && (
               <p className="dash-word-hint">Nobody has joined yet. Make an invite link and send it to someone.</p>
@@ -357,7 +387,8 @@ export default function MembersPage() {
                 <div key={m.id} className={`dash-members-row ${m.disabled ? "is-muted" : ""}`}>
                   <div className="min-w-0 flex-1">
                     <div className="dash-members-name">
-                      {m.name} {m.disabled && <span className="dash-word-hint">· paused</span>}
+                      {m.name} {m.emailUpdates && <span title="On your email list">✉</span>}{" "}
+                      {m.disabled && <span className="dash-word-hint">· paused</span>}
                     </div>
                     <div className="dash-word-hint">
                       {m.email} · joined {when(m.createdAt)} · last here {when(m.lastSeen)}

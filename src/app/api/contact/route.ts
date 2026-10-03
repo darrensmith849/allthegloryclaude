@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getDb } from "@/lib/analytics/store";
+import { subscribeStmt } from "@/lib/study/members";
 
 /**
  * Contact-form + newsletter delivery — sends the submission to the site
@@ -9,6 +11,9 @@ import { NextResponse } from "next/server";
  * notifications. Brevo sends from our own authenticated domain
  * (alltheglory.co.za — SPF + DKIM + DMARC all pass), so mail lands in the
  * inbox instead of Junk.
+ *
+ * Newsletter sign-ups are also kept on the owner's email list (D1
+ * email_list), downloadable from /dashboard/members.
  *
  * Requires BREVO_API_KEY (a Cloudflare Worker secret in production;
  * .dev.vars locally). The key is used server-side only — it never reaches
@@ -64,6 +69,11 @@ export async function POST(req: Request) {
       { error: "Please enter a valid email address." },
       { status: 400 },
     );
+  }
+  if (kind === "newsletter") {
+    // Best effort - the notification email below still goes if this fails.
+    const db = await getDb();
+    if (db) await subscribeStmt(db, email.toLowerCase(), name || null, "newsletter").run().catch(() => {});
   }
   if (kind === "contact" && message.length < 10) {
     return NextResponse.json(

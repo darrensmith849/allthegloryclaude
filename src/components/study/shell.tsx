@@ -11,15 +11,23 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import type { Member, StudySettings } from "@/lib/study/members";
 
+export type MeMember = Member & { emailUpdates?: boolean };
+
 interface Me {
   loaded: boolean;
-  member: Member | null;
+  member: MeMember | null;
   study: StudySettings | null;
   refresh: () => Promise<void>;
 }
 
 const MeContext = createContext<Me>({ loaded: false, member: null, study: null, refresh: async () => {} });
 export const useMe = () => useContext(MeContext);
+
+// "Daniel's study" once the owner has put their name on it.
+export function studyName(study: StudySettings | null): string {
+  const author = study?.author?.trim();
+  return author && author !== "All The Glory" ? `${author}'s study` : "Read the study";
+}
 
 // Can this visitor read the owner's study?
 export function canRead(me: Pick<Me, "member" | "study">): boolean {
@@ -28,7 +36,7 @@ export function canRead(me: Pick<Me, "member" | "study">): boolean {
 
 export function StudyShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [me, setMe] = useState<{ loaded: boolean; member: Member | null; study: StudySettings | null }>({
+  const [me, setMe] = useState<{ loaded: boolean; member: MeMember | null; study: StudySettings | null }>({
     loaded: false,
     member: null,
     study: null,
@@ -37,7 +45,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const r = await fetch("/api/study/me", { cache: "no-store" });
-      const data = (await r.json()) as { member: Member | null; study: StudySettings };
+      const data = (await r.json()) as { member: MeMember | null; study: StudySettings };
       setMe({ loaded: true, member: data.member, study: data.study });
     } catch {
       setMe((m) => ({ ...m, loaded: true }));
@@ -54,7 +62,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   );
 
   const nav = [
-    ...(readable ? [{ href: "/study/read", label: "Read the study" }] : []),
+    ...(readable ? [{ href: "/study/read", label: studyName(me.study) }] : []),
     ...(me.member
       ? [
           { href: "/study/journal", label: "My journal" },

@@ -27,6 +27,18 @@ function Account() {
   const [delConfirm, setDelConfirm] = useState("");
   const [delError, setDelError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [updates, setUpdates] = useState<boolean | null>(null);
+  const subscribed = updates ?? Boolean(me.member?.emailUpdates);
+
+  async function setEmailUpdates(on: boolean) {
+    try {
+      await call("PATCH", { emailUpdates: on });
+      setUpdates(on);
+      void me.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't save that.");
+    }
+  }
 
   useEffect(() => setName(me.member?.name ?? ""), [me.member?.name]);
 
@@ -178,14 +190,31 @@ function Account() {
         </div>
 
         <div className="dash-col-6">
-          <Panel eyebrow="Your data" title="Download everything">
+          <Panel eyebrow="Staying in touch" title="Email updates">
             <p className="dash-word-hint mb-3">
-              Your notes, words and day titles in one file. Your journal is private to you - nobody else can read it.
+              {subscribed
+                ? `You're on the All The Glory email list (${me.member?.email}) - the occasional note about new studies, music and videos.`
+                : "Get the occasional email about new studies, music and videos from All The Glory."}
             </p>
-            <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>
-              {downloading ? "Preparing…" : "Download my journal"}
+            <button
+              type="button"
+              className={`dash-btn ${subscribed ? "dash-btn-ghost" : "dash-btn-primary"}`}
+              onClick={() => setEmailUpdates(!subscribed)}
+            >
+              {subscribed ? "Unsubscribe" : "Yes, email me"}
             </button>
           </Panel>
+
+          <div className="mt-[18px]">
+            <Panel eyebrow="Your data" title="Download everything">
+              <p className="dash-word-hint mb-3">
+                Your notes, words and day titles in one file. Your journal is private to you - nobody else can read it.
+              </p>
+              <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>
+                {downloading ? "Preparing…" : "Download my journal"}
+              </button>
+            </Panel>
+          </div>
 
           <div className="mt-[18px]">
             <Panel eyebrow="Leave" title="Delete my account">

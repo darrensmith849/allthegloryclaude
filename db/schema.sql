@@ -292,3 +292,15 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   n   INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, who)
 );
+
+-- One email list for the owner: the site's newsletter sign-ups and Study
+-- members who ticked "send me updates". Only people who asked are on it;
+-- unsubscribing keeps the row with unsubscribed_at so it's never re-added
+-- by mistake, and deleting a Study account removes it.
+CREATE TABLE IF NOT EXISTS email_list (
+  email           TEXT PRIMARY KEY,     -- lower-cased
+  name            TEXT,
+  source          TEXT NOT NULL,        -- 'newsletter' | 'study'
+  subscribed_at   INTEGER NOT NULL,     -- epoch ms
+  unsubscribed_at INTEGER
+);

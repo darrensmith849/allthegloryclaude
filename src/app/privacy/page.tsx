@@ -54,6 +54,14 @@ export default function PrivacyPage() {
                 asked for.
               </li>
               <li>
+                <strong className="text-white/85">When you join The Study</strong>{" "}
+                — your name, email address and password (kept only in scrambled,
+                hashed form), and the notes and words you write in your journal,
+                which are private to you. We only email you updates if you tick
+                the box to say yes. You can download everything or delete your
+                account and all of it from your Account page at any time.
+              </li>
+              <li>
                 <strong className="text-white/85">When you donate</strong> —
                 your payment is handled securely by our payment provider,
                 Paystack. We never see or store your card details. We keep a

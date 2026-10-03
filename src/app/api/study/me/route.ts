@@ -3,11 +3,12 @@
  *
  *   GET                                   -> { member | null, study: { reading, signup, author, intro } }
  *   PATCH { name }                        -> { member }
+ *   PATCH { emailUpdates: boolean }       -> { emailUpdates }  join / leave the owner's email list
  *   PATCH { current, password }           -> { ok }   new password; other devices are logged out
  *   DELETE { password, confirm: "DELETE" } -> { ok }  removes the account and everything in it
  *
- * Deleting an account removes the member's own notes, words and days - it's
- * their data and their choice. (The owner's study is never touched here.)
+ * Deleting an account removes the member's own notes, words and days, and
+ * takes them off the email list - it's their data and their choice. (The owner's study is never touched here.)
  */
 import { getDb } from "@/lib/analytics/store";
 import {
@@ -20,8 +21,11 @@ import {
   getMember,
   getSettings,
   hashMemberPassword,
+  isSubscribed,
   memberCookie,
   slowDown,
+  subscribeStmt,
+  unsubscribeStmt,
 } from "@/lib/study/members";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +36,8 @@ export async function GET(req: Request) {
   const db = await getDb();
   if (!db) return Response.json({ error: "Accounts aren't available right now." }, { status: 503 });
   const [member, settings] = await Promise.all([getMember(req, db), getSettings(db)]);
-  return Response.json({ member, study: settings }, { headers: noStore });
+  const emailUpdates = member ? await isSubscribed(db, member.email) : false;
+  return Response.json({ member: member && { ...member, emailUpdates }, study: settings }, { headers: noStore });
 }
 
 export async function PATCH(req: Request) {
@@ -41,6 +46,11 @@ export async function PATCH(req: Request) {
   const member = await getMember(req, db);
   if (!member) return Response.json({ error: "Please log in.", login: true }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (typeof body.emailUpdates === "boolean") {
+    await (body.emailUpdates ? subscribeStmt(db, member.email, member.name, "study") : unsubscribeStmt(db, member.email)).run();
+    return Response.json({ emailUpdates: body.emailUpdates }, { headers: noStore });
+  }
 
   if (typeof body.password === "string") {
     const password = body.password;
@@ -80,6 +90,7 @@ export async function DELETE(req: Request) {
   await db.batch([
     ...MEMBER_TABLES.map((t) => db.prepare(`DELETE FROM ${t} WHERE member_id = ?1`).bind(member.id)),
     db.prepare("DELETE FROM ai_usage WHERE who = ?1").bind(member.id),
+    db.prepare("DELETE FROM email_list WHERE email = ?1").bind(member.email),
     db.prepare("DELETE FROM members WHERE id = ?1").bind(member.id),
   ]);
   return Response.json({ ok: true }, { headers: { "set-cookie": clearedMemberCookie(), ...noStore } });

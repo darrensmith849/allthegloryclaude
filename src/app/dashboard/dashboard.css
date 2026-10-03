@@ -1829,6 +1829,16 @@
 .dash-note-nav { padding: 6px 11px; font-size: 12px; white-space: nowrap; }
 
 /* Calendar */
+/* Month / Year on the left, ‹ Today › together on the right - one row. */
+.dash-note-calbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.dash-note-calnav { display: flex; gap: 4px; flex-wrap: nowrap; }
+.dash-note-calnav .dash-note-nav { min-width: 34px; }
 .dash-note-cal {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -2442,3 +2452,17 @@
 a.study-card:hover { border-color: rgba(216, 178, 90, 0.45); background: rgba(216, 178, 90, 0.05); }
 .study-card-title { font-family: var(--font-display), serif; font-size: 21px; color: var(--colour-ink-strong); }
 .study-card-text { font-size: 13.5px; line-height: 1.55; color: var(--colour-ink-soft); }
+.study-ask {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(216, 178, 90, 0.3);
+  background: rgba(216, 178, 90, 0.06);
+  font-size: 14px;
+  color: var(--colour-ink-strong);
+}

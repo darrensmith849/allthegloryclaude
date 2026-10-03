@@ -1,7 +1,10 @@
 /**
  * Make a member account for The Study.
  *
- *   POST { name, email, password, invite? } -> 200 + session cookie
+ *   POST { name, email, password, invite?, emailUpdates? } -> 200 + session cookie
+ *
+ * emailUpdates: they ticked "send me updates" - added to the owner's email
+ * list (email_list). Never ticked for them.
  *
  * Who can join is the owner's choice (study_settings.signup): only with an
  * invite link (the default), anyone, or nobody for now.
@@ -17,6 +20,7 @@ import {
   memberByEmail,
   memberCookie,
   normEmail,
+  subscribeStmt,
   noteAttempt,
   tooMany,
   usableInvite,
@@ -71,6 +75,7 @@ export async function POST(req: Request) {
         )
         .bind(id, email, name, rec.hash, rec.salt, rec.iterations, invite?.code ?? null, now),
       ...(invite ? [db.prepare("UPDATE member_invites SET uses = uses + 1 WHERE code = ?1").bind(invite.code)] : []),
+      ...(body.emailUpdates === true ? [subscribeStmt(db, email, name, "study")] : []),
     ]);
   } catch (e) {
     console.error("study join:", e);

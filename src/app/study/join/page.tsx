@@ -11,6 +11,7 @@ export default function StudyJoinPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailUpdates, setEmailUpdates] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,7 @@ export default function StudyJoinPage() {
       const r = await fetch("/api/study/join", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, password, invite }),
+        body: JSON.stringify({ name, email, password, invite, emailUpdates }),
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(data.error ?? "Couldn't make your account.");
@@ -97,6 +98,10 @@ export default function StudyJoinPage() {
               required
             />
             <p className="dash-word-hint">At least {MIN_PASSWORD} characters.</p>
+            <label className="dash-day-share mt-4">
+              <input type="checkbox" checked={emailUpdates} onChange={(e) => setEmailUpdates(e.target.checked)} />
+              Email me now and then about new studies, music and videos from All The Glory. Unsubscribe any time.
+            </label>
             {error && (
               <div className="mt-3 text-[13px] text-[#f1a07d]" role="alert">
                 {error}

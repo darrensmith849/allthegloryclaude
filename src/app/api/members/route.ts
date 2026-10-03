@@ -2,7 +2,10 @@
  * The owner's controls for The Study (/dashboard/members). Admin session
  * required (middleware).
  *
- *   GET                                   -> { settings, invites, members }
+ *   GET                                   -> { settings, invites, members, emailList }
+ *   GET ?export=list                      -> CSV of everyone who asked for updates
+ *   GET ?export=members                   -> CSV of every Study member
+ *   (CSV columns EMAIL, FIRSTNAME, LASTNAME ... import straight into Brevo)
  *   PATCH { settings: {...} }             -> { settings }
  *   PATCH { member: id, disabled: bool }  -> { ok }      pause / un-pause an account
  *   POST  { invite: { label?, maxUses? } } -> { invite }  new invite link (maxUses null = many people, default 1)
@@ -17,11 +20,64 @@ export const dynamic = "force-dynamic";
 const noStore = { "cache-control": "no-store" };
 const unavailable = () => Response.json({ error: "Storage isn't available here." }, { status: 503 });
 
-export async function GET() {
+const csvCell = (v: unknown) => {
+  const s = v == null ? "" : String(v);
+  // Quote, and stop spreadsheet apps reading a leading = + - @ as a formula.
+  return `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`;
+};
+const csv = (rows: unknown[][]) => rows.map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+const splitName = (name: string | null) => {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  return [parts[0] ?? "", parts.slice(1).join(" ")];
+};
+const day = (ms: number | null) => (ms ? new Date(ms).toISOString().slice(0, 10) : "");
+
+async function exportCsv(which: string) {
+  const db = await getDb();
+  if (!db) return unavailable();
+  const stamp = new Date().toISOString().slice(0, 10);
+  if (which === "members") {
+    const { results } = await db
+      .prepare(
+        "SELECT m.email, m.name, m.created_at, m.last_seen, (e.email IS NOT NULL AND e.unsubscribed_at IS NULL) AS updates " +
+          "FROM members m LEFT JOIN email_list e ON e.email = m.email ORDER BY m.created_at",
+      )
+      .all<{ email: string; name: string; created_at: number; last_seen: number | null; updates: number }>();
+    const body = csv([
+      ["EMAIL", "FIRSTNAME", "LASTNAME", "JOINED", "LAST_SEEN", "EMAIL_UPDATES"],
+      ...results.map((r) => [r.email, ...splitName(r.name), day(r.created_at), day(r.last_seen), r.updates ? "yes" : "no"]),
+    ]);
+    return new Response(body, {
+      headers: {
+        "content-type": "text/csv; charset=utf-8",
+        "content-disposition": `attachment; filename="study-members-${stamp}.csv"`,
+        "cache-control": "no-store",
+      },
+    });
+  }
+  const { results } = await db
+    .prepare("SELECT email, name, source, subscribed_at FROM email_list WHERE unsubscribed_at IS NULL ORDER BY subscribed_at")
+    .all<{ email: string; name: string | null; source: string; subscribed_at: number }>();
+  const body = csv([
+    ["EMAIL", "FIRSTNAME", "LASTNAME", "SOURCE", "SUBSCRIBED"],
+    ...results.map((r) => [r.email, ...splitName(r.name), r.source === "study" ? "The Study" : "Newsletter", day(r.subscribed_at)]),
+  ]);
+  return new Response(body, {
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="alltheglory-email-list-${stamp}.csv"`,
+      "cache-control": "no-store",
+    },
+  });
+}
+
+export async function GET(req: Request) {
+  const which = new URL(req.url).searchParams.get("export");
+  if (which) return exportCsv(which);
   const db = await getDb();
   if (!db) return unavailable();
   try {
-    const [settings, { results: invites }, { results: members }, { results: notes }, { results: words }] =
+    const [settings, { results: invites }, { results: members }, { results: notes }, { results: words }, { results: list }] =
       await Promise.all([
         getSettings(db),
         db.prepare("SELECT * FROM member_invites ORDER BY created_at DESC").all<InviteRow>(),
@@ -42,7 +98,11 @@ export async function GET() {
         db
           .prepare("SELECT member_id, COUNT(*) AS n FROM member_words WHERE deleted_at IS NULL GROUP BY member_id")
           .all<{ member_id: string; n: number }>(),
+        db
+          .prepare("SELECT email, source FROM email_list WHERE unsubscribed_at IS NULL")
+          .all<{ email: string; source: string }>(),
       ]);
+    const subscribed = new Set(list.map((l) => l.email));
     return Response.json(
       {
         settings,
@@ -65,7 +125,13 @@ export async function GET() {
           notes: Number(notes.find((x) => x.member_id === m.id)?.n ?? 0),
           days: Number(notes.find((x) => x.member_id === m.id)?.days ?? 0),
           words: Number(words.find((x) => x.member_id === m.id)?.n ?? 0),
+          emailUpdates: subscribed.has(m.email),
         })),
+        emailList: {
+          total: list.length,
+          study: list.filter((l) => l.source === "study").length,
+          newsletter: list.filter((l) => l.source === "newsletter").length,
+        },
       },
       { headers: noStore },
     );

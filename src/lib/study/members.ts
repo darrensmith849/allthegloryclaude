@@ -266,3 +266,27 @@ export const MEMBER_TABLES = [
   "member_sessions",
   "member_resets",
 ] as const;
+
+// ── The owner's email list (table email_list) ────────────────────
+
+export async function isSubscribed(db: D1Db, email: string): Promise<boolean> {
+  const row = await db
+    .prepare("SELECT 1 AS ok FROM email_list WHERE email = ?1 AND unsubscribed_at IS NULL")
+    .bind(email)
+    .first<{ ok: number }>()
+    .catch(() => null);
+  return Boolean(row);
+}
+
+// Adds someone who asked for updates (or re-subscribes them).
+export const subscribeStmt = (db: D1Db, email: string, name: string | null, source: "newsletter" | "study") =>
+  db
+    .prepare(
+      "INSERT INTO email_list (email, name, source, subscribed_at) VALUES (?1, ?2, ?3, ?4) " +
+        "ON CONFLICT(email) DO UPDATE SET name = COALESCE(excluded.name, email_list.name), unsubscribed_at = NULL, " +
+        "subscribed_at = CASE WHEN email_list.unsubscribed_at IS NULL THEN email_list.subscribed_at ELSE excluded.subscribed_at END",
+    )
+    .bind(email, name, source, Date.now());
+
+export const unsubscribeStmt = (db: D1Db, email: string) =>
+  db.prepare("UPDATE email_list SET unsubscribed_at = ?2 WHERE email = ?1").bind(email, Date.now());

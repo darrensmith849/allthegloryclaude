@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { canRead, useMe } from "@/components/study/shell";
+import { useEffect, useState } from "react";
+import { canRead, studyName, useMe } from "@/components/study/shell";
 import { dayLabel, todayDay } from "@/lib/dashboard/notes";
 
 // The Study's front door.
@@ -9,6 +10,36 @@ export default function StudyHome() {
   const me = useMe();
   const readable = canRead(me);
   const today = todayDay();
+
+  // Ask members once (per device) if they'd like email updates.
+  const askKey = me.member ? `atg:study:${me.member.id}:emailAsk` : "";
+  const [asked, setAsked] = useState(true);
+  const [thanks, setThanks] = useState(false);
+  useEffect(() => {
+    if (!askKey) return;
+    try {
+      setAsked(window.localStorage.getItem(askKey) === "1");
+    } catch {
+      setAsked(false);
+    }
+  }, [askKey]);
+  const answer = async (yes: boolean) => {
+    try {
+      window.localStorage.setItem(askKey, "1");
+    } catch {
+      // private window - they'll just be asked again
+    }
+    if (yes) {
+      await fetch("/api/study/me", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ emailUpdates: true }),
+      }).catch(() => {});
+      setThanks(true);
+      void me.refresh();
+    }
+    setAsked(true);
+  };
 
   return (
     <div className="study-home">
@@ -21,13 +52,29 @@ export default function StudyHome() {
 
       {me.member && <p className="study-home-hello">Welcome back, {me.member.name.split(" ")[0]}.</p>}
 
+      {me.member && !me.member.emailUpdates && !asked && (
+        <div className="study-ask">
+          <span>Would you like the occasional email when new studies, music or videos go up?</span>
+          <span className="flex gap-2">
+            <button type="button" className="dash-btn dash-btn-primary" onClick={() => answer(true)}>
+              Yes, email me
+            </button>
+            <button type="button" className="dash-btn dash-btn-ghost" onClick={() => answer(false)}>
+              No thanks
+            </button>
+          </span>
+        </div>
+      )}
+      {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
+
       <div className="study-cards">
         {readable && (
           <Link href="/study/read" className="study-card">
             <span className="eyebrow eyebrow-amber">Today · {dayLabel(today, { weekday: false })}</span>
-            <span className="study-card-title">Read the study</span>
+            <span className="study-card-title">{studyName(me.study)}</span>
             <span className="study-card-text">
-              {me.study?.author ? `${me.study.author}'s notes` : "The notes"}, day by day through the year.
+              Follow along with {me.study?.author && me.study.author !== "All The Glory" ? `${me.study.author}'s` : "the"} notes, day
+              by day through the year.
             </span>
           </Link>
         )}

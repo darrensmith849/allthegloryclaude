@@ -583,16 +583,17 @@ export function StudyNotes() {
           <Panel
             eyebrow="Reading plan"
             title={calView === "year" ? month.slice(0, 4) : monthName}
-            action={
-              <div className="flex gap-1 flex-wrap justify-end">
-                <div className="dash-toggle" role="group" aria-label="Calendar view">
-                  <button type="button" className={calView === "month" ? "is-on" : ""} onClick={() => setCalView("month")}>
-                    Month
-                  </button>
-                  <button type="button" className={calView === "year" ? "is-on" : ""} onClick={() => setCalView("year")}>
-                    Year
-                  </button>
-                </div>
+          >
+            <div className="dash-note-calbar">
+              <div className="dash-toggle" role="group" aria-label="Calendar view">
+                <button type="button" className={calView === "month" ? "is-on" : ""} onClick={() => setCalView("month")}>
+                  Month
+                </button>
+                <button type="button" className={calView === "year" ? "is-on" : ""} onClick={() => setCalView("year")}>
+                  Year
+                </button>
+              </div>
+              <div className="dash-note-calnav">
                 <button
                   type="button"
                   className="dash-btn dash-btn-ghost dash-note-nav"
@@ -613,8 +614,7 @@ export function StudyNotes() {
                   ›
                 </button>
               </div>
-            }
-          >
+            </div>
             {calView === "year" && (
               <div className="dash-note-year">
                 {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
