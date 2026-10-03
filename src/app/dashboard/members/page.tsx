@@ -32,6 +32,12 @@ interface MemberRow {
   helper: boolean;
   invitedVia: string | null;
 }
+interface Subscriber {
+  email: string;
+  name: string;
+  source: string;
+  subscribedAt: number;
+}
 interface EmailCounts {
   total: number;
   study: number;
@@ -94,6 +100,8 @@ export default function MembersPage() {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [emailList, setEmailList] = useState<EmailCounts | null>(null);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subQuery, setSubQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [author, setAuthor] = useState("");
@@ -106,7 +114,7 @@ export default function MembersPage() {
   const [showStopped, setShowStopped] = useState(false);
 
   function load() {
-    api<{ settings: StudySettings; invites: Invite[]; members: MemberRow[]; emailList: EmailCounts }>("GET")
+    api<{ settings: StudySettings; invites: Invite[]; members: MemberRow[]; emailList: EmailCounts; subscribers: Subscriber[] }>("GET")
       .then((d) => {
         setSettings(d.settings);
         setAuthor(d.settings.author);
@@ -114,6 +122,7 @@ export default function MembersPage() {
         setInvites(d.invites);
         setMembers(d.members);
         setEmailList(d.emailList);
+        setSubscribers(d.subscribers ?? []);
         setError(null);
       })
       .catch((e: Error) => setError(e.message));
@@ -159,6 +168,18 @@ export default function MembersPage() {
       setResetLinks((r) => ({ ...r, [m.id]: `${origin}${path}` }));
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't make a reset link.");
+    }
+  }
+
+  async function unsubscribe(sub: Subscriber) {
+    if (!confirm(`Take ${sub.email} off the email list? Do this when someone asks to stop getting emails.`)) return;
+    try {
+      await api("PATCH", { unsubscribe: sub.email });
+      setSubscribers((list) => list.filter((x) => x.email !== sub.email));
+      setMembers((list) => list.map((m) => (m.email === sub.email ? { ...m, emailUpdates: false } : m)));
+      setEmailList((c) => c && { ...c, total: c.total - 1, [sub.source === "The Study" ? "study" : "newsletter"]: c[sub.source === "The Study" ? "study" : "newsletter"] - 1 });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't change that.");
     }
   }
 
@@ -412,24 +433,67 @@ export default function MembersPage() {
         </div>
 
         <div className="dash-col-12">
-          <Panel eyebrow="Staying in touch" title="Your email list">
+          <Panel
+            eyebrow="Staying in touch"
+            title={`Your email list${emailList ? ` · ${emailList.total}` : ""}`}
+            action={
+              <div className="flex gap-2 flex-wrap">
+                <a className="dash-btn dash-btn-primary dash-note-nav" href="/api/members?export=list">
+                  Download list (CSV)
+                </a>
+                <a className="dash-btn dash-btn-ghost dash-note-nav" href="/api/members?export=members">
+                  All members (CSV)
+                </a>
+              </div>
+            }
+          >
             <p className="dash-word-hint">
               {emailList
-                ? `${emailList.total} ${emailList.total === 1 ? "person has" : "people have"} asked for updates - ${emailList.newsletter} from the newsletter box on the site, ${emailList.study} from The Study.`
-                : "Loading…"}
+                ? `Everyone who said yes to email updates - ${emailList.study} from The Study, ${emailList.newsletter} from the newsletter box on the site.`
+                : "Loading…"}{" "}
+              Only send news to this list. The CSV imports straight into Brevo.
             </p>
-            <div className="flex gap-2 flex-wrap mt-3">
-              <a className="dash-btn dash-btn-primary" href="/api/members?export=list">
-                Download email list (CSV)
-              </a>
-              <a className="dash-btn dash-btn-ghost" href="/api/members?export=members">
-                Download all members (CSV)
-              </a>
-            </div>
-            <p className="dash-word-hint mt-3">
-              The email list imports straight into Brevo. Only send news and updates to the email list - it&apos;s
-              everyone who said yes. The members file is for messages about their account or the study itself.
-            </p>
+            {subscribers.length > 6 && (
+              <input
+                type="search"
+                className="dash-input mt-3"
+                placeholder="Search by name or email"
+                value={subQuery}
+                onChange={(e) => setSubQuery(e.target.value)}
+              />
+            )}
+            {subscribers.length === 0 ? (
+              <p className="dash-word-hint mt-3">Nobody yet.</p>
+            ) : (
+              <div className="dash-email-table">
+                <div className="dash-email-row is-head">
+                  <span>Name</span>
+                  <span>Email</span>
+                  <span>Signed up from</span>
+                  <span>Since</span>
+                  <span />
+                </div>
+                {subscribers
+                  .filter((sub) =>
+                    !subQuery.trim()
+                      ? true
+                      : `${sub.name} ${sub.email}`.toLowerCase().includes(subQuery.trim().toLowerCase()),
+                  )
+                  .map((sub) => (
+                    <div key={sub.email} className="dash-email-row">
+                      <span className="dash-members-name">{sub.name || "-"}</span>
+                      <a href={`mailto:${sub.email}`} className="dash-email-addr">
+                        {sub.email}
+                      </a>
+                      <span>{sub.source}</span>
+                      <span>{when(sub.subscribedAt)}</span>
+                      <button type="button" className="dash-word-link" onClick={() => unsubscribe(sub)}>
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
           </Panel>
         </div>
 
@@ -443,7 +507,7 @@ export default function MembersPage() {
                 <div key={m.id} className={`dash-members-row ${m.disabled ? "is-muted" : ""}`}>
                   <div className="min-w-0 flex-1">
                     <div className="dash-members-name">
-                      {m.name} {m.emailUpdates && <span title="On your email list">✉</span>}{" "}
+                      {m.name} {m.emailUpdates && <span className="dash-email-badge">✉ Email updates</span>}{" "}
                       {m.helper && <span className="dash-helper-badge">Helper</span>}{" "}
                       {m.disabled && <span className="dash-word-hint">· paused</span>}
                     </div>

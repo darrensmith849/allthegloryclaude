@@ -92,7 +92,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   // The left menu: only the study - like the owner's dashboard menu.
   const nav = [
     { href: "/study", label: me.member ? "Today" : "Home", glyph: "✦" },
-    ...(readable ? [{ href: "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
+    ...(readable ? [{ href: me.member ? "/study/journal?daniel=1" : "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
     ...(me.member
       ? [
           { href: "/study/journal", label: "My journal", glyph: "✎" },
@@ -133,7 +133,12 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         <ThemeSwitch className="mt-4 study-side-theme" />
         <nav className="study-side-nav" aria-label="The Study">
           {nav.map((n) => {
-            const active = n.href === "/study" ? pathname === "/study" : pathname?.startsWith(n.href);
+            const active =
+              n.href === "/study"
+                ? pathname === "/study"
+                : n.href.includes("daniel=1")
+                  ? pathname?.startsWith("/study/read")
+                  : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
             return (
               <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
                 <span className="dash-nav-glyph">{n.glyph}</span>

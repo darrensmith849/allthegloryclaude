@@ -234,7 +234,7 @@ export default function StudyHome() {
             </span>
           </a>
           {readable && (
-            <Link className="study-today-step" href={studyToday ? `/study/read?on=${today.slice(5)}` : "/study/read"}>
+            <Link className="study-today-step" href={me.member ? `/study/journal?day=${today}&daniel=1` : "/study/read"}>
               <span className="study-today-num">2</span>
               <span>
                 <strong>{author ? `Read ${author}'s notes` : "Read the study notes"}</strong>
@@ -293,7 +293,7 @@ export default function StudyHome() {
 
       <div className="study-cards">
         {readable && (
-          <Link href="/study/read" className="study-card">
+          <Link href={me.member ? "/study/journal?daniel=1" : "/study/read"} className="study-card">
             <span className="eyebrow eyebrow-amber">Follow along</span>
             <span className="study-card-title">{studyName(me.study)}</span>
             <span className="study-card-text">{me.study?.intro || STUDY_HEART}</span>

@@ -124,7 +124,9 @@ export function StudyNotes() {
   const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean }>({
     notes: true,
     words: true,
+    study: true,
   });
+  const studyOpen = sections.study !== false; // the owner's study in a member's day - open unless minimised
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
@@ -218,6 +220,24 @@ export function StudyNotes() {
       .catch(() => {});
   }, []);
 
+  // Open the owner's study in this day and bring it into view.
+  function showStudy() {
+    if (!isDay(day)) openDay(todayDay());
+    setSections((s) => {
+      const next = { ...s, study: true };
+      writeStore(SECTIONS_KEY, next);
+      return next;
+    });
+    window.setTimeout(() => document.getElementById("daniel-study")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+  }
+  // ?daniel=1 (from the menu or home page) opens it straight away.
+  useEffect(() => {
+    if (client.kind !== "member" || !new URLSearchParams(window.location.search).get("daniel")) return;
+    const t = window.setTimeout(showStudy, 600);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client.kind, studyOn.size]);
+
   // Members: a short how-it-works guide until they've seen it.
   const [guide, setGuide] = useState(false);
   useEffect(() => {
@@ -282,7 +302,7 @@ export function StudyNotes() {
 
   function toggleSection(key: "notes" | "words" | "study") {
     setSections((s) => {
-      const next = { ...s, [key]: !s[key] };
+      const next = { ...s, [key]: key === "study" ? s.study === false : !s[key] };
       writeStore(SECTIONS_KEY, next);
       return next;
     });
@@ -669,12 +689,9 @@ export function StudyNotes() {
             All words
           </a>
           {client.studyUrl && (
-            <a
-              className="dash-btn dash-btn-primary"
-              href={isDay(day) && studyOn.has(day.slice(5)) ? `${client.studyUrl}?on=${day.slice(5)}` : client.studyUrl}
-            >
-              {client.studyName} →
-            </a>
+            <button type="button" className="dash-btn dash-btn-primary" onClick={showStudy}>
+              {client.studyName} ▾
+            </button>
           )}
         </div>
       </div>
@@ -1134,31 +1151,30 @@ export function StudyNotes() {
                 </button>
               ))}
 
-            {client.studyUrl && isDay(day) && !studyOn.has(day.slice(5)) && studyOn.size > 0 && (
-              <a className="dash-study-link is-quiet" href={client.studyUrl}>
-                <span className="eyebrow">{client.studyName}</span>
-                <span className="dash-study-link-title">
-                  {client.studyAuthor ?? "The study"} hasn&apos;t written for {dayLabel(day, { weekday: false })} yet - read the latest day
-                </span>
-                <span className="dash-study-link-go">Open →</span>
-              </a>
-            )}
-            {client.studyUrl && isDay(day) && studyOn.has(day.slice(5)) && (
-              <div className={`dash-study-peek ${sections.study ? "is-open" : ""}`}>
+            {client.studyUrl && isDay(day) && studyOn.size > 0 && (
+              <div className={`dash-daniel ${studyOpen ? "is-open" : ""}`} id="daniel-study">
                 <button
                   type="button"
-                  className="dash-study-link"
+                  className="dash-daniel-head"
                   onClick={() => toggleSection("study")}
-                  aria-expanded={Boolean(sections.study)}
+                  aria-expanded={studyOpen}
                 >
-                  <span className="eyebrow eyebrow-amber">
-                    {client.studyAuthor ? `${client.studyAuthor}'s notes` : "The study"} for {dayLabel(day, { weekday: false })}
+                  <span className="dash-daniel-label">
+                    <span className="eyebrow eyebrow-amber">{client.studyName}</span>
+                    <span className="dash-daniel-sub">
+                      {studyOn.has(day.slice(5))
+                        ? studyOn.get(day.slice(5)) || `For ${dayLabel(day, { weekday: false })}`
+                        : `Nothing for ${dayLabel(day, { weekday: false })} yet - see the latest`}
+                    </span>
                   </span>
-                  <span className="dash-study-link-title">{studyOn.get(day.slice(5)) || "Read the notes"}</span>
-                  <span className="dash-study-link-go">{sections.study ? "Hide ▴" : "Read ▾"}</span>
+                  <span className="dash-daniel-toggle">{studyOpen ? "Minimise ▴" : "Open ▾"}</span>
                 </button>
-                {sections.study && (
-                  <StudyPeek on={day.slice(5)} studyUrl={client.studyUrl} author={client.studyAuthor} />
+                {studyOpen && (
+                  <StudyPeek
+                    on={studyOn.has(day.slice(5)) ? day.slice(5) : undefined}
+                    studyUrl={client.studyUrl}
+                    author={client.studyAuthor}
+                  />
                 )}
               </div>
             )}

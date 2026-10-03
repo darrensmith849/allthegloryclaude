@@ -2,13 +2,14 @@
  * The owner's controls for The Study (/dashboard/members). Admin session
  * required (middleware).
  *
- *   GET                                   -> { settings, invites, members, emailList }
+ *   GET                                   -> { settings, invites, members, emailList, subscribers }
  *   GET ?export=list                      -> CSV of everyone who asked for updates
  *   GET ?export=members                   -> CSV of every Study member
  *   (CSV columns EMAIL, FIRSTNAME, LASTNAME ... import straight into Brevo)
  *   PATCH { settings: {...} }             -> { settings }
  *   PATCH { member: id, disabled: bool }  -> { ok }      pause / un-pause an account
  *   PATCH { member: id, helper: bool }    -> { ok }      let them answer members' questions
+ *   PATCH { unsubscribe: email }          -> { ok }      take someone off the email list (kept as unsubscribed)
  *   POST  { invite: { label?, maxUses? } } -> { invite }  new invite link (maxUses null = many people, default 1)
  *   POST  { reset: memberId }             -> { path }    one-time password reset link (7 days)
  *   DELETE ?invite=code                   -> { ok }      stop an invite link working
@@ -105,8 +106,8 @@ export async function GET(req: Request) {
           .prepare("SELECT member_id, COUNT(*) AS n FROM member_words WHERE deleted_at IS NULL GROUP BY member_id")
           .all<{ member_id: string; n: number }>(),
         db
-          .prepare("SELECT email, source FROM email_list WHERE unsubscribed_at IS NULL")
-          .all<{ email: string; source: string }>(),
+          .prepare("SELECT email, name, source, subscribed_at FROM email_list WHERE unsubscribed_at IS NULL ORDER BY subscribed_at DESC")
+          .all<{ email: string; name: string | null; source: string; subscribed_at: number }>(),
       ]);
     const subscribed = new Set(list.map((l) => l.email));
     return Response.json(
@@ -136,6 +137,12 @@ export async function GET(req: Request) {
           words: Number(words.find((x) => x.member_id === m.id)?.n ?? 0),
           emailUpdates: subscribed.has(m.email),
         })),
+        subscribers: list.map((l) => ({
+          email: l.email,
+          name: l.name ?? "",
+          source: l.source === "study" ? "The Study" : "Newsletter",
+          subscribedAt: l.subscribed_at,
+        })),
         emailList: {
           total: list.length,
           study: list.filter((l) => l.source === "study").length,
@@ -161,6 +168,11 @@ export async function PATCH(req: Request) {
   try {
     if (body.settings && typeof body.settings === "object") {
       return Response.json({ settings: await saveSettings(db, body.settings) });
+    }
+    const unsubscribe = (body as { unsubscribe?: unknown }).unsubscribe;
+    if (typeof unsubscribe === "string") {
+      await db.prepare("UPDATE email_list SET unsubscribed_at = ?2 WHERE email = ?1").bind(unsubscribe.toLowerCase(), Date.now()).run();
+      return Response.json({ ok: true });
     }
     if (typeof body.member === "string" && typeof (body as { helper?: unknown }).helper === "boolean") {
       const helper = (body as { helper: boolean }).helper;
