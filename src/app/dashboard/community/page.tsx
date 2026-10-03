@@ -242,15 +242,15 @@ export default function CommunityAdminPage() {
                     className="dash-textarea dash-word-field mt-2"
                     placeholder="Your answer…"
                     value={answers[q.id]?.text ?? ""}
-                    onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? false } }))}
+                    onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? true } }))}
                   />
                   <label className="dash-day-share mt-2">
                     <input
                       type="checkbox"
-                      checked={answers[q.id]?.publish ?? false}
+                      checked={answers[q.id]?.publish ?? true}
                       onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: a[q.id]?.text ?? "", publish: e.target.checked } }))}
                     />
-                    Also share as a Q&amp;A with all members (the asker isn&apos;t named)
+                    Share the question and answer for everyone - members and The Study page (the asker is never named). Untick if it&apos;s personal.
                   </label>
                   <div className="flex gap-2 mt-2">
                     <button
@@ -289,7 +289,7 @@ export default function CommunityAdminPage() {
                     </div>
                     <div className="flex gap-3 mt-2">
                       <button type="button" className="dash-word-link" onClick={() => setPublished(q, !q.published)}>
-                        {q.published ? "Stop sharing as Q&A" : "Share as Q&A with members"}
+                        {q.published ? "Stop sharing" : "Share for everyone (anonymous)"}
                       </button>
                       <button type="button" className="dash-word-link" onClick={() => removeQuestion(q)}>
                         Remove

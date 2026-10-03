@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/videos",
     "/commissions",
     "/testimony",
-    "/study",
+    "/the-study",
     "/contact",
     "/give",
     "/privacy",

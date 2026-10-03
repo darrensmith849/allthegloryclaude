@@ -16,8 +16,11 @@ export default function StudyJoinPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Joining happens on The Study's page on the main site (invites too).
   useEffect(() => {
-    setInvite(new URLSearchParams(window.location.search).get("invite") ?? "");
+    const code = new URLSearchParams(window.location.search).get("invite");
+    setInvite(code ?? "");
+    window.location.replace(code ? `/the-study?invite=${encodeURIComponent(code)}` : "/the-study#join");
   }, []);
 
   async function submit(e: React.FormEvent) {

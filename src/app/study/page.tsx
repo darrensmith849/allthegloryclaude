@@ -7,15 +7,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useAlbumPlayer } from "@/components/study/album-player";
 import { canRead, studyName, useMe } from "@/components/study/shell";
-import { album } from "@/content/album";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
-import { bibleAppDay, PLAN } from "@/lib/study/plan";
+import { useRouter } from "next/navigation";
+import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
 
 export default function StudyHome() {
   const me = useMe();
-  const player = useAlbumPlayer();
+  const router = useRouter();
+  // Visitors see The Study on the main site; this page is members' home.
+  useEffect(() => {
+    if (me.loaded && !me.member) router.replace("/the-study");
+  }, [me.loaded, me.member, router]);
   const readable = canRead(me);
   const today = todayDay();
   const n = planDay(today).n;
@@ -221,9 +224,7 @@ export default function StudyHome() {
           <Link href="/study/read" className="study-card">
             <span className="eyebrow eyebrow-amber">Follow along</span>
             <span className="study-card-title">{studyName(me.study)}</span>
-            <span className="study-card-text">
-              {author ? `${author}'s` : "The"} notes and word studies, day by day through the year.
-            </span>
+            <span className="study-card-text">{me.study?.intro || STUDY_HEART}</span>
           </Link>
         )}
         {me.member && (
@@ -262,29 +263,6 @@ export default function StudyHome() {
         </div>
       </div>
 
-      {/* ── The album ───────────────────────────────────────── */}
-      <section className="study-album">
-        <Image src={album.coverImage} alt="From Darkness To Light - artwork by Debbie Clark" width={717} height={528} className="study-album-art" />
-        <div className="study-album-text">
-          <div className="eyebrow eyebrow-amber">The album</div>
-          <h2 className="study-album-title">From Darkness To Light</h2>
-          <div className="study-album-meta">A worship album · {album.tracks.length} songs · free to download</div>
-          <p className="study-card-text">
-            Seven songs, each built on a verse - from &ldquo;It is finished&rdquo; to the great exchange of 2 Corinthians 5:21.
-            Play it quietly while you read, or after.
-          </p>
-          <div className="flex gap-2 flex-wrap mt-4">
-            {player && (
-              <button type="button" className="dash-btn dash-btn-primary" onClick={() => player.setOpen(true)}>
-                ▶ Listen while you study
-              </button>
-            )}
-            <a className="dash-btn dash-btn-ghost" href={album.path}>
-              Visit the album ↗
-            </a>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

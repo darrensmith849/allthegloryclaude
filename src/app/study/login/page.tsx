@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { forgetMe, useMe } from "@/components/study/shell";
 
 // Only same-site paths inside /study are followed after logging in.
@@ -14,6 +14,12 @@ export default function StudyLoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Logging in happens on The Study's page on the main site.
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    window.location.replace(`/the-study?login=1${next ? `&next=${encodeURIComponent(next)}` : ""}`);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

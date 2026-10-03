@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FoldNotes, FoldWords } from "@/components/study/fold-notes";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import { dayLabel, formatPassage, passageOf, planDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
-import { bibleAppDay } from "@/lib/study/plan";
+import { bibleAppDay, STUDY_HEART } from "@/lib/study/plan";
 import type { ReaderData } from "@/lib/study/types";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
@@ -217,7 +217,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
         <div className="dash-reader-page">
           <p className="dash-reader-empty">{error.message}</p>
           {error.login && (
-            <a className="dash-btn dash-btn-primary mt-4 inline-flex" href={`/study/login?next=${encodeURIComponent(basePath)}`}>
+            <a className="dash-btn dash-btn-primary mt-4 inline-flex" href={`/the-study?login=1&next=${encodeURIComponent(basePath)}`}>
               Log in
             </a>
           )}
@@ -291,6 +291,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
 
       <aside className="dash-reader-side">
         {calendar}
+        <p className="dash-reader-heart">{data.study.intro || STUDY_HEART}</p>
         {days.length > 0 && (
           <details className="dash-reader-contents">
             <summary>
@@ -321,7 +322,6 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
       </aside>
 
       <div className="dash-reader-main">
-        {data.study.intro && !params.toString() && <p className="dash-reader-intro">{data.study.intro}</p>}
 
         {!day ? (
           <div className="dash-reader-page">

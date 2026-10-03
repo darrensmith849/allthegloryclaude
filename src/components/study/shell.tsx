@@ -10,7 +10,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
-import { AlbumPlayerProvider, ListenButton } from "./album-player";
 import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
 
@@ -122,57 +121,54 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="study-root study-app">
-      <AlbumPlayerProvider>
-        <aside className="dash-sidebar study-sidebar">
-          <Link href="/study" className="study-side-brand">
-            <Image src="/media/dove-mark.png" alt="" width={40} height={40} className="study-brand-dove" priority />
-            <span>
-              <span className="eyebrow eyebrow-amber block">All The Glory</span>
-              <span className="study-side-title">The Study</span>
-            </span>
-          </Link>
-          <ThemeSwitch className="mt-4 study-side-theme" />
-          <nav className="study-side-nav" aria-label="The Study">
-            {nav.map((n) => {
-              const active = n.href === "/study" ? pathname === "/study" : pathname?.startsWith(n.href);
-              return (
-                <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
-                  <span className="dash-nav-glyph">{n.glyph}</span>
-                  <span>{n.label}</span>
+      <aside className="dash-sidebar study-sidebar">
+        <Link href="/study" className="study-side-brand">
+          <Image src="/media/dove-mark.png" alt="" width={40} height={40} className="study-brand-dove" priority />
+          <span>
+            <span className="eyebrow eyebrow-amber block">All The Glory</span>
+            <span className="study-side-title">The Study</span>
+          </span>
+        </Link>
+        <ThemeSwitch className="mt-4 study-side-theme" />
+        <nav className="study-side-nav" aria-label="The Study">
+          {nav.map((n) => {
+            const active = n.href === "/study" ? pathname === "/study" : pathname?.startsWith(n.href);
+            return (
+              <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
+                <span className="dash-nav-glyph">{n.glyph}</span>
+                <span>{n.label}</span>
+              </Link>
+            );
+          })}
+          {me.loaded && !me.member && (
+            <>
+              <Link href={`/the-study?login=1&next=${encodeURIComponent(pathname ?? "/study")}`} className="dash-nav-link">
+                <span className="dash-nav-glyph">→</span>
+                <span>Log in</span>
+              </Link>
+              {me.study?.signup === "open" && (
+                <Link href="/the-study#join" className="dash-btn dash-btn-primary study-side-join">
+                  Join The Study
                 </Link>
-              );
-            })}
-            {me.loaded && !me.member && (
-              <>
-                <Link href={`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`} className="dash-nav-link">
-                  <span className="dash-nav-glyph">→</span>
-                  <span>Log in</span>
-                </Link>
-                {me.study?.signup === "open" && (
-                  <Link href="/study/join" className="dash-btn dash-btn-primary study-side-join">
-                    Join The Study
-                  </Link>
-                )}
-              </>
-            )}
-          </nav>
-          <div className="study-side-foot">
-            <ListenButton side />
-            <a href="/" className="dash-nav-link text-[12px] opacity-75">
-              ← alltheglory.co.za
-            </a>
-            {me.member && (
-              <button type="button" className="dash-nav-link text-[12px] opacity-75 text-left" onClick={logout}>
-                Log out
-              </button>
-            )}
-          </div>
-        </aside>
-        <main className="dash-main study-main">
-          {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
-          <StudyFooter />
-        </main>
-      </AlbumPlayerProvider>
+              )}
+            </>
+          )}
+        </nav>
+        <div className="study-side-foot">
+          <a href="/" className="dash-nav-link text-[12px] opacity-75">
+            ← alltheglory.co.za
+          </a>
+          {me.member && (
+            <button type="button" className="dash-nav-link text-[12px] opacity-75 text-left" onClick={logout}>
+              Log out
+            </button>
+          )}
+        </div>
+      </aside>
+      <main className="dash-main study-main">
+        {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
+        <StudyFooter />
+      </main>
     </div>
   );
 }
@@ -225,7 +221,6 @@ function StudyFooter() {
       <div className="study-foot-mark">All The Glory</div>
       <nav className="study-foot-links" aria-label="All The Glory">
         <a href="/">Home</a>
-        <a href="/album/from-darkness-to-light">The album</a>
         <a href="/videos">Videos</a>
         <a href="/testimony">Testimony</a>
         <a href="/about">About</a>
@@ -245,7 +240,7 @@ export function MemberOnly({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   useEffect(() => {
-    if (me.loaded && !me.member) router.replace(`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`);
+    if (me.loaded && !me.member) router.replace(`/the-study?login=1&next=${encodeURIComponent(pathname ?? "/study")}`);
   }, [me.loaded, me.member, router, pathname]);
   if (!me.member) return <p className="dash-reader-empty">{me.loaded ? "Taking you to log in…" : "Opening…"}</p>;
   return <>{children}</>;

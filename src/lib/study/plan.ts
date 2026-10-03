@@ -4,6 +4,11 @@
 // in the NIV (in the app, whichever translation the reader last chose) - so
 // days link straight to it rather than copying the plan.
 
+// Why the owner shares his study - in his words (the default welcome line;
+// the owner can change it on /dashboard/members).
+export const STUDY_HEART =
+  "Daniel has a heart to share how he's studying the Bible - the questions he asks himself as he reads, what God is saying to him, and his own study of the Word. It's here as an encouragement: we're all still learning.";
+
 export const PLAN = {
   name: "The One Year Chronological Bible",
   edition: "NIV · Tyndale",

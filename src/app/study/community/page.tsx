@@ -252,8 +252,8 @@ function Community() {
               <p className="dash-word-hint mb-3">
                 Ask about a passage, a word, or something you&apos;re working through. Your question goes privately to{" "}
                 {author}
-                {" "}or one of the trusted helpers, and the answer comes back here. Some answers
-                may be shared with all members as a Q&amp;A - your name is never shown.
+                {" "}or one of the trusted helpers, and the answer comes back here. Answers are shared so everyone
+                can learn - your name is never shown.
               </p>
               <GrowingTextarea
                 className="dash-textarea dash-word-field"
@@ -465,17 +465,17 @@ function Community() {
                         className="dash-textarea dash-word-field mt-2"
                         placeholder="Your answer…"
                         value={answers[q.id]?.text ?? ""}
-                        onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? false } }))}
+                        onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? true } }))}
                       />
                       <label className="dash-day-share mt-2">
                         <input
                           type="checkbox"
-                          checked={answers[q.id]?.publish ?? false}
+                          checked={answers[q.id]?.publish ?? true}
                           onChange={(e) =>
                             setAnswers((a) => ({ ...a, [q.id]: { text: a[q.id]?.text ?? "", publish: e.target.checked } }))
                           }
                         />
-                        Also share as a Q&amp;A with all members (the asker isn&apos;t named)
+                        Share the question and answer for everyone (the asker is never named) - untick if it&apos;s personal
                       </label>
                       <button
                         type="button"
@@ -523,7 +523,7 @@ function Community() {
                   Questions go privately to {author}. Only {author} and trusted helpers answer them - members
                   can&apos;t comment on anything, so what&apos;s taught here stays true to the Word.
                 </li>
-                <li>Some answers are shared as Q&amp;A for everyone - the person who asked is never named.</li>
+                <li>Answers are shared as Q&amp;A so everyone can learn - the person who asked is never named.</li>
                 <li>{author} reads every testimony first. Nothing appears until it&apos;s approved, and you choose your first name or anonymous.</li>
                 <li>Only signed-in members see any of this - never the public website or search engines.</li>
                 <li>Check-in replies are private to {author}. See something that isn&apos;t right? Tap Report.</li>

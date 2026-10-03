@@ -3456,3 +3456,14 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-question { font-family: var(--font-read), Georgia, serif; font-size: 16px; font-style: italic; line-height: 1.6; color: var(--colour-ink-strong); }
 .dash-answer { margin-top: 10px; padding-left: 14px; border-left: 2px solid var(--colour-amber); }
 .dash-answer .dash-reflection-who { display: block; margin-top: 6px; }
+.dash-reader-heart {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border-left: 2px solid var(--colour-amber);
+  background: rgb(var(--gold-rgb) / 0.05);
+  font-family: var(--font-read), Georgia, serif;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--colour-ink-soft);
+}
