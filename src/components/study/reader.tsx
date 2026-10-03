@@ -188,7 +188,7 @@ function ReaderInner({ basePath, preview, back, badge }: Props) {
               <div className="dash-reader-chapters">{data.contents.find((c) => c.day === day)?.chapters.join(" · ")}</div>
             )}
             <a className="dash-plan-link mt-3" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-              📖 Read Day {planDay(day).n}&apos;s passages in the Bible App ↗
+              📖 Read Day {planDay(day).n}&apos;s passages in the Bible App (NIV) ↗
             </a>
             {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
 

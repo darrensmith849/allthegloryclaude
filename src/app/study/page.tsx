@@ -79,17 +79,24 @@ export default function StudyHome() {
         </div>
         <div className="study-plan-actions">
           <a className="dash-btn dash-btn-primary" href={bibleAppDay(planDay(today).n)} target="_blank" rel="noreferrer">
-            Read today free in the Bible App ↗
+            Read today free in the Bible App (NIV) ↗
           </a>
           <span className="study-plan-buy">
-            Get the book:{" "}
+            The NIV book:{" "}
             <a href={PLAN.takealot} target="_blank" rel="noreferrer">
               Takealot
             </a>{" "}
             ·{" "}
             <a href={PLAN.amazon} target="_blank" rel="noreferrer">
               Amazon
+            </a>{" "}
+            ·{" "}
+            <a href={PLAN.kindle} target="_blank" rel="noreferrer">
+              Kindle eBook
             </a>
+          </span>
+          <span className="study-plan-buy">
+            In the Bible App, if you see another translation, tap its name at the top and choose NIV - it remembers.
           </span>
         </div>
       </div>

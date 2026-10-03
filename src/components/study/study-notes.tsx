@@ -699,13 +699,17 @@ export function StudyNotes() {
               <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
                 free in the Bible App
               </a>{" "}
-              · get the book:{" "}
+              · the NIV book:{" "}
               <a href={PLAN.takealot} target="_blank" rel="noreferrer">
                 Takealot
               </a>{" "}
               ·{" "}
               <a href={PLAN.amazon} target="_blank" rel="noreferrer">
                 Amazon
+              </a>{" "}
+              ·{" "}
+              <a href={PLAN.kindle} target="_blank" rel="noreferrer">
+                Kindle eBook
               </a>
             </p>
 
@@ -818,7 +822,7 @@ export function StudyNotes() {
 
             {isDay(day) && (
               <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-                📖 Day {planDay(day).n}&apos;s reading in the Bible App ↗
+                📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
               </a>
             )}
 
