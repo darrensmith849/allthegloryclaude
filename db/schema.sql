@@ -170,7 +170,8 @@ CREATE TABLE IF NOT EXISTS members (
   invite_code TEXT,                  -- the invite used to join, if any
   created_at  INTEGER NOT NULL,      -- epoch ms
   last_seen   INTEGER,
-  disabled_at INTEGER                -- set by the owner; can't log in
+  disabled_at INTEGER,               -- set by the owner; can't log in
+  role        TEXT                   -- 'helper' = may answer members' questions (ALTER TABLE members ADD COLUMN role TEXT)
 );
 
 -- Logged-in devices. Only a SHA-256 of the cookie token is stored.
@@ -358,3 +359,24 @@ CREATE TABLE IF NOT EXISTS checkin_replies (
   read_at       INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_checkin_reflection ON checkin_replies(reflection_id, created_at);
+
+
+-- Members' questions. Asked privately; only the owner or a helper answers.
+-- Members can't comment on anything. The owner (or a helper) may publish an
+-- answered question as a Q&A for all members - the asker is never named.
+CREATE TABLE IF NOT EXISTS community_questions (
+  id            TEXT PRIMARY KEY,
+  member_id     TEXT NOT NULL,
+  asker_name    TEXT,                          -- first name, seen only by the owner / helpers
+  text          TEXT NOT NULL,
+  ref           TEXT,                          -- optional passage, e.g. "John 4:10"
+  status        TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'answered'
+  answer        TEXT,
+  answered_by   TEXT,                          -- 'owner' or the helper's member id
+  answerer_name TEXT,
+  answered_at   INTEGER,
+  published     INTEGER NOT NULL DEFAULT 0,    -- 1 = shown to all members as a Q&A
+  created_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_questions_status ON community_questions(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_questions_member ON community_questions(member_id);

@@ -1,8 +1,9 @@
 "use client";
 
-// The owner's side of The Study's community: approve or decline what
-// members share (nothing appears until approved), see reported posts,
-// post the weekly reflection and read members' private check-in replies.
+// The owner's side of The Study's community: answer members' questions (and
+// choose which answers to share as Q&A), approve or decline testimonies
+// (nothing appears until approved), see reported posts, post the weekly
+// reflection and read members' private check-in replies.
 
 import { useEffect, useMemo, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
@@ -32,6 +33,19 @@ interface Weekly {
   question: string | null;
   publishedAt: number;
   replies: number;
+}
+interface Question {
+  id: string;
+  text: string;
+  ref: string | null;
+  status: string;
+  answer: string | null;
+  answeredBy: string | null;
+  answeredAt: number | null;
+  published: boolean;
+  member: string;
+  email: string;
+  createdAt: number;
 }
 interface Reply {
   id: string;
@@ -107,14 +121,18 @@ export default function CommunityAdminPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [weekly, setWeekly] = useState<Weekly[]>([]);
   const [replies, setReplies] = useState<Reply[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<Record<string, { text: string; publish: boolean }>>({});
+  const [showAnswered, setShowAnswered] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", body: "", question: "How are you doing this week - what's God been showing you?" });
   const [posting, setPosting] = useState(false);
   const [showShared, setShowShared] = useState(false);
 
   function load() {
-    api<{ posts: Post[]; weekly: Weekly[]; replies: Reply[] }>("GET")
+    api<{ posts: Post[]; weekly: Weekly[]; replies: Reply[]; questions: Question[] }>("GET")
       .then((d) => {
+        setQuestions(d.questions);
         setPosts(d.posts);
         setWeekly(d.weekly);
         setReplies(d.replies);
@@ -136,6 +154,29 @@ export default function CommunityAdminPage() {
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't save that.");
     }
+  }
+
+  const openQuestions = questions.filter((q) => q.status === "open");
+  const answeredQuestions = questions.filter((q) => q.status === "answered");
+
+  async function answerQuestion(q: Question) {
+    const a = answers[q.id];
+    if (!a?.text.trim()) return;
+    try {
+      await api("PATCH", { question: q.id, answer: a.text, publish: a.publish });
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't save that.");
+    }
+  }
+  async function setPublished(q: Question, publish: boolean) {
+    await api("PATCH", { question: q.id, publish }).catch(() => {});
+    setQuestions((list) => list.map((x) => (x.id === q.id ? { ...x, published: publish } : x)));
+  }
+  async function removeQuestion(q: Question) {
+    if (!confirm("Remove this question for good?")) return;
+    await api("DELETE", undefined, `?question=${encodeURIComponent(q.id)}`).catch(() => {});
+    setQuestions((list) => list.filter((x) => x.id !== q.id));
   }
 
   async function publish() {
@@ -172,8 +213,8 @@ export default function CommunityAdminPage() {
           <div className="eyebrow eyebrow-amber">The Study · members only</div>
           <h1 className="dash-title mt-1">Community</h1>
           <div className="dash-subtitle">
-            What members share waits here for you. Nothing appears until you approve it, and only signed-in members ever
-            see it.
+            Members&apos; questions and testimonies wait here for you. Only you and your helpers answer questions, nothing
+            is shown until you approve it, and only signed-in members ever see it.
           </div>
         </div>
         <a className="dash-btn dash-btn-ghost" href="/study/community" target="_blank" rel="noreferrer">
@@ -185,7 +226,83 @@ export default function CommunityAdminPage() {
 
       <div className="dash-grid">
         <div className="dash-col-7">
-          <Panel eyebrow={`${pending.length} waiting`} title="Waiting for you">
+          <Panel eyebrow={`${openQuestions.length} to answer`} title="Questions">
+            {openQuestions.length === 0 && <p className="dash-word-hint">No questions waiting.</p>}
+            <div className="flex flex-col gap-3">
+              {openQuestions.map((q) => (
+                <div key={q.id} className="dash-mod-card">
+                  <div className="dash-mod-meta">
+                    <strong>{q.member}</strong>
+                    <span>{q.email}</span>
+                    {q.ref && <span>{q.ref}</span>}
+                    <span>{when(q.createdAt)}</span>
+                  </div>
+                  <p className="dash-question mt-2">{q.text}</p>
+                  <GrowingTextarea
+                    className="dash-textarea dash-word-field mt-2"
+                    placeholder="Your answer…"
+                    value={answers[q.id]?.text ?? ""}
+                    onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? false } }))}
+                  />
+                  <label className="dash-day-share mt-2">
+                    <input
+                      type="checkbox"
+                      checked={answers[q.id]?.publish ?? false}
+                      onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: a[q.id]?.text ?? "", publish: e.target.checked } }))}
+                    />
+                    Also share as a Q&amp;A with all members (the asker isn&apos;t named)
+                  </label>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="dash-btn dash-btn-primary dash-note-nav"
+                      disabled={!answers[q.id]?.text.trim()}
+                      onClick={() => answerQuestion(q)}
+                    >
+                      Send answer
+                    </button>
+                    <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => removeQuestion(q)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {answeredQuestions.length > 0 && (
+              <button type="button" className="dash-word-link mt-4" onClick={() => setShowAnswered((v) => !v)}>
+                {showAnswered ? "Hide" : "Show"} answered questions · {answeredQuestions.length}
+              </button>
+            )}
+            {showAnswered && (
+              <div className="flex flex-col gap-3 mt-3">
+                {answeredQuestions.map((q) => (
+                  <div key={q.id} className="dash-mod-card">
+                    <div className="dash-mod-meta">
+                      <strong>{q.member}</strong>
+                      {q.ref && <span>{q.ref}</span>}
+                      <span>answered by {q.answeredBy ?? "you"}</span>
+                      {q.published && <span className="dash-mod-kind">Shared as Q&amp;A</span>}
+                    </div>
+                    <p className="dash-question mt-2">{q.text}</p>
+                    <div className="dash-answer">
+                      <NoteText text={q.answer ?? ""} />
+                    </div>
+                    <div className="flex gap-3 mt-2">
+                      <button type="button" className="dash-word-link" onClick={() => setPublished(q, !q.published)}>
+                        {q.published ? "Stop sharing as Q&A" : "Share as Q&A with members"}
+                      </button>
+                      <button type="button" className="dash-word-link" onClick={() => removeQuestion(q)}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <div className="mt-[18px]">
+          <Panel eyebrow={`${pending.length} waiting`} title="Testimonies waiting for you">
             {pending.length === 0 && <p className="dash-word-hint">All clear - nothing waiting.</p>}
             <div className="flex flex-col gap-3">
               {pending.map((p) => (
@@ -193,6 +310,7 @@ export default function CommunityAdminPage() {
               ))}
             </div>
           </Panel>
+          </div>
 
           {reported.length > 0 && (
             <div className="mt-[18px]">
@@ -209,7 +327,7 @@ export default function CommunityAdminPage() {
           <div className="mt-[18px]">
             <Panel
               eyebrow={`${shared.length} shared`}
-              title="Shared with members"
+              title="Testimonies shared"
               action={
                 <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setShowShared((v) => !v)}>
                   {showShared ? "Hide" : "Show"}

@@ -1,7 +1,8 @@
 /**
- * Members-only sharing in The Study (table community_posts).
+ * Members-only testimonies in The Study (table community_posts).
+ * (Sharing journal reflections was retired - only testimonies, which the
+ * owner approves, are shared; questions live in /api/study/questions.)
  *
- *   GET ?day=MM-DD          -> { posts }  approved reflections for that date (any year)
  *   GET ?kind=testimony     -> { posts }  approved testimonies
  *   GET ?mine=1             -> { posts }  this member's own posts, any status
  *   POST { kind, text, consent: true, anonymous, day?, ref?, noteId?, title? } -> { post }  waits for approval
@@ -12,7 +13,6 @@
  * Each post needs the member's consent tick; anonymous posts carry no name.
  */
 import { getDb, type D1Db } from "@/lib/analytics/store";
-import { isDay } from "@/lib/dashboard/notes";
 import { getMember, type Member } from "@/lib/study/members";
 import { notifyOwner } from "@/lib/study/notify";
 
@@ -63,7 +63,6 @@ export async function GET(req: Request) {
   if (s instanceof Response) return s;
   const { db, member } = s;
   const url = new URL(req.url);
-  const on = url.searchParams.get("day");
   let results: Row[] = [];
   if (url.searchParams.get("mine")) {
     ({ results } = await db
@@ -74,17 +73,6 @@ export async function GET(req: Request) {
     ({ results } = await db
       .prepare("SELECT * FROM community_posts WHERE kind = 'testimony' AND status = 'approved' ORDER BY created_at DESC LIMIT 200")
       .all<Row>());
-  } else if (on && /^\d{2}-\d{2}$/.test(on)) {
-    ({ results } = await db
-      .prepare(
-        "SELECT * FROM community_posts WHERE kind = 'reflection' AND status = 'approved' AND substr(day, 6) = ?1 ORDER BY created_at",
-      )
-      .bind(on)
-      .all<Row>());
-  } else {
-    ({ results } = await db
-      .prepare("SELECT * FROM community_posts WHERE kind = 'reflection' AND status = 'approved' ORDER BY created_at DESC LIMIT 30")
-      .all<Row>());
   }
   return Response.json({ posts: results.map((r) => toPost(r, member.id)) }, { headers: noStore });
 }
@@ -94,7 +82,7 @@ export async function POST(req: Request) {
   if (s instanceof Response) return s;
   const { db, member } = s;
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const kind = body.kind === "testimony" ? "testimony" : body.kind === "reflection" ? "reflection" : null;
+  const kind = body.kind === "testimony" ? "testimony" : null;
   const text = String(body.text ?? "").trim().slice(0, kind === "testimony" ? 5000 : 3000);
   if (!kind) return Response.json({ error: "What are you sharing?" }, { status: 400 });
   if (body.consent !== true) {
@@ -112,30 +100,22 @@ export async function POST(req: Request) {
   }
   const anonymous = body.anonymous === true;
   const first = member.name.split(" ")[0];
-  const day = kind === "reflection" && isDay(body.day) ? body.day : null;
-  const ref = kind === "reflection" ? String(body.ref ?? "").trim().slice(0, 60) || null : null;
-  const title = kind === "testimony" ? String(body.title ?? "").trim().slice(0, 120) || null : null;
-  const noteId = kind === "reflection" && typeof body.noteId === "string" ? body.noteId.slice(0, 64) : null;
+  const title = String(body.title ?? "").trim().slice(0, 120) || null;
   const now = Date.now();
   const id = crypto.randomUUID();
-
-  // One shared copy per journal note: sharing it again replaces the old one.
-  if (noteId) {
-    await db.prepare("DELETE FROM community_posts WHERE member_id = ?1 AND note_id = ?2").bind(member.id, noteId).run();
-  }
   await db
     .prepare(
-      "INSERT INTO community_posts (id, kind, member_id, author_name, day, ref, title, text, note_id, status, consent_at, created_at) " +
-        "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?10)",
+      "INSERT INTO community_posts (id, kind, member_id, author_name, title, text, status, consent_at, created_at) " +
+        "VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?7)",
     )
-    .bind(id, kind, member.id, anonymous ? null : first, day, ref, title, text, noteId, now)
+    .bind(id, kind, member.id, anonymous ? null : first, title, text, now)
     .run();
   await notifyOwner(
-    kind === "testimony" ? "A testimony is waiting for you" : "A shared reflection is waiting for you",
-    `${member.name} (${member.email}) shared a ${kind}${anonymous ? " (to show anonymously)" : ""}${ref ? ` on ${ref}` : ""}:\n\n${text.slice(0, 600)}`,
+    "A testimony is waiting for you",
+    `${member.name} (${member.email}) shared a testimony${anonymous ? " (to show anonymously)" : ""}:\n\n${text.slice(0, 600)}`,
   );
   return Response.json({
-    post: { id, kind, author: anonymous ? "A member" : first, day, ref, title, text, noteId, status: "pending", mine: true, createdAt: now },
+    post: { id, kind, author: anonymous ? "A member" : first, day: null, ref: null, title, text, noteId: null, status: "pending", mine: true, createdAt: now },
   });
 }
 

@@ -19,6 +19,7 @@ export interface Member {
   email: string;
   name: string;
   createdAt: number;
+  helper?: boolean; // may answer members' questions
 }
 
 export type SignupMode = "invite" | "open" | "closed";
@@ -180,18 +181,18 @@ export async function getMember(req: Request, db?: D1Db | null): Promise<Member 
   if (!d) return null;
   const row = await d
     .prepare(
-      "SELECT m.id, m.email, m.name, m.created_at, m.last_seen FROM member_sessions s JOIN members m ON m.id = s.member_id " +
+      "SELECT m.id, m.email, m.name, m.created_at, m.last_seen, m.role FROM member_sessions s JOIN members m ON m.id = s.member_id " +
         "WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND m.disabled_at IS NULL",
     )
     .bind(await sha256(token), Date.now())
-    .first<{ id: string; email: string; name: string; created_at: number; last_seen: number | null }>()
+    .first<{ id: string; email: string; name: string; created_at: number; last_seen: number | null; role: string | null }>()
     .catch(() => null);
   if (!row) return null;
   // Note when they were last here, at most once an hour.
   if (!row.last_seen || Date.now() - row.last_seen > 3_600_000) {
     await d.prepare("UPDATE members SET last_seen = ?2 WHERE id = ?1").bind(row.id, Date.now()).run().catch(() => {});
   }
-  return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at };
+  return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at, helper: row.role === "helper" };
 }
 
 export async function endSession(req: Request, db: D1Db): Promise<void> {
@@ -268,6 +269,7 @@ export const MEMBER_TABLES = [
   "community_posts",
   "community_reports",
   "checkin_replies",
+  "community_questions",
 ] as const;
 
 // ── The owner's email list (table email_list) ────────────────────

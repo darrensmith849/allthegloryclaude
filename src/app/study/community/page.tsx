@@ -1,15 +1,16 @@
 "use client";
 
-// Community - members only. This week's reflection from the owner with a
-// private check-in reply, testimonies members have shared (each approved by
-// the owner first), and the member's own shared posts.
+// Community - members only, and kept safe: this week's reflection from the
+// owner with a private check-in reply; questions asked privately and
+// answered only by the owner or the helpers they choose (members can't
+// comment on anything), with chosen answers shared as Q&A; and testimonies,
+// each approved by the owner first.
 
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { MemberOnly, useMe } from "@/components/study/shell";
-import { dayLabel } from "@/lib/dashboard/notes";
 
 interface Post {
   id: string;
@@ -22,6 +23,18 @@ interface Post {
   status?: string;
   mine: boolean;
   createdAt: number;
+}
+interface Question {
+  id: string;
+  text: string;
+  ref: string | null;
+  status?: string;
+  answer: string | null;
+  answeredBy: string | null;
+  answeredAt: number | null;
+  published?: boolean;
+  createdAt?: number;
+  askerName?: string;
 }
 interface Weekly {
   id: string;
@@ -51,6 +64,59 @@ function Community() {
   const [writing, setWriting] = useState(false);
   const [form, setForm] = useState({ title: "", text: "", anonymous: false, consent: false });
   const [formState, setFormState] = useState<{ busy?: boolean; error?: string; done?: boolean }>({});
+  const [myQuestions, setMyQuestions] = useState<Question[]>([]);
+  const [qa, setQa] = useState<Question[]>([]);
+  const [queue, setQueue] = useState<Question[] | null>(null);
+  const [ask, setAsk] = useState({ text: "", ref: "" });
+  const [askState, setAskState] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, { text: string; publish: boolean }>>({});
+
+  function loadQuestions() {
+    fetch("/api/study/questions", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { mine?: Question[]; published?: Question[]; queue?: Question[] } | null) => {
+        setMyQuestions(d?.mine ?? []);
+        setQa(d?.published ?? []);
+        setQueue(d?.queue ?? null);
+      })
+      .catch(() => {});
+  }
+
+  async function sendQuestion() {
+    if (ask.text.trim().length < 5) return;
+    setAskState("Sending…");
+    const r = await fetch("/api/study/questions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(ask),
+    }).catch(() => null);
+    const d = r ? ((await r.json().catch(() => ({}))) as { question?: Question; error?: string }) : null;
+    if (r?.ok && d?.question) {
+      setMyQuestions((list) => [d.question!, ...list]);
+      setAsk({ text: "", ref: "" });
+      setAskState(`✓ Sent. ${author} will answer you here.`);
+    } else setAskState(d?.error ?? "Couldn't send - check your connection.");
+  }
+
+  async function withdrawQuestion(q: Question) {
+    if (!confirm("Remove this question?")) return;
+    await fetch(`/api/study/questions?id=${encodeURIComponent(q.id)}`, { method: "DELETE" }).catch(() => {});
+    setMyQuestions((list) => list.filter((x) => x.id !== q.id));
+  }
+
+  async function answer(q: Question) {
+    const a = answers[q.id];
+    if (!a?.text.trim()) return;
+    const r = await fetch("/api/study/questions", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: q.id, answer: a.text, publish: a.publish }),
+    }).catch(() => null);
+    if (r?.ok) {
+      setQueue((list) => list?.filter((x) => x.id !== q.id) ?? null);
+      loadQuestions();
+    } else alert("Couldn't save the answer - try again.");
+  }
 
   useEffect(() => {
     fetch("/api/study/weekly", { cache: "no-store" })
@@ -66,8 +132,9 @@ function Community() {
       .catch(() => {});
     fetch("/api/study/community?mine=1", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { posts?: Post[] } | null) => setMine(d?.posts ?? []))
+      .then((d: { posts?: Post[] } | null) => setMine((d?.posts ?? []).filter((p) => p.kind === "testimony")))
       .catch(() => {});
+    loadQuestions();
   }, []);
 
   async function sendReply() {
@@ -136,8 +203,8 @@ function Community() {
           <div className="eyebrow eyebrow-amber">The Study · members only</div>
           <h1 className="dash-title mt-1">Community</h1>
           <div className="dash-subtitle">
-            A weekly word from {author}, and what God is doing in the lives of members. Everything here is seen by members
-            only, and every post is read by {author} before it appears.
+            A weekly word from {author}, your questions answered, and what God is doing in members&apos; lives. Members only -
+            and nothing appears until {author} has read it.
           </div>
         </div>
       </div>
@@ -179,6 +246,103 @@ function Community() {
               </>
             )}
           </Panel>
+
+          <div className="mt-[18px]">
+            <Panel eyebrow="Ask" title="Ask a question">
+              <p className="dash-word-hint mb-3">
+                Ask about a passage, a word, or something you&apos;re working through. Your question goes privately to{" "}
+                {author}
+                {" "}or one of the trusted helpers, and the answer comes back here. Some answers
+                may be shared with all members as a Q&amp;A - your name is never shown.
+              </p>
+              <GrowingTextarea
+                className="dash-textarea dash-word-field"
+                placeholder="Your question…"
+                value={ask.text}
+                onChange={(e) => setAsk({ ...ask, text: e.target.value })}
+              />
+              <div className="flex gap-2 mt-2 flex-wrap items-center">
+                <input
+                  className="dash-input dash-ask-ref"
+                  placeholder="Passage (optional), e.g. John 4:10"
+                  value={ask.ref}
+                  onChange={(e) => setAsk({ ...ask, ref: e.target.value })}
+                />
+                <button type="button" className="dash-btn dash-btn-primary" disabled={ask.text.trim().length < 5} onClick={sendQuestion}>
+                  Ask privately
+                </button>
+              </div>
+              {askState && <p className="dash-word-hint mt-2">{askState}</p>}
+
+              {myQuestions.length > 0 && (
+                <div className="dash-fold">
+                  <div className="dash-note-section-row">
+                    <span className="eyebrow eyebrow-amber">Your questions · {myQuestions.length}</span>
+                  </div>
+                  <div className="dash-note-list">
+                    {myQuestions.map((q) => (
+                      <article key={q.id} className="dash-note is-open">
+                        <div className="dash-reflection-head">
+                          <span className="dash-note-head-ref">{q.ref || "Question"}</span>
+                          <span className="dash-reflection-who">
+                            {q.status === "answered" ? `Answered by ${q.answeredBy ?? author}` : "Waiting for an answer"}
+                          </span>
+                        </div>
+                        <div className="dash-note-open">
+                          <p className="dash-question">{q.text}</p>
+                          {q.answer && (
+                            <div className="dash-answer">
+                              <NoteText text={q.answer} />
+                            </div>
+                          )}
+                          {q.status !== "answered" && (
+                            <div className="dash-note-actions">
+                              <span className="flex-1" />
+                              <button type="button" className="dash-word-link" onClick={() => withdrawQuestion(q)}>
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {qa.length > 0 && (
+            <div className="mt-[18px]">
+              <Panel eyebrow={`Answered by ${author}`} title="Questions & answers">
+                <div className="dash-note-list">
+                  {qa.map((q) => {
+                    const isOpen = open.has(q.id);
+                    return (
+                      <article key={q.id} className={`dash-note ${isOpen ? "is-open" : ""}`}>
+                        <button type="button" className="dash-note-head" onClick={() => toggle(q.id)} aria-expanded={isOpen}>
+                          <span className="dash-note-head-ref">{q.ref || "Question"}</span>
+                          <span className="dash-note-head-text">{q.text}</span>
+                          <span className="dash-note-chev" aria-hidden>
+                            ›
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div className="dash-note-open">
+                            <p className="dash-question">{q.text}</p>
+                            <div className="dash-answer">
+                              <NoteText text={q.answer ?? ""} />
+                              <span className="dash-reflection-who">- {q.answeredBy ?? author}</span>
+                            </div>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </Panel>
+            </div>
+          )}
 
           <div className="mt-[18px]">
             <Panel
@@ -284,10 +448,53 @@ function Community() {
         </div>
 
         <div className="dash-col-5">
-          <Panel eyebrow="Yours" title="What you've shared">
+          {queue && (
+            <div className="mb-[18px]">
+              <Panel eyebrow="You're a helper" title={`Questions to answer · ${queue.length}`}>
+                {queue.length === 0 && <p className="dash-word-hint">No questions waiting.</p>}
+                <div className="flex flex-col gap-3">
+                  {queue.map((q) => (
+                    <div key={q.id} className="dash-mod-card">
+                      <div className="dash-mod-meta">
+                        <strong>{q.askerName}</strong>
+                        {q.ref && <span>{q.ref}</span>}
+                        {q.createdAt && <span>{when(q.createdAt)}</span>}
+                      </div>
+                      <p className="dash-question mt-2">{q.text}</p>
+                      <GrowingTextarea
+                        className="dash-textarea dash-word-field mt-2"
+                        placeholder="Your answer…"
+                        value={answers[q.id]?.text ?? ""}
+                        onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: { text: e.target.value, publish: a[q.id]?.publish ?? false } }))}
+                      />
+                      <label className="dash-day-share mt-2">
+                        <input
+                          type="checkbox"
+                          checked={answers[q.id]?.publish ?? false}
+                          onChange={(e) =>
+                            setAnswers((a) => ({ ...a, [q.id]: { text: a[q.id]?.text ?? "", publish: e.target.checked } }))
+                          }
+                        />
+                        Also share as a Q&amp;A with all members (the asker isn&apos;t named)
+                      </label>
+                      <button
+                        type="button"
+                        className="dash-btn dash-btn-primary dash-note-nav mt-2"
+                        disabled={!answers[q.id]?.text.trim()}
+                        onClick={() => answer(q)}
+                      >
+                        Send answer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            </div>
+          )}
+          <Panel eyebrow="Yours" title="Your testimonies">
             {mine.length === 0 && (
               <p className="dash-word-hint">
-                Nothing yet. To share a note, open it in your journal and tap &ldquo;Share with members&rdquo;.
+                Nothing yet. Tap &ldquo;Share yours&rdquo; under Testimonies to tell what God has done.
               </p>
             )}
             <div className="flex flex-col gap-2">
@@ -295,8 +502,7 @@ function Community() {
                 <div key={p.id} className="dash-members-row">
                   <div className="min-w-0">
                     <div className="dash-members-name">
-                      {p.kind === "testimony" ? p.title || "Testimony" : p.ref || "Reflection"}
-                      {p.day && <span className="dash-word-hint"> · {dayLabel(p.day, { weekday: false })}</span>}
+                      {p.title || "Testimony"}
                     </div>
                     <div className="dash-word-hint">
                       {STATUS[p.status ?? "pending"]} · {p.author === "A member" ? "without your name" : "with your first name"}
@@ -310,14 +516,17 @@ function Community() {
             </div>
           </Panel>
           <div className="mt-[18px]">
-            <Panel eyebrow="How sharing works" title="Safe and private">
+            <Panel eyebrow="How this works" title="Safe and sound">
               <ul className="dash-community-rules">
-                <li>Only signed-in members of The Study can see what&apos;s shared - never the public website or search engines.</li>
-                <li>{author} reads everything first. Nothing appears until it&apos;s approved.</li>
-                <li>You choose to show your first name or stay anonymous, every time.</li>
-                <li>You can stop sharing any post at any time, and it&apos;s gone for everyone.</li>
-                <li>Replies to the weekly check-in are private - only {author} reads them.</li>
-                <li>See something that isn&apos;t right? Tap Report and {author} will look at it.</li>
+                <li>Your journal is private. Notes are never shared - only testimonies you choose to send.</li>
+                <li>
+                  Questions go privately to {author}. Only {author} and trusted helpers answer them - members
+                  can&apos;t comment on anything, so what&apos;s taught here stays true to the Word.
+                </li>
+                <li>Some answers are shared as Q&amp;A for everyone - the person who asked is never named.</li>
+                <li>{author} reads every testimony first. Nothing appears until it&apos;s approved, and you choose your first name or anonymous.</li>
+                <li>Only signed-in members see any of this - never the public website or search engines.</li>
+                <li>Check-in replies are private to {author}. See something that isn&apos;t right? Tap Report.</li>
               </ul>
             </Panel>
           </div>

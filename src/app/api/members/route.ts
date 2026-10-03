@@ -8,6 +8,7 @@
  *   (CSV columns EMAIL, FIRSTNAME, LASTNAME ... import straight into Brevo)
  *   PATCH { settings: {...} }             -> { settings }
  *   PATCH { member: id, disabled: bool }  -> { ok }      pause / un-pause an account
+ *   PATCH { member: id, helper: bool }    -> { ok }      let them answer members' questions
  *   POST  { invite: { label?, maxUses? } } -> { invite }  new invite link (maxUses null = many people, default 1)
  *   POST  { reset: memberId }             -> { path }    one-time password reset link (7 days)
  *   DELETE ?invite=code                   -> { ok }      stop an invite link working
@@ -82,7 +83,7 @@ export async function GET(req: Request) {
         getSettings(db),
         db.prepare("SELECT * FROM member_invites ORDER BY created_at DESC").all<InviteRow>(),
         db
-          .prepare("SELECT id, email, name, created_at, last_seen, disabled_at, invite_code FROM members ORDER BY created_at DESC")
+          .prepare("SELECT id, email, name, created_at, last_seen, disabled_at, invite_code, role FROM members ORDER BY created_at DESC")
           .all<{
             id: string;
             email: string;
@@ -91,6 +92,7 @@ export async function GET(req: Request) {
             last_seen: number | null;
             disabled_at: number | null;
             invite_code: string | null;
+            role: string | null;
           }>(),
         db
           .prepare("SELECT member_id, COUNT(*) AS n, COUNT(DISTINCT day) AS days FROM member_notes WHERE deleted_at IS NULL GROUP BY member_id")
@@ -122,6 +124,7 @@ export async function GET(req: Request) {
           lastSeen: m.last_seen,
           disabled: Boolean(m.disabled_at),
           invite: m.invite_code,
+          helper: m.role === "helper",
           notes: Number(notes.find((x) => x.member_id === m.id)?.n ?? 0),
           days: Number(notes.find((x) => x.member_id === m.id)?.days ?? 0),
           words: Number(words.find((x) => x.member_id === m.id)?.n ?? 0),
@@ -152,6 +155,11 @@ export async function PATCH(req: Request) {
   try {
     if (body.settings && typeof body.settings === "object") {
       return Response.json({ settings: await saveSettings(db, body.settings) });
+    }
+    if (typeof body.member === "string" && typeof (body as { helper?: unknown }).helper === "boolean") {
+      const helper = (body as { helper: boolean }).helper;
+      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1").bind(body.member, helper ? "helper" : null).run();
+      return Response.json({ ok: true });
     }
     if (typeof body.member === "string" && typeof body.disabled === "boolean") {
       await db.batch([

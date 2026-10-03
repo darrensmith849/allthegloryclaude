@@ -63,11 +63,13 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-white/85">When you share in The Study</strong>{" "}
-                — a reflection or testimony you choose to share is shown only to
-                other signed-in members (never on the public site), after we have
-                read and approved it, with your first name or anonymously as you
-                choose. You can stop sharing it at any time. Replies to the
-                weekly check-in are private and read only by us.
+                — your journal notes are never shared. A testimony you choose to
+                send is shown only to other signed-in members (never on the public
+                site), after we have read and approved it, with your first name or
+                anonymously as you choose, and you can remove it at any time.
+                Questions you ask go privately to us and the helpers we trust;
+                an answer may be shared with members as a Q&amp;A without your
+                name. Replies to the weekly check-in are private to us.
               </li>
               <li>
                 <strong className="text-white/85">When you donate</strong> —

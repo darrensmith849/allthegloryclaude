@@ -8,7 +8,10 @@
  *   PATCH { weekly: id, title?, body?, question? }      -> { ok }       edit it
  *   DELETE ?weekly=id                                    -> { ok }       take it down (kept)
  *   PATCH { reply: id | "all", read: true }             -> { ok }
+ *   PATCH { question: id, answer?, publish? }           -> { ok }   answer a member's question / share it as a Q&A
+ *   DELETE ?question=id                                  -> { ok }   remove a question
  */
+import { getSettings } from "@/lib/study/members";
 import { getDb } from "@/lib/analytics/store";
 
 export const dynamic = "force-dynamic";
@@ -24,16 +27,21 @@ export async function GET(req: Request) {
       .prepare(
         "SELECT (SELECT COUNT(*) FROM community_posts WHERE status = 'pending') AS pending, " +
           "(SELECT COUNT(*) FROM checkin_replies WHERE read_at IS NULL) AS unread, " +
+          "(SELECT COUNT(*) FROM community_questions WHERE status = 'open') AS questions, " +
           "(SELECT COUNT(DISTINCT post_id) FROM community_reports r JOIN community_posts p ON p.id = r.post_id WHERE p.status = 'approved') AS reported",
       )
-      .first<{ pending: number; unread: number; reported: number }>()
+      .first<{ pending: number; unread: number; reported: number; questions: number }>()
       .catch(() => null);
     return Response.json(
-      { pending: Number(row?.pending ?? 0), unread: Number(row?.unread ?? 0), reported: Number(row?.reported ?? 0) },
+      {
+        pending: Number(row?.pending ?? 0) + Number(row?.questions ?? 0),
+        unread: Number(row?.unread ?? 0),
+        reported: Number(row?.reported ?? 0),
+      },
       { headers: noStore },
     );
   }
-  const [{ results: posts }, { results: reports }, { results: weekly }, { results: replies }] = await Promise.all([
+  const [{ results: posts }, { results: reports }, { results: weekly }, { results: replies }, { results: questions }] = await Promise.all([
     db
       .prepare(
         "SELECT p.*, m.name AS member_name, m.email AS member_email FROM community_posts p " +
@@ -53,6 +61,12 @@ export async function GET(req: Request) {
       .prepare(
         "SELECT c.id, c.reflection_id, c.text, c.created_at, c.read_at, m.name AS member_name, m.email AS member_email " +
           "FROM checkin_replies c LEFT JOIN members m ON m.id = c.member_id ORDER BY c.created_at DESC LIMIT 300",
+      )
+      .all<Record<string, unknown>>(),
+    db
+      .prepare(
+        "SELECT q.*, m.name AS member_name, m.email AS member_email FROM community_questions q " +
+          "LEFT JOIN members m ON m.id = q.member_id ORDER BY (q.status = 'open') DESC, q.created_at DESC LIMIT 300",
       )
       .all<Record<string, unknown>>(),
   ]);
@@ -81,6 +95,19 @@ export async function GET(req: Request) {
         question: w.question,
         publishedAt: w.published_at,
         replies: Number(w.replies ?? 0),
+      })),
+      questions: questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        ref: q.ref,
+        status: q.status,
+        answer: q.answer,
+        answeredBy: q.answerer_name,
+        answeredAt: q.answered_at,
+        published: Boolean(q.published),
+        member: q.member_name ?? "(account deleted)",
+        email: q.member_email ?? "",
+        createdAt: q.created_at,
       })),
       replies: replies.map((r) => ({
         id: r.id,
@@ -121,6 +148,25 @@ export async function PATCH(req: Request) {
       .run();
     return Response.json({ ok: true });
   }
+  if (typeof body.question === "string") {
+    const answer = typeof body.answer === "string" ? body.answer.trim().slice(0, 6000) : null;
+    const publish = typeof body.publish === "boolean" ? (body.publish ? 1 : 0) : null;
+    if (answer) {
+      const settings = await getSettings(db);
+      await db
+        .prepare(
+          "UPDATE community_questions SET answer = ?2, status = 'answered', answered_by = 'owner', answerer_name = ?3, " +
+            "answered_at = ?4, published = COALESCE(?5, published) WHERE id = ?1",
+        )
+        .bind(body.question, answer, settings.author, now, publish)
+        .run();
+    } else if (publish !== null) {
+      await db.prepare("UPDATE community_questions SET published = ?2 WHERE id = ?1 AND status = 'answered'").bind(body.question, publish).run();
+    } else {
+      return Response.json({ error: "Write the answer first." }, { status: 400 });
+    }
+    return Response.json({ ok: true });
+  }
   if (body.read === true && typeof body.reply === "string") {
     if (body.reply === "all") await db.prepare("UPDATE checkin_replies SET read_at = ?1 WHERE read_at IS NULL").bind(now).run();
     else await db.prepare("UPDATE checkin_replies SET read_at = ?2 WHERE id = ?1").bind(body.reply, now).run();
@@ -149,7 +195,13 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
-  const id = new URL(req.url).searchParams.get("weekly") ?? "";
+  const url = new URL(req.url);
+  const question = url.searchParams.get("question");
+  if (question) {
+    await db.prepare("DELETE FROM community_questions WHERE id = ?1").bind(question).run();
+    return Response.json({ ok: true });
+  }
+  const id = url.searchParams.get("weekly") ?? "";
   await db.prepare("UPDATE weekly_reflections SET deleted_at = ?2 WHERE id = ?1").bind(id, Date.now()).run();
   return Response.json({ ok: true });
 }

@@ -3441,3 +3441,18 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
   .dash-pagehead { flex-direction: column; align-items: stretch; gap: 12px; }
   .dash-pagehead > div:last-child { flex-wrap: wrap; }
 }
+.dash-helper-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(var(--gold-rgb) / 0.15);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--colour-glow);
+  vertical-align: middle;
+}
+.dash-ask-ref { flex: 1; min-width: 200px; }
+.dash-question { font-family: var(--font-read), Georgia, serif; font-size: 16px; font-style: italic; line-height: 1.6; color: var(--colour-ink-strong); }
+.dash-answer { margin-top: 10px; padding-left: 14px; border-left: 2px solid var(--colour-amber); }
+.dash-answer .dash-reflection-who { display: block; margin-top: 6px; }

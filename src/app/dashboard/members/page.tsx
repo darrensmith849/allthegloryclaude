@@ -27,6 +27,7 @@ interface MemberRow {
   days: number;
   words: number;
   emailUpdates: boolean;
+  helper: boolean;
 }
 interface EmailCounts {
   total: number;
@@ -155,6 +156,16 @@ export default function MembersPage() {
       setResetLinks((r) => ({ ...r, [m.id]: `${origin}${path}` }));
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't make a reset link.");
+    }
+  }
+
+  async function setHelper(m: MemberRow, helper: boolean) {
+    if (helper && !confirm(`Make ${m.name} a helper? They'll be able to answer members' questions (you see every answer).`)) return;
+    try {
+      await api("PATCH", { member: m.id, helper });
+      setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, helper } : x)));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't change that.");
     }
   }
 
@@ -388,6 +399,7 @@ export default function MembersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="dash-members-name">
                       {m.name} {m.emailUpdates && <span title="On your email list">✉</span>}{" "}
+                      {m.helper && <span className="dash-helper-badge">Helper</span>}{" "}
                       {m.disabled && <span className="dash-word-hint">· paused</span>}
                     </div>
                     <div className="dash-word-hint">
@@ -406,6 +418,9 @@ export default function MembersPage() {
                     )}
                   </div>
                   <div className="flex gap-1 flex-wrap justify-end">
+                    <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setHelper(m, !m.helper)}>
+                      {m.helper ? "Remove helper" : "Make helper"}
+                    </button>
                     <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => resetLink(m)}>
                       Reset link
                     </button>
