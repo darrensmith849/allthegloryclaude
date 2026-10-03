@@ -2148,20 +2148,16 @@ html:has(.dash-welcome-root),
   gap: 8px;
 }
 
-/* Calendar column stays in view while the day scrolls (wide screens). */
+/* Calendar column stays in view while the day scrolls (wide screens). It
+ * scrolls with the page, never on its own: when it's taller than the
+ * window, --side-top (set in study-notes.tsx) goes negative so the column
+ * scrolls until its bottom - the word study - is in view, then holds. */
 @media (min-width: 1101px) {
   .dash-note-side {
     position: sticky;
-    top: 24px;
+    top: var(--side-top, 24px);
     align-self: start;
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    border-radius: 20px;
   }
-  .dash-note-side::-webkit-scrollbar { width: 6px; }
-  .dash-note-side::-webkit-scrollbar-thumb { background: rgb(var(--tint-rgb) / calc(0.08 * var(--tint-k))); border-radius: 999px; }
 }
 
 /* Year view: twelve small months */
@@ -2566,9 +2562,7 @@ html:has(.dash-welcome-root),
 .study-nav-link.is-active { color: var(--colour-ink-strong); background: rgb(var(--gold-rgb) / 0.12); }
 .study-join { margin-left: 4px; padding: 7px 14px; font-size: 13px; }
 .study-main { margin: 0 auto; }
-@media (min-width: 1101px) {
-  .study-main .dash-note-side { top: 84px; max-height: calc(100vh - 108px); }
-}
+
 
 .study-home { max-width: 860px; margin: clamp(12px, 6vh, 64px) auto 0; }
 .study-home-title {
@@ -3160,3 +3154,66 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-theme-switch button { white-space: nowrap; }
 .dash-sidebar .dash-theme-switch { display: flex; width: 100%; }
 .dash-sidebar .dash-theme-switch button { flex: 1; padding: 5px 6px; }
+
+/* The owner's notes, opened inside a member's journal day */
+.dash-study-peek { margin-bottom: 14px; }
+.dash-study-peek .dash-study-link { width: 100%; margin-bottom: 0; text-align: left; }
+.dash-study-peek.is-open .dash-study-link { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.dash-study-peek-body {
+  padding: 4px 16px 16px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.25);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  background: rgb(var(--gold-rgb) / 0.03);
+}
+.dash-study-peek-body .dash-reader-takeaway { margin: 12px 0 4px; font-size: 16px; }
+.dash-study-peek-note { margin-top: 14px; }
+.dash-study-peek-note .dash-reader-ref { font-size: 15px; margin-bottom: 4px; }
+.dash-study-peek-words { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.dash-study-peek-word { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.dash-study-peek-word .dash-reader-word-name { font-size: 17px; }
+.dash-study-peek-word p { flex-basis: 100%; margin: 0; font-family: var(--font-read), Georgia, serif; font-size: 14.5px; color: var(--colour-ink-soft); }
+.dash-study-peek-open { display: inline-block; margin-top: 16px; color: var(--colour-glow); }
+
+/* Back to where they came from */
+.study-backbar { display: flex; align-items: center; gap: 14px; margin: -12px 0 18px; }
+.study-back {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--colour-ink-soft);
+}
+.study-back:hover { border-color: var(--colour-amber); color: var(--colour-ink-strong); }
+.study-crumb { font-size: 12.5px; color: var(--colour-ink-quiet); }
+.study-crumb a { color: var(--colour-ink-soft); }
+.study-crumb a:hover { color: var(--colour-glow); }
+.study-crumb span { margin: 0 4px; }
+.dash-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 22px; counter-reset: guide; }
+.dash-guide li {
+  position: relative;
+  padding-left: 34px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--colour-ink-soft);
+  counter-increment: guide;
+}
+.dash-guide li::before {
+  content: counter(guide);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.5);
+  font-family: var(--font-read), Georgia, serif;
+  font-size: 12.5px;
+  color: var(--colour-amber);
+}
+.dash-guide strong { color: var(--colour-ink-strong); font-weight: 600; }
+.dash-guide code { font-size: 12.5px; padding: 1px 5px; border-radius: 5px; background: rgb(var(--gold-rgb) / 0.1); color: var(--colour-ink); }

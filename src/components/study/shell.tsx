@@ -8,7 +8,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { AlbumPlayerProvider, ListenButton } from "./album-player";
 import { ThemeToggle } from "./theme-toggle";
@@ -75,7 +75,12 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   ];
   const bare = ["/study/login", "/study/join", "/study/reset"].includes(pathname ?? "");
 
-  const body = <MeContext.Provider value={{ ...me, refresh }}>{children}</MeContext.Provider>;
+  const body = (
+    <MeContext.Provider value={{ ...me, refresh }}>
+      <BackBar />
+      {children}
+    </MeContext.Provider>
+  );
 
   if (bare) return <div className="study-root">{body}</div>;
 
@@ -121,6 +126,46 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         </main>
         <StudyFooter />
       </AlbumPlayerProvider>
+    </div>
+  );
+}
+
+// "← Back" on every page but the front door: to the page they came from in
+// The Study (or elsewhere on the site), else to the page above this one.
+let movedInApp = false;
+const PAGE: Record<string, { name: string; parent: string }> = {
+  "/study/journal": { name: "My journal", parent: "/study" },
+  "/study/read": { name: "Daniel's study", parent: "/study" },
+  "/study/account": { name: "Account", parent: "/study" },
+  "/study/words": { name: "All words", parent: "/study/journal" },
+};
+
+function BackBar() {
+  const pathname = usePathname() ?? "/study";
+  const router = useRouter();
+  const me = useMe();
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) first.current = false;
+    else movedInApp = true;
+  }, [pathname]);
+
+  const page = PAGE[pathname];
+  if (!page) return null;
+  const name = pathname === "/study/read" ? studyName(me.study) : page.name;
+  const back = () => {
+    const fromSite = typeof document !== "undefined" && document.referrer.startsWith(window.location.origin);
+    if ((movedInApp || fromSite) && window.history.length > 1) router.back();
+    else router.push(page.parent);
+  };
+  return (
+    <div className="study-backbar">
+      <button type="button" className="study-back" onClick={back}>
+        ← Back
+      </button>
+      <span className="study-crumb">
+        <Link href="/study">The Study</Link> <span aria-hidden>›</span> {name}
+      </span>
     </div>
   );
 }

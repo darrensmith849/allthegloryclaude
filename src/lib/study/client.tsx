@@ -15,7 +15,8 @@ export type CacheName =
   | "sections"
   | "words"
   | "wordsPending"
-  | "wordsSynced";
+  | "wordsSynced"
+  | "guide";
 
 export interface StudyClient {
   kind: "owner" | "member";
@@ -45,6 +46,7 @@ const OWNER_KEYS: Record<CacheName, string> = {
   words: "atg:words:v1",
   wordsPending: "atg:words:pending",
   wordsSynced: "atg:words:synced",
+  guide: "atg:notes:guide",
 };
 
 export const OWNER_CLIENT: StudyClient = {

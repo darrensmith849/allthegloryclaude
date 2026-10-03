@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
+import { StudyPeek } from "@/components/study/study-peek";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -111,7 +112,10 @@ export function StudyNotes() {
   const [day, setDay] = useState<string>(() => todayDay());
   const [month, setMonth] = useState<string>(() => startOfMonth(todayDay()));
   const [calView, setCalView] = useState<"month" | "year">("month");
-  const [sections, setSections] = useState<{ notes: boolean; words: boolean }>({ notes: true, words: true });
+  const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean }>({
+    notes: true,
+    words: true,
+  });
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
@@ -138,6 +142,27 @@ export function StudyNotes() {
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
   const writeBox = useRef<HTMLTextAreaElement>(null);
+  const sideRef = useRef<HTMLDivElement>(null);
+
+  // Pin the calendar column below any sticky top bar; when it's taller than
+  // the window, let it scroll with the page until its bottom shows.
+  useEffect(() => {
+    const el = sideRef.current;
+    if (!el) return;
+    const update = () => {
+      const bar = document.querySelector<HTMLElement>(".study-top");
+      const base = bar && getComputedStyle(bar).position === "sticky" ? bar.offsetHeight + 16 : 24;
+      el.style.setProperty("--side-top", `${Math.min(base, window.innerHeight - el.offsetHeight - 16)}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   // Instant load from the last copy, then the server. Opens on ?day= when
   // given (e.g. back from the reader view), else the latest note's day.
@@ -182,6 +207,16 @@ export function StudyNotes() {
       })
       .catch(() => {});
   }, []);
+
+  // Members: a short how-it-works guide until they've seen it.
+  const [guide, setGuide] = useState(false);
+  useEffect(() => {
+    if (client.kind === "member") setGuide(readStore<boolean>(client.key("guide"), false) !== true);
+  }, [client]);
+  const closeGuide = () => {
+    setGuide(false);
+    writeStore(client.key("guide"), true);
+  };
 
   // Members: which dates the shared study covers, to link each day to it.
   useEffect(() => {
@@ -230,7 +265,7 @@ export function StudyNotes() {
     });
   };
 
-  function toggleSection(key: "notes" | "words") {
+  function toggleSection(key: "notes" | "words" | "study") {
     setSections((s) => {
       const next = { ...s, [key]: !s[key] };
       writeStore(SECTIONS_KEY, next);
@@ -617,6 +652,48 @@ export function StudyNotes() {
       {offline && <div className="dash-word-note mb-4">{offline}</div>}
 
       <div className="dash-grid">
+        {guide && (
+          <div className="dash-col-12">
+            <Panel
+              eyebrow="Welcome"
+              title="How your journal works"
+              action={
+                <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={closeGuide}>
+                  Got it
+                </button>
+              }
+            >
+              <ol className="dash-guide">
+                <li>
+                  <strong>Open a day.</strong> Today is already open - each date is that day&apos;s reading in{" "}
+                  <em>{PLAN.name}</em>.
+                </li>
+                <li>
+                  <strong>Read the passages</strong> with the 📖 Bible App link (NIV), or in your own copy of the book.
+                </li>
+                {client.studyUrl && (
+                  <li>
+                    <strong>Read {client.studyAuthor ? `${client.studyAuthor}'s` : "the study's"} notes.</strong> Gold
+                    dots on the calendar mark the days {client.studyAuthor ?? "the study"} wrote - open the card on that
+                    day to read them right there.
+                  </li>
+                )}
+                <li>
+                  <strong>Write your notes</strong> the way you like. A new line like <code>Vs 14 - …</code> or{" "}
+                  <code>John 4 vs 10 - …</code> becomes its own note, filed under that verse.
+                </li>
+                <li>
+                  <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
+                  it in for the Hebrew or Greek, its meaning and the verses that use it.
+                </li>
+                <li>
+                  <strong>Tick &ldquo;Mark as read&rdquo;</strong> to keep your place and build a streak. Everything is
+                  saved and private to you.
+                </li>
+              </ol>
+            </Panel>
+          </div>
+        )}
         {importOpen && (
           <div className="dash-col-12">
             <Panel eyebrow="Bring notes across" title="Paste many days at once">
@@ -653,7 +730,7 @@ export function StudyNotes() {
         )}
 
         {/* ── Calendar + search ───────────────────────────────────── */}
-        <div className="dash-col-5 dash-note-side">
+        <div className="dash-col-5 dash-note-side" ref={sideRef}>
           <Panel
             eyebrow="Reading plan"
             title={calView === "year" ? month.slice(0, 4) : monthName}
@@ -1012,13 +1089,23 @@ export function StudyNotes() {
               </a>
             )}
             {client.studyUrl && isDay(day) && studyOn.has(day.slice(5)) && (
-              <a className="dash-study-link" href={`${client.studyUrl}?on=${day.slice(5)}`}>
-                <span className="eyebrow eyebrow-amber">
-                  {client.studyAuthor ? `${client.studyAuthor}'s notes` : "The study"} for {dayLabel(day, { weekday: false })}
-                </span>
-                <span className="dash-study-link-title">{studyOn.get(day.slice(5)) || "Read the notes"}</span>
-                <span className="dash-study-link-go">Read →</span>
-              </a>
+              <div className={`dash-study-peek ${sections.study ? "is-open" : ""}`}>
+                <button
+                  type="button"
+                  className="dash-study-link"
+                  onClick={() => toggleSection("study")}
+                  aria-expanded={Boolean(sections.study)}
+                >
+                  <span className="eyebrow eyebrow-amber">
+                    {client.studyAuthor ? `${client.studyAuthor}'s notes` : "The study"} for {dayLabel(day, { weekday: false })}
+                  </span>
+                  <span className="dash-study-link-title">{studyOn.get(day.slice(5)) || "Read the notes"}</span>
+                  <span className="dash-study-link-go">{sections.study ? "Hide ▴" : "Read ▾"}</span>
+                </button>
+                {sections.study && (
+                  <StudyPeek on={day.slice(5)} studyUrl={client.studyUrl} author={client.studyAuthor} />
+                )}
+              </div>
             )}
 
             {otherYears.length > 0 && (
