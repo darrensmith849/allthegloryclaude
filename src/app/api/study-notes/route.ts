@@ -3,14 +3,16 @@
  * (table study_notes, see db/schema.sql) so the list can grow without the
  * size limits of the dashboard's single state blob.
  *
- *   GET                         -> { notes: StudyNote[] }  (order written)
- *   POST   { note }             -> { note }       new note, next seq
- *   POST   { import: [...] }    -> { notes }      many, in the given order
- *   PATCH  { id, ...fields }    -> { note }
- *   DELETE ?id=...              -> 204
+ *   GET                                   -> { notes }  (order written)
+ *   POST   { note }                       -> { note }   new note, next seq
+ *   POST   { import: [...] }              -> { notes }  many, in the given order
+ *   PATCH  { id, ...note }                -> { note }   edit one note
+ *   PATCH  { moves: [{ id, position }] }  -> { notes }  reorder
+ *   PATCH  { ids: [...], day?, page? }    -> { notes }  set day / page on many
+ *   DELETE ?id=...                        -> 204
  */
 import { getDb, type D1Db } from "@/lib/analytics/store";
-import type { NoteInput, StudyNote } from "@/lib/dashboard/notes";
+import { isDay, type NoteInput, type StudyNote } from "@/lib/dashboard/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +21,10 @@ const MAX_IMPORT = 5_000;
 
 interface Row {
   id: string;
+  day: string | null;
   page: number | null;
   seq: number;
+  position: number | null;
   book: number | null;
   chapter: number | null;
   verse: number | null;
@@ -32,8 +36,10 @@ interface Row {
 
 const toNote = (r: Row): StudyNote => ({
   id: r.id,
+  day: r.day,
   page: r.page,
   seq: r.seq,
+  position: r.position ?? r.seq,
   book: r.book,
   chapter: r.chapter,
   verse: r.verse,
@@ -47,6 +53,8 @@ const int = (v: unknown, min: number, max: number): number | null => {
   const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
   return Number.isInteger(n) && n >= min && n <= max ? n : null;
 };
+const page = (v: unknown) => int(v, 0, 100_000);
+const day = (v: unknown) => (isDay(v) ? v : null);
 
 // Validates one note; null if there's no text to save.
 function clean(input: Partial<NoteInput> | undefined): NoteInput | null {
@@ -56,7 +64,7 @@ function clean(input: Partial<NoteInput> | undefined): NoteInput | null {
   const chapter = book ? int(input?.chapter, 1, 150) : null;
   const verse = chapter ? int(input?.verse, 1, 200) : null;
   const verseEnd = verse ? int(input?.verseEnd, verse, 200) : null;
-  return { page: int(input?.page, 0, 100_000), book, chapter, verse, verseEnd, text };
+  return { day: day(input?.day), page: page(input?.page), book, chapter, verse, verseEnd, text };
 }
 
 const unavailable = () =>
@@ -68,14 +76,23 @@ async function nextSeq(db: D1Db): Promise<number> {
 }
 
 function insert(db: D1Db, n: NoteInput, seq: number, now: number): { stmt: ReturnType<D1Db["prepare"]>; note: StudyNote } {
-  const note: StudyNote = { id: crypto.randomUUID(), seq, createdAt: now, updatedAt: now, ...n };
+  const note: StudyNote = { id: crypto.randomUUID(), seq, position: seq, createdAt: now, updatedAt: now, ...n };
   const stmt = db
     .prepare(
-      "INSERT INTO study_notes (id, page, seq, book, chapter, verse, verse_end, text, created_at, updated_at) " +
-        "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+      "INSERT INTO study_notes (id, day, page, seq, position, book, chapter, verse, verse_end, text, created_at, updated_at) " +
+        "VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
     )
-    .bind(note.id, n.page, seq, n.book, n.chapter, n.verse, n.verseEnd, n.text, now, now);
+    .bind(note.id, n.day, n.page, seq, n.book, n.chapter, n.verse, n.verseEnd, n.text, now);
   return { stmt, note };
+}
+
+async function fetchNotes(db: D1Db, ids: string[]): Promise<StudyNote[]> {
+  if (!ids.length) return [];
+  const { results } = await db
+    .prepare(`SELECT * FROM study_notes WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`)
+    .bind(...ids)
+    .all<Row>();
+  return results.map(toNote);
 }
 
 export async function GET() {
@@ -117,23 +134,65 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
-  const body = (await req.json().catch(() => ({}))) as Partial<NoteInput> & { id?: string };
-  const id = String(body.id ?? "");
-  const n = clean(body);
-  if (!id || !n) return Response.json({ error: "Nothing to save." }, { status: 400 });
+  const body = (await req.json().catch(() => ({}))) as Partial<NoteInput> & {
+    id?: string;
+    ids?: unknown;
+    moves?: unknown;
+  };
+  const now = Date.now();
   try {
-    const now = Date.now();
+    // Reorder: new positions for a few notes.
+    if (Array.isArray(body.moves)) {
+      const moves = body.moves
+        .map((m) => m as { id?: unknown; position?: unknown })
+        .filter((m) => typeof m.id === "string" && typeof m.position === "number" && Number.isFinite(m.position))
+        .slice(0, 500) as { id: string; position: number }[];
+      if (!moves.length) return Response.json({ error: "Nothing to move." }, { status: 400 });
+      await db.batch(
+        moves.map((m) =>
+          db.prepare("UPDATE study_notes SET position=?2, updated_at=?3 WHERE id=?1").bind(m.id, m.position, now),
+        ),
+      );
+      return Response.json({ notes: await fetchNotes(db, moves.map((m) => m.id)) });
+    }
+
+    // Set the day and/or page on many notes at once.
+    if (Array.isArray(body.ids)) {
+      const ids = body.ids.filter((x): x is string => typeof x === "string").slice(0, 2_000);
+      const sets: string[] = [];
+      const values: unknown[] = [];
+      if ("day" in body) {
+        values.push(day(body.day));
+        sets.push(`day=?${values.length + 1}`);
+      }
+      if ("page" in body) {
+        values.push(page(body.page));
+        sets.push(`page=?${values.length + 1}`);
+      }
+      if (!ids.length || !sets.length) return Response.json({ error: "Nothing to change." }, { status: 400 });
+      values.push(now);
+      sets.push(`updated_at=?${values.length + 1}`);
+      await db.batch(
+        ids.map((id) => db.prepare(`UPDATE study_notes SET ${sets.join(", ")} WHERE id=?1`).bind(id, ...values)),
+      );
+      return Response.json({ notes: await fetchNotes(db, ids) });
+    }
+
+    // Edit one note.
+    const id = String(body.id ?? "");
+    const n = clean(body);
+    if (!id || !n) return Response.json({ error: "Nothing to save." }, { status: 400 });
     await db
       .prepare(
-        "UPDATE study_notes SET page=?2, book=?3, chapter=?4, verse=?5, verse_end=?6, text=?7, updated_at=?8 WHERE id=?1",
+        "UPDATE study_notes SET day=?2, page=?3, book=?4, chapter=?5, verse=?6, verse_end=?7, text=?8, updated_at=?9 WHERE id=?1",
       )
-      .bind(id, n.page, n.book, n.chapter, n.verse, n.verseEnd, n.text, now)
+      .bind(id, n.day, n.page, n.book, n.chapter, n.verse, n.verseEnd, n.text, now)
       .run();
-    const row = await db.prepare("SELECT * FROM study_notes WHERE id=?1").bind(id).first<Row>();
-    return row ? Response.json({ note: toNote(row) }) : Response.json({ error: "Note not found." }, { status: 404 });
+    const [note] = await fetchNotes(db, [id]);
+    return note ? Response.json({ note }) : Response.json({ error: "Note not found." }, { status: 404 });
   } catch (e) {
     console.error("study-notes PATCH:", e);
-    return Response.json({ error: "Couldn't save that note." }, { status: 500 });
+    return Response.json({ error: "Couldn't save that change." }, { status: 500 });
   }
 }
 

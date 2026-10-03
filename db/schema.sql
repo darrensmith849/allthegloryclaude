@@ -39,12 +39,17 @@ CREATE TABLE IF NOT EXISTS dashboard_state (
 );
 
 -- Bible study notes from the private dashboard (/dashboard/notes). One row
--- per note so the list can grow without limit. Ordered by the page in the
--- owner's chronological Bible, then by the order they were written (seq).
+-- per note so the list can grow without limit. Ordered by reading-plan day,
+-- then page, then position (the order the owner arranges them in).
+-- day/position were added after the table first shipped; on an existing
+-- database run: ALTER TABLE study_notes ADD COLUMN day TEXT;
+--               ALTER TABLE study_notes ADD COLUMN position REAL;
 CREATE TABLE IF NOT EXISTS study_notes (
   id         TEXT PRIMARY KEY,
+  day        TEXT,                -- reading-plan day, YYYY-MM-DD (nullable)
   page       INTEGER,             -- chronological Bible page (nullable)
-  seq        INTEGER NOT NULL,    -- order written; breaks ties within a page
+  seq        INTEGER NOT NULL,    -- order written
+  position   REAL,                -- order within a day/page; starts as seq
   book       INTEGER,             -- 1-66, canonical order (nullable)
   chapter    INTEGER,
   verse      INTEGER,
