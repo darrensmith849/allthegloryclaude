@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 
 const NAV = [
@@ -9,6 +10,7 @@ const NAV = [
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
   { href: "/dashboard/members", label: "Members", glyph: "☍" },
+  { href: "/dashboard/community", label: "Community", glyph: "❧" },
   { href: "/dashboard/today", label: "Today", glyph: "✦" },
   { href: "/dashboard/calendar", label: "Calendar", glyph: "▦" },
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },
@@ -21,6 +23,16 @@ const NAV = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  // Things waiting in Community (shared posts to approve, new check-in replies).
+  const [waiting, setWaiting] = useState(0);
+  useEffect(() => {
+    fetch("/api/members/community?count=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { pending?: number; unread?: number; reported?: number } | null) =>
+        setWaiting((d?.pending ?? 0) + (d?.unread ?? 0) + (d?.reported ?? 0)),
+      )
+      .catch(() => {});
+  }, [pathname]);
   return (
     <aside className="dash-sidebar">
       <div className="dash-brand">
@@ -42,6 +54,7 @@ export default function DashboardSidebar() {
             >
               <span className="dash-nav-glyph">{item.glyph}</span>
               <span>{item.label}</span>
+              {item.href === "/dashboard/community" && waiting > 0 && <span className="dash-nav-badge">{waiting}</span>}
             </Link>
           );
         })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { forgetMe } from "@/components/study/shell";
 
 const MIN_PASSWORD = 8;
 
@@ -31,6 +32,7 @@ export default function StudyResetPage() {
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(data.error ?? "Couldn't set your password.");
+      forgetMe();
       window.location.assign("/study/journal");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't set your password.");

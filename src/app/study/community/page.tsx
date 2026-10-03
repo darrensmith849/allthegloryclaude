@@ -1,0 +1,336 @@
+"use client";
+
+// Community - members only. This week's reflection from the owner with a
+// private check-in reply, testimonies members have shared (each approved by
+// the owner first), and the member's own shared posts.
+
+import { useEffect, useState } from "react";
+import { Panel } from "@/components/dashboard/panel";
+import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
+import { NoteText } from "@/components/dashboard/note-text";
+import { MemberOnly, useMe } from "@/components/study/shell";
+import { dayLabel } from "@/lib/dashboard/notes";
+
+interface Post {
+  id: string;
+  kind: string;
+  author: string;
+  day: string | null;
+  ref: string | null;
+  title: string | null;
+  text: string;
+  status?: string;
+  mine: boolean;
+  createdAt: number;
+}
+interface Weekly {
+  id: string;
+  title: string;
+  body: string;
+  question: string | null;
+  publishedAt: number;
+}
+
+const when = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const STATUS: Record<string, string> = {
+  pending: "Waiting for approval",
+  approved: "Shared with members",
+  declined: "Not shared",
+};
+
+function Community() {
+  const me = useMe();
+  const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : "The study's host";
+  const [weekly, setWeekly] = useState<Weekly | null | undefined>(undefined);
+  const [replies, setReplies] = useState<{ id: string; text: string; createdAt: number }[]>([]);
+  const [reply, setReply] = useState("");
+  const [replyState, setReplyState] = useState<string | null>(null);
+  const [testimonies, setTestimonies] = useState<Post[]>([]);
+  const [mine, setMine] = useState<Post[]>([]);
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const [writing, setWriting] = useState(false);
+  const [form, setForm] = useState({ title: "", text: "", anonymous: false, consent: false });
+  const [formState, setFormState] = useState<{ busy?: boolean; error?: string; done?: boolean }>({});
+
+  useEffect(() => {
+    fetch("/api/study/weekly", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { reflection?: Weekly | null; replies?: typeof replies } | null) => {
+        setWeekly(d?.reflection ?? null);
+        setReplies(d?.replies ?? []);
+      })
+      .catch(() => setWeekly(null));
+    fetch("/api/study/community?kind=testimony", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { posts?: Post[] } | null) => setTestimonies(d?.posts ?? []))
+      .catch(() => {});
+    fetch("/api/study/community?mine=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { posts?: Post[] } | null) => setMine(d?.posts ?? []))
+      .catch(() => {});
+  }, []);
+
+  async function sendReply() {
+    if (!weekly || !reply.trim()) return;
+    setReplyState("Sending…");
+    const r = await fetch("/api/study/weekly", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reflectionId: weekly.id, text: reply }),
+    }).catch(() => null);
+    const d = r ? ((await r.json().catch(() => ({}))) as { reply?: (typeof replies)[number]; error?: string }) : null;
+    if (r?.ok && d?.reply) {
+      setReplies((list) => [...list, d.reply!]);
+      setReply("");
+      setReplyState(`✓ Sent - only ${author} reads this.`);
+    } else setReplyState(d?.error ?? "Couldn't send - check your connection.");
+  }
+
+  async function shareTestimony() {
+    if (!form.consent) return;
+    setFormState({ busy: true });
+    const r = await fetch("/api/study/community", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "testimony", title: form.title, text: form.text, anonymous: form.anonymous, consent: true }),
+    }).catch(() => null);
+    const d = r ? ((await r.json().catch(() => ({}))) as { post?: Post; error?: string }) : null;
+    if (r?.ok && d?.post) {
+      setMine((list) => [d.post!, ...list]);
+      setForm({ title: "", text: "", anonymous: false, consent: false });
+      setFormState({ done: true });
+      setWriting(false);
+    } else setFormState({ error: d?.error ?? "Couldn't send - check your connection." });
+  }
+
+  async function withdraw(post: Post) {
+    if (!confirm("Stop sharing this? It's removed for everyone straight away.")) return;
+    await fetch(`/api/study/community?id=${encodeURIComponent(post.id)}`, { method: "DELETE" }).catch(() => {});
+    setMine((list) => list.filter((p) => p.id !== post.id));
+    setTestimonies((list) => list.filter((p) => p.id !== post.id));
+  }
+
+  async function report(post: Post) {
+    const reason = prompt(`What's wrong with this post? (${author} will look at it.)`, "");
+    if (reason === null) return;
+    await fetch("/api/study/community", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ report: post.id, reason }),
+    }).catch(() => {});
+    alert("Thank you - it's been passed on.");
+  }
+
+  const toggle = (id: string) =>
+    setOpen((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <>
+      <div className="dash-pagehead">
+        <div>
+          <div className="eyebrow eyebrow-amber">The Study · members only</div>
+          <h1 className="dash-title mt-1">Community</h1>
+          <div className="dash-subtitle">
+            A weekly word from {author}, and what God is doing in the lives of members. Everything here is seen by members
+            only, and every post is read by {author} before it appears.
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="dash-col-7">
+          <Panel eyebrow={weekly ? `This week · ${when(weekly.publishedAt)}` : "This week"} title={weekly?.title ?? "This week's reflection"}>
+            {weekly === undefined && <p className="dash-word-hint">Opening…</p>}
+            {weekly === null && <p className="dash-word-hint">{author} hasn&apos;t posted this week&apos;s reflection yet.</p>}
+            {weekly && (
+              <>
+                <div className="dash-community-body">
+                  <NoteText text={weekly.body} />
+                </div>
+                {weekly.question && (
+                  <div className="dash-checkin">
+                    <div className="eyebrow eyebrow-amber">Check-in</div>
+                    <p className="dash-checkin-q">{weekly.question}</p>
+                    {replies.map((r) => (
+                      <div key={r.id} className="dash-checkin-mine">
+                        <span>You · {when(r.createdAt)}</span>
+                        <NoteText text={r.text} />
+                      </div>
+                    ))}
+                    <GrowingTextarea
+                      className="dash-textarea dash-word-field"
+                      placeholder={`Reply to ${author} - only ${author} sees this.`}
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                    />
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <button type="button" className="dash-btn dash-btn-primary" disabled={!reply.trim()} onClick={sendReply}>
+                        Send privately
+                      </button>
+                      {replyState && <span className="dash-word-hint">{replyState}</span>}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Panel>
+
+          <div className="mt-[18px]">
+            <Panel
+              eyebrow="Shared by members"
+              title="Testimonies"
+              action={
+                !writing && (
+                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => setWriting(true)}>
+                    Share yours
+                  </button>
+                )
+              }
+            >
+              {formState.done && (
+                <div className="dash-word-saved">✓ Thank you. {author} will read it and it will appear here once approved.</div>
+              )}
+              {writing && (
+                <div className="dash-share-form mb-4">
+                  <p>
+                    Share what God has done in your life. Keep it about your own story - please don&apos;t name other
+                    people or share their details without their permission, and leave out medical or legal advice.{" "}
+                    {author} reads every testimony before it appears, and only signed-in members can see it - never the
+                    public site. You can remove it any time.
+                  </p>
+                  <input
+                    className="dash-input"
+                    placeholder="A title (optional), e.g. Found again"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  />
+                  <GrowingTextarea
+                    className="dash-textarea dash-word-field"
+                    minRows={6}
+                    placeholder="Your testimony…"
+                    value={form.text}
+                    onChange={(e) => setForm({ ...form, text: e.target.value })}
+                  />
+                  <label className="dash-day-share">
+                    <input type="checkbox" checked={form.anonymous} onChange={(e) => setForm({ ...form, anonymous: e.target.checked })} />
+                    Share without my name (shows as &ldquo;A member&rdquo;)
+                  </label>
+                  <label className="dash-day-share">
+                    <input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
+                    I&apos;m happy for other members of The Study to read this
+                  </label>
+                  {formState.error && <p className="text-[12.5px] text-[#f1a07d]">{formState.error}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="dash-btn dash-btn-primary"
+                      disabled={!form.consent || form.text.trim().length < 20 || formState.busy}
+                      onClick={shareTestimony}
+                    >
+                      {formState.busy ? "Sending…" : "Send for approval"}
+                    </button>
+                    <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setWriting(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {testimonies.length === 0 && !writing && (
+                <p className="dash-word-hint">No testimonies yet - yours could be the first.</p>
+              )}
+              <div className="dash-note-list">
+                {testimonies.map((t) => {
+                  const isOpen = open.has(t.id);
+                  return (
+                    <article key={t.id} className={`dash-note ${isOpen ? "is-open" : ""}`}>
+                      <button type="button" className="dash-note-head dash-testimony-head" onClick={() => toggle(t.id)} aria-expanded={isOpen}>
+                        <span className="dash-testimony-title">{t.title || "Testimony"}</span>
+                        <span className="dash-note-head-text">{isOpen ? "" : `${t.mine ? "You" : t.author} · ${t.text.replace(/\s+/g, " ")}`}</span>
+                        <span className="dash-note-chev" aria-hidden>
+                          ›
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="dash-note-open">
+                          <div className="dash-reflection-who mb-2">
+                            {t.mine ? "You" : t.author} · {when(t.createdAt)}
+                          </div>
+                          <NoteText text={t.text} />
+                          <div className="dash-note-actions">
+                            <span className="flex-1" />
+                            {t.mine ? (
+                              <button type="button" className="dash-word-link" onClick={() => withdraw(t)}>
+                                Remove
+                              </button>
+                            ) : (
+                              <button type="button" className="dash-word-link" onClick={() => report(t)}>
+                                Report
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </Panel>
+          </div>
+        </div>
+
+        <div className="dash-col-5">
+          <Panel eyebrow="Yours" title="What you've shared">
+            {mine.length === 0 && (
+              <p className="dash-word-hint">
+                Nothing yet. To share a note, open it in your journal and tap &ldquo;Share with members&rdquo;.
+              </p>
+            )}
+            <div className="flex flex-col gap-2">
+              {mine.map((p) => (
+                <div key={p.id} className="dash-members-row">
+                  <div className="min-w-0">
+                    <div className="dash-members-name">
+                      {p.kind === "testimony" ? p.title || "Testimony" : p.ref || "Reflection"}
+                      {p.day && <span className="dash-word-hint"> · {dayLabel(p.day, { weekday: false })}</span>}
+                    </div>
+                    <div className="dash-word-hint">
+                      {STATUS[p.status ?? "pending"]} · {p.author === "A member" ? "without your name" : "with your first name"}
+                    </div>
+                  </div>
+                  <button type="button" className="dash-word-link" onClick={() => withdraw(p)}>
+                    {p.status === "declined" ? "Remove" : "Stop sharing"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Panel>
+          <div className="mt-[18px]">
+            <Panel eyebrow="How sharing works" title="Safe and private">
+              <ul className="dash-community-rules">
+                <li>Only signed-in members of The Study can see what&apos;s shared - never the public website or search engines.</li>
+                <li>{author} reads everything first. Nothing appears until it&apos;s approved.</li>
+                <li>You choose to show your first name or stay anonymous, every time.</li>
+                <li>You can stop sharing any post at any time, and it&apos;s gone for everyone.</li>
+                <li>Replies to the weekly check-in are private - only {author} reads them.</li>
+                <li>See something that isn&apos;t right? Tap Report and {author} will look at it.</li>
+              </ul>
+            </Panel>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <MemberOnly>
+      <Community />
+    </MemberOnly>
+  );
+}

@@ -62,6 +62,14 @@ export default function PrivacyPage() {
                 account and all of it from your Account page at any time.
               </li>
               <li>
+                <strong className="text-white/85">When you share in The Study</strong>{" "}
+                — a reflection or testimony you choose to share is shown only to
+                other signed-in members (never on the public site), after we have
+                read and approved it, with your first name or anonymously as you
+                choose. You can stop sharing it at any time. Replies to the
+                weekly check-in are private and read only by us.
+              </li>
+              <li>
                 <strong className="text-white/85">When you donate</strong> —
                 your payment is handled securely by our payment provider,
                 Paystack. We never see or store your card details. We keep a

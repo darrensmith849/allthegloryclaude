@@ -37,5 +37,6 @@ export const config = {
     "/api/word-fill",
     "/api/analytics",
     "/api/members",
+    "/api/members/:path*",
   ],
 };

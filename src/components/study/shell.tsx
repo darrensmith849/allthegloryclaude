@@ -23,6 +23,17 @@ interface Me {
   refresh: () => Promise<void>;
 }
 
+const ME_KEY = "atg:study:me"; // this tab's last /api/study/me answer
+
+// Forget the cached sign-in (after logging in or out).
+export function forgetMe() {
+  try {
+    window.sessionStorage.removeItem(ME_KEY);
+  } catch {
+    // private window
+  }
+}
+
 const MeContext = createContext<Me>({ loaded: false, member: null, study: null, refresh: async () => {} });
 export const useMe = () => useContext(MeContext);
 
@@ -50,11 +61,26 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
       const r = await fetch("/api/study/me", { cache: "no-store" });
       const data = (await r.json()) as { member: MeMember | null; study: StudySettings };
       setMe({ loaded: true, member: data.member, study: data.study });
+      try {
+        window.sessionStorage.setItem(ME_KEY, JSON.stringify({ member: data.member, study: data.study }));
+      } catch {
+        // private window
+      }
     } catch {
       setMe((m) => ({ ...m, loaded: true }));
     }
   }, []);
   useEffect(() => {
+    // Show the page straight away from this tab's last answer, then check.
+    try {
+      const cached = JSON.parse(window.sessionStorage.getItem(ME_KEY) ?? "null") as {
+        member: MeMember | null;
+        study: StudySettings;
+      } | null;
+      if (cached?.study) setMe({ loaded: true, member: cached.member, study: cached.study });
+    } catch {
+      // private window
+    }
     void refresh();
   }, [refresh]);
 
@@ -69,6 +95,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
     ...(me.member
       ? [
           { href: "/study/journal", label: "My journal" },
+          { href: "/study/community", label: "Community" },
           { href: "/study/account", label: "Account" },
         ]
       : []),
@@ -137,6 +164,7 @@ const PAGE: Record<string, { name: string; parent: string }> = {
   "/study/journal": { name: "My journal", parent: "/study" },
   "/study/read": { name: "Daniel's study", parent: "/study" },
   "/study/account": { name: "Account", parent: "/study" },
+  "/study/community": { name: "Community", parent: "/study" },
   "/study/words": { name: "All words", parent: "/study/journal" },
 };
 

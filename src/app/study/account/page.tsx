@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
-import { MemberOnly, useMe } from "@/components/study/shell";
+import { forgetMe, MemberOnly, useMe } from "@/components/study/shell";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 
 const MIN_PASSWORD = 8;
@@ -115,6 +115,7 @@ function Account() {
     if (!confirm("Delete your account and everything in your journal? This can't be undone.")) return;
     try {
       await call("DELETE", { password: delPassword, confirm: delConfirm });
+      forgetMe();
       window.location.assign("/study");
     } catch (err) {
       setDelError(err instanceof Error ? err.message : "Couldn't delete it.");
@@ -123,6 +124,7 @@ function Account() {
 
   async function logout() {
     await fetch("/api/study/logout", { method: "POST" }).catch(() => {});
+    forgetMe();
     window.location.assign("/study");
   }
 

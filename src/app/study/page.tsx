@@ -34,6 +34,18 @@ export default function StudyHome() {
       .catch(() => setStudyToday(null));
   }, [readable, today]);
 
+  // This week's reflection from the owner (members).
+  const [weekly, setWeekly] = useState<{ title: string; body: string; question: string | null } | null>(null);
+  useEffect(() => {
+    if (!me.member) return;
+    fetch("/api/study/weekly", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { reflection?: { title: string; body: string; question: string | null } | null } | null) =>
+        setWeekly(d?.reflection ?? null),
+      )
+      .catch(() => {});
+  }, [me.member]);
+
   // The member's reading progress.
   const [days, setDays] = useState<StudyDay[]>([]);
   useEffect(() => {
@@ -122,6 +134,15 @@ export default function StudyHome() {
         </div>
       )}
       {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
+
+      {weekly && (
+        <Link href="/study/community" className="study-weekly">
+          <span className="eyebrow eyebrow-amber">This week from {author ?? "the study"}</span>
+          <span className="study-weekly-title">{weekly.title}</span>
+          <span className="study-weekly-text">{weekly.body.replace(/\s+/g, " ").slice(0, 220)}{weekly.body.length > 220 ? "…" : ""}</span>
+          <span className="study-weekly-go">{weekly.question ? "Read it and check in →" : "Read it →"}</span>
+        </Link>
+      )}
 
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">

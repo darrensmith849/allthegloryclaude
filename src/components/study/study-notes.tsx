@@ -10,6 +10,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { StudyPeek } from "@/components/study/study-peek";
+import { BibleLookup } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -93,6 +94,26 @@ async function request<T>(client: StudyClient, method: string, body?: unknown, q
   const data = (await r.json().catch(() => ({}))) as T & { error?: string };
   if (!r.ok) throw new Error(data.error ?? `Request failed (${r.status})`);
   return data;
+}
+
+interface SharedPost {
+  id: string;
+  kind: string;
+  author: string;
+  day: string | null;
+  ref: string | null;
+  text: string;
+  noteId: string | null;
+  status?: string;
+  mine: boolean;
+  createdAt: number;
+}
+interface ShareDraft {
+  noteId: string;
+  anonymous: boolean;
+  consent: boolean;
+  busy?: boolean;
+  error?: string;
 }
 
 export function StudyNotes() {
@@ -207,6 +228,77 @@ export function StudyNotes() {
       })
       .catch(() => {});
   }, []);
+
+  // Members: sharing a note with other members (after the owner approves),
+  // and the reflections others have shared on this date.
+  const [myPosts, setMyPosts] = useState<SharedPost[]>([]);
+  const [sharing, setSharing] = useState<ShareDraft | null>(null);
+  const [reflections, setReflections] = useState<SharedPost[]>([]);
+  const [openReflections, setOpenReflections] = useState(false);
+  useEffect(() => {
+    if (client.kind !== "member") return;
+    fetch("/api/study/community?mine=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { posts?: SharedPost[] } | null) => d?.posts && setMyPosts(d.posts))
+      .catch(() => {});
+  }, [client.kind]);
+  useEffect(() => {
+    if (client.kind !== "member" || !isDay(day)) {
+      setReflections([]);
+      return;
+    }
+    let live = true;
+    fetch(`/api/study/community?day=${day.slice(5)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { posts?: SharedPost[] } | null) => live && setReflections(d?.posts ?? []))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [client.kind, day]);
+  const postByNote = useMemo(() => new Map(myPosts.filter((p) => p.noteId).map((p) => [p.noteId as string, p])), [myPosts]);
+
+  async function shareNote(n: StudyNote) {
+    if (!sharing || !sharing.consent) return;
+    setSharing({ ...sharing, busy: true, error: undefined });
+    try {
+      const r = await fetch("/api/study/community", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          kind: "reflection",
+          noteId: n.id,
+          day: n.day,
+          ref: formatPassage(passageOf(n)),
+          text: n.text,
+          anonymous: sharing.anonymous,
+          consent: true,
+        }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { post?: SharedPost; error?: string };
+      if (!r.ok || !data.post) throw new Error(data.error ?? "Couldn't share that.");
+      setMyPosts((list) => [data.post!, ...list.filter((p) => p.noteId !== n.id)]);
+      setSharing(null);
+    } catch (err) {
+      setSharing((s) => s && { ...s, busy: false, error: err instanceof Error ? err.message : "Couldn't share that." });
+    }
+  }
+  async function withdraw(post: SharedPost) {
+    if (!confirm("Stop sharing this? It's removed for everyone straight away.")) return;
+    await fetch(`/api/study/community?id=${encodeURIComponent(post.id)}`, { method: "DELETE" }).catch(() => {});
+    setMyPosts((list) => list.filter((p) => p.id !== post.id));
+    setReflections((list) => list.filter((p) => p.id !== post.id));
+  }
+  async function report(post: SharedPost) {
+    const reason = prompt("What's wrong with this post? (Daniel will look at it.)", "");
+    if (reason === null) return;
+    await fetch("/api/study/community", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ report: post.id, reason }),
+    }).catch(() => {});
+    alert("Thank you - it's been passed on.");
+  }
 
   // Members: a short how-it-works guide until they've seen it.
   const [guide, setGuide] = useState(false);
@@ -938,6 +1030,23 @@ export function StudyNotes() {
               </Panel>
             </div>
           )}
+
+          {day !== TRASH && (
+            <div className="mt-[18px]">
+              <Panel eyebrow="The Bible" title="Look up a verse">
+                <BibleLookup
+                  onAdd={(ref) => {
+                    const current = drafts[day] ?? "";
+                    setDraft(day, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
+                    window.setTimeout(() => {
+                      writeBox.current?.focus();
+                      writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 60);
+                  }}
+                />
+              </Panel>
+            </div>
+          )}
         </div>
 
         {/* ── The open day ────────────────────────────────────────── */}
@@ -1279,6 +1388,27 @@ export function StudyNotes() {
                                   {n.private ? "🔒 Private" : "Make private"}
                                 </button>
                               )}
+                              {client.kind === "member" &&
+                                (postByNote.get(n.id) ? (
+                                  <span className="dash-share-state">
+                                    {postByNote.get(n.id)!.status === "approved"
+                                      ? "✓ Shared with members"
+                                      : postByNote.get(n.id)!.status === "pending"
+                                        ? "Waiting for approval"
+                                        : "Not shared"}
+                                    <button type="button" className="dash-word-link" onClick={() => withdraw(postByNote.get(n.id)!)}>
+                                      {postByNote.get(n.id)!.status === "declined" ? "Remove" : "Stop sharing"}
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="dash-word-link"
+                                    onClick={() => setSharing({ noteId: n.id, anonymous: false, consent: false })}
+                                  >
+                                    Share with members
+                                  </button>
+                                ))}
                               <span className="flex-1" />
                               <button
                                 type="button"
@@ -1317,6 +1447,46 @@ export function StudyNotes() {
                               </button>
                             </div>
                           )}
+                          {!isEditing && sharing?.noteId === n.id && (
+                            <div className="dash-share-form">
+                              <p>
+                                Share a copy of this note with other members of The Study.{" "}
+                                {client.studyAuthor ?? "The study's host"} reads it first - nothing appears until it&apos;s
+                                approved, and only signed-in members ever see it, never the public site. You can stop
+                                sharing any time.
+                              </p>
+                              <label className="dash-day-share">
+                                <input
+                                  type="checkbox"
+                                  checked={sharing.anonymous}
+                                  onChange={(e) => setSharing({ ...sharing, anonymous: e.target.checked })}
+                                />
+                                Share without my name (shows as &ldquo;A member&rdquo;)
+                              </label>
+                              <label className="dash-day-share">
+                                <input
+                                  type="checkbox"
+                                  checked={sharing.consent}
+                                  onChange={(e) => setSharing({ ...sharing, consent: e.target.checked })}
+                                />
+                                I&apos;m happy for other members to read this
+                              </label>
+                              {sharing.error && <p className="text-[12.5px] text-[#f1a07d]">{sharing.error}</p>}
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  className="dash-btn dash-btn-primary dash-note-nav"
+                                  disabled={!sharing.consent || sharing.busy}
+                                  onClick={() => shareNote(n)}
+                                >
+                                  {sharing.busy ? "Sending…" : "Send for approval"}
+                                </button>
+                                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setSharing(null)}>
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </article>
@@ -1324,6 +1494,49 @@ export function StudyNotes() {
                 );
               })}
             </div>
+            )}
+
+            {client.kind === "member" && reflections.length > 0 && (
+              <div className="dash-note-words">
+                <button
+                  type="button"
+                  className="dash-note-section"
+                  onClick={() => setOpenReflections((v) => !v)}
+                  aria-expanded={openReflections}
+                >
+                  <span className="eyebrow eyebrow-amber">Shared by members · {reflections.length}</span>
+                  <span className="dash-note-section-chev" aria-hidden>
+                    {openReflections ? "▾" : "▸"}
+                  </span>
+                </button>
+                {openReflections && (
+                  <div className="dash-note-list">
+                    {reflections.map((post) => (
+                      <article key={post.id} className="dash-note is-open dash-reflection">
+                        <div className="dash-reflection-head">
+                          <span className="dash-note-head-ref">{post.ref || "Reflection"}</span>
+                          <span className="dash-reflection-who">{post.mine ? "You" : post.author}</span>
+                        </div>
+                        <div className="dash-note-open">
+                          <NoteText text={post.text} />
+                          <div className="dash-note-actions">
+                            <span className="flex-1" />
+                            {post.mine ? (
+                              <button type="button" className="dash-word-link" onClick={() => withdraw(post)}>
+                                Stop sharing
+                              </button>
+                            ) : (
+                              <button type="button" className="dash-word-link" onClick={() => report(post)}>
+                                Report
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {dayWords.length > 0 && (

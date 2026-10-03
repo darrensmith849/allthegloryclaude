@@ -9,8 +9,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { NoteText } from "@/components/dashboard/note-text";
-import { languageLabel } from "@/lib/dashboard/words";
+import { FoldNotes, FoldWords } from "@/components/study/fold-notes";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import { dayLabel, formatPassage, passageOf, planDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { bibleAppDay } from "@/lib/study/plan";
@@ -364,15 +363,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
               </div>
               {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
 
-              {data.notes.map((n) => {
-                const p = passageOf(n);
-                return (
-                  <section key={n.id} className="dash-reader-note">
-                    {p && <h2 className="dash-reader-ref">{formatPassage(p)}</h2>}
-                    <NoteText text={n.text} />
-                  </section>
-                );
-              })}
+              <FoldNotes notes={data.notes} />
               {!data.notes.length && (
                 <p className="dash-reader-empty">
                   {data.hidden ? "Every note on this day is private." : "No notes on this day - just the words below."}
@@ -383,37 +374,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
                   🔒 {data.hidden} private note{data.hidden === 1 ? "" : "s"} not shown.
                 </p>
               )}
-
-              {data.words.length > 0 && (
-                <section className="dash-reader-words">
-                  <h2 className="dash-reader-section">Words studied</h2>
-                  {data.words.map((w) => (
-                    <div key={w.id} className="dash-reader-word">
-                      <div className="dash-reader-word-head">
-                        <span className="dash-reader-word-name">{w.word}</span>
-                        {w.original && (
-                          <span className="dash-word-script" dir="auto">
-                            {w.original}
-                          </span>
-                        )}
-                        {w.translit && <span className="dash-word-translit">{w.translit}</span>}
-                        {w.strongs && <span className="dash-word-source">{w.strongs}</span>}
-                      </div>
-                      {w.originalMeaning && (
-                        <p>
-                          <span className="dash-reader-label">{languageLabel(w)}</span> {w.originalMeaning}
-                        </p>
-                      )}
-                      {w.englishMeaning && (
-                        <p>
-                          <span className="dash-reader-label">English</span> {w.englishMeaning}
-                        </p>
-                      )}
-                      {w.application && <p className="dash-reader-word-life">{w.application}</p>}
-                    </div>
-                  ))}
-                </section>
-              )}
+              <FoldWords words={data.words} />
             </article>
 
             <nav className="dash-reader-nav" aria-label="Days">

@@ -6,9 +6,7 @@
 // reader (/api/study/read): no private notes or personal word comments.
 
 import { useEffect, useState } from "react";
-import { NoteText } from "@/components/dashboard/note-text";
-import { formatPassage, passageOf } from "@/lib/dashboard/notes";
-import { languageLabel } from "@/lib/dashboard/words";
+import { FoldNotes, FoldWords } from "@/components/study/fold-notes";
 import type { ReaderData } from "@/lib/study/types";
 
 const cache = new Map<string, ReaderData>();
@@ -45,34 +43,8 @@ export function StudyPeek({ on, studyUrl, author }: { on: string; studyUrl: stri
   return (
     <div className="dash-study-peek-body">
       {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
-      {data.notes.map((n) => {
-        const p = passageOf(n);
-        return (
-          <section key={n.id} className="dash-study-peek-note">
-            {p && <div className="dash-reader-ref">{formatPassage(p)}</div>}
-            <NoteText text={n.text} />
-          </section>
-        );
-      })}
-      {data.words.length > 0 && (
-        <div className="dash-study-peek-words">
-          <div className="dash-reader-section">Words {author ?? "the study"} studied</div>
-          {data.words.map((w) => (
-            <div key={w.id} className="dash-study-peek-word">
-              <span className="dash-reader-word-name">{w.word}</span>
-              {w.original && (
-                <span className="dash-word-script" dir="auto">
-                  {w.original}
-                </span>
-              )}
-              {w.translit && <span className="dash-word-translit">{w.translit}</span>}
-              <p>
-                <span className="dash-reader-label">{languageLabel(w)}</span> {w.originalMeaning || w.englishMeaning}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+      <FoldNotes notes={data.notes} title={author ? `${author}'s notes` : "Notes"} />
+      <FoldWords words={data.words} title={author ? `Words ${author} studied` : "Words studied"} />
       <a className="dash-word-link dash-study-peek-open" href={`${studyUrl}?day=${data.day}`}>
         Open in {author ? `${author}'s study` : "the study"} →
       </a>

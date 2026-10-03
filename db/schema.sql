@@ -306,3 +306,55 @@ CREATE TABLE IF NOT EXISTS email_list (
   subscribed_at   INTEGER NOT NULL,     -- epoch ms
   unsubscribed_at INTEGER
 );
+
+-- ── The Study: members-only sharing ───────────────────────────────
+-- Reflections on a day's reading and testimonies. Members only - never on
+-- the public site. Each post needs the member's consent tick, can be
+-- anonymous, waits for the owner's approval before anyone sees it, and can
+-- be withdrawn (deleted) by its author at any time.
+CREATE TABLE IF NOT EXISTS community_posts (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL,                    -- 'reflection' | 'testimony'
+  member_id   TEXT NOT NULL,
+  author_name TEXT,                             -- first name; NULL = anonymous
+  day         TEXT,                             -- reflection: reading day YYYY-MM-DD
+  ref         TEXT,                             -- reflection: passage, e.g. "John 4:10"
+  title       TEXT,                             -- testimony: optional title
+  text        TEXT NOT NULL,
+  note_id     TEXT,                             -- reflection: the journal note it was shared from
+  status      TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'approved' | 'declined'
+  consent_at  INTEGER NOT NULL,
+  created_at  INTEGER NOT NULL,
+  reviewed_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_community_status ON community_posts(status, kind, created_at);
+CREATE INDEX IF NOT EXISTS idx_community_member ON community_posts(member_id);
+
+CREATE TABLE IF NOT EXISTS community_reports (
+  post_id    TEXT NOT NULL,
+  member_id  TEXT NOT NULL,
+  reason     TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (post_id, member_id)
+);
+
+-- The owner's weekly reflection, and members' replies to its check-in
+-- question - private: only the owner reads replies.
+CREATE TABLE IF NOT EXISTS weekly_reflections (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  body         TEXT NOT NULL,
+  question     TEXT,
+  published_at INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  deleted_at   INTEGER
+);
+CREATE TABLE IF NOT EXISTS checkin_replies (
+  id            TEXT PRIMARY KEY,
+  reflection_id TEXT NOT NULL,
+  member_id     TEXT NOT NULL,
+  text          TEXT NOT NULL,
+  created_at    INTEGER NOT NULL,
+  read_at       INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_checkin_reflection ON checkin_replies(reflection_id, created_at);

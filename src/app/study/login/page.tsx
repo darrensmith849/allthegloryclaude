@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMe } from "@/components/study/shell";
+import { forgetMe, useMe } from "@/components/study/shell";
 
 // Only same-site paths inside /study are followed after logging in.
 function safeNext(raw: string | null): string {
@@ -28,6 +28,7 @@ export default function StudyLoginPage() {
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(data.error ?? "Couldn't log in.");
+      forgetMe();
       window.location.assign(safeNext(new URLSearchParams(window.location.search).get("next")));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't log in.");

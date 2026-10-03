@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMe } from "@/components/study/shell";
+import { forgetMe, useMe } from "@/components/study/shell";
 
 const MIN_PASSWORD = 8;
 
@@ -36,6 +36,7 @@ export default function StudyJoinPage() {
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(data.error ?? "Couldn't make your account.");
+      forgetMe();
       window.location.assign("/study/journal");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't make your account.");
