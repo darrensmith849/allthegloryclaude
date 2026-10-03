@@ -14,6 +14,7 @@ import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
 import { bibleAppDay, PLAN } from "@/lib/study/plan";
+import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
   chapterLabel,
@@ -427,6 +428,28 @@ export function StudyNotes() {
     }
   }
 
+  // Tick a day's reading as done (or not). Saved per day, kept for good.
+  async function toggleRead(d: string) {
+    const was = days[d]?.readAt ?? null;
+    const optimistic = { ...days, [d]: { ...(days[d] ?? { day: d, title: "", takeaway: "", shared: true, updatedAt: Date.now() }), readAt: was ? null : Date.now() } };
+    setDays(optimistic);
+    try {
+      const r = await fetch(client.daysApi, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ day: d, read: !was }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; error?: string };
+      if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
+      const next = { ...optimistic, [d]: data.day };
+      setDays(next);
+      writeStore(DAYS_KEY, next);
+    } catch (err) {
+      setDays(days);
+      alert(err instanceof Error ? err.message : "Couldn't save that.");
+    }
+  }
+
   async function restore(n: StudyNote) {
     try {
       const { note } = await send<{ note: StudyNote }>("PATCH", { id: n.id, restore: true });
@@ -513,8 +536,47 @@ export function StudyNotes() {
     window.setTimeout(() => setFlash((id) => (id === n.id ? null : id)), 4000);
   }
 
+  const wordResults = useMemo(
+    () => (query.trim() ? allWords.filter((w) => matchesWord(w, query)) : []),
+    [allWords, query],
+  );
+  function openWordResult(id: string, d: string | undefined) {
+    setQuery("");
+    if (!d) {
+      window.location.assign(`${client.wordsUrl}?edit=${encodeURIComponent(id)}`);
+      return;
+    }
+    openDay(d);
+    setOpenWord(id);
+    setSections((s) => ({ ...s, words: true }));
+    window.setTimeout(() => {
+      document.getElementById(`word-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+  }
+
   const grid = useMemo(() => monthGrid(month), [month]);
   const today = todayDay();
+
+  // Reading progress: days ticked as read this year, and the run of days
+  // read up to today (or yesterday, so it isn't lost before today's reading).
+  const readDays = useMemo(
+    () => new Set(Object.values(days).filter((d) => d.readAt).map((d) => d.day)),
+    [days],
+  );
+  const progressYear = month.slice(0, 4);
+  const readThisYear = useMemo(
+    () => [...readDays].filter((d) => d.startsWith(progressYear)).length,
+    [readDays, progressYear],
+  );
+  const streak = useMemo(() => {
+    let d = readDays.has(today) ? today : shiftDay(today, -1);
+    let n = 0;
+    while (readDays.has(d)) {
+      n++;
+      d = shiftDay(d, -1);
+    }
+    return n;
+  }, [readDays, today]);
   const monthName = new Date(`${month}T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
   return (
@@ -538,6 +600,9 @@ export function StudyNotes() {
               Download
             </button>
           )}
+          <a className="dash-btn dash-btn-ghost" href={client.wordsUrl}>
+            All words
+          </a>
         </div>
       </div>
 
@@ -616,6 +681,15 @@ export function StudyNotes() {
                 </button>
               </div>
             </div>
+            <div className="dash-read-progress">
+              <span>
+                <strong>{readThisYear}</strong> of 365 days read in {progressYear}
+              </span>
+              {streak > 1 && <span className="dash-read-streak">{streak}-day streak</span>}
+              <span className="dash-read-bar" aria-hidden>
+                <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
+              </span>
+            </div>
             {calView === "year" && (
               <div className="dash-note-year">
                 {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
@@ -638,9 +712,9 @@ export function StudyNotes() {
                             type="button"
                             onClick={() => openDay(d)}
                             title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
-                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${d === day ? "is-selected" : ""} ${
-                              d === today ? "is-today" : ""
-                            }`}
+                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${
+                              d === day ? "is-selected" : ""
+                            } ${d === today ? "is-today" : ""}`}
                           />
                         ) : (
                           <span key={d} />
@@ -661,6 +735,7 @@ export function StudyNotes() {
               {grid.map((d) => {
                 const count = counts.get(d) ?? 0;
                 const hasWords = wordDays.has(d);
+                const read = readDays.has(d);
                 return (
                   <button
                     key={d}
@@ -668,12 +743,13 @@ export function StudyNotes() {
                     onClick={() => openDay(d)}
                     className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                       d === day ? "is-selected" : ""
-                    } ${count || hasWords ? "has-notes" : ""}`}
-                    aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}`}
+                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""}`}
+                    aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
                   >
                     <span>{Number(d.slice(8))}</span>
-                    {(count > 0 || hasWords) && (
+                    {(count > 0 || hasWords || read) && (
                       <em>
+                        {read ? "✓ " : ""}
                         {count > 0 ? count : ""}
                         {hasWords ? " α" : ""}
                       </em>
@@ -717,14 +793,28 @@ export function StudyNotes() {
             <input
               type="search"
               className="dash-input"
-              placeholder="Search all notes - a word, “Matt 4”, “27 sep”"
+              placeholder="Search notes and words - “grace”, “Matt 4”, “27 sep”"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search your notes"
             />
             {query.trim() && (
               <div className="dash-note-results">
-                {results.length === 0 && <div className="dash-word-hint">Nothing matches “{query.trim()}”.</div>}
+                {results.length === 0 && wordResults.length === 0 && (
+                  <div className="dash-word-hint">Nothing matches “{query.trim()}”.</div>
+                )}
+                {wordResults.length > 0 && <div className="dash-note-results-head">Words</div>}
+                {wordResults.slice(0, 20).map((w) => (
+                  <button key={w.id} type="button" className="dash-note-result" onClick={() => openWordResult(w.id, w.day)}>
+                    <span className="dash-note-result-meta">
+                      {w.day ? dayLabel(w.day, { weekday: false }) : "Word Journal"} · {w.original ?? ""} {w.translit ?? ""}
+                    </span>
+                    <span className="dash-note-result-text">
+                      <strong>{w.word}</strong> - {w.originalMeaning || w.englishMeaning}
+                    </span>
+                  </button>
+                ))}
+                {wordResults.length > 0 && results.length > 0 && <div className="dash-note-results-head">Notes</div>}
                 {results.slice(0, 60).map((n) => (
                   <button key={n.id} type="button" className="dash-note-result" onClick={() => openResult(n)}>
                     <span className="dash-note-result-meta">
@@ -821,9 +911,19 @@ export function StudyNotes() {
             )}
 
             {isDay(day) && (
-              <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-                📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
-              </a>
+              <div className="dash-day-tools">
+                <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
+                  📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
+                </a>
+                <button
+                  type="button"
+                  className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${readDays.has(day) ? "is-read" : ""}`}
+                  onClick={() => toggleRead(day)}
+                  title={readDays.has(day) ? "Read - tap to undo" : "Tick when you've read this day's passages"}
+                >
+                  {readDays.has(day) ? "✓ Read" : "Mark as read"}
+                </button>
+              </div>
             )}
 
             {isDay(day) &&

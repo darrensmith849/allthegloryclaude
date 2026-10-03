@@ -8,3 +8,4 @@ export const dynamic = "force-dynamic";
 const api = daysApi(memberScopeOf);
 export const GET = api.GET;
 export const PUT = api.PUT;
+export const PATCH = api.PATCH;

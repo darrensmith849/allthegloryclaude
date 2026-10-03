@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { StudyShell } from "@/components/study/shell";
 import "../dashboard/dashboard.css";
 
@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Read through the Bible in the order it happened, one day at a time, and keep your own notes.",
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: "#f6f1e7" };
 
 export default function StudyLayout({ children }: { children: React.ReactNode }) {
   return <StudyShell>{children}</StudyShell>;

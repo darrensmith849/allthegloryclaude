@@ -374,6 +374,7 @@ export interface StudyDay {
   takeaway: string;
   shared: boolean; // included when the study is shared
   updatedAt: number;
+  readAt?: number | null; // ticked as read
 }
 
 // Day of the reading plan: 1 January is day 1, 31 December day 365. The

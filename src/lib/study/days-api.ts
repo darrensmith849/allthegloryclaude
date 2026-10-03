@@ -5,6 +5,7 @@
  *
  *   GET                                   -> { days }
  *   PUT  { day, title, takeaway, shared } -> { day }
+ *   PATCH { day, read: boolean }          -> { day }   tick the day's reading done (or not)
  *
  * Nothing is ever lost: each change first copies the old row into the
  * versions table.
@@ -19,6 +20,7 @@ interface Row {
   takeaway: string | null;
   shared: number;
   updated_at: number;
+  read_at: number | null;
 }
 
 const toDay = (r: Row): StudyDay => ({
@@ -27,6 +29,7 @@ const toDay = (r: Row): StudyDay => ({
   takeaway: r.takeaway ?? "",
   shared: Boolean(r.shared),
   updatedAt: r.updated_at,
+  readAt: r.read_at ?? null,
 });
 
 const unavailable = () => Response.json({ error: "Storage isn't available here." }, { status: 503 });
@@ -76,12 +79,47 @@ export function daysApi(scopeOf: ScopeOf) {
           )
           .bind(...mineArgs(s), body.day, title, takeaway, shared, now),
       ]);
-      return Response.json({ day: { day: body.day, title, takeaway, shared: Boolean(shared), updatedAt: now } });
+      const row = await db
+        .prepare(`SELECT * FROM ${s.days} WHERE day = ?${andMine(s)}`)
+        .bind(body.day, ...mineArgs(s))
+        .first<Row>();
+      return Response.json({
+        day: row ? toDay(row) : { day: body.day, title, takeaway, shared: Boolean(shared), updatedAt: now },
+      });
     } catch (e) {
       console.error("days PUT:", e);
       return Response.json({ error: "Couldn't save that." }, { status: 500 });
     }
   }
 
-  return { GET, PUT };
+  async function PATCH(req: Request) {
+    const s = await scopeOf(req);
+    if (s instanceof Response) return s;
+    const db = await getDb();
+    if (!db) return unavailable();
+    const body = (await req.json().catch(() => ({}))) as { day?: unknown; read?: unknown };
+    if (!isDay(body.day) || typeof body.read !== "boolean") {
+      return Response.json({ error: "Which day?" }, { status: 400 });
+    }
+    const now = Date.now();
+    try {
+      await db
+        .prepare(
+          `INSERT INTO ${s.days} (${pre(s)}day, read_at, updated_at) VALUES (${preQ(s)}?, ?, ?) ` +
+            `ON CONFLICT(${s.member ? "member_id, day" : "day"}) DO UPDATE SET read_at = excluded.read_at, updated_at = excluded.updated_at`,
+        )
+        .bind(...mineArgs(s), body.day, body.read ? now : null, now)
+        .run();
+      const row = await db
+        .prepare(`SELECT * FROM ${s.days} WHERE day = ?${andMine(s)}`)
+        .bind(body.day, ...mineArgs(s))
+        .first<Row>();
+      return row ? Response.json({ day: toDay(row) }) : Response.json({ error: "Couldn't save that." }, { status: 500 });
+    } catch (e) {
+      console.error("days PATCH:", e);
+      return Response.json({ error: "Couldn't save that." }, { status: 500 });
+    }
+  }
+
+  return { GET, PUT, PATCH };
 }

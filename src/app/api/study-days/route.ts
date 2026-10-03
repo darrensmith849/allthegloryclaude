@@ -9,3 +9,4 @@ export const dynamic = "force-dynamic";
 const api = daysApi(async () => OWNER_SCOPE);
 export const GET = api.GET;
 export const PUT = api.PUT;
+export const PATCH = api.PATCH;

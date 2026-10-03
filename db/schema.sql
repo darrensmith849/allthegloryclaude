@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS study_days (
   title      TEXT,
   takeaway   TEXT,
   shared     INTEGER NOT NULL DEFAULT 1,
-  updated_at INTEGER NOT NULL     -- epoch ms
+  updated_at INTEGER NOT NULL,    -- epoch ms
+  read_at    INTEGER              -- ticked "read" (ALTER TABLE study_days ADD COLUMN read_at INTEGER)
 );
 CREATE TABLE IF NOT EXISTS study_day_versions (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -271,6 +272,7 @@ CREATE TABLE IF NOT EXISTS member_days (
   takeaway   TEXT,
   shared     INTEGER NOT NULL DEFAULT 1,
   updated_at INTEGER NOT NULL,
+  read_at    INTEGER,              -- ticked "read" (ALTER TABLE member_days ADD COLUMN read_at INTEGER)
   PRIMARY KEY (member_id, day)
 );
 

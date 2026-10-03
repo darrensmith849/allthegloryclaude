@@ -5,10 +5,12 @@
 // owner's notes (when open to them), their own journal and words, and
 // their account.
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
+import { AlbumPlayerProvider, ListenButton } from "./album-player";
 import type { Member, StudySettings } from "@/lib/study/members";
 
 export type MeMember = Member & { emailUpdates?: boolean };
@@ -66,7 +68,6 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
     ...(me.member
       ? [
           { href: "/study/journal", label: "My journal" },
-          { href: "/study/words", label: "My words" },
           { href: "/study/account", label: "Account" },
         ]
       : []),
@@ -79,35 +80,67 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="study-root">
-      <header className="study-top">
-        <Link href="/study" className="study-brand">
-          <span className="eyebrow eyebrow-amber">All The Glory</span>
-          <span className="study-brand-name">The Study</span>
-        </Link>
-        <nav className="study-nav" aria-label="The Study">
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href} className={`study-nav-link ${pathname?.startsWith(n.href) ? "is-active" : ""}`}>
-              {n.label}
-            </Link>
-          ))}
-          {me.loaded && !me.member && (
-            <>
-              <Link href={`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`} className="study-nav-link">
-                Log in
+      <AlbumPlayerProvider>
+        <header className="study-top">
+          <Link href="/study" className="study-brand">
+            <Image src="/media/dove-mark.png" alt="" width={34} height={34} className="study-brand-dove" priority />
+            <span className="study-brand-words">
+              <span className="study-brand-name">All The Glory</span>
+              <span className="study-brand-sub">The Study</span>
+            </span>
+          </Link>
+          <nav className="study-nav" aria-label="The Study">
+            {nav.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`study-nav-link ${pathname?.startsWith(n.href) ? "is-active" : ""}`}
+              >
+                {n.label}
               </Link>
-              {me.study?.signup === "open" && (
-                <Link href="/study/join" className="dash-btn dash-btn-primary study-join">
-                  Join
+            ))}
+            {me.loaded && !me.member && (
+              <>
+                <Link href={`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`} className="study-nav-link">
+                  Log in
                 </Link>
-              )}
-            </>
-          )}
-        </nav>
-      </header>
-      <main className="dash-main study-main">
-        {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
-      </main>
+                {me.study?.signup === "open" && (
+                  <Link href="/study/join" className="dash-btn dash-btn-primary study-join">
+                    Join
+                  </Link>
+                )}
+              </>
+            )}
+            <ListenButton />
+          </nav>
+        </header>
+        <main className="dash-main study-main">
+          {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
+        </main>
+        <StudyFooter />
+      </AlbumPlayerProvider>
     </div>
+  );
+}
+
+// The thin flyer-style footer: back to the rest of All The Glory.
+function StudyFooter() {
+  return (
+    <footer className="study-foot">
+      <div className="study-foot-mark">All The Glory</div>
+      <nav className="study-foot-links" aria-label="All The Glory">
+        <a href="/">Home</a>
+        <a href="/album/from-darkness-to-light">The album</a>
+        <a href="/videos">Videos</a>
+        <a href="/testimony">Testimony</a>
+        <a href="/about">About</a>
+        <a href="/give">Give</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <div className="study-foot-small">
+        <a href="/privacy">Privacy</a> · Readings follow Tyndale&apos;s One Year Chronological Bible (NIV)
+      </div>
+    </footer>
   );
 }
 
