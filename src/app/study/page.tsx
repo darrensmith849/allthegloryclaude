@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { canRead, studyName, useMe } from "@/components/study/shell";
-import { dayLabel, todayDay } from "@/lib/dashboard/notes";
+import { dayLabel, planDay, todayDay } from "@/lib/dashboard/notes";
+import { bibleAppDay, PLAN } from "@/lib/study/plan";
 
 // The Study's front door.
 export default function StudyHome() {
@@ -66,6 +67,32 @@ export default function StudyHome() {
         </div>
       )}
       {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
+
+      <div className="study-plan">
+        <div>
+          <div className="eyebrow eyebrow-amber">The reading plan</div>
+          <div className="study-plan-title">{PLAN.name}</div>
+          <div className="study-card-text">
+            {PLAN.edition} - the whole Bible in 365 daily readings, in the order events happened. Today is Day{" "}
+            {planDay(today).n}.
+          </div>
+        </div>
+        <div className="study-plan-actions">
+          <a className="dash-btn dash-btn-primary" href={bibleAppDay(planDay(today).n)} target="_blank" rel="noreferrer">
+            Read today free in the Bible App ↗
+          </a>
+          <span className="study-plan-buy">
+            Get the book:{" "}
+            <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+              Takealot
+            </a>{" "}
+            ·{" "}
+            <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+              Amazon
+            </a>
+          </span>
+        </div>
+      </div>
 
       <div className="study-cards">
         {readable && (

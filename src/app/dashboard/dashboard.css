@@ -2466,3 +2466,34 @@ a.study-card:hover { border-color: rgba(216, 178, 90, 0.45); background: rgba(21
   font-size: 14px;
   color: var(--colour-ink-strong);
 }
+
+/* Reading plan links (Bible App / the book) */
+.dash-plan-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--colour-glow);
+}
+.dash-plan-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.dash-plan-foot { margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--colour-ink-quiet); }
+.dash-plan-foot a { color: var(--colour-amber-soft); }
+.dash-plan-foot a:hover { color: var(--colour-glow); }
+.study-plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(216, 178, 90, 0.25);
+  background: rgba(216, 178, 90, 0.05);
+}
+.study-plan-title { margin-top: 4px; font-family: var(--font-display), serif; font-size: 20px; color: var(--colour-ink-strong); }
+.study-plan-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.study-plan-buy { font-size: 12.5px; color: var(--colour-ink-quiet); }
+.study-plan-buy a { color: var(--colour-amber-soft); }
+.study-plan-buy a:hover { color: var(--colour-glow); }

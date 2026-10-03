@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { NoteText } from "@/components/dashboard/note-text";
 import { languageLabel } from "@/lib/dashboard/words";
 import { dayLabel, formatPassage, passageOf, planDay } from "@/lib/dashboard/notes";
+import { bibleAppDay } from "@/lib/study/plan";
 import type { ReaderData } from "@/lib/study/types";
 
 const MONTHS = [
@@ -186,6 +187,9 @@ function ReaderInner({ basePath, preview, back, badge }: Props) {
             {data.info?.title && (data.contents.find((c) => c.day === day)?.chapters.length ?? 0) > 0 && (
               <div className="dash-reader-chapters">{data.contents.find((c) => c.day === day)?.chapters.join(" · ")}</div>
             )}
+            <a className="dash-plan-link mt-3" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
+              📖 Read Day {planDay(day).n}&apos;s passages in the Bible App ↗
+            </a>
             {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
 
             {data.notes.map((n) => {

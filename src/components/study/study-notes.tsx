@@ -13,6 +13,7 @@ import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
+import { bibleAppDay, PLAN } from "@/lib/study/plan";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
   chapterLabel,
@@ -693,6 +694,21 @@ export function StudyNotes() {
               </button>
             )}
 
+            <p className="dash-plan-foot">
+              Following <em>{PLAN.name}</em> ({PLAN.edition}) ·{" "}
+              <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+                free in the Bible App
+              </a>{" "}
+              · get the book:{" "}
+              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                Takealot
+              </a>{" "}
+              ·{" "}
+              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                Amazon
+              </a>
+            </p>
+
             <div className="dash-divider" />
             <input
               type="search"
@@ -798,6 +814,12 @@ export function StudyNotes() {
                   </article>
                 ))}
               </div>
+            )}
+
+            {isDay(day) && (
+              <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
+                📖 Day {planDay(day).n}&apos;s reading in the Bible App ↗
+              </a>
             )}
 
             {isDay(day) &&

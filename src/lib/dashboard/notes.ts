@@ -376,14 +376,14 @@ export interface StudyDay {
   updatedAt: number;
 }
 
-// Day of the reading plan: 1 January is day 1.
+// Day of the reading plan: 1 January is day 1, 31 December day 365. The
+// One Year Bible has 365 readings, so in a leap year 29 February repeats
+// 28 February's (day 59) and the days after keep the book's numbering.
 export function planDay(iso: string): { n: number; of: number } {
-  const [y] = iso.split("-").map(Number);
-  const start = Date.UTC(y, 0, 1);
-  const [, m, d] = iso.split("-").map(Number);
-  const n = Math.round((Date.UTC(y, m - 1, d) - start) / 86_400_000) + 1;
+  const [y, m, d] = iso.split("-").map(Number);
+  const n = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
   const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  return { n, of: leap ? 366 : 365 };
+  return { n: leap && n >= 60 ? n - 1 : n, of: 365 };
 }
 
 // Merge a set of changed notes into a cached list (by id).
