@@ -222,7 +222,7 @@ export async function POST(req: Request) {
         .prepare("INSERT INTO member_resets (token_hash, member_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)")
         .bind(await sha256(token), body.reset, now, now + 7 * 86_400_000)
         .run();
-      return Response.json({ path: `/study/reset?token=${token}` });
+      return Response.json({ path: `/the-study?reset=${token}` });
     }
     return Response.json({ error: "Nothing to make." }, { status: 400 });
   } catch (e) {

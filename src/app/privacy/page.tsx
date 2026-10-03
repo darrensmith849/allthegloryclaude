@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
             Privacy Policy
           </h1>
-          <p className="mt-4 text-sm text-white/55">Last updated: 7 July 2026</p>
+          <p className="mt-4 text-sm text-white/55">Last updated: 3 October 2026</p>
         </header>
 
         <div className="mt-10 md:mt-14 panel-scrim panel-flush-mobile p-7 md:p-10 space-y-9">
@@ -143,6 +143,13 @@ export default function PrivacyPage() {
               We keep contact messages and donation records for as long as we
               need them for the purposes above, and analytics for a limited
               period. You can ask us to delete your information at any time.
+            </p>
+            <p className="mt-4">
+              The Study keeps your journal for as long as you have an account.
+              So nothing is ever lost, a private backup copy is made every
+              night; those copies are kept for one year, so when you delete
+              your account it is gone from the backups within a year too.
+              Passwords are never included in backups.
             </p>
           </Section>
 

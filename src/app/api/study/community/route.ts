@@ -12,9 +12,9 @@
  * Signed-in members only, and only approved posts are ever shown to others.
  * Each post needs the member's consent tick; anonymous posts carry no name.
  */
-import { getDb, type D1Db } from "@/lib/analytics/store";
+import { changesOf, getDb, type D1Db } from "@/lib/analytics/store";
 import { getMember, type Member } from "@/lib/study/members";
-import { notifyOwner } from "@/lib/study/notify";
+import { notifyOwnerFrom } from "@/lib/study/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +110,9 @@ export async function POST(req: Request) {
     )
     .bind(id, kind, member.id, anonymous ? null : first, title, text, now)
     .run();
-  await notifyOwner(
+  await notifyOwnerFrom(
+    db,
+    member.id,
     "A testimony is waiting for you",
     `${member.name} (${member.email}) shared a testimony${anonymous ? " (to show anonymously)" : ""}:\n\n${text.slice(0, 600)}`,
   );
@@ -125,11 +127,19 @@ export async function PATCH(req: Request) {
   const { db, member } = s;
   const body = (await req.json().catch(() => ({}))) as { report?: unknown; reason?: unknown };
   if (typeof body.report !== "string") return Response.json({ error: "Nothing to do." }, { status: 400 });
-  await db
+  // Only approved posts by someone else can be reported, once each.
+  const post = await db
+    .prepare("SELECT id FROM community_posts WHERE id = ?1 AND status = 'approved' AND member_id != ?2")
+    .bind(body.report, member.id)
+    .first<{ id: string }>();
+  if (!post) return Response.json({ ok: true });
+  const res = await db
     .prepare("INSERT OR IGNORE INTO community_reports (post_id, member_id, reason, created_at) VALUES (?1, ?2, ?3, ?4)")
-    .bind(body.report, member.id, String(body.reason ?? "").slice(0, 300) || null, Date.now())
+    .bind(post.id, member.id, String(body.reason ?? "").slice(0, 300) || null, Date.now())
     .run();
-  await notifyOwner("A shared post was reported", `${member.name} reported a post in The Study.`);
+  if (changesOf(res)) {
+    await notifyOwnerFrom(db, member.id, "A shared post was reported", `${member.name} reported a post in The Study.`);
+  }
   return Response.json({ ok: true });
 }
 

@@ -10,6 +10,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FoldNotes, FoldWords } from "@/components/study/fold-notes";
+import { ShareDay } from "@/components/study/share-day";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import { dayLabel, formatPassage, passageOf, planDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { bibleAppDay, STUDY_HEART } from "@/lib/study/plan";
@@ -359,6 +360,14 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
                   >
                     {myRead.has(myDay) ? `✓ Day ${planDay(myDay).n} read` : `Mark Day ${planDay(myDay).n} as read`}
                   </button>
+                )}
+                {data.study.reading !== "off" && data.info?.shared !== false && (
+                  <ShareDay
+                    day={day}
+                    title={data.info?.title || titleOf(day)}
+                    takeaway={data.info?.takeaway || undefined}
+                    author={data.study.author}
+                  />
                 )}
               </div>
               {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}

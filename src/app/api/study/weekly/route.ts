@@ -6,7 +6,7 @@
  */
 import { getDb } from "@/lib/analytics/store";
 import { getMember } from "@/lib/study/members";
-import { notifyOwner } from "@/lib/study/notify";
+import { notifyOwnerFrom } from "@/lib/study/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +67,6 @@ export async function POST(req: Request) {
     .prepare("INSERT INTO checkin_replies (id, reflection_id, member_id, text, created_at) VALUES (?1, ?2, ?3, ?4, ?5)")
     .bind(id, body.reflectionId, member.id, text, now)
     .run();
-  await notifyOwner(`${member.name} replied to "${exists.title}"`, `${member.name} (${member.email}):\n\n${text.slice(0, 1000)}`);
+  await notifyOwnerFrom(db, member.id, `${member.name} replied to "${exists.title}"`, `${member.name} (${member.email}):\n\n${text.slice(0, 1000)}`);
   return Response.json({ reply: { id, text, createdAt: now } });
 }

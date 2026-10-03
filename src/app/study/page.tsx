@@ -24,6 +24,9 @@ export default function StudyHome() {
   const today = todayDay();
   const n = planDay(today).n;
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : null;
+  // Effects below key on the id, not the member object (which is replaced
+  // when the live check confirms the cached one) - so each loads once.
+  const memberId = me.member?.id;
 
   // The owner's study: is there a day for today's date (any year)?
   const [studyToday, setStudyToday] = useState<{ title: string } | null | undefined>(undefined);
@@ -41,32 +44,32 @@ export default function StudyHome() {
   // This week's reflection from the owner (members).
   const [weekly, setWeekly] = useState<{ title: string; body: string; question: string | null } | null>(null);
   useEffect(() => {
-    if (!me.member) return;
+    if (!memberId) return;
     fetch("/api/study/weekly", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { reflection?: { title: string; body: string; question: string | null } | null } | null) =>
         setWeekly(d?.reflection ?? null),
       )
       .catch(() => {});
-  }, [me.member]);
+  }, [memberId]);
 
   // A friend's invite link of their own.
   const [invite, setInvite] = useState<string | null>(null);
   useEffect(() => {
-    if (!me.member) return;
+    if (!memberId) return;
     fetch("/api/study/invite", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { code?: string } | null) => d?.code && setInvite(`${window.location.origin}/the-study?invite=${d.code}`))
       .catch(() => {});
-  }, [me.member]);
+  }, [memberId]);
 
   // Answers to their questions they haven't seen yet.
   const [answered, setAnswered] = useState(0);
   useEffect(() => {
-    if (!me.member) return;
+    if (!memberId) return;
     let seen: string[] = [];
     try {
-      seen = JSON.parse(window.localStorage.getItem(`atg:study:${me.member.id}:seenAnswers`) ?? "[]") as string[];
+      seen = JSON.parse(window.localStorage.getItem(`atg:study:${memberId}:seenAnswers`) ?? "[]") as string[];
     } catch {
       // private window
     }
@@ -76,14 +79,14 @@ export default function StudyHome() {
         setAnswered((d?.mine ?? []).filter((q) => q.status === "answered" && !seen.includes(q.id)).length),
       )
       .catch(() => {});
-  }, [me.member]);
+  }, [memberId]);
 
   // Where they left off: the latest day they wrote in or ticked as read.
   const [lastDay, setLastDay] = useState<string | null>(null);
   useEffect(() => {
-    if (!me.member) return;
+    if (!memberId) return;
     try {
-      const notes = JSON.parse(window.localStorage.getItem(`atg:study:${me.member.id}:notes`) ?? "[]") as {
+      const notes = JSON.parse(window.localStorage.getItem(`atg:study:${memberId}:notes`) ?? "[]") as {
         day: string | null;
         deletedAt: number | null;
       }[];
@@ -96,12 +99,12 @@ export default function StudyHome() {
     } catch {
       // private window
     }
-  }, [me.member]);
+  }, [memberId]);
 
   // The member's reading progress.
   const [days, setDays] = useState<StudyDay[]>([]);
   useEffect(() => {
-    if (!me.member) return;
+    if (!memberId) return;
     fetch("/api/study/days", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { days?: StudyDay[] } | null) => {
@@ -110,7 +113,7 @@ export default function StudyHome() {
         if (lastRead) setLastDay((cur) => (cur && cur > lastRead ? cur : lastRead));
       })
       .catch(() => {});
-  }, [me.member]);
+  }, [memberId]);
   const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
   const readThisYear = [...read].filter((d) => d.startsWith(today.slice(0, 4))).length;
   const streak = useMemo(() => {
@@ -193,7 +196,7 @@ export default function StudyHome() {
 
       {answered > 0 && (
         <Link href="/study/community#questions" className="study-weekly study-answered">
-          <span className="eyebrow eyebrow-amber">Your question</span>
+          <span className="eyebrow eyebrow-amber">{answered === 1 ? "Your question" : "Your questions"}</span>
           <span className="study-weekly-title">
             {author ?? "The study"} answered {answered === 1 ? "your question" : `${answered} of your questions`}
           </span>

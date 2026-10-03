@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS study_notes (
 );
 CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);
 CREATE INDEX IF NOT EXISTS idx_study_notes_updated ON study_notes(updated_at);
+CREATE INDEX IF NOT EXISTS idx_study_notes_day ON study_notes(day, position, seq);
 
 -- Each reading day's own details: a title and key takeaway, and whether the
 -- day is included when the study is shared. Edits keep their old version.

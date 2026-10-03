@@ -52,7 +52,9 @@ export default function TheStudyPage() {
   const reduce = useReducedMotion();
   const [me, setMe] = useState<Me | null>(null);
   const [qa, setQa] = useState<QA[]>([]);
-  const [tab, setTab] = useState<"join" | "login">("join");
+  const [tab, setTab] = useState<"join" | "login" | "forgot" | "reset">("join");
+  const [resetToken, setResetToken] = useState("");
+  const [sent, setSent] = useState(false);
   const [invite, setInvite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +63,25 @@ export default function TheStudyPage() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     if (q.get("login")) setTab("login");
+    if (q.get("reset")) {
+      setTab("reset");
+      setResetToken(q.get("reset") ?? "");
+    }
     setInvite(q.get("invite") ?? "");
-    if (q.get("login") || q.get("invite") || window.location.hash === "#join") {
+    if (q.get("login") || q.get("invite") || q.get("reset") || window.location.hash === "#join") {
       window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
     }
     fetch("/api/study/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: Me | null) => d && setMe(d))
+      .then((d: Me | null) => {
+        if (!d) return;
+        // Already logged in and sent here to log in: go straight on.
+        if (d.member && q.get("login") && !q.get("reset")) {
+          window.location.replace(safeNext(q.get("next")));
+          return;
+        }
+        setMe(d);
+      })
       .catch(() => {});
     fetch("/api/study/qa", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -92,6 +106,44 @@ export default function TheStudyPage() {
     if (String(f.get("website") ?? "")) return; // bots
     setBusy(true);
     setError(null);
+    if (tab === "forgot") {
+      const r = await fetch("/api/study/forgot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: f.get("email") }),
+      }).catch(() => null);
+      const d = r ? ((await r.json().catch(() => ({}))) as { error?: string }) : null;
+      setBusy(false);
+      if (r?.ok) setSent(true);
+      else setError(d?.error ?? "Couldn't send - check your connection.");
+      return;
+    }
+    if (tab === "reset") {
+      const password = String(f.get("password") ?? "");
+      if (password.length < 8) {
+        setError("Use a password of at least 8 characters.");
+        setBusy(false);
+        return;
+      }
+      const r = await fetch("/api/study/reset", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token: resetToken, password }),
+      }).catch(() => null);
+      const d = r ? ((await r.json().catch(() => ({}))) as { error?: string }) : null;
+      if (r?.ok) {
+        try {
+          window.sessionStorage.removeItem("atg:study:me");
+        } catch {
+          // private window
+        }
+        window.location.assign("/study");
+      } else {
+        setError(d?.error ?? "Couldn't set your password - try again.");
+        setBusy(false);
+      }
+      return;
+    }
     const body =
       tab === "join"
         ? {
@@ -240,10 +292,20 @@ export default function TheStudyPage() {
       )}
 
       {/* ── Join / log in ────────────────────────────────────── */}
-      {!me?.member && (
+      {(!me?.member || tab === "reset") && (
         <section className="w-full py-10 md:py-16 scroll-mt-28" id="join" ref={formRef}>
           <div className="max-w-md mx-auto px-6">
             <div className="panel-scrim p-6 md:p-8">
+              {tab === "forgot" || tab === "reset" ? (
+                <div className="mb-6">
+                  <div className="eyebrow eyebrow-amber mb-2">{tab === "forgot" ? "Forgotten your password?" : "New password"}</div>
+                  <p className="text-sm text-white/65 leading-relaxed">
+                    {tab === "forgot"
+                      ? "Type the email you joined with and we'll send you a link to choose a new password."
+                      : "Choose a new password for your journal. You'll be logged out everywhere else."}
+                  </p>
+                </div>
+              ) : (
               <div className="flex gap-2 mb-6" role="tablist">
                 {(["join", "login"] as const).map((t) => (
                   <button
@@ -263,8 +325,26 @@ export default function TheStudyPage() {
                   </button>
                 ))}
               </div>
+              )}
 
-              {tab === "join" && !canJoin ? (
+              {tab === "forgot" && sent ? (
+                <div className="text-sm text-white/75 leading-relaxed">
+                  <p>
+                    ✓ If there&apos;s an account with that email, a link is on its way. It works for the next hour - check
+                    your spam folder if you don&apos;t see it.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-4 underline text-white/60 hover:text-white"
+                    onClick={() => {
+                      setTab("login");
+                      setSent(false);
+                    }}
+                  >
+                    Back to log in
+                  </button>
+                </div>
+              ) : tab === "join" && !canJoin ? (
                 <p className="text-sm text-white/65 leading-relaxed">
                   {me?.study.signup === "closed"
                     ? "Joining is closed for now - please check back soon."
@@ -284,27 +364,31 @@ export default function TheStudyPage() {
                       <input id="ts-name" name="name" autoComplete="name" required className={input} placeholder="Your name" />
                     </div>
                   )}
+                  {tab !== "reset" && (
                   <div>
                     <label htmlFor="ts-email" className={label}>
                       Email
                     </label>
                     <input id="ts-email" name="email" type="email" autoComplete="email" required className={input} placeholder="you@example.com" />
                   </div>
+                  )}
+                  {tab !== "forgot" && (
                   <div>
                     <label htmlFor="ts-password" className={label}>
-                      Password
+                      {tab === "reset" ? "New password" : "Password"}
                     </label>
                     <input
                       id="ts-password"
                       name="password"
                       type="password"
-                      autoComplete={tab === "join" ? "new-password" : "current-password"}
-                      minLength={tab === "join" ? 8 : undefined}
+                      autoComplete={tab === "login" ? "current-password" : "new-password"}
+                      minLength={tab === "login" ? undefined : 8}
                       required
                       className={input}
-                      placeholder={tab === "join" ? "At least 8 characters" : "Your password"}
+                      placeholder={tab === "login" ? "Your password" : "At least 8 characters"}
                     />
                   </div>
+                  )}
                   {tab === "join" && (
                     <label className="flex items-start gap-3 text-sm text-white/65 leading-relaxed">
                       <input type="checkbox" name="updates" className="mt-1 accent-[var(--colour-amber)]" />
@@ -321,7 +405,15 @@ export default function TheStudyPage() {
                     disabled={busy}
                     className="w-full py-3 bg-colour-accent text-colour-bg font-semibold text-sm uppercase tracking-widest hover:bg-colour-fg transition-colors disabled:opacity-60"
                   >
-                    {busy ? "One moment…" : tab === "join" ? "Make my account" : "Log in"}
+                    {busy
+                      ? "One moment…"
+                      : tab === "join"
+                        ? "Make my account"
+                        : tab === "forgot"
+                          ? "Email me a link"
+                          : tab === "reset"
+                            ? "Save and open my journal"
+                            : "Log in"}
                   </button>
                   <p className="text-xs text-white/45 leading-relaxed">
                     {tab === "join" ? (
@@ -333,14 +425,23 @@ export default function TheStudyPage() {
                         </a>
                         .
                       </>
+                    ) : tab === "login" ? (
+                      <button
+                        type="button"
+                        className="underline hover:text-white/70"
+                        onClick={() => {
+                          setTab("forgot");
+                          setError(null);
+                        }}
+                      >
+                        Forgotten your password?
+                      </button>
+                    ) : tab === "forgot" ? (
+                      <button type="button" className="underline hover:text-white/70" onClick={() => setTab("login")}>
+                        Back to log in
+                      </button>
                     ) : (
-                      <>
-                        Forgotten your password?{" "}
-                        <a href="/contact" className="underline hover:text-white/70">
-                          Get in touch
-                        </a>{" "}
-                        and we&apos;ll send you a link to set a new one.
-                      </>
+                      "The link works once, for an hour. If it has run out, ask for a new one."
                     )}
                   </p>
                 </form>

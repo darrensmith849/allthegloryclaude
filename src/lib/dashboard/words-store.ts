@@ -4,7 +4,9 @@
 // server (one D1 row per word) is the record; this keeps an instant local
 // copy and a queue of changes not yet confirmed, so a word saved with no
 // signal is sent the next time the journal opens - never dropped. Deleting
-// only moves a word to Recently deleted.
+// only moves a word to Recently deleted. A change the server turns down for
+// good (too long, journal full) is set aside under the "wordsRejected" key
+// rather than retried forever, so it can't hold up every change after it.
 //
 // One store per study (the owner's, or a member's - see
 // src/lib/study/client.tsx), each with its own API and cache keys.
@@ -73,7 +75,9 @@ class WordsStore {
     this.emit();
   }
 
-  private async send(op: Op): Promise<boolean> {
+  // "ok" = saved; "retry" = offline, logged out or a server hiccup - try
+  // again later; "rejected" = the server won't take this change.
+  private async send(op: Op): Promise<"ok" | "retry" | "rejected"> {
     const api = this.c.wordsApi;
     try {
       const r =
@@ -90,9 +94,10 @@ class WordsStore {
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({ id: op.id, restore: true }),
               });
-      return r.ok;
+      if (r.ok) return "ok";
+      return [400, 404, 409, 413, 422].includes(r.status) ? "rejected" : "retry";
     } catch {
-      return false;
+      return "retry";
     }
   }
 
@@ -101,7 +106,13 @@ class WordsStore {
     this.flushing = (async () => {
       for (;;) {
         const [op] = read<Op[]>(this.pendingKey, []);
-        if (!op || !(await this.send(op))) break;
+        if (!op) break;
+        const result = await this.send(op);
+        if (result === "retry") break;
+        if (result === "rejected") {
+          console.warn("A word change was turned down by the server and set aside:", op);
+          write(this.c.key("wordsRejected"), [...read<Op[]>(this.c.key("wordsRejected"), []), op].slice(-50));
+        }
         write(this.pendingKey, read<Op[]>(this.pendingKey, []).slice(1));
       }
     })().finally(() => {

@@ -10,6 +10,7 @@
  * invite link (the default), anyone, or nobody for now.
  */
 import { getDb } from "@/lib/analytics/store";
+import { sendStudyEmail, studyEmail } from "@/lib/study/mail";
 import {
   MIN_MEMBER_PASSWORD,
   cleanName,
@@ -86,6 +87,20 @@ export async function POST(req: Request) {
     return Response.json({ error: "Couldn't make your account - try again." }, { status: 500 });
   }
   const token = await createMemberSession(db, id);
+  const origin = new URL(req.url).origin;
+  await sendStudyEmail(
+    { email },
+    "Welcome to The Study",
+    studyEmail({
+      heading: "Welcome to The Study",
+      paragraphs: [
+        "Your Bible study journal is ready. Each day, open that day's reading, write your notes the way you like, and look up the Hebrew and Greek behind the words.",
+        "Your journal is private to you and kept for good. You can download a copy or delete it any time from your Account page.",
+      ],
+      button: { label: "Open my journal", url: `${origin}/study` },
+      footer: "Forgotten your password? Use \"Forgotten your password?\" on The Study page to get a new one.",
+    }),
+  );
   return Response.json(
     { member: { id, email, name, createdAt: now } },
     { headers: { "set-cookie": memberCookie(token), "cache-control": "no-store" } },

@@ -116,13 +116,18 @@ const keepVersion = (db: D1Db, s: Scope, id: string, now: number) =>
     )
     .bind(now, id, ...mineArgs(s));
 
+// In groups of 80 - D1 takes at most 100 bound values per query.
 async function fetchNotes(db: D1Db, s: Scope, ids: string[]): Promise<StudyNote[]> {
-  if (!ids.length) return [];
-  const { results } = await db
-    .prepare(`SELECT * FROM ${s.notes} WHERE id IN (${ids.map(() => "?").join(",")})${andMine(s)}`)
-    .bind(...ids, ...mineArgs(s))
-    .all<Row>();
-  return results.map(toNote);
+  const out: StudyNote[] = [];
+  for (let i = 0; i < ids.length; i += 80) {
+    const part = ids.slice(i, i + 80);
+    const { results } = await db
+      .prepare(`SELECT * FROM ${s.notes} WHERE id IN (${part.map(() => "?").join(",")})${andMine(s)}`)
+      .bind(...part, ...mineArgs(s))
+      .all<Row>();
+    out.push(...results.map(toNote));
+  }
+  return out;
 }
 
 export function notesApi(scopeOf: ScopeOf) {

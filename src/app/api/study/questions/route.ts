@@ -12,9 +12,9 @@
  * Only the owner (/api/members/community) and helpers answer. Members
  * can't comment on anything.
  */
-import { getDb, type D1Db } from "@/lib/analytics/store";
+import { changesOf, getDb, type D1Db } from "@/lib/analytics/store";
 import { getMember, type Member } from "@/lib/study/members";
-import { notifyOwner } from "@/lib/study/notify";
+import { notifyOwnerFrom } from "@/lib/study/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
     .prepare("INSERT INTO community_questions (id, member_id, asker_name, text, ref, status, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 'open', ?6)")
     .bind(id, member.id, member.name.split(" ")[0], text, ref, now)
     .run();
-  await notifyOwner("A member asked a question", `${member.name} (${member.email})${ref ? ` on ${ref}` : ""}:\n\n${text}`);
+  await notifyOwnerFrom(db, member.id, "A member asked a question", `${member.name} (${member.email})${ref ? ` on ${ref}` : ""}:\n\n${text}`);
   return Response.json({
     question: { id, text, ref, status: "open", answer: null, answeredBy: null, answeredAt: null, published: false, createdAt: now },
   });
@@ -122,14 +122,19 @@ export async function PATCH(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { id?: unknown; answer?: unknown; publish?: unknown };
   const answer = String(body.answer ?? "").trim().slice(0, 6000);
   if (typeof body.id !== "string" || answer.length < 2) return Response.json({ error: "Write the answer first." }, { status: 400 });
-  await db
+  const res = await db
     .prepare(
       "UPDATE community_questions SET answer = ?2, status = 'answered', answered_by = ?3, answerer_name = ?4, answered_at = ?5, published = ?6 " +
-        "WHERE id = ?1 AND member_id != ?3",
+        "WHERE id = ?1 AND member_id != ?3 AND (status = 'open' OR answered_by = ?3)",
     )
     .bind(body.id, answer, member.id, member.name.split(" ")[0], Date.now(), body.publish === true ? 1 : 0)
     .run();
-  await notifyOwner(`${member.name} answered a question`, answer.slice(0, 800));
+  // Helpers answer open questions (or edit their own answer) - never
+  // someone else's answer.
+  if (!changesOf(res)) {
+    return Response.json({ error: "This question has already been answered." }, { status: 409 });
+  }
+  await notifyOwnerFrom(db, member.id, `${member.name} answered a question`, answer.slice(0, 800));
   return Response.json({ ok: true });
 }
 

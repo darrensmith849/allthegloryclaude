@@ -24,10 +24,28 @@ interface Me {
 
 const ME_KEY = "atg:study:me"; // this tab's last /api/study/me answer
 
-// Forget the cached sign-in (after logging in or out).
-export function forgetMe() {
+// The local copies of a member's journal (cleared on logout, so nothing of
+// it stays on a shared device). Unsent work - drafts and words waiting to
+// send - stays until it's sent, unless the account itself is deleted.
+const JOURNAL_CACHES = ["notes", "notesSynced", "days", "words", "wordsSynced", "wordsRejected"];
+
+// Forget the cached sign-in (after logging in or out) and, for the member
+// who was signed in, their journal's local copy.
+export function forgetMe(everything = false) {
   try {
+    const cached = JSON.parse(window.sessionStorage.getItem(ME_KEY) ?? "null") as { member?: { id?: string } } | null;
     window.sessionStorage.removeItem(ME_KEY);
+    const id = cached?.member?.id;
+    if (!id) return;
+    const prefix = `atg:study:${id}:`;
+    for (const k of Object.keys(window.localStorage)) {
+      if (!k.startsWith(prefix)) continue;
+      const name = k.slice(prefix.length);
+      const value = window.localStorage.getItem(k);
+      if (everything || JOURNAL_CACHES.includes(name) || !value || value === "[]" || value === "{}") {
+        window.localStorage.removeItem(k);
+      }
+    }
   } catch {
     // private window
   }

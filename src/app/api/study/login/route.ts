@@ -3,8 +3,11 @@
  *
  *   POST { email, password } -> 200 + session cookie | 401 | 403 | 429
  *
- * More than 8 wrong tries from one address in 15 minutes locks that
- * address out until the window passes.
+ * Every try is counted before the password is checked - per address and
+ * per email - so 8 tries from one address, or 10 at one account, in 15
+ * minutes lock out until the window passes. A good login clears that
+ * email's count only (logging into your own account doesn't reset the
+ * address's count).
  */
 import { getDb } from "@/lib/analytics/store";
 import {
@@ -28,20 +31,29 @@ export async function POST(req: Request) {
   const email = normEmail(body.email);
   const password = String(body.password ?? "").slice(0, 200);
   const key = `study:${clientIp(req)}`;
-
-  if (await tooMany(db, key, 8, 15 * 60_000)) {
+  const emailKey = `study-email:${email}`;
+  const started = Date.now();
+  await Promise.all([noteAttempt(db, key), noteAttempt(db, emailKey)]);
+  const [busyIp, busyEmail] = await Promise.all([
+    tooMany(db, key, 9, 15 * 60_000),
+    tooMany(db, emailKey, 11, 15 * 60_000),
+  ]);
+  if (busyIp || busyEmail) {
+    await slowDown();
     return Response.json({ error: "Too many wrong attempts. Try again in 15 minutes." }, { status: 429 });
   }
   const { member, ok } = await verifyLogin(db, email, password);
   if (!member || !ok) {
-    await noteAttempt(db, key);
     await slowDown();
     return Response.json({ error: "That email and password don't match." }, { status: 401 });
   }
   if (member.disabled_at) {
     return Response.json({ error: "This account is paused. Please get in touch." }, { status: 403 });
   }
-  await clearAttempts(db, key);
+  await Promise.all([
+    clearAttempts(db, emailKey),
+    db.prepare("DELETE FROM login_attempts WHERE ip = ?1 AND ts >= ?2").bind(key, started).run().catch(() => {}),
+  ]);
   const token = await createMemberSession(db, member.id);
   return Response.json(
     { member: { id: member.id, email: member.email, name: member.name, createdAt: member.created_at } },

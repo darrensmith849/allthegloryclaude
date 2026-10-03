@@ -32,6 +32,13 @@ interface MemberRow {
   helper: boolean;
   invitedVia: string | null;
 }
+interface Backup {
+  key: string;
+  size: number;
+  at: number;
+  rows: number;
+  reason: string;
+}
 interface Subscriber {
   email: string;
   name: string;
@@ -102,6 +109,30 @@ export default function MembersPage() {
   const [emailList, setEmailList] = useState<EmailCounts | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [subQuery, setSubQuery] = useState("");
+  const [backups, setBackups] = useState<{ count: number; list: Backup[]; last: { at: number; rows: number } | null } | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
+  const [showBackups, setShowBackups] = useState(false);
+
+  function loadBackups() {
+    fetch("/api/members/backup", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { count: number; backups: Backup[]; last: { at: number; rows: number } | null } | null) =>
+        setBackups(d ? { count: d.count, list: d.backups, last: d.last } : { count: 0, list: [], last: null }),
+      )
+      .catch(() => setBackups({ count: 0, list: [], last: null }));
+  }
+  async function backUpNow() {
+    setBackingUp(true);
+    try {
+      const r = await fetch("/api/members/backup", { method: "POST" });
+      if (!r.ok) throw new Error();
+      loadBackups();
+    } catch {
+      alert("Couldn't back up just now - try again in a moment.");
+    } finally {
+      setBackingUp(false);
+    }
+  }
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [author, setAuthor] = useState("");
@@ -130,6 +161,7 @@ export default function MembersPage() {
   useEffect(() => {
     setOrigin(window.location.origin);
     load();
+    loadBackups();
   }, []);
 
   async function saveSettings(patch: Partial<StudySettings>) {
@@ -548,6 +580,58 @@ export default function MembersPage() {
             <p className="dash-word-hint mt-4">
               Members&apos; journals are theirs - you see only counts here, never their notes.
             </p>
+          </Panel>
+        </div>
+        <div className="dash-col-12">
+          <Panel
+            eyebrow="Kept for good"
+            title="Backups"
+            action={
+              <button type="button" className="dash-btn dash-btn-primary dash-note-nav" disabled={backingUp} onClick={backUpNow}>
+                {backingUp ? "Backing up…" : "Back up now"}
+              </button>
+            }
+          >
+            <p className="dash-word-hint">
+              Everything in The Study - your study, every member&apos;s journal, their words and days, questions, testimonies
+              and the email list - is kept for good; only a member deleting their own account removes theirs. On top of
+              that, a full copy is saved every night at 04:00 to your own private storage, and each copy is kept for a
+              year (download any copy to keep it longer). Passwords are never copied - after a restore, members use
+              &quot;Forgotten your password?&quot;.
+            </p>
+            {backups === null ? (
+              <p className="dash-word-hint mt-3">Loading…</p>
+            ) : (
+              <>
+                <p className="dash-backup-last">
+                  {backups.last
+                    ? `Last backup: ${new Date(backups.last.at).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} · ${backups.last.rows.toLocaleString()} records`
+                    : "No backup yet - the first runs tonight, or tap Back up now."}
+                  {backups.count > 0 && ` · ${backups.count} ${backups.count === 1 ? "copy" : "copies"} kept`}
+                </p>
+                {backups.list.length > 0 && (
+                  <button type="button" className="dash-word-link mt-2" onClick={() => setShowBackups((v) => !v)}>
+                    {showBackups ? "Hide" : "Show"} backups
+                  </button>
+                )}
+                {showBackups && (
+                  <div className="dash-email-table">
+                    {backups.list.map((b) => (
+                      <div key={b.key} className="dash-backup-row">
+                        <span className="dash-members-name">
+                          {new Date(b.at).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        <span>{b.reason === "manual" ? "Backed up by you" : "Nightly"}</span>
+                        <span>{b.rows.toLocaleString()} records · {(b.size / 1024).toFixed(0)} KB</span>
+                        <a className="dash-word-link" href={`/api/members/backup?key=${encodeURIComponent(b.key)}`}>
+                          Download
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </Panel>
         </div>
       </div>

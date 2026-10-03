@@ -3,7 +3,8 @@
   // (full-stack Next.js via OpenNext). https://opennext.js.org/cloudflare
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "allthegloryclaude",
-  "main": ".open-next/worker.js",
+  // OpenNext's worker plus a nightly backup job (custom-worker.ts).
+  "main": "custom-worker.ts",
   "compatibility_date": "2025-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -33,6 +34,18 @@
   // journal (/api/word-fill). 10,000 free neurons a day, about 80 words.
   "ai": {
     "binding": "AI"
+  },
+  // Private bucket for nightly backups of The Study (never public; see
+  // src/lib/study/backup-core.ts). Backups are kept for good.
+  "r2_buckets": [
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "alltheglory-backups"
+    }
+  ],
+  // Nightly backup at 02:00 UTC (04:00 in South Africa).
+  "triggers": {
+    "crons": ["0 2 * * *"]
   },
   "observability": {
     "enabled": true

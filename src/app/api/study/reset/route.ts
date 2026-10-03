@@ -1,12 +1,14 @@
 /**
- * Set a new password from a one-time reset link the owner made
- * (/dashboard/members → "Reset link").
+ * Set a new password from a one-time reset link - emailed by "Forgotten
+ * your password?" (works for an hour) or made by the owner on
+ * /dashboard/members → "Reset link" (7 days).
  *
  *   POST { token, password } -> 200 + session cookie
  *
- * The link works once, for 7 days. Every other device is logged out.
+ * A link works once; using it cancels any other unused links for that
+ * member, and every other device is logged out.
  */
-import { getDb } from "@/lib/analytics/store";
+import { changesOf, getDb } from "@/lib/analytics/store";
 import {
   MIN_MEMBER_PASSWORD,
   clientIp,
@@ -49,10 +51,19 @@ export async function POST(req: Request) {
     await slowDown();
     return Response.json({ error: "This reset link has expired or was already used." }, { status: 400 });
   }
+  // Claim the link first, so two quick submissions can't both use it, then
+  // cancel any other unused links for this member.
+  const claimed = await db
+    .prepare("UPDATE member_resets SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL")
+    .bind(await sha256(token), now)
+    .run();
+  if (!changesOf(claimed)) {
+    return Response.json({ error: "This reset link has expired or was already used." }, { status: 400 });
+  }
   const rec = await hashMemberPassword(password);
   await db.batch([
     db.prepare("UPDATE members SET hash = ?2, salt = ?3, iterations = ?4 WHERE id = ?1").bind(row.member_id, rec.hash, rec.salt, rec.iterations),
-    db.prepare("UPDATE member_resets SET used_at = ?2 WHERE token_hash = ?1").bind(await sha256(token), now),
+    db.prepare("UPDATE member_resets SET used_at = ?2 WHERE member_id = ?1 AND used_at IS NULL").bind(row.member_id, now),
     db.prepare("DELETE FROM member_sessions WHERE member_id = ?1").bind(row.member_id),
   ]);
   const session = await createMemberSession(db, row.member_id);

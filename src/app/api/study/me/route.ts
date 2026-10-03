@@ -65,6 +65,7 @@ export async function PATCH(req: Request) {
     await db.batch([
       db.prepare("UPDATE members SET hash = ?2, salt = ?3, iterations = ?4 WHERE id = ?1").bind(member.id, rec.hash, rec.salt, rec.iterations),
       db.prepare("DELETE FROM member_sessions WHERE member_id = ?1").bind(member.id),
+      db.prepare("UPDATE member_resets SET used_at = ?2 WHERE member_id = ?1 AND used_at IS NULL").bind(member.id, Date.now()),
     ]);
     const token = await createMemberSession(db, member.id);
     return Response.json({ ok: true }, { headers: { "set-cookie": memberCookie(token), ...noStore } });
@@ -90,6 +91,10 @@ export async function DELETE(req: Request) {
   await db.batch([
     ...MEMBER_TABLES.map((t) => db.prepare(`DELETE FROM ${t} WHERE member_id = ?1`).bind(member.id)),
     db.prepare("DELETE FROM ai_usage WHERE who = ?1").bind(member.id),
+    // Their "Invite a friend" link stops working and loses their name.
+    db
+      .prepare("UPDATE member_invites SET revoked_at = COALESCE(revoked_at, ?2), label = 'A former member''s link', member_id = NULL WHERE member_id = ?1")
+      .bind(member.id, Date.now()),
     db.prepare("DELETE FROM email_list WHERE email = ?1").bind(member.email),
     db.prepare("DELETE FROM members WHERE id = ?1").bind(member.id),
   ]);

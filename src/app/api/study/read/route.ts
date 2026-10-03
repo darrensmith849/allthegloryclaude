@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       db
         .prepare(
           "SELECT day, book, chapter FROM study_notes WHERE deleted_at IS NULL AND private = 0 AND day IS NOT NULL " +
-            "ORDER BY day, position, seq",
+            "GROUP BY day, book, chapter ORDER BY day, MIN(position), MIN(seq)",
         )
         .all<{ day: string; book: number | null; chapter: number | null }>(),
       db

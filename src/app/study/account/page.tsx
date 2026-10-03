@@ -116,7 +116,7 @@ function Account() {
     if (!confirm("Delete your account and everything in your journal? This can't be undone.")) return;
     try {
       await call("DELETE", { password: delPassword, confirm: delConfirm });
-      forgetMe();
+      forgetMe(true);
       window.location.assign("/study");
     } catch (err) {
       setDelError(err instanceof Error ? err.message : "Couldn't delete it.");
@@ -225,9 +225,10 @@ function Account() {
           </div>
 
           <div className="mt-[18px]">
-            <Panel eyebrow="Your data" title="Download everything">
+            <Panel eyebrow="Your journal" title="Kept for good">
               <p className="dash-word-hint mb-3">
-                Your notes, words and day titles in one file. Your journal is private to you - nobody else can read it.
+                Everything you write - every note, word and day - is saved permanently, and a full copy is backed up every
+                night. Nothing is ever wiped. Your journal is private to you, and you can download your own copy any time.
               </p>
               <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>
                 {downloading ? "Preparing…" : "Download my journal"}

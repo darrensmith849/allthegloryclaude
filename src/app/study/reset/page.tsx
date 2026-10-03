@@ -11,8 +11,11 @@ export default function StudyResetPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // New passwords are set on The Study page on the main site.
   useEffect(() => {
-    setToken(new URLSearchParams(window.location.search).get("token") ?? "");
+    const t = new URLSearchParams(window.location.search).get("token") ?? "";
+    setToken(t);
+    window.location.replace(t ? `/the-study?reset=${encodeURIComponent(t)}` : "/the-study?login=1");
   }, []);
 
   async function submit(e: React.FormEvent) {

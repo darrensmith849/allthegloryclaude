@@ -1171,6 +1171,7 @@ export function StudyNotes() {
                 </button>
                 {studyOpen && (
                   <StudyPeek
+                    key={day}
                     on={studyOn.has(day.slice(5)) ? day.slice(5) : undefined}
                     studyUrl={client.studyUrl}
                     author={client.studyAuthor}
