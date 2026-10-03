@@ -4,9 +4,11 @@
  *   GET  → { json: string | null, updatedAt: number }
  *   PUT  { json: string, updatedAt: number } → upsert (204)
  *
- * The whole dashboard state (words, schedule, tasks, …) is a single
- * JSON blob kept in one row (id='owner'). localStorage stays the instant
- * local cache; this makes the data durable and cross-device.
+ * The dashboard state (schedule, tasks, guitar, book, settings, …) is a
+ * single JSON blob kept in one row (id='owner'). localStorage stays the
+ * instant local cache; this makes the data durable and cross-device.
+ * Word journal entries and study notes have their own tables
+ * (/api/words, /api/study-notes) so they can grow without limit.
  *
  * Safeguards so it can NEVER reset your data:
  *   - last-write-wins: an update only applies if its updatedAt is >= the
@@ -15,6 +17,8 @@
  *     NOT overwrite a stored state that has them (guards against a
  *     fresh/empty browser — e.g. the apex vs www case — pushing an empty
  *     blob over your history).
+ *   - history: the state as it stood at the end of each day is kept in
+ *     dashboard_state_history, forever - a restore point for any day.
  * Every path is best-effort and never throws to the caller.
  */
 import { getDb } from "@/lib/analytics/store";
@@ -22,7 +26,7 @@ import { getDb } from "@/lib/analytics/store";
 export const dynamic = "force-dynamic";
 
 const OWNER = "owner";
-const MAX_BYTES = 1_000_000; // 1MB ceiling — the state is a few KB in practice
+const MAX_BYTES = 1_900_000; // just under D1's 2MB row limit - in practice a few KB
 
 // Cheap "how much real data is in here" measure = recorded habit-days plus
 // saved journal words. Used only to refuse an empty blob overwriting a full one.
@@ -81,15 +85,24 @@ export async function PUT(req: Request) {
       }
     }
 
-    // Last-write-wins: only apply if this update is at least as new.
-    await db
-      .prepare(
-        "INSERT INTO dashboard_state (id, json, updated_at) VALUES (?1, ?2, ?3) " +
-          "ON CONFLICT(id) DO UPDATE SET json=excluded.json, updated_at=excluded.updated_at " +
-          "WHERE excluded.updated_at >= dashboard_state.updated_at",
-      )
-      .bind(OWNER, json, updatedAt)
-      .run();
+    // Last-write-wins: only apply if this update is at least as new. Then
+    // copy whatever is now current into today's history row.
+    await db.batch([
+      db
+        .prepare(
+          "INSERT INTO dashboard_state (id, json, updated_at) VALUES (?1, ?2, ?3) " +
+            "ON CONFLICT(id) DO UPDATE SET json=excluded.json, updated_at=excluded.updated_at " +
+            "WHERE excluded.updated_at >= dashboard_state.updated_at",
+        )
+        .bind(OWNER, json, updatedAt),
+      db
+        .prepare(
+          "INSERT INTO dashboard_state_history (day, json, updated_at) " +
+            "SELECT ?2, json, updated_at FROM dashboard_state WHERE id=?1 " +
+            "ON CONFLICT(day) DO UPDATE SET json=excluded.json, updated_at=excluded.updated_at",
+        )
+        .bind(OWNER, new Date().toISOString().slice(0, 10)),
+    ]);
   } catch {
     // never surface storage errors to the client
   }

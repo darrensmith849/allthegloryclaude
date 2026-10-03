@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Panel, Stat, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import { todayISO, formatHuman, startOfWeek } from "@/lib/dashboard/dates";
 import {
   emptyHabits,
@@ -39,7 +40,7 @@ export default function DashboardHome() {
     (t) => t.done && t.completedAt?.slice(0, 10) === today,
   ).length;
 
-  const words = state.words;
+  const { words } = useWords();
   const todaysWord = wordForDate(words, today);
   const weekStart = startOfWeek(today);
   const wordsThisWeek = words.filter((w) => wordDate(w) >= weekStart).length;

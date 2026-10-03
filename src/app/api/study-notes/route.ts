@@ -3,13 +3,18 @@
  * (table study_notes, see db/schema.sql) so the list can grow without the
  * size limits of the dashboard's single state blob.
  *
- *   GET                                   -> { notes }  (order written)
+ *   GET                                   -> { notes }  (order written, incl. deleted)
  *   POST   { note }                       -> { note }   new note, next seq
  *   POST   { import: [...] }              -> { notes }  many, in the given order
  *   PATCH  { id, ...note }                -> { note }   edit one note
+ *   PATCH  { id, restore: true }          -> { note }   back from Recently deleted
  *   PATCH  { moves: [{ id, position }] }  -> { notes }  reorder
  *   PATCH  { ids: [...], day?, page? }    -> { notes }  set day / page on many
- *   DELETE ?id=...                        -> 204
+ *   DELETE ?id=...                        -> 204        to Recently deleted
+ *
+ * Nothing is ever removed: DELETE only marks a note deleted (it can be
+ * restored), and every edit first copies the old version into
+ * study_note_versions.
  */
 import { getDb, type D1Db } from "@/lib/analytics/store";
 import { isDay, type NoteInput, type StudyNote } from "@/lib/dashboard/notes";
@@ -25,6 +30,7 @@ interface Row {
   page: number | null;
   seq: number;
   position: number | null;
+  deleted_at: number | null;
   book: number | null;
   chapter: number | null;
   verse: number | null;
@@ -40,6 +46,7 @@ const toNote = (r: Row): StudyNote => ({
   page: r.page,
   seq: r.seq,
   position: r.position ?? r.seq,
+  deletedAt: r.deleted_at ?? null,
   book: r.book,
   chapter: r.chapter,
   verse: r.verse,
@@ -76,7 +83,15 @@ async function nextSeq(db: D1Db): Promise<number> {
 }
 
 function insert(db: D1Db, n: NoteInput, seq: number, now: number): { stmt: ReturnType<D1Db["prepare"]>; note: StudyNote } {
-  const note: StudyNote = { id: crypto.randomUUID(), seq, position: seq, createdAt: now, updatedAt: now, ...n };
+  const note: StudyNote = {
+    id: crypto.randomUUID(),
+    seq,
+    position: seq,
+    deletedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    ...n,
+  };
   const stmt = db
     .prepare(
       "INSERT INTO study_notes (id, day, page, seq, position, book, chapter, verse, verse_end, text, created_at, updated_at) " +
@@ -85,6 +100,15 @@ function insert(db: D1Db, n: NoteInput, seq: number, now: number): { stmt: Retur
     .bind(note.id, n.day, n.page, seq, n.book, n.chapter, n.verse, n.verseEnd, n.text, now);
   return { stmt, note };
 }
+
+// Copies a note's current content into study_note_versions before it changes.
+const keepVersion = (db: D1Db, id: string, now: number) =>
+  db
+    .prepare(
+      "INSERT INTO study_note_versions (note_id, day, page, book, chapter, verse, verse_end, text, saved_at) " +
+        "SELECT id, day, page, book, chapter, verse, verse_end, text, ?2 FROM study_notes WHERE id=?1",
+    )
+    .bind(id, now);
 
 async function fetchNotes(db: D1Db, ids: string[]): Promise<StudyNote[]> {
   if (!ids.length) return [];
@@ -138,6 +162,7 @@ export async function PATCH(req: Request) {
     id?: string;
     ids?: unknown;
     moves?: unknown;
+    restore?: unknown;
   };
   const now = Date.now();
   try {
@@ -154,6 +179,13 @@ export async function PATCH(req: Request) {
         ),
       );
       return Response.json({ notes: await fetchNotes(db, moves.map((m) => m.id)) });
+    }
+
+    // Restore from Recently deleted.
+    if (body.restore === true && typeof body.id === "string") {
+      await db.prepare("UPDATE study_notes SET deleted_at=NULL, updated_at=?2 WHERE id=?1").bind(body.id, now).run();
+      const [note] = await fetchNotes(db, [body.id]);
+      return note ? Response.json({ note }) : Response.json({ error: "Note not found." }, { status: 404 });
     }
 
     // Set the day and/or page on many notes at once.
@@ -173,7 +205,10 @@ export async function PATCH(req: Request) {
       values.push(now);
       sets.push(`updated_at=?${values.length + 1}`);
       await db.batch(
-        ids.map((id) => db.prepare(`UPDATE study_notes SET ${sets.join(", ")} WHERE id=?1`).bind(id, ...values)),
+        ids.flatMap((id) => [
+          keepVersion(db, id, now),
+          db.prepare(`UPDATE study_notes SET ${sets.join(", ")} WHERE id=?1`).bind(id, ...values),
+        ]),
       );
       return Response.json({ notes: await fetchNotes(db, ids) });
     }
@@ -182,12 +217,14 @@ export async function PATCH(req: Request) {
     const id = String(body.id ?? "");
     const n = clean(body);
     if (!id || !n) return Response.json({ error: "Nothing to save." }, { status: 400 });
-    await db
-      .prepare(
-        "UPDATE study_notes SET day=?2, page=?3, book=?4, chapter=?5, verse=?6, verse_end=?7, text=?8, updated_at=?9 WHERE id=?1",
-      )
-      .bind(id, n.day, n.page, n.book, n.chapter, n.verse, n.verseEnd, n.text, now)
-      .run();
+    await db.batch([
+      keepVersion(db, id, now),
+      db
+        .prepare(
+          "UPDATE study_notes SET day=?2, page=?3, book=?4, chapter=?5, verse=?6, verse_end=?7, text=?8, updated_at=?9 WHERE id=?1",
+        )
+        .bind(id, n.day, n.page, n.book, n.chapter, n.verse, n.verseEnd, n.text, now),
+    ]);
     const [note] = await fetchNotes(db, [id]);
     return note ? Response.json({ note }) : Response.json({ error: "Note not found." }, { status: 404 });
   } catch (e) {
@@ -202,7 +239,7 @@ export async function DELETE(req: Request) {
   const id = new URL(req.url).searchParams.get("id") ?? "";
   if (!id) return Response.json({ error: "Which note?" }, { status: 400 });
   try {
-    await db.prepare("DELETE FROM study_notes WHERE id=?1").bind(id).run();
+    await db.prepare("UPDATE study_notes SET deleted_at=?2, updated_at=?2 WHERE id=?1").bind(id, Date.now()).run();
     return new Response(null, { status: 204 });
   } catch (e) {
     console.error("study-notes DELETE:", e);

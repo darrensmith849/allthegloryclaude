@@ -18,6 +18,7 @@ export interface StudyNote {
   page: number | null; // chronological Bible page
   seq: number; // order written
   position: number; // order within its day / page - movable
+  deletedAt: number | null; // in Recently deleted since (epoch ms); never removed
   book: number | null; // 1-66
   chapter: number | null;
   verse: number | null;

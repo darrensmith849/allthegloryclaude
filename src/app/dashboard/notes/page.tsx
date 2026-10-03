@@ -5,7 +5,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
-import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
   chapterLabel,
@@ -31,6 +31,9 @@ const CACHE_KEY = "atg:notes:v1"; // last copy from the server, for instant load
 const DRAFT_KEY = "atg:notes:drafts"; // unsaved writing, per day
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNDATED = "undated";
+const TRASH = "deleted"; // the Recently deleted view
+const SECTIONS_KEY = "atg:notes:sections"; // which day sections are open
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 interface Verse {
   chapter: number;
@@ -112,7 +115,7 @@ function NoteText({ text }: { text: string }) {
 }
 
 export default function StudyNotesPage() {
-  const { state: dash, update: updateDash } = useDashboard();
+  const { words: allWords, remove: removeWordById } = useWords();
   const [openWord, setOpenWord] = useState<string | null>(null);
   const [notes, setNotes] = useState<StudyNote[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -120,6 +123,8 @@ export default function StudyNotesPage() {
 
   const [day, setDay] = useState<string>(() => todayDay());
   const [month, setMonth] = useState<string>(() => startOfMonth(todayDay()));
+  const [calView, setCalView] = useState<"month" | "year">("month");
+  const [sections, setSections] = useState<{ notes: boolean; words: boolean }>({ notes: true, words: true });
   const [query, setQuery] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -148,6 +153,7 @@ export default function StudyNotesPage() {
     setNotes(cachedNotes);
     open(cachedNotes);
     setDrafts(readStore<Record<string, string>>(DRAFT_KEY, {}));
+    setSections(readStore(SECTIONS_KEY, { notes: true, words: true }));
     send<{ notes: StudyNote[] }>("GET")
       .then(({ notes: fresh }) => {
         setNotes(fresh);
@@ -173,6 +179,14 @@ export default function StudyNotesPage() {
     });
   };
 
+  function toggleSection(key: "notes" | "words") {
+    setSections((s) => {
+      const next = { ...s, [key]: !s[key] };
+      writeStore(SECTIONS_KEY, next);
+      return next;
+    });
+  }
+
   function openDay(d: string) {
     setDay(d);
     if (isDay(d)) setMonth(startOfMonth(d));
@@ -181,25 +195,53 @@ export default function StudyNotesPage() {
   }
 
   // ── The open day ──────────────────────────────────────────────
-  const ordered = useMemo(() => readingOrder(notes), [notes]);
+  const liveNotes = useMemo(() => notes.filter((n) => !n.deletedAt), [notes]);
+  const trash = useMemo(
+    () => notes.filter((n) => n.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
+    [notes],
+  );
+  const ordered = useMemo(() => readingOrder(liveNotes), [liveNotes]);
   const dayNotes = useMemo(
     () => ordered.filter((n) => (day === UNDATED ? !n.day : n.day === day)),
     [ordered, day],
   );
   const counts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const n of notes) if (n.day) m.set(n.day, (m.get(n.day) ?? 0) + 1);
+    for (const n of liveNotes) if (n.day) m.set(n.day, (m.get(n.day) ?? 0) + 1);
     return m;
-  }, [notes]);
+  }, [liveNotes]);
   const dayWords = useMemo(
     () =>
-      day === UNDATED
+      day === UNDATED || day === TRASH
         ? []
-        : (dash.words ?? []).filter((w) => w.day === day).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-    [dash.words, day],
+        : allWords.filter((w) => w.day === day).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [allWords, day],
   );
-  const wordDays = useMemo(() => new Set((dash.words ?? []).map((w) => w.day).filter(Boolean)), [dash.words]);
-  const undatedCount = notes.length - [...counts.values()].reduce((a, b) => a + b, 0);
+  const wordDays = useMemo(() => new Set(allWords.map((w) => w.day).filter(Boolean)), [allWords]);
+  const undatedCount = liveNotes.length - [...counts.values()].reduce((a, b) => a + b, 0);
+
+  // The same calendar day in other years - the One Year Bible comes round
+  // again each year, so this is what you saw on this reading before.
+  const otherYears = useMemo(() => {
+    if (!isDay(day)) return [];
+    const md = day.slice(5);
+    const byYear = new Map<string, { notes: number; words: number }>();
+    for (const n of liveNotes) {
+      if (n.day && n.day !== day && n.day.slice(5) === md) {
+        const e = byYear.get(n.day) ?? { notes: 0, words: 0 };
+        e.notes++;
+        byYear.set(n.day, e);
+      }
+    }
+    for (const w of allWords) {
+      if (w.day && w.day !== day && w.day.slice(5) === md) {
+        const e = byYear.get(w.day) ?? { notes: 0, words: 0 };
+        e.words++;
+        byYear.set(w.day, e);
+      }
+    }
+    return [...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [liveNotes, allWords, day]);
   const dayChapters = [...new Set(dayNotes.map(passageOf).filter((p): p is Passage => Boolean(p)).map(chapterLabel))];
   const dayPages = [...new Set(dayNotes.map((n) => n.page).filter((p): p is number => p != null))];
 
@@ -218,10 +260,8 @@ export default function StudyNotesPage() {
   }, [dayNotes, context]);
 
   function removeWord(id: string, name: string) {
-    if (!confirm(`Delete “${name}” from your word journal?`)) return;
-    updateDash((d) => {
-      d.words = (d.words ?? []).filter((w) => w.id !== id);
-    });
+    if (!confirm(`Move “${name}” to Recently deleted? You can restore it from the Word Journal.`)) return;
+    removeWordById(id);
   }
 
   const draft = drafts[day] ?? "";
@@ -297,12 +337,22 @@ export default function StudyNotesPage() {
   }
 
   async function remove(n: StudyNote) {
-    if (!confirm(`Delete this note${n.book ? ` on ${formatPassage(passageOf(n))}` : ""}? This can't be undone.`)) return;
+    if (!confirm("Move this note to Recently deleted? You can restore it any time.")) return;
     try {
       await send("DELETE", undefined, `?id=${encodeURIComponent(n.id)}`);
-      commit(notes.filter((x) => x.id !== n.id));
+      commit(notes.map((x) => (x.id === n.id ? { ...x, deletedAt: Date.now() } : x)));
+      setEditing(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Couldn't delete that note.");
+    }
+  }
+
+  async function restore(n: StudyNote) {
+    try {
+      const { note } = await send<{ note: StudyNote }>("PATCH", { id: n.id, restore: true });
+      commit(notes.map((x) => (x.id === note.id ? note : x)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't restore that note.");
     }
   }
 
@@ -356,7 +406,7 @@ export default function StudyNotesPage() {
   }
 
   function download() {
-    const blob = new Blob([exportText(notes)], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([exportText(liveNotes)], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -393,8 +443,8 @@ export default function StudyNotesPage() {
           <div className="eyebrow eyebrow-amber">The One Year Chronological Bible · NIV</div>
           <h1 className="dash-title mt-1">Study Notes</h1>
           <div className="dash-subtitle">
-            {notes.length
-              ? `${notes.length} ${notes.length === 1 ? "note" : "notes"} across ${counts.size} ${counts.size === 1 ? "day" : "days"}. Tap a day to read or add to it.`
+            {liveNotes.length
+              ? `${liveNotes.length} ${liveNotes.length === 1 ? "note" : "notes"} across ${counts.size} ${counts.size === 1 ? "day" : "days"}. Every note is kept - tap a day to read or add to it.`
               : "Pick the day you're reading and write your notes the way you always do."}
           </div>
         </div>
@@ -402,7 +452,7 @@ export default function StudyNotesPage() {
           <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setImportOpen((v) => !v)}>
             {importOpen ? "Close" : "Paste many days"}
           </button>
-          {notes.length > 0 && (
+          {liveNotes.length > 0 && (
             <button type="button" className="dash-btn dash-btn-ghost" onClick={download}>
               Download
             </button>
@@ -449,24 +499,78 @@ export default function StudyNotesPage() {
         )}
 
         {/* ── Calendar + search ───────────────────────────────────── */}
-        <div className="dash-col-5">
+        <div className="dash-col-5 dash-note-side">
           <Panel
             eyebrow="Reading plan"
-            title={monthName}
+            title={calView === "year" ? month.slice(0, 4) : monthName}
             action={
-              <div className="flex gap-1">
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setMonth((m) => shiftMonth(m, -1))} aria-label="Previous month">
+              <div className="flex gap-1 flex-wrap justify-end">
+                <div className="dash-toggle" role="group" aria-label="Calendar view">
+                  <button type="button" className={calView === "month" ? "is-on" : ""} onClick={() => setCalView("month")}>
+                    Month
+                  </button>
+                  <button type="button" className={calView === "year" ? "is-on" : ""} onClick={() => setCalView("year")}>
+                    Year
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost dash-note-nav"
+                  onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? -12 : -1))}
+                  aria-label={calView === "year" ? "Previous year" : "Previous month"}
+                >
                   ‹
                 </button>
                 <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(today)}>
                   Today
                 </button>
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setMonth((m) => shiftMonth(m, 1))} aria-label="Next month">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost dash-note-nav"
+                  onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? 12 : 1))}
+                  aria-label={calView === "year" ? "Next year" : "Next month"}
+                >
                   ›
                 </button>
               </div>
             }
           >
+            {calView === "year" && (
+              <div className="dash-note-year">
+                {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
+                  <div key={m} className="dash-note-mini">
+                    <button
+                      type="button"
+                      className="dash-note-mini-name"
+                      onClick={() => {
+                        setMonth(m);
+                        setCalView("month");
+                      }}
+                    >
+                      {MONTH_SHORT[Number(m.slice(5, 7)) - 1]}
+                    </button>
+                    <div className="dash-note-mini-grid">
+                      {monthGrid(m).map((d) =>
+                        isSameMonth(d, m) ? (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => openDay(d)}
+                            title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
+                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${d === day ? "is-selected" : ""} ${
+                              d === today ? "is-today" : ""
+                            }`}
+                          />
+                        ) : (
+                          <span key={d} />
+                        ),
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {calView === "month" && (
             <div className="dash-note-cal">
               {WEEK.map((w) => (
                 <div key={w} className="dash-note-cal-head">
@@ -497,9 +601,15 @@ export default function StudyNotesPage() {
                 );
               })}
             </div>
+            )}
             {undatedCount > 0 && (
               <button type="button" className="dash-word-link mt-3" onClick={() => openDay(UNDATED)}>
                 {undatedCount} {undatedCount === 1 ? "note" : "notes"} without a day →
+              </button>
+            )}
+            {trash.length > 0 && (
+              <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
+                Recently deleted · {trash.length} →
               </button>
             )}
 
@@ -529,7 +639,7 @@ export default function StudyNotesPage() {
             )}
           </Panel>
 
-          {day !== UNDATED && (
+          {isDay(day) && (
             <div className="mt-[18px]">
               <Panel eyebrow={`Word study · ${dayLabel(day, { weekday: false })}`} title="Study a word">
                 <QuickWord
@@ -551,14 +661,16 @@ export default function StudyNotesPage() {
         <div className="dash-col-7">
           <Panel
             eyebrow={
-              day === UNDATED
+              day === TRASH
+                ? "Nothing is ever lost"
+                : day === UNDATED
                 ? "Notes without a day"
                 : [dayPages.length ? `Page ${dayPages.join(", ")}` : "", dayChapters.join(" · ")].filter(Boolean).join(" · ") ||
                   "Reading"
             }
-            title={day === UNDATED ? "No day set" : dayLabel(day)}
+            title={day === TRASH ? "Recently deleted" : day === UNDATED ? "No day set" : dayLabel(day)}
             action={
-              day !== UNDATED ? (
+              isDay(day) ? (
                 <div className="flex gap-1">
                   <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
                     ‹
@@ -570,10 +682,57 @@ export default function StudyNotesPage() {
               ) : null
             }
           >
-            {loaded && dayNotes.length === 0 && (
+            {day === TRASH && (
+              <div className="dash-note-list">
+                {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
+                {trash.map((n) => (
+                  <article key={n.id} className="dash-note">
+                    <div className="dash-note-ref">
+                      <span className="text-[12px] text-[var(--colour-amber-soft)]">
+                        {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
+                        {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
+                      </span>
+                    </div>
+                    <div className="dash-note-body">
+                      <NoteText text={n.text} />
+                    </div>
+                    <div className="dash-note-actions" style={{ opacity: 1 }}>
+                      <button type="button" className="dash-word-link" onClick={() => restore(n)}>
+                        Restore
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {otherYears.length > 0 && (
+              <div className="dash-note-years">
+                <span className="eyebrow">This day in other years</span>
+                {otherYears.map(([d, c]) => (
+                  <button key={d} type="button" className="dash-word-alt" onClick={() => openDay(d)}>
+                    {d.slice(0, 4)} · {c.notes ? `${c.notes} ${c.notes === 1 ? "note" : "notes"}` : ""}
+                    {c.notes && c.words ? ", " : ""}
+                    {c.words ? `${c.words} ${c.words === 1 ? "word" : "words"}` : ""}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {day !== TRASH && loaded && dayNotes.length === 0 && (
               <div className="dash-word-hint mb-4">No notes on this day yet - write them below.</div>
             )}
 
+            {day !== TRASH && dayNotes.length > 0 && (
+              <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
+                <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
+                <span className="dash-note-section-chev" aria-hidden>
+                  {sections.notes ? "▾" : "▸"}
+                </span>
+              </button>
+            )}
+
+            {day !== TRASH && sections.notes && (
             <div className="dash-note-list">
               {dayNotes.map((n, i) => {
                 const p = passageOf(n);
@@ -709,11 +868,17 @@ export default function StudyNotesPage() {
                 );
               })}
             </div>
+            )}
 
             {dayWords.length > 0 && (
               <div className="dash-note-words">
-                <div className="eyebrow eyebrow-amber mb-1.5">Words studied</div>
-                {dayWords.map((w) => (
+                <button type="button" className="dash-note-section" onClick={() => toggleSection("words")} aria-expanded={sections.words}>
+                  <span className="eyebrow eyebrow-amber">Words studied · {dayWords.length}</span>
+                  <span className="dash-note-section-chev" aria-hidden>
+                    {sections.words ? "▾" : "▸"}
+                  </span>
+                </button>
+                {sections.words && dayWords.map((w) => (
                   <WordRow
                     key={w.id}
                     w={w}
@@ -727,6 +892,7 @@ export default function StudyNotesPage() {
             )}
 
             {/* ── Write for this day ─────────────────────────────── */}
+            {day !== TRASH && (
             <div className="dash-note-write">
               <label className="dash-label" htmlFor="sn-write">
                 {day === UNDATED ? "Write notes" : `Write for ${dayLabel(day, { weekday: false })}`}
@@ -771,6 +937,7 @@ export default function StudyNotesPage() {
                 {error && <span className="text-[12.5px] text-[#f1a07d]">{error}</span>}
               </div>
             </div>
+            )}
           </Panel>
         </div>
       </div>

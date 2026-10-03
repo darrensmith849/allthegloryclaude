@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses, WordRow } from "@/components/dashboard/word-entry";
-import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import { BibleWord, KeyVerse, WordLanguage } from "@/lib/dashboard/types";
 import { formatShort } from "@/lib/dashboard/dates";
 import {
@@ -154,10 +154,10 @@ export default function WordJournalPage() {
 }
 
 function WordJournal() {
-  const { state, update, ready } = useDashboard();
+  const { words, deleted, ready, save: saveWord, remove: removeWord, restore } = useWords();
+  const [showDeleted, setShowDeleted] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
-  const words = state.words;
 
   // ── Entry form ────────────────────────────────────────────────
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -333,14 +333,8 @@ function WordJournal() {
     };
     const now = new Date().toISOString();
     const id = editingId ?? uid();
-    update((d) => {
-      if (!Array.isArray(d.words)) d.words = [];
-      if (editingId) {
-        d.words = d.words.map((w) => (w.id === editingId ? { ...w, ...fields, updatedAt: now } : w));
-      } else {
-        d.words.unshift({ id, createdAt: now, ...fields });
-      }
-    });
+    const existing = editingId ? words.find((w) => w.id === editingId) : undefined;
+    saveWord(existing ? { ...existing, ...fields, updatedAt: now } : { id, createdAt: now, ...fields });
     // Make sure the saved word is on screen, whatever was being searched.
     setQuery("");
     setLang("all");
@@ -358,10 +352,8 @@ function WordJournal() {
   }
 
   function remove(w: BibleWord) {
-    if (!confirm(`Delete “${w.word}” from your word journal?`)) return;
-    update((d) => {
-      d.words = (d.words ?? []).filter((x) => x.id !== w.id);
-    });
+    if (!confirm(`Move “${w.word}” to Recently deleted? You can restore it any time.`)) return;
+    removeWord(w.id);
     if (editingId === w.id) resetForm();
   }
 
@@ -791,6 +783,26 @@ function WordJournal() {
               >
                 Show more · {shown.length - visible} left
               </button>
+            )}
+
+            {deleted.length > 0 && (
+              <div className="dash-trash">
+                <button type="button" className="dash-word-link" onClick={() => setShowDeleted((v) => !v)}>
+                  {showDeleted ? "Hide" : "Show"} recently deleted · {deleted.length}
+                </button>
+                {showDeleted &&
+                  deleted.map((w) => (
+                    <div key={w.id} className="dash-trash-row">
+                      <span>
+                        <strong>{w.word}</strong>
+                        {w.translit ? ` · ${w.translit}` : ""}
+                      </span>
+                      <button type="button" className="dash-word-link" onClick={() => restore(w.id)}>
+                        Restore
+                      </button>
+                    </div>
+                  ))}
+              </div>
             )}
           </Panel>
         </div>

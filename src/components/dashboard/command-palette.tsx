@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import { emptyHabits, getScheduleForDate } from "@/lib/dashboard/types";
 import { todayISO } from "@/lib/dashboard/dates";
 import { languageLabel, matchesWord } from "@/lib/dashboard/words";
@@ -24,6 +25,7 @@ interface Command {
 export default function CommandPalette() {
   const router = useRouter();
   const { state, update } = useDashboard();
+  const { words: journalWords } = useWords();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [hi, setHi] = useState(0);
@@ -145,7 +147,7 @@ export default function CommandPalette() {
     if (!t) return commands;
     // Saved words only appear once you start typing, so the palette stays
     // short when it opens.
-    const words: Command[] = (state.words ?? [])
+    const words: Command[] = journalWords
       .filter((w) => matchesWord(w, q))
       .slice(0, 6)
       .map((w) => ({
@@ -164,7 +166,7 @@ export default function CommandPalette() {
         (c) => norm(c.title).includes(t) || (c.hint && norm(c.hint).includes(t)),
       ),
     ];
-  }, [q, commands, state.words, router]);
+  }, [q, commands, journalWords, router]);
 
   useEffect(() => setHi(0), [q]);
 

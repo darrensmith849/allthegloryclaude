@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses } from "@/components/dashboard/word-entry";
-import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import type { BibleWord, WordLanguage } from "@/lib/dashboard/types";
 import type { LanguageFill, WordFill } from "@/lib/dashboard/words";
 
@@ -27,7 +27,7 @@ export function QuickWord({
   verseHint: string; // the passage being read, e.g. "John 2:11"
   onSaved?: (w: BibleWord) => void;
 }) {
-  const { update } = useDashboard();
+  const { save: saveWord } = useWords();
   const [word, setWord] = useState("");
   const [verse, setVerse] = useState(verseHint);
   const [verseTouched, setVerseTouched] = useState(false);
@@ -100,10 +100,7 @@ export function QuickWord({
       day: day ?? undefined,
       comment: comment.trim() || undefined,
     };
-    update((d) => {
-      if (!Array.isArray(d.words)) d.words = [];
-      d.words.unshift(entry);
-    });
+    saveWord(entry);
     setSaved(w);
     setWord("");
     setData(null);

@@ -38,18 +38,32 @@ CREATE TABLE IF NOT EXISTS dashboard_state (
   updated_at INTEGER NOT NULL     -- epoch ms; last-write-wins
 );
 
+-- The dashboard state as it stood at the end of each day (UTC), kept
+-- forever - a year-by-year record and a restore point if anything goes wrong.
+CREATE TABLE IF NOT EXISTS dashboard_state_history (
+  day        TEXT PRIMARY KEY,    -- YYYY-MM-DD
+  json       TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 -- Bible study notes from the private dashboard (/dashboard/notes). One row
 -- per note so the list can grow without limit. Ordered by reading-plan day,
 -- then page, then position (the order the owner arranges them in).
--- day/position were added after the table first shipped; on an existing
--- database run: ALTER TABLE study_notes ADD COLUMN day TEXT;
---               ALTER TABLE study_notes ADD COLUMN position REAL;
+-- Nothing is ever removed: deleting sets deleted_at (restorable from
+-- "Recently deleted"), and every edit keeps the old version in
+-- study_note_versions.
+-- day/position/deleted_at were added after the table first shipped; on an
+-- existing database run:
+--   ALTER TABLE study_notes ADD COLUMN day TEXT;
+--   ALTER TABLE study_notes ADD COLUMN position REAL;
+--   ALTER TABLE study_notes ADD COLUMN deleted_at INTEGER;
 CREATE TABLE IF NOT EXISTS study_notes (
   id         TEXT PRIMARY KEY,
   day        TEXT,                -- reading-plan day, YYYY-MM-DD (nullable)
   page       INTEGER,             -- chronological Bible page (nullable)
   seq        INTEGER NOT NULL,    -- order written
   position   REAL,                -- order within a day/page; starts as seq
+  deleted_at INTEGER,             -- epoch ms when moved to Recently deleted
   book       INTEGER,             -- 1-66, canonical order (nullable)
   chapter    INTEGER,
   verse      INTEGER,
@@ -59,6 +73,21 @@ CREATE TABLE IF NOT EXISTS study_notes (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);
+
+-- Every earlier version of an edited study note, so an edit never loses text.
+CREATE TABLE IF NOT EXISTS study_note_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id   TEXT NOT NULL,
+  day       TEXT,
+  page      INTEGER,
+  book      INTEGER,
+  chapter   INTEGER,
+  verse     INTEGER,
+  verse_end INTEGER,
+  text      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL      -- epoch ms the version was replaced
+);
+CREATE INDEX IF NOT EXISTS idx_study_note_versions_note ON study_note_versions(note_id, saved_at);
 
 -- Failed dashboard logins, for brute-force lockout (/api/admin/login).
 -- Rows older than a day are cleared on each failure.
@@ -77,3 +106,27 @@ CREATE TABLE IF NOT EXISTS admin_auth (
   iterations INTEGER NOT NULL,
   updated_at INTEGER NOT NULL     -- epoch ms
 );
+
+-- Word journal entries (dashboard Word Journal / Study Notes), one row per
+-- word so the journal can grow for years. json is the full entry. Nothing
+-- is ever removed: deleting sets deleted_at, and edits keep the old version
+-- in study_word_versions. Words saved before this table existed are copied
+-- in from the dashboard_state blob the first time /api/words is read.
+CREATE TABLE IF NOT EXISTS study_words (
+  id         TEXT PRIMARY KEY,
+  day        TEXT,                -- reading day it was studied on (nullable)
+  word       TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,    -- epoch ms
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER              -- epoch ms when moved to Recently deleted
+);
+CREATE INDEX IF NOT EXISTS idx_study_words_day ON study_words(day);
+
+CREATE TABLE IF NOT EXISTS study_word_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  word_id  TEXT NOT NULL,
+  json     TEXT NOT NULL,
+  saved_at INTEGER NOT NULL       -- epoch ms the version was replaced
+);
+CREATE INDEX IF NOT EXISTS idx_study_word_versions_word ON study_word_versions(word_id, saved_at);

@@ -120,10 +120,20 @@ export default function SettingsPage() {
   }
 
   // ── Backup + restore ────────────────────────────────────────
-  // The dashboard is localStorage-only - clearing the browser wipes
-  // everything. Export/import gives the user a manual safety net.
-  function exportData() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], {
+  // Everything is also kept on the server; this file is a personal copy.
+  async function exportData() {
+    // Word journal and study notes live in their own tables - include them,
+    // deleted ones too, so the file is a complete record.
+    const get = async (url: string, key: string) => {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        return r.ok ? ((await r.json()) as Record<string, unknown>)[key] : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+    const [words, studyNotes] = await Promise.all([get("/api/words", "words"), get("/api/study-notes", "notes")]);
+    const blob = new Blob([JSON.stringify({ ...state, words: words ?? state.words, studyNotes }, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
@@ -505,9 +515,10 @@ export default function SettingsPage() {
         <div className="dash-col-12" id="backup">
           <Panel eyebrow="Backup &amp; restore" title="Save your data">
             <p className="text-[13px] text-[var(--colour-ink-soft)] mb-3">
-              Everything lives in this browser&apos;s storage. Export a full backup
-              to a JSON file, or restore from one if you ever clear your browser
-              or move machines. Drop a copy in your iCloud / Drive every week.
+              Everything is saved on the server and never removed - deleted notes and words
+              go to Recently deleted, edits keep their earlier versions, and a copy of the
+              dashboard is kept for every day. Export gives you your own complete copy
+              (words and study notes included) to keep in iCloud / Drive as well.
             </p>
             <div className="flex flex-wrap gap-2 items-center">
               <button className="dash-btn dash-btn-primary" onClick={exportData}>

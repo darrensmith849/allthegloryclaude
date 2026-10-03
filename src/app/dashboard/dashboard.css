@@ -1959,6 +1959,75 @@
   gap: 8px;
 }
 
+/* Calendar column stays in view while the day scrolls (wide screens). */
+@media (min-width: 1101px) {
+  .dash-note-side {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    border-radius: 20px;
+  }
+  .dash-note-side::-webkit-scrollbar { width: 6px; }
+  .dash-note-side::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 999px; }
+}
+
+/* Year view: twelve small months */
+.dash-note-year { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px; }
+.dash-note-mini-name {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--colour-amber-soft);
+  margin-bottom: 4px;
+}
+.dash-note-mini-name:hover { color: var(--colour-glow); }
+.dash-note-mini-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.dash-note-mini-grid > * { aspect-ratio: 1 / 1; border-radius: 3px; }
+.dash-note-mini-grid button { background: rgba(255, 255, 255, 0.05); }
+.dash-note-mini-grid button:hover { background: rgba(255, 255, 255, 0.18); }
+.dash-note-mini-grid button.has-notes { background: rgba(216, 178, 90, 0.55); }
+.dash-note-mini-grid button.is-today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5); }
+.dash-note-mini-grid button.is-selected { background: var(--colour-glow); }
+
+/* Collapsible day sections */
+.dash-note-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 4px;
+  text-align: left;
+}
+.dash-note-section-chev { font-size: 12px; color: var(--colour-ink-quiet); }
+.dash-note-section:hover .dash-note-section-chev { color: var(--colour-glow); }
+.dash-note-years {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(216, 178, 90, 0.06);
+}
+
+/* Recently deleted (Word Journal) */
+.dash-trash { margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.dash-trash-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px;
+  font-size: 13px;
+  color: var(--colour-ink-soft);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* Words studied on a day, and the word study box */
 .dash-note-words { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .dash-quickword-inputs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Panel, Tag } from "@/components/dashboard/panel";
 import { useDashboard } from "@/lib/dashboard/storage";
+import { useWords } from "@/lib/dashboard/words-store";
 import {
   formatHuman,
   formatShort,
@@ -62,6 +63,7 @@ function dayScore(h: DayHabits | undefined, savedWord: boolean): number {
 
 export default function CalendarPage() {
   const { state, update, ready } = useDashboard();
+  const { words } = useWords();
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState(() => startOfMonth(todayISO()));
   const [selected, setSelected] = useState<string>(() => todayISO());
@@ -72,7 +74,7 @@ export default function CalendarPage() {
   const TAGS = resolveTaskTags(state.settings);
 
   // Days with at least one word saved - drives the extra calendar dot.
-  const wordDays = useMemo(() => new Set(state.words.map(wordDate)), [state.words]);
+  const wordDays = useMemo(() => new Set(words.map(wordDate)), [words]);
 
   // Per-day completion percentage (mirrors the Today progress bar logic, but
   // for whatever day the user picked).
@@ -111,8 +113,8 @@ export default function CalendarPage() {
     [state.book.sessions, selected],
   );
   const wordsThatDay = useMemo(
-    () => state.words.filter((w) => wordDate(w) === selected),
-    [state.words, selected],
+    () => words.filter((w) => wordDate(w) === selected),
+    [words, selected],
   );
 
   function toggleHabitForSelected(habitId: string) {

@@ -31,6 +31,7 @@ export const config = {
     "/dashboard/:path*",
     "/api/dashboard-state",
     "/api/study-notes",
+    "/api/words",
     "/api/word-fill",
     "/api/analytics",
   ],

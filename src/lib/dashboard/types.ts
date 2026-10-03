@@ -271,6 +271,7 @@ export interface BibleWord {
   day?: ISODate; // the reading-plan day it was studied on (Study Notes)
   keyVerses?: KeyVerse[]; // verses that use this Hebrew / Greek word
   comment?: string; // the user's own note, added at the end
+  deletedAt?: string; // in Recently deleted since; never removed
   createdAt: string;
   updatedAt?: string;
 }
