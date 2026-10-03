@@ -1912,24 +1912,47 @@
 }
 .dash-note-pagebreak:first-child { margin-top: 0; }
 .dash-note {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) auto;
-  gap: 14px;
-  padding: 12px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
+  transition: background 160ms ease;
+}
+.dash-note.is-open {
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom-color: transparent;
+  margin: 4px 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .dash-note.is-new { animation: dash-word-glow 2.4s ease-out 1; }
-.dash-note-ref { padding-top: 2px; }
-.dash-note-ref button {
+.dash-note-head {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 10px;
+  text-align: left;
+  border-radius: 10px;
+}
+.dash-note:not(.is-open) .dash-note-head:hover { background: rgba(255, 255, 255, 0.035); }
+.dash-note-head-ref {
   font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--colour-amber-soft);
-  text-align: left;
-  transition: color 140ms ease;
 }
-.dash-note-ref button:hover { color: var(--colour-glow); }
-.dash-note-body { min-width: 0; }
+.dash-note-head-text {
+  font-size: 13.5px;
+  color: var(--colour-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-note-chev {
+  font-size: 16px;
+  color: var(--colour-ink-faint);
+  transition: transform 160ms ease;
+}
+.dash-note.is-open .dash-note-chev { transform: rotate(90deg); color: var(--colour-amber-soft); }
+.dash-note-open { padding: 0 14px 12px 134px; }
 .dash-note-text { font-size: 14.5px; line-height: 1.6; color: var(--colour-ink-strong); }
 .dash-note-text p { white-space: pre-line; }
 .dash-note-text p + p,
@@ -1937,7 +1960,7 @@
 .dash-note-text ul + p { margin-top: 6px; }
 .dash-note-text ul { list-style: disc; padding-left: 20px; color: var(--colour-ink-soft); }
 .dash-note-text li + li { margin-top: 2px; }
-.dash-note-actions { display: flex; align-items: flex-start; gap: 8px; padding-top: 1px; }
+.dash-note-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
 .dash-note-move {
   width: 24px;
   height: 24px;
@@ -1948,11 +1971,19 @@
 }
 .dash-note-move:hover:not(:disabled) { color: var(--colour-glow); border-color: rgba(216, 178, 90, 0.5); }
 .dash-note-move:disabled { opacity: 0.25; }
-@media (hover: hover) {
-  .dash-note-actions { opacity: 0; transition: opacity 140ms ease; }
-  .dash-note:hover .dash-note-actions,
-  .dash-note:focus-within .dash-note-actions { opacity: 1; }
+.dash-note-section-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dash-note-section-row .dash-note-section { width: auto; flex: 1; }
+
+/* Recently deleted rows */
+.dash-note-trash {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+.dash-note-ref { padding-top: 2px; }
+.dash-note-body { min-width: 0; }
 .dash-note-edit-row {
   display: grid;
   grid-template-columns: 150px 90px minmax(0, 1fr);
@@ -2068,10 +2099,13 @@
 }
 
 @media (max-width: 720px) {
-  .dash-note { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
-  .dash-note-ref { grid-column: 1; grid-row: 1; }
-  .dash-note-actions { grid-column: 2; grid-row: 1; opacity: 1; }
-  .dash-note-body { grid-column: 1 / -1; grid-row: 2; }
+  .dash-note-head { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+  .dash-note-head-ref { grid-column: 1; grid-row: 1; }
+  .dash-note-chev { grid-column: 2; grid-row: 1; }
+  .dash-note-head-text { grid-column: 1 / -1; grid-row: 2; }
+  .dash-note-open { padding: 0 12px 12px; }
+  .dash-note-trash { grid-template-columns: minmax(0, 1fr) auto; }
+  .dash-note-trash .dash-note-body { grid-column: 1 / -1; }
   .dash-note-edit-row { grid-template-columns: 1fr 1fr; }
   .dash-note-edit-row > :last-child { grid-column: 1 / -1; }
   .dash-note-preview-row { grid-template-columns: 90px minmax(0, 1fr); }

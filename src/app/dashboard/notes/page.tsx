@@ -125,6 +125,15 @@ export default function StudyNotesPage() {
   const [month, setMonth] = useState<string>(() => startOfMonth(todayDay()));
   const [calView, setCalView] = useState<"month" | "year">("month");
   const [sections, setSections] = useState<{ notes: boolean; words: boolean }>({ notes: true, words: true });
+  const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
+  const toggleNote = (id: string) =>
+    setOpenNotes((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const openNote = (...ids: string[]) => setOpenNotes((s) => new Set([...s, ...ids]));
   const [query, setQuery] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -277,6 +286,7 @@ export default function StudyNotesPage() {
     try {
       const { notes: made } = await send<{ notes: StudyNote[] }>("POST", { import: preview });
       commit([...notes, ...made]);
+      openNote(...made.map((n) => n.id));
       setDraft(day, "");
       const lastMade = made[made.length - 1];
       if (lastMade?.day && lastMade.day !== day) openDay(lastMade.day);
@@ -425,6 +435,7 @@ export default function StudyNotesPage() {
   function openResult(n: StudyNote) {
     openDay(n.day ?? UNDATED);
     setQuery("");
+    openNote(n.id);
     setFlash(n.id);
     window.setTimeout(() => {
       document.getElementById(`note-${n.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -686,7 +697,7 @@ export default function StudyNotesPage() {
               <div className="dash-note-list">
                 {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
                 {trash.map((n) => (
-                  <article key={n.id} className="dash-note">
+                  <article key={n.id} className="dash-note-trash">
                     <div className="dash-note-ref">
                       <span className="text-[12px] text-[var(--colour-amber-soft)]">
                         {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
@@ -724,12 +735,27 @@ export default function StudyNotesPage() {
             )}
 
             {day !== TRASH && dayNotes.length > 0 && (
-              <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
-                <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
-                <span className="dash-note-section-chev" aria-hidden>
-                  {sections.notes ? "▾" : "▸"}
-                </span>
-              </button>
+              <div className="dash-note-section-row">
+                <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
+                  <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
+                  <span className="dash-note-section-chev" aria-hidden>
+                    {sections.notes ? "▾" : "▸"}
+                  </span>
+                </button>
+                {sections.notes && (
+                  <button
+                    type="button"
+                    className="dash-word-link"
+                    onClick={() =>
+                      setOpenNotes(
+                        dayNotes.every((n) => openNotes.has(n.id)) ? new Set() : new Set(dayNotes.map((n) => n.id)),
+                      )
+                    }
+                  >
+                    {dayNotes.every((n) => openNotes.has(n.id)) ? "Close all" : "Open all"}
+                  </button>
+                )}
+              </div>
             )}
 
             {day !== TRASH && sections.notes && (
@@ -738,129 +764,151 @@ export default function StudyNotesPage() {
                 const p = passageOf(n);
                 const v = verses[n.id];
                 const isEditing = editing?.id === n.id;
+                const open = isEditing || openNotes.has(n.id);
                 const showPage = n.page != null && n.page !== dayNotes[i - 1]?.page;
+                const preview = n.text
+                  .replace(/^\s*(?:[•●▪◦*]|-(?=\s))\s*/gm, "")
+                  .replace(/\s+/g, " ")
+                  .trim();
                 return (
                   <div key={n.id}>
                     {showPage && <div className="dash-note-pagebreak">Page {n.page}</div>}
-                    <article id={`note-${n.id}`} className={`dash-note ${flash === n.id ? "is-new" : ""}`}>
-                      <div className="dash-note-ref">
-                        {p ? (
-                          <button type="button" onClick={() => toggleVerse(n)} title="Read the passage">
-                            {formatPassage(p)}
-                          </button>
-                        ) : (
-                          <span className="opacity-40">·</span>
-                        )}
-                      </div>
-                      <div className="dash-note-body">
-                        {isEditing ? (
-                          <div className="flex flex-col gap-2">
-                            <div className="dash-note-edit-row">
-                              <input
-                                type="date"
-                                className="dash-input"
-                                aria-label="Day"
-                                value={editing.day}
-                                onChange={(e) => setEditing({ ...editing, day: e.target.value })}
+                    <article
+                      id={`note-${n.id}`}
+                      className={`dash-note ${open ? "is-open" : ""} ${flash === n.id ? "is-new" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="dash-note-head"
+                        onClick={() => !isEditing && toggleNote(n.id)}
+                        aria-expanded={open}
+                      >
+                        <span className="dash-note-head-ref">{p ? formatPassage(p) : "Note"}</span>
+                        <span className="dash-note-head-text">{open ? "" : preview}</span>
+                        <span className="dash-note-chev" aria-hidden>
+                          ›
+                        </span>
+                      </button>
+
+                      {open && (
+                        <div className="dash-note-open">
+                          {isEditing ? (
+                            <div className="flex flex-col gap-2">
+                              <div className="dash-note-edit-row">
+                                <input
+                                  type="date"
+                                  className="dash-input"
+                                  aria-label="Day"
+                                  value={editing.day}
+                                  onChange={(e) => setEditing({ ...editing, day: e.target.value })}
+                                />
+                                <input
+                                  className="dash-input"
+                                  inputMode="numeric"
+                                  aria-label="Page"
+                                  placeholder="Page"
+                                  value={editing.page}
+                                  onChange={(e) => setEditing({ ...editing, page: e.target.value.replace(/[^\d]/g, "") })}
+                                />
+                                <input
+                                  className="dash-input"
+                                  aria-label="Passage"
+                                  placeholder="Passage, e.g. Matt 4 vs 1"
+                                  value={editing.passage}
+                                  onChange={(e) => setEditing({ ...editing, passage: e.target.value })}
+                                />
+                              </div>
+                              <GrowingTextarea
+                                className="dash-textarea dash-word-field"
+                                value={editing.text}
+                                onChange={(e) => setEditing({ ...editing, text: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
+                                  if (e.key === "Escape") setEditing(null);
+                                }}
+                                autoFocus
                               />
-                              <input
-                                className="dash-input"
-                                inputMode="numeric"
-                                aria-label="Page"
-                                placeholder="Page"
-                                value={editing.page}
-                                onChange={(e) => setEditing({ ...editing, page: e.target.value.replace(/[^\d]/g, "") })}
-                              />
-                              <input
-                                className="dash-input"
-                                aria-label="Passage"
-                                placeholder="Passage, e.g. Matt 4 vs 1"
-                                value={editing.passage}
-                                onChange={(e) => setEditing({ ...editing, passage: e.target.value })}
-                              />
+                              <div className="flex gap-2 flex-wrap">
+                                <button type="button" className="dash-btn dash-btn-primary" onClick={saveEdit}>
+                                  Save
+                                </button>
+                                <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setEditing(null)}>
+                                  Cancel
+                                </button>
+                                <button type="button" className="dash-btn dash-btn-danger ml-auto" onClick={() => remove(n)}>
+                                  Delete
+                                </button>
+                              </div>
                             </div>
-                            <GrowingTextarea
-                              className="dash-textarea dash-word-field"
-                              value={editing.text}
-                              onChange={(e) => setEditing({ ...editing, text: e.target.value })}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
-                                if (e.key === "Escape") setEditing(null);
-                              }}
-                              autoFocus
-                            />
-                            <div className="flex gap-2 flex-wrap">
-                              <button type="button" className="dash-btn dash-btn-primary" onClick={saveEdit}>
-                                Save
+                          ) : (
+                            <NoteText text={n.text} />
+                          )}
+
+                          {v && (
+                            <div className="dash-word-verse">
+                              {v.loading && <span className="dash-word-hint">Opening the passage…</span>}
+                              {v.error && <span className="text-[12.5px] text-[#f1a07d]">{v.error}</span>}
+                              {v.verses && (
+                                <>
+                                  <div className="eyebrow eyebrow-amber mb-1.5">{v.label}</div>
+                                  <div className="dash-verse">
+                                    {v.verses.map((x) => (
+                                      <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
+                                        <span className="dash-verse-num">{x.verse}</span>
+                                        {x.text}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {!isEditing && (
+                            <div className="dash-note-actions">
+                              {p && (
+                                <button type="button" className="dash-word-link" onClick={() => toggleVerse(n)}>
+                                  {v ? "Hide verse" : "Read verse"}
+                                </button>
+                              )}
+                              <span className="flex-1" />
+                              <button
+                                type="button"
+                                className="dash-note-move"
+                                onClick={() => move(n, -1)}
+                                disabled={i === 0}
+                                aria-label="Move up"
+                                title="Move up"
+                              >
+                                ↑
                               </button>
-                              <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setEditing(null)}>
-                                Cancel
+                              <button
+                                type="button"
+                                className="dash-note-move"
+                                onClick={() => move(n, 1)}
+                                disabled={i === dayNotes.length - 1}
+                                aria-label="Move down"
+                                title="Move down"
+                              >
+                                ↓
                               </button>
-                              <button type="button" className="dash-btn dash-btn-danger ml-auto" onClick={() => remove(n)}>
-                                Delete
+                              <button
+                                type="button"
+                                className="dash-word-link"
+                                onClick={() =>
+                                  setEditing({
+                                    id: n.id,
+                                    day: n.day ?? "",
+                                    page: n.page != null ? String(n.page) : "",
+                                    passage: formatPassage(p),
+                                    text: n.text,
+                                  })
+                                }
+                              >
+                                Edit
                               </button>
                             </div>
-                          </div>
-                        ) : (
-                          <NoteText text={n.text} />
-                        )}
-                        {v && (
-                          <div className="dash-word-verse">
-                            {v.loading && <span className="dash-word-hint">Opening the passage…</span>}
-                            {v.error && <span className="text-[12.5px] text-[#f1a07d]">{v.error}</span>}
-                            {v.verses && (
-                              <>
-                                <div className="eyebrow eyebrow-amber mb-1.5">{v.label}</div>
-                                <div className="dash-verse">
-                                  {v.verses.map((x) => (
-                                    <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
-                                      <span className="dash-verse-num">{x.verse}</span>
-                                      {x.text}
-                                    </p>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {!isEditing && (
-                        <div className="dash-note-actions">
-                          <button
-                            type="button"
-                            className="dash-note-move"
-                            onClick={() => move(n, -1)}
-                            disabled={i === 0}
-                            aria-label="Move up"
-                            title="Move up"
-                          >
-                            ↑
-                          </button>
-                          <button
-                            type="button"
-                            className="dash-note-move"
-                            onClick={() => move(n, 1)}
-                            disabled={i === dayNotes.length - 1}
-                            aria-label="Move down"
-                            title="Move down"
-                          >
-                            ↓
-                          </button>
-                          <button
-                            type="button"
-                            className="dash-word-link"
-                            onClick={() =>
-                              setEditing({
-                                id: n.id,
-                                day: n.day ?? "",
-                                page: n.page != null ? String(n.page) : "",
-                                passage: formatPassage(p),
-                                text: n.text,
-                              })
-                            }
-                          >
-                            Edit
-                          </button>
+                          )}
                         </div>
                       )}
                     </article>
