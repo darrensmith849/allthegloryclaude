@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
+import { ShareLink } from "@/components/study/share-link";
 import type { ReadingMode, SignupMode, StudySettings } from "@/lib/study/members";
 
 interface Invite {
@@ -15,6 +16,7 @@ interface Invite {
   uses: number;
   createdAt: number;
   revoked: boolean;
+  byMember?: boolean;
 }
 interface MemberRow {
   id: string;
@@ -28,6 +30,7 @@ interface MemberRow {
   words: number;
   emailUpdates: boolean;
   helper: boolean;
+  invitedVia: string | null;
 }
 interface EmailCounts {
   total: number;
@@ -37,7 +40,7 @@ interface EmailCounts {
 
 const SIGNUP: { value: SignupMode; label: string; hint: string }[] = [
   { value: "invite", label: "Invite link", hint: "Only people you send a link to can join." },
-  { value: "open", label: "Anyone", hint: "Anyone can make an account at /study." },
+  { value: "open", label: "Anyone", hint: "Anyone can make an account on The Study page." },
   { value: "closed", label: "Nobody", hint: "No new accounts. Members already in keep their journal." },
 ];
 const READING: { value: ReadingMode; label: string; hint: string }[] = [
@@ -179,15 +182,29 @@ export default function MembersPage() {
     }
   }
 
-  const inviteUrl = (code: string) => `${origin}/study/join?invite=${code}`;
+  const inviteUrl = (code: string) => `${origin}/the-study?invite=${code}`;
   const liveInvites = invites.filter((i) => !i.revoked && (i.maxUses == null || i.uses < i.maxUses));
+  // The link to pass on: The Study page when anyone can join, otherwise a
+  // standing invite link that lets many people join.
+  const everyday = liveInvites.find((i) => i.maxUses == null && !i.byMember);
+  const shareUrl =
+    settings?.signup === "open" ? `${origin}/the-study` : settings?.signup === "invite" && everyday ? inviteUrl(everyday.code) : null;
+
+  async function makeEveryday() {
+    try {
+      const { invite } = await api<{ invite: Invite }>("POST", { invite: { label: "Everyday link", maxUses: null } });
+      setInvites((list) => [invite, ...list]);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't make that link.");
+    }
+  }
   const oldInvites = invites.filter((i) => !liveInvites.includes(i));
 
   return (
     <>
       <div className="dash-pagehead">
         <div>
-          <div className="eyebrow eyebrow-amber">The Study · {origin.replace(/^https?:\/\//, "")}/study</div>
+          <div className="eyebrow eyebrow-amber">The Study · {origin.replace(/^https?:\/\//, "")}/the-study</div>
           <h1 className="dash-title mt-1">Members</h1>
           <div className="dash-subtitle">
             People who keep their own Bible study journal on your site - and, when you open it, read yours.
@@ -197,8 +214,8 @@ export default function MembersPage() {
           <a className="dash-btn dash-btn-ghost" href="/dashboard/notes/read">
             Preview your study
           </a>
-          <a className="dash-btn dash-btn-ghost" href="/study" target="_blank" rel="noreferrer">
-            Open /study ↗
+          <a className="dash-btn dash-btn-ghost" href="/the-study" target="_blank" rel="noreferrer">
+            Open The Study page ↗
           </a>
         </div>
       </div>
@@ -206,6 +223,34 @@ export default function MembersPage() {
       {error && <div className="dash-word-note mb-4">{error}</div>}
 
       <div className="dash-grid">
+        <div className="dash-col-12">
+          <Panel eyebrow="Your link" title="Share The Study">
+            {settings?.signup === "closed" ? (
+              <p className="dash-word-hint">Joining is set to Nobody, so there&apos;s nothing to share right now.</p>
+            ) : shareUrl ? (
+              <>
+                <p className="dash-word-hint mb-3">
+                  {settings?.signup === "open"
+                    ? "Anyone with this link can read about The Study and join."
+                    : "Joining is by invite - this everyday link lets anyone you send it to join."}
+                </p>
+                <ShareLink
+                  url={shareUrl}
+                  subject="Join me in The Study"
+                  message="I'm reading through the Bible in the order it happened with The Study from All The Glory - come and read along:"
+                />
+              </>
+            ) : (
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="dash-word-hint">Joining is by invite. Make one link you can give to anyone.</p>
+                <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={makeEveryday}>
+                  Make an everyday link
+                </button>
+              </div>
+            )}
+          </Panel>
+        </div>
+
         <div className="dash-col-6">
           <Panel eyebrow="Switches" title="Who can join">
             <div className="dash-toggle dash-members-toggle" role="group" aria-label="Who can join">
@@ -407,6 +452,7 @@ export default function MembersPage() {
                     </div>
                     <div className="dash-word-hint">
                       {m.notes} notes across {m.days} days · {m.words} words
+                      {m.invitedVia ? ` · joined via ${m.invitedVia.startsWith("From ") ? m.invitedVia.replace(/^From /, "") + "'s link" : m.invitedVia}` : ""}
                     </div>
                     {resetLinks[m.id] && (
                       <div className="mt-2">

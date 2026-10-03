@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { canRead, studyName, useMe } from "@/components/study/shell";
+import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
 import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
@@ -49,13 +50,65 @@ export default function StudyHome() {
       .catch(() => {});
   }, [me.member]);
 
+  // A friend's invite link of their own.
+  const [invite, setInvite] = useState<string | null>(null);
+  useEffect(() => {
+    if (!me.member) return;
+    fetch("/api/study/invite", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { code?: string } | null) => d?.code && setInvite(`${window.location.origin}/the-study?invite=${d.code}`))
+      .catch(() => {});
+  }, [me.member]);
+
+  // Answers to their questions they haven't seen yet.
+  const [answered, setAnswered] = useState(0);
+  useEffect(() => {
+    if (!me.member) return;
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(window.localStorage.getItem(`atg:study:${me.member.id}:seenAnswers`) ?? "[]") as string[];
+    } catch {
+      // private window
+    }
+    fetch("/api/study/questions", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { mine?: { id: string; status: string }[] } | null) =>
+        setAnswered((d?.mine ?? []).filter((q) => q.status === "answered" && !seen.includes(q.id)).length),
+      )
+      .catch(() => {});
+  }, [me.member]);
+
+  // Where they left off: the latest day they wrote in or ticked as read.
+  const [lastDay, setLastDay] = useState<string | null>(null);
+  useEffect(() => {
+    if (!me.member) return;
+    try {
+      const notes = JSON.parse(window.localStorage.getItem(`atg:study:${me.member.id}:notes`) ?? "[]") as {
+        day: string | null;
+        deletedAt: number | null;
+      }[];
+      const latest = notes
+        .filter((n) => n.day && !n.deletedAt)
+        .map((n) => n.day as string)
+        .sort()
+        .pop();
+      if (latest) setLastDay((d) => (d && d > latest ? d : latest));
+    } catch {
+      // private window
+    }
+  }, [me.member]);
+
   // The member's reading progress.
   const [days, setDays] = useState<StudyDay[]>([]);
   useEffect(() => {
     if (!me.member) return;
     fetch("/api/study/days", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { days?: StudyDay[] } | null) => setDays(d?.days ?? []))
+      .then((d: { days?: StudyDay[] } | null) => {
+        setDays(d?.days ?? []);
+        const lastRead = (d?.days ?? []).filter((x) => x.readAt).map((x) => x.day).sort().pop();
+        if (lastRead) setLastDay((cur) => (cur && cur > lastRead ? cur : lastRead));
+      })
       .catch(() => {});
   }, [me.member]);
   const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
@@ -137,6 +190,25 @@ export default function StudyHome() {
         </div>
       )}
       {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
+
+      {answered > 0 && (
+        <Link href="/study/community#questions" className="study-weekly study-answered">
+          <span className="eyebrow eyebrow-amber">Your question</span>
+          <span className="study-weekly-title">
+            {author ?? "The study"} answered {answered === 1 ? "your question" : `${answered} of your questions`}
+          </span>
+          <span className="study-weekly-go">Read the answer →</span>
+        </Link>
+      )}
+
+      {lastDay && lastDay !== today && (
+        <Link href={`/study/journal?day=${lastDay}`} className="study-resume">
+          <span>
+            Pick up where you left off · <strong>Day {planDay(lastDay).n}</strong>, {dayLabel(lastDay, { weekday: false })}
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
+      )}
 
       {weekly && (
         <Link href="/study/community" className="study-weekly">
@@ -262,6 +334,22 @@ export default function StudyHome() {
           </span>
         </div>
       </div>
+
+      {invite && (
+        <section className="study-invite" id="invite">
+          <div className="eyebrow eyebrow-amber">Invite a friend</div>
+          <h2 className="study-today-title">Read through the Bible together</h2>
+          <p className="study-card-text mb-4">
+            Know someone who&apos;d love to read along? Send them your link - they&apos;ll have their own private journal,
+            and you&apos;ll both be on the same day of the plan.
+          </p>
+          <ShareLink
+            url={invite}
+            subject="Read through the Bible with me"
+            message="I'm reading through the Bible in the order it happened with The Study from All The Glory - join me:"
+          />
+        </section>
+      )}
 
     </div>
   );

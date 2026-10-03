@@ -190,8 +190,10 @@ CREATE TABLE IF NOT EXISTS member_invites (
   max_uses   INTEGER,                -- NULL = unlimited
   uses       INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
-  revoked_at INTEGER
+  revoked_at INTEGER,
+  member_id  TEXT                    -- a member's own "invite a friend" link (ALTER TABLE member_invites ADD COLUMN member_id TEXT)
 );
+CREATE INDEX IF NOT EXISTS idx_member_invites_member ON member_invites(member_id);
 
 -- One-time password reset links the owner makes for a member.
 CREATE TABLE IF NOT EXISTS member_resets (

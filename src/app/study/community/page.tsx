@@ -76,6 +76,15 @@ function Community() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { mine?: Question[]; published?: Question[]; queue?: Question[] } | null) => {
         setMyQuestions(d?.mine ?? []);
+        // Seen now - the home page stops pointing to them.
+        try {
+          const key = `atg:study:${me.member?.id}:seenAnswers`;
+          const seen = new Set(JSON.parse(window.localStorage.getItem(key) ?? "[]") as string[]);
+          for (const q of d?.mine ?? []) if (q.status === "answered") seen.add(q.id);
+          window.localStorage.setItem(key, JSON.stringify([...seen]));
+        } catch {
+          // private window
+        }
         setQa(d?.published ?? []);
         setQueue(d?.queue ?? null);
       })
@@ -247,7 +256,7 @@ function Community() {
             )}
           </Panel>
 
-          <div className="mt-[18px]">
+          <div className="mt-[18px] scroll-mt-6" id="questions">
             <Panel eyebrow="Ask" title="Ask a question">
               <p className="dash-word-hint mb-3">
                 Ask about a passage, a word, or something you&apos;re working through. Your question goes privately to{" "}

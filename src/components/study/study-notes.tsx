@@ -110,8 +110,16 @@ export function StudyNotes() {
   const [loaded, setLoaded] = useState(false);
   const [offline, setOffline] = useState<string | null>(null);
 
-  const [day, setDay] = useState<string>(() => todayDay());
-  const [month, setMonth] = useState<string>(() => startOfMonth(todayDay()));
+  // Members' pages only render in the browser, so they can open straight on
+  // ?day= (the owner's page is pre-rendered, so it settles on it after load).
+  const [day, setDay] = useState<string>(() => {
+    if (client.kind === "member" && typeof window !== "undefined") {
+      const asked = new URLSearchParams(window.location.search).get("day");
+      if (isDay(asked)) return asked;
+    }
+    return todayDay();
+  });
+  const [month, setMonth] = useState<string>(() => startOfMonth(day));
   const [calView, setCalView] = useState<"month" | "year">("month");
   const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean }>({
     notes: true,

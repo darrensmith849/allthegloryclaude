@@ -3467,3 +3467,30 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
   line-height: 1.6;
   color: var(--colour-ink-soft);
 }
+.dash-share-link { display: flex; flex-direction: column; gap: 10px; }
+.dash-share-ways { display: flex; gap: 6px; flex-wrap: wrap; }
+.study-resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  font-size: 14px;
+  color: var(--colour-ink-soft);
+}
+.study-resume strong { color: var(--colour-ink-strong); }
+.study-resume:hover { border-color: var(--colour-amber); }
+.study-answered { border-left-color: rgb(var(--ok-rgb)); }
+.study-invite {
+  margin-top: 28px;
+  padding: 22px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  scroll-margin-top: 24px;
+}
+.dash-install-steps { display: flex; flex-direction: column; gap: 6px; padding-left: 18px; list-style: decimal; font-size: 13.5px; line-height: 1.5; color: var(--colour-ink-soft); }

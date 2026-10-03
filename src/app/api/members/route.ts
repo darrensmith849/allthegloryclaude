@@ -83,7 +83,10 @@ export async function GET(req: Request) {
         getSettings(db),
         db.prepare("SELECT * FROM member_invites ORDER BY created_at DESC").all<InviteRow>(),
         db
-          .prepare("SELECT id, email, name, created_at, last_seen, disabled_at, invite_code, role FROM members ORDER BY created_at DESC")
+          .prepare(
+            "SELECT m.id, m.email, m.name, m.created_at, m.last_seen, m.disabled_at, m.invite_code, m.role, i.label AS invite_label " +
+              "FROM members m LEFT JOIN member_invites i ON i.code = m.invite_code ORDER BY m.created_at DESC",
+          )
           .all<{
             id: string;
             email: string;
@@ -93,6 +96,7 @@ export async function GET(req: Request) {
             disabled_at: number | null;
             invite_code: string | null;
             role: string | null;
+            invite_label: string | null;
           }>(),
         db
           .prepare("SELECT member_id, COUNT(*) AS n, COUNT(DISTINCT day) AS days FROM member_notes WHERE deleted_at IS NULL GROUP BY member_id")
@@ -115,6 +119,7 @@ export async function GET(req: Request) {
           uses: i.uses,
           createdAt: i.created_at,
           revoked: Boolean(i.revoked_at),
+          byMember: Boolean((i as InviteRow & { member_id?: string | null }).member_id),
         })),
         members: members.map((m) => ({
           id: m.id,
@@ -124,6 +129,7 @@ export async function GET(req: Request) {
           lastSeen: m.last_seen,
           disabled: Boolean(m.disabled_at),
           invite: m.invite_code,
+          invitedVia: m.invite_label,
           helper: m.role === "helper",
           notes: Number(notes.find((x) => x.member_id === m.id)?.n ?? 0),
           days: Number(notes.find((x) => x.member_id === m.id)?.days ?? 0),

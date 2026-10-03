@@ -99,6 +99,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
           { href: "/study/words", label: "All words", glyph: "α" },
           { href: "/study/community", label: "Community", glyph: "❧" },
           { href: "/study/account", label: "Account", glyph: "⚙" },
+          { href: "/study#invite", label: "Invite a friend", glyph: "✉" },
         ]
       : []),
   ];

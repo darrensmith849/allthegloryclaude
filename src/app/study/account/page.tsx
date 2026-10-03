@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { forgetMe, MemberOnly, useMe } from "@/components/study/shell";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
+import { InstallCard } from "@/components/study/install-card";
 
 const MIN_PASSWORD = 8;
 
@@ -193,12 +194,18 @@ function Account() {
         </div>
 
         <div className="dash-col-6">
+          <Panel eyebrow="On your phone" title="Get The Study as an app">
+            <InstallCard />
+          </Panel>
+
+          <div className="mt-[18px]">
           <Panel eyebrow="Reading comfort" title="Light or dark">
             <p className="dash-word-hint mb-3">
               Light reads like paper by day; dark is easier at night. Auto follows your phone or computer.
             </p>
             <ThemeSwitch />
           </Panel>
+          </div>
 
           <div className="mt-[18px]">
             <Panel eyebrow="Staying in touch" title="Email updates">
