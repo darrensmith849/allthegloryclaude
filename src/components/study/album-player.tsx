@@ -180,18 +180,20 @@ export function AlbumPlayerProvider({ children }: { children: React.ReactNode })
 }
 
 // The top-bar button: opens the player, and shows the song while playing.
-export function ListenButton() {
+export function ListenButton({ side = false }: { side?: boolean }) {
   const p = useAlbumPlayer();
   if (!p) return null;
   return (
     <button
       type="button"
-      className={`study-listen ${p.playing ? "is-playing" : ""}`}
+      className={`${side ? "dash-nav-link study-listen-side" : "study-listen"} ${p.playing ? "is-playing" : ""}`}
       onClick={() => p.setOpen(!p.open)}
       aria-expanded={p.open}
     >
-      <span aria-hidden>♪</span>
-      {p.playing ? TRACKS[p.index].title : "Listen"}
+      <span aria-hidden className={side ? "dash-nav-glyph" : undefined}>
+        ♪
+      </span>
+      <span>{p.playing ? TRACKS[p.index].title : side ? "Listen to the album" : "Listen"}</span>
     </button>
   );
 }

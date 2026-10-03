@@ -80,11 +80,15 @@ export async function GET(req: Request) {
 
     // Contents: every day with something to read, oldest first.
     const chapters = new Map<string, string[]>();
+    const passages = new Map<string, string[]>(); // "book:chapter" per day
     for (const r of refRows) {
       const list = chapters.get(r.day) ?? [];
+      const keys = passages.get(r.day) ?? [];
       const p = passageOf({ book: r.book, chapter: r.chapter, verse: null, verseEnd: null });
       if (p && !list.includes(chapterLabel(p))) list.push(chapterLabel(p));
+      if (p && !keys.includes(`${p.book}:${p.chapter}`)) keys.push(`${p.book}:${p.chapter}`);
       chapters.set(r.day, list);
+      passages.set(r.day, keys);
     }
     for (const w of wordDays) if (!chapters.has(w.day)) chapters.set(w.day, []);
     const contents = [...chapters.keys()]
@@ -94,6 +98,7 @@ export async function GET(req: Request) {
         day: d,
         title: info.get(d)?.title ?? "",
         chapters: chapters.get(d) ?? [],
+        passages: passages.get(d) ?? [],
         shared: info.get(d)?.shared !== 0,
       }));
 

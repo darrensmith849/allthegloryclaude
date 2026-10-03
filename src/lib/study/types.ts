@@ -31,6 +31,7 @@ export interface ContentsDay {
   day: string;
   title: string;
   chapters: string[];
+  passages?: string[]; // "book:chapter", e.g. "43:4"
   shared: boolean;
 }
 

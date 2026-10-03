@@ -37,6 +37,10 @@ export async function POST(req: Request) {
   const email = normEmail(body.email);
   const password = String(body.password ?? "");
   const code = String(body.invite ?? "").trim();
+  // Hidden field real people never see - bots fill it in.
+  if (String(body.website ?? "").trim()) {
+    return Response.json({ error: "Couldn't make your account." }, { status: 400 });
+  }
 
   const settings = await getSettings(db);
   const invite = code ? await usableInvite(db, code) : null;

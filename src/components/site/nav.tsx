@@ -63,7 +63,7 @@ export default function Nav() {
         </Link>
 
         {/* Desktop */}
-        <div className="hidden md:flex items-center gap-7 lg:gap-9">
+        <div className="hidden md:flex items-center gap-5 lg:gap-8 xl:gap-9">
           {site.nav.map((item) => {
             const active = isCurrent(pathname, item.href);
             return (
@@ -71,7 +71,7 @@ export default function Nav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative group text-[11px] font-medium uppercase tracking-[0.22em] transition-colors duration-200 ${
+                className={`relative group whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.22em] transition-colors duration-200 ${
                   active
                     ? "text-white"
                     : "text-white/55 hover:text-white/90"

@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { AlbumPlayerProvider, ListenButton } from "./album-player";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
 
 export type MeMember = Member & { emailUpdates?: boolean };
@@ -90,13 +90,16 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
     [me.member, readable, me.study?.author],
   );
 
+  // The left menu: only the study - like the owner's dashboard menu.
   const nav = [
-    ...(readable ? [{ href: "/study/read", label: studyName(me.study) }] : []),
+    { href: "/study", label: me.member ? "Today" : "Home", glyph: "✦" },
+    ...(readable ? [{ href: "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
     ...(me.member
       ? [
-          { href: "/study/journal", label: "My journal" },
-          { href: "/study/community", label: "Community" },
-          { href: "/study/account", label: "Account" },
+          { href: "/study/journal", label: "My journal", glyph: "✎" },
+          { href: "/study/words", label: "All words", glyph: "α" },
+          { href: "/study/community", label: "Community", glyph: "❧" },
+          { href: "/study/account", label: "Account", glyph: "⚙" },
         ]
       : []),
   ];
@@ -111,47 +114,64 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
 
   if (bare) return <div className="study-root">{body}</div>;
 
+  const logout = async () => {
+    await fetch("/api/study/logout", { method: "POST" }).catch(() => {});
+    forgetMe();
+    window.location.assign("/study");
+  };
+
   return (
-    <div className="study-root">
+    <div className="study-root study-app">
       <AlbumPlayerProvider>
-        <header className="study-top">
-          <Link href="/study" className="study-brand">
-            <Image src="/media/dove-mark.png" alt="" width={34} height={34} className="study-brand-dove" priority />
-            <span className="study-brand-words">
-              <span className="study-brand-name">All The Glory</span>
-              <span className="study-brand-sub">The Study</span>
+        <aside className="dash-sidebar study-sidebar">
+          <Link href="/study" className="study-side-brand">
+            <Image src="/media/dove-mark.png" alt="" width={40} height={40} className="study-brand-dove" priority />
+            <span>
+              <span className="eyebrow eyebrow-amber block">All The Glory</span>
+              <span className="study-side-title">The Study</span>
             </span>
           </Link>
-          <nav className="study-nav" aria-label="The Study">
-            {nav.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`study-nav-link ${pathname?.startsWith(n.href) ? "is-active" : ""}`}
-              >
-                {n.label}
-              </Link>
-            ))}
+          <ThemeSwitch className="mt-4 study-side-theme" />
+          <nav className="study-side-nav" aria-label="The Study">
+            {nav.map((n) => {
+              const active = n.href === "/study" ? pathname === "/study" : pathname?.startsWith(n.href);
+              return (
+                <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
+                  <span className="dash-nav-glyph">{n.glyph}</span>
+                  <span>{n.label}</span>
+                </Link>
+              );
+            })}
             {me.loaded && !me.member && (
               <>
-                <Link href={`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`} className="study-nav-link">
-                  Log in
+                <Link href={`/study/login?next=${encodeURIComponent(pathname ?? "/study")}`} className="dash-nav-link">
+                  <span className="dash-nav-glyph">→</span>
+                  <span>Log in</span>
                 </Link>
                 {me.study?.signup === "open" && (
-                  <Link href="/study/join" className="dash-btn dash-btn-primary study-join">
-                    Join
+                  <Link href="/study/join" className="dash-btn dash-btn-primary study-side-join">
+                    Join The Study
                   </Link>
                 )}
               </>
             )}
-            <ListenButton />
-            <ThemeToggle />
           </nav>
-        </header>
+          <div className="study-side-foot">
+            <ListenButton side />
+            <a href="/" className="dash-nav-link text-[12px] opacity-75">
+              ← alltheglory.co.za
+            </a>
+            {me.member && (
+              <button type="button" className="dash-nav-link text-[12px] opacity-75 text-left" onClick={logout}>
+                Log out
+              </button>
+            )}
+          </div>
+        </aside>
         <main className="dash-main study-main">
           {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
+          <StudyFooter />
         </main>
-        <StudyFooter />
       </AlbumPlayerProvider>
     </div>
   );

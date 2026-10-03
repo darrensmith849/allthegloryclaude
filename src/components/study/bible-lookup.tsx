@@ -1,10 +1,16 @@
 "use client";
 
 // "Look up a verse": a reference (John 3:16) or a few words (living water),
-// with each verse ready to add to today's notes or open in the NIV.
+// with each verse ready to add to today's notes or open in the NIV. For a
+// chapter that's part of the chronological reading, it says which day of
+// the plan it belongs to, so it's read in its place in the story.
 
 import { useState } from "react";
+import { dayLabel, planDay } from "@/lib/dashboard/notes";
 import { bibleAppVerse } from "@/lib/study/plan";
+
+// Where a chapter sits in the chronological plan: "book:chapter" -> days.
+export type PlanIndex = Map<string, { day: string; label: string }[]>;
 
 interface Hit {
   ref: string;
@@ -32,16 +38,27 @@ function Marked({ text }: { text: string }) {
   );
 }
 
-export function BibleLookup({ onAdd }: { onAdd?: (ref: string) => void }) {
+export function BibleLookup({
+  onAdd,
+  plan,
+  planName = "your notes",
+  onOpenDay,
+}: {
+  onAdd?: (ref: string) => void;
+  plan?: PlanIndex; // days already studied that include each chapter
+  planName?: string; // e.g. "Daniel's notes"
+  onOpenDay?: (day: string) => void;
+}) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState<string | null>(null);
 
-  async function search(e?: React.FormEvent) {
+  async function search(e?: React.FormEvent, override?: string) {
     e?.preventDefault();
-    const query = q.trim();
+    const query = (override ?? q).trim();
+    if (override) setQ(override);
     if (!query || busy) return;
     setBusy(true);
     setError(null);
@@ -85,6 +102,40 @@ export function BibleLookup({ onAdd }: { onAdd?: (ref: string) => void }) {
             <span className="dash-bible-version">Berean Standard Bible</span>
           </div>
           {res.results.length === 0 && <p className="dash-word-hint">No verses use those words.</p>}
+          {res.kind === "passage" && res.results[0] && (() => {
+            const first = res.results[0];
+            const chapterName = first.ref.replace(/:\d+$/, "");
+            const days = plan?.get(`${first.book}:${first.chapter}`) ?? [];
+            const partial = res.results.length < 2 || res.label.includes(":");
+            return (
+              <div className="dash-bible-context">
+                {days.length > 0 ? (
+                  <span>
+                    📅 In the chronological order, {chapterName} is read on{" "}
+                    {days.map((d, i) => (
+                      <span key={d.day}>
+                        {i > 0 && " and "}
+                        <button type="button" className="dash-word-link" onClick={() => onOpenDay?.(d.day)}>
+                          Day {planDay(d.day).n} · {dayLabel(d.day, { weekday: false })}
+                        </button>
+                      </span>
+                    ))}{" "}
+                    - read it there with {planName}.
+                  </span>
+                ) : (
+                  <span>
+                    📅 {chapterName} hasn&apos;t come up in {planName} yet - in the chronological plan it&apos;s read on
+                    its own day, in its place in the story.
+                  </span>
+                )}
+                {partial && (
+                  <button type="button" className="dash-word-link" onClick={() => search(undefined, chapterName)}>
+                    Read all of {chapterName}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           {res.results.map((v) => (
             <div key={v.ref} className="dash-bible-verse">
               <p>

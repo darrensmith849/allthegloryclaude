@@ -12,6 +12,7 @@ export const site = {
   nav: [
     { label: "Home", href: "/" },
     { label: "Music", href: "/album/from-darkness-to-light" },
+    { label: "The Study", href: "/study" },
     { label: "Videos", href: "/videos" },
     { label: "Commissions", href: "/commissions" },
     { label: "Testimony", href: "/testimony" },

@@ -1,15 +1,20 @@
 "use client";
 
-// Light / dark for the dashboard and The Study. With no choice made the
-// theme follows the device (prefers-color-scheme, in dashboard.css); the
-// switch saves an explicit choice and sets <html data-theme>. ThemeScript
-// applies a saved choice before the page paints, so there's no flash.
+// Light / dark for the dashboard and The Study. Light unless someone picks
+// dark (or "auto" = follow the device); the choice is saved per device and
+// set as <html data-theme>. ThemeScript applies it before the page paints,
+// so there's no flash.
 
 import { useEffect, useState } from "react";
 
 const KEY = "atg:theme";
 
-const script = `(function(){try{var t=localStorage.getItem("${KEY}");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;
+const script = `(function(){try{var t=localStorage.getItem("${KEY}");if(t==="dark"||t==="auto")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`;
+
+const isDarkNow = () => {
+  const set = document.documentElement.getAttribute("data-theme");
+  return set === "dark" || (set === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+};
 
 export function ThemeScript() {
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
@@ -19,13 +24,13 @@ export function ThemeToggle({ className = "study-theme", label = false }: { clas
   const [dark, setDark] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const set = document.documentElement.getAttribute("data-theme");
-    setDark(set ? set === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setDark(isDarkNow());
   }, []);
 
   const flip = () => {
     const next = !dark;
-    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+    if (next) document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.removeAttribute("data-theme");
     try {
       window.localStorage.setItem(KEY, next ? "dark" : "light");
     } catch {
@@ -63,18 +68,17 @@ export function ThemeSwitch({ className = "" }: { className?: string }) {
     } catch {
       // private window
     }
-    setMode(saved === "light" || saved === "dark" ? saved : "auto");
+    setMode(saved === "dark" || saved === "auto" ? saved : "light");
   }, []);
 
   const choose = (m: Mode) => {
     const root = document.documentElement;
     try {
-      if (m === "auto") window.localStorage.removeItem(KEY);
-      else window.localStorage.setItem(KEY, m);
+      window.localStorage.setItem(KEY, m);
     } catch {
       // private window - lasts until they leave
     }
-    if (m === "auto") root.removeAttribute("data-theme");
+    if (m === "light") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", m);
     setMode(m);
   };

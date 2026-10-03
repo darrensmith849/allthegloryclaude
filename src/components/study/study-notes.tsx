@@ -10,7 +10,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { StudyPeek } from "@/components/study/study-peek";
-import { BibleLookup } from "@/components/study/bible-lookup";
+import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -142,6 +142,7 @@ export function StudyNotes() {
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
   // Members: the dates (MM-DD) the owner's study has notes for, with a label.
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
+  const [studyIndex, setStudyIndex] = useState<PlanIndex>(() => new Map());
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
       const next = new Set(s);
@@ -315,9 +316,14 @@ export function StudyNotes() {
     if (!client.studyUrl) return;
     fetch("/api/study/read?only=contents", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { contents?: { day: string; title: string; chapters: string[] }[] } | null) => {
+      .then((data: { contents?: { day: string; title: string; chapters: string[]; passages?: string[] }[] } | null) => {
         if (!data?.contents) return;
         setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
+        const index: PlanIndex = new Map();
+        for (const c of data.contents)
+          for (const key of c.passages ?? [])
+            index.set(key, [...(index.get(key) ?? []), { day: c.day, label: c.title || c.chapters.join(" · ") }]);
+        setStudyIndex(index);
       })
       .catch(() => {});
   }, [client.studyUrl]);
@@ -662,6 +668,21 @@ export function StudyNotes() {
     }, 80);
     window.setTimeout(() => setFlash((id) => (id === n.id ? null : id)), 4000);
   }
+
+  // Which days each chapter was read on: the owner's own notes, or (members)
+  // the owner's study - so a looked-up chapter shows its place in the plan.
+  const planIndex = useMemo<PlanIndex>(() => {
+    if (client.kind === "member") return studyIndex;
+    const index: PlanIndex = new Map();
+    for (const n of liveNotes) {
+      if (!n.day || !n.book || !n.chapter) continue;
+      const key = `${n.book}:${n.chapter}`;
+      const list = index.get(key) ?? [];
+      if (!list.some((x) => x.day === n.day)) list.push({ day: n.day, label: days[n.day]?.title ?? "" });
+      index.set(key, list);
+    }
+    return index;
+  }, [client.kind, studyIndex, liveNotes, days]);
 
   const wordResults = useMemo(
     () => (query.trim() ? allWords.filter((w) => matchesWord(w, query)) : []),
@@ -1035,6 +1056,14 @@ export function StudyNotes() {
             <div className="mt-[18px]">
               <Panel eyebrow="The Bible" title="Look up a verse">
                 <BibleLookup
+                  plan={planIndex}
+                  planName={client.kind === "member" ? `${client.studyAuthor ?? "the study"}'s notes` : "your notes"}
+                  onOpenDay={(d) => {
+                    // Members open the same date in their own year, where the owner's notes sit too.
+                    const target = client.kind === "member" ? `${todayDay().slice(0, 4)}-${d.slice(5)}` : d;
+                    openDay(target);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   onAdd={(ref) => {
                     const current = drafts[day] ?? "";
                     setDraft(day, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);

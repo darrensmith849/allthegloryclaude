@@ -12,6 +12,7 @@ export default function StudyJoinPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailUpdates, setEmailUpdates] = useState(false);
+  const [trap, setTrap] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +33,7 @@ export default function StudyJoinPage() {
       const r = await fetch("/api/study/join", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, password, invite, emailUpdates }),
+        body: JSON.stringify({ name, email, password, invite, emailUpdates, website: trap }),
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) throw new Error(data.error ?? "Couldn't make your account.");
@@ -63,6 +64,16 @@ export default function StudyJoinPage() {
           </p>
         ) : (
           <>
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={trap}
+              onChange={(e) => setTrap(e.target.value)}
+              className="sr-only"
+              aria-hidden="true"
+            />
             <label className="dash-label mt-6" htmlFor="sj-name">
               Your name
             </label>

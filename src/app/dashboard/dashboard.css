@@ -5,10 +5,10 @@
  */
 
 /* ── Theme ─────────────────────────────────────────────────────────
- * Light (default): the album flyer - cream paper, thin gold lines, dark
- * serif type. Dark: the original night look. Dark follows the device's
- * setting unless the reader picks one with the ☾ / ☀ switch, which sets
- * <html data-theme="light|dark"> (see src/components/study/theme-toggle.tsx).
+ * Light (always the default): the album flyer - cream paper, thin gold
+ * lines, dark serif type. Dark: the original night look, only when chosen
+ * with the ☾ / ☀ switch - <html data-theme="dark">, or "auto" to follow the
+ * device (see src/components/study/theme-toggle.tsx).
  * The "Who am I?" page is always dark. Colours below use these tokens; the
  * public site keeps its own look.
  */
@@ -100,7 +100,7 @@
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) :is(.dash-root, .dash-login, .study-root, .dash-app-backdrop) {
+  :root[data-theme="auto"] :is(.dash-root, .dash-login, .study-root, .dash-app-backdrop) {
   --colour-bg: #09080e;
   --colour-ink: #f4f0e8;
   --colour-ink-strong: rgba(244, 240, 232, 0.97);
@@ -147,7 +147,7 @@ html:has(:is(.dash-root, .dash-login, .study-root)) { background: #f3ecdf; }
 html:has(.dash-welcome-root),
 :root[data-theme="dark"]:has(:is(.dash-root, .dash-login, .study-root)) { background: #060410; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):has(:is(.dash-root, .dash-login, .study-root)) { background: #060410; }
+  :root[data-theme="auto"]:has(:is(.dash-root, .dash-login, .study-root)) { background: #060410; }
 }
 .dash-app-backdrop { background: var(--bg-page); }
 
@@ -3346,3 +3346,98 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .study-weekly-title { font-family: var(--font-read), Georgia, serif; font-size: 22px; color: var(--colour-ink-strong); }
 .study-weekly-text { font-family: var(--font-read), Georgia, serif; font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
 .study-weekly-go { font-size: 13px; font-weight: 600; color: var(--colour-glow); }
+
+/* ── Notes as clean rows (like the reader) - no boxes ────────────────
+ * Closed: the verse in gold serif, a one-line preview, a chevron.
+ * Open: the verse, then the note in full underneath. Thin rules between.
+ * Used for the owner's notes, members' notes, the owner's notes inside a
+ * member's journal, and the reader. */
+.dash-note-list > * + * { margin-top: 0; }
+.dash-note {
+  border-radius: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.dash-note.is-open {
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--line-soft);
+}
+.dash-note-head {
+  grid-template-columns: 136px minmax(0, 1fr) auto;
+  padding: 14px 6px;
+  border-radius: 0;
+}
+.dash-note:not(.is-open) .dash-note-head:hover { background: rgb(var(--gold-rgb) / 0.05); }
+.dash-note-head-ref {
+  font-family: var(--font-read), Georgia, serif;
+  font-size: 16px;
+  letter-spacing: 0;
+  color: var(--colour-amber);
+}
+.dash-note.is-open .dash-note-head { padding-bottom: 4px; }
+.dash-note.is-open .dash-note-head-ref { font-size: 18px; }
+.dash-note-head-text { font-size: 15px; color: var(--colour-ink-soft); }
+.dash-note-open { padding: 0 6px 18px; }
+.dash-note-open .dash-note-text { font-size: 16.5px; line-height: 1.8; }
+.dash-note-actions { margin-top: 10px; padding-top: 0; border-top: none; }
+.dash-note-pagebreak { margin-top: 18px; }
+.dash-reflection-head { padding: 14px 6px 4px; }
+.dash-reflection .dash-note-head-ref { font-size: 18px; }
+.dash-fold-word { font-size: 17px; }
+@media (max-width: 560px) {
+  .dash-note-head { grid-template-columns: 96px minmax(0, 1fr) auto; gap: 8px; }
+}
+
+/* ── The Study: left menu like the owner's dashboard ──────────────── */
+.study-app {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.study-app .study-main { margin: 0; max-width: 1280px; }
+.study-side-brand { display: flex; align-items: center; gap: 10px; }
+.study-side-title { display: block; margin-top: 2px; font-family: var(--font-read), Georgia, serif; font-size: 21px; color: var(--colour-ink-strong); }
+.study-sidebar .dash-theme-switch { display: flex; width: 100%; }
+.study-sidebar .dash-theme-switch button { flex: 1; padding: 5px 6px; }
+.study-side-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 24px; }
+.study-side-join { justify-content: center; margin-top: 8px; }
+.study-side-foot { display: flex; flex-direction: column; gap: 2px; margin-top: auto; padding-top: 28px; }
+.study-listen-side { text-align: left; }
+.study-listen-side.is-playing { color: var(--colour-glow); background: rgb(var(--gold-rgb) / 0.1); }
+.study-listen-side > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.study-main .dash-reader-side { top: 24px; }
+.study-app .study-foot { margin-top: 48px; }
+@media (max-width: 900px) {
+  /* Phones: the menu becomes a compact header with the pages in a row. */
+  .study-app { grid-template-columns: 1fr; }
+  .study-sidebar { position: relative; height: auto; padding: 14px 16px 10px; }
+  .study-side-brand .study-brand-dove { width: 32px; height: 32px; }
+  .study-side-title { font-size: 18px; }
+  .study-side-theme { display: none !important; }
+  .study-side-nav {
+    flex-direction: row;
+    gap: 4px;
+    margin: 12px -16px 0;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .study-side-nav::-webkit-scrollbar { display: none; }
+  .study-side-nav .dash-nav-link { flex: none; padding: 7px 12px; border-radius: 999px; }
+  .study-side-nav .dash-nav-glyph { display: none; }
+  .study-side-join { margin-top: 0; flex: none; }
+  .study-side-foot { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 8px; padding-top: 0; }
+  .study-side-foot .dash-nav-link { padding: 5px 10px; }
+}
+.dash-note-head { grid-template-columns: 150px minmax(0, 1fr) auto; }
+.dash-note.is-open .dash-note-head { grid-template-columns: minmax(0, 1fr) auto; }
+.dash-note.is-open .dash-note-head-text { display: none; }
+.dash-note:not(.is-open) .dash-note-head-ref { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) {
+  .dash-note-head { grid-template-columns: 104px minmax(0, 1fr) auto; }
+}
+@media (max-width: 640px) {
+  .dash-pagehead { flex-direction: column; align-items: stretch; gap: 12px; }
+  .dash-pagehead > div:last-child { flex-wrap: wrap; }
+}
