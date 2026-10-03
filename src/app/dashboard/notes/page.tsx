@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
+import { QuickWord } from "@/components/dashboard/quick-word";
+import { WordRow } from "@/components/dashboard/word-entry";
+import { useDashboard } from "@/lib/dashboard/storage";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
   chapterLabel,
@@ -109,6 +112,8 @@ function NoteText({ text }: { text: string }) {
 }
 
 export default function StudyNotesPage() {
+  const { state: dash, update: updateDash } = useDashboard();
+  const [openWord, setOpenWord] = useState<string | null>(null);
   const [notes, setNotes] = useState<StudyNote[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [offline, setOffline] = useState<string | null>(null);
@@ -186,6 +191,14 @@ export default function StudyNotesPage() {
     for (const n of notes) if (n.day) m.set(n.day, (m.get(n.day) ?? 0) + 1);
     return m;
   }, [notes]);
+  const dayWords = useMemo(
+    () =>
+      day === UNDATED
+        ? []
+        : (dash.words ?? []).filter((w) => w.day === day).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [dash.words, day],
+  );
+  const wordDays = useMemo(() => new Set((dash.words ?? []).map((w) => w.day).filter(Boolean)), [dash.words]);
   const undatedCount = notes.length - [...counts.values()].reduce((a, b) => a + b, 0);
   const dayChapters = [...new Set(dayNotes.map(passageOf).filter((p): p is Passage => Boolean(p)).map(chapterLabel))];
   const dayPages = [...new Set(dayNotes.map((n) => n.page).filter((p): p is number => p != null))];
@@ -198,6 +211,18 @@ export default function StudyNotesPage() {
     const lastPassage = [...before].reverse().map(passageOf).find(Boolean) ?? null;
     return { page: last?.day === day ? (last?.page ?? null) : null, prev: lastPassage };
   }, [ordered, day]);
+
+  const verseHint = useMemo(() => {
+    const own = [...dayNotes].reverse().map(passageOf).find(Boolean);
+    return formatPassage(own ?? context.prev ?? null);
+  }, [dayNotes, context]);
+
+  function removeWord(id: string, name: string) {
+    if (!confirm(`Delete “${name}” from your word journal?`)) return;
+    updateDash((d) => {
+      d.words = (d.words ?? []).filter((w) => w.id !== id);
+    });
+  }
 
   const draft = drafts[day] ?? "";
   const preview = useMemo(
@@ -450,6 +475,7 @@ export default function StudyNotesPage() {
               ))}
               {grid.map((d) => {
                 const count = counts.get(d) ?? 0;
+                const hasWords = wordDays.has(d);
                 return (
                   <button
                     key={d}
@@ -457,11 +483,16 @@ export default function StudyNotesPage() {
                     onClick={() => openDay(d)}
                     className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                       d === day ? "is-selected" : ""
-                    } ${count ? "has-notes" : ""}`}
-                    aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}`}
+                    } ${count || hasWords ? "has-notes" : ""}`}
+                    aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}`}
                   >
                     <span>{Number(d.slice(8))}</span>
-                    {count > 0 && <em>{count}</em>}
+                    {(count > 0 || hasWords) && (
+                      <em>
+                        {count > 0 ? count : ""}
+                        {hasWords ? " α" : ""}
+                      </em>
+                    )}
                   </button>
                 );
               })}
@@ -497,6 +528,23 @@ export default function StudyNotesPage() {
               </div>
             )}
           </Panel>
+
+          {day !== UNDATED && (
+            <div className="mt-[18px]">
+              <Panel eyebrow={`Word study · ${dayLabel(day, { weekday: false })}`} title="Study a word">
+                <QuickWord
+                  day={day}
+                  verseHint={verseHint}
+                  onSaved={(w) => {
+                    setOpenWord(w.id);
+                    window.setTimeout(() => {
+                      document.getElementById(`word-${w.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 80);
+                  }}
+                />
+              </Panel>
+            </div>
+          )}
         </div>
 
         {/* ── The open day ────────────────────────────────────────── */}
@@ -661,6 +709,22 @@ export default function StudyNotesPage() {
                 );
               })}
             </div>
+
+            {dayWords.length > 0 && (
+              <div className="dash-note-words">
+                <div className="eyebrow eyebrow-amber mb-1.5">Words studied</div>
+                {dayWords.map((w) => (
+                  <WordRow
+                    key={w.id}
+                    w={w}
+                    open={openWord === w.id}
+                    onToggle={() => setOpenWord((id) => (id === w.id ? null : w.id))}
+                    onEdit={() => window.location.assign(`/dashboard/word-study?edit=${encodeURIComponent(w.id)}`)}
+                    onDelete={() => removeWord(w.id, w.word)}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* ── Write for this day ─────────────────────────────── */}
             <div className="dash-note-write">

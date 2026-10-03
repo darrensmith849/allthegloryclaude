@@ -1959,6 +1959,16 @@
   gap: 8px;
 }
 
+/* Words studied on a day, and the word study box */
+.dash-note-words { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.dash-quickword-inputs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.dash-quickword-result {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dash-quickword-result .dash-word-defs { grid-template-columns: 1fr; }
+
 /* Writing box */
 .dash-note-write {
   margin-top: 18px;

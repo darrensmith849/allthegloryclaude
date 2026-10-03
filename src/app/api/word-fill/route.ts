@@ -611,17 +611,20 @@ export async function POST(req: Request) {
         : r.lexicon
           ? lexiconName(r.entry.number)
           : "Strong's Concordance";
+    const application = goodLife(w?.life ?? "").text;
     const chosenVerses = r.verses.filter((v) => w?.verses.includes(v.label)).slice(0, 2);
-    const keyVerses = (chosenVerses.length ? chosenVerses : r.verses.slice(0, 2)).map(({ ref, text }) => ({
-      ref,
-      text,
-    }));
+    const shown = chosenVerses.length ? chosenVerses : r.verses.slice(0, 2);
+    // The verse the reflection cites is always among the key verses shown.
+    const cited = r.verses.find(
+      (v) => !shown.includes(v) && application.includes(v.ref.replace(/-\d+$/, "")),
+    );
+    const keyVerses = [...shown, ...(cited ? [cited] : [])].map(({ ref, text }) => ({ ref, text }));
     return {
       entry: toCandidate(r.entry),
       meaning,
       meaningSource: source,
       keyVerses,
-      application: goodLife(w?.life ?? "").text,
+      application,
       alternatives: lists[lang]
         .filter((e) => e.number !== r.entry.number)
         .slice(0, 5)

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
+import { KeyVerses, WordRow } from "@/components/dashboard/word-entry";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { BibleWord, KeyVerse, WordLanguage } from "@/lib/dashboard/types";
 import { formatShort } from "@/lib/dashboard/dates";
@@ -139,18 +140,6 @@ const PAGE = 40;
 type LangFilter = "all" | WordLanguage;
 type SortMode = "newest" | "az";
 
-interface Verse {
-  chapter: number;
-  verse: number;
-  text: string;
-}
-interface VerseView {
-  loading: boolean;
-  label?: string;
-  verses?: Verse[];
-  error?: string;
-}
-
 function monthLabel(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -189,15 +178,21 @@ function WordJournal() {
   const [sort, setSort] = useState<SortMode>("newest");
   const [openId, setOpenId] = useState<string | null>(null);
   const [visible, setVisible] = useState(PAGE);
-  const [verses, setVerses] = useState<Record<string, VerseView>>({});
 
-  // Deep links from ⌘K and Today: ?q=grace opens a search, ?new=1 jumps to
-  // the form. Consumed once, then cleared so the same link works again.
+  // Deep links: ?q=grace opens a search (⌘K, Today), ?new=1 jumps to the
+  // form, ?edit=<id> opens a word to edit (Study Notes). Consumed once, then
+  // cleared so the same link works again.
   useEffect(() => {
     if (!ready) return;
     const q = params.get("q");
     const isNew = params.get("new");
-    if (q === null && !isNew) return;
+    const editId = params.get("edit");
+    if (q === null && !isNew && !editId) return;
+    const toEdit = editId ? words.find((w) => w.id === editId) : undefined;
+    if (toEdit) {
+      startEdit(toEdit);
+      setOpenId(toEdit.id);
+    }
     if (q !== null) {
       setQuery(q);
       setLang("all");
@@ -375,31 +370,6 @@ function WordJournal() {
     setDraft({ ...EMPTY_DRAFT, word: query.trim() });
     formTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     wordInput.current?.focus({ preventScroll: true });
-  }
-
-  async function toggleVerse(w: BibleWord) {
-    if (!w.reference) return;
-    if (verses[w.id]) {
-      setVerses((v) => {
-        const next = { ...v };
-        delete next[w.id];
-        return next;
-      });
-      return;
-    }
-    setVerses((v) => ({ ...v, [w.id]: { loading: true } }));
-    try {
-      const r = await fetch(`/api/verse?ref=${encodeURIComponent(w.reference)}`);
-      const data = await r.json();
-      setVerses((v) => ({
-        ...v,
-        [w.id]: data.error
-          ? { loading: false, error: data.error }
-          : { loading: false, label: `${data.reference} · ${data.translation}`, verses: data.verses },
-      }));
-    } catch {
-      setVerses((v) => ({ ...v, [w.id]: { loading: false, error: "Couldn't load that passage." } }));
-    }
   }
 
   const counts = useMemo(
@@ -803,9 +773,7 @@ function WordJournal() {
                         open={openId === w.id}
                         isNew={saved?.id === w.id}
                         editing={editingId === w.id}
-                        verse={verses[w.id]}
                         onToggle={() => setOpenId((id) => (id === w.id ? null : w.id))}
-                        onVerse={() => toggleVerse(w)}
                         onEdit={() => startEdit(w)}
                         onDelete={() => remove(w)}
                       />
@@ -828,167 +796,5 @@ function WordJournal() {
         </div>
       </div>
     </>
-  );
-}
-
-function KeyVerses({ verses, onRemove }: { verses: KeyVerse[]; onRemove?: (i: number) => void }) {
-  return (
-    <ul className="dash-word-keyverses">
-      {verses.map((v, i) => (
-        <li key={`${v.ref}-${i}`}>
-          <span className="dash-word-keyverse-ref">{v.ref}</span>
-          <span className="dash-word-keyverse-text">“{v.text}”</span>
-          {onRemove && (
-            <button
-              type="button"
-              className="dash-word-keyverse-remove"
-              onClick={() => onRemove(i)}
-              aria-label={`Remove ${v.ref}`}
-              title="Remove this verse"
-            >
-              ✕
-            </button>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// One word in the journal: a compact row that opens to the full entry.
-function WordRow({
-  w,
-  open,
-  isNew,
-  editing,
-  verse,
-  onToggle,
-  onVerse,
-  onEdit,
-  onDelete,
-}: {
-  w: BibleWord;
-  open: boolean;
-  isNew: boolean;
-  editing: boolean;
-  verse?: VerseView;
-  onToggle: () => void;
-  onVerse: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  const preview = w.application || w.englishMeaning || w.originalMeaning;
-  return (
-    <article
-      id={`word-${w.id}`}
-      className={`dash-word-row ${open ? "is-open" : ""} ${isNew ? "is-new" : ""} ${editing ? "is-editing" : ""}`}
-    >
-      <button type="button" className="dash-word-row-head" onClick={onToggle} aria-expanded={open}>
-        <span className="dash-word-row-main">
-          <span className="dash-word-row-line">
-            <span className="dash-word-row-title">{w.word}</span>
-            {w.original && (
-              <span className="dash-word-row-orig" dir="auto" lang={w.language === "greek" ? "grc" : "he"}>
-                {w.original}
-              </span>
-            )}
-            {w.translit && <span className="dash-word-row-translit">{w.translit}</span>}
-          </span>
-          {!open && preview && <span className="dash-word-row-sub">{preview}</span>}
-        </span>
-        <span className={`dash-word-lang is-${w.language}`}>{languageLabel(w)}</span>
-        <span className="dash-word-row-chev" aria-hidden>
-          ›
-        </span>
-      </button>
-
-      {open && (
-        <div className="dash-word-row-body">
-          {(w.originalMeaning || w.englishMeaning) && (
-            <dl className="dash-word-defs">
-              {w.originalMeaning && (
-                <div>
-                  <dt>
-                    {languageLabel(w)} meaning{w.strongs ? ` · ${w.strongs}` : ""}
-                  </dt>
-                  <dd>{w.originalMeaning}</dd>
-                  {w.meaningSource && <div className="dash-word-source">{w.meaningSource}</div>}
-                </div>
-              )}
-              {w.englishMeaning && (
-                <div>
-                  <dt>English meaning</dt>
-                  <dd>{w.englishMeaning}</dd>
-                </div>
-              )}
-            </dl>
-          )}
-
-          {w.keyVerses && w.keyVerses.length > 0 && (
-            <div className="mt-4">
-              <div className="eyebrow mb-1.5">Key verses</div>
-              <KeyVerses verses={w.keyVerses} />
-            </div>
-          )}
-
-          {w.application && (
-            <div className="dash-word-apply">
-              <span className="eyebrow eyebrow-amber">For my life</span>
-              <p>{w.application}</p>
-            </div>
-          )}
-
-          {w.comment && (
-            <div className="dash-word-comment">
-              <span className="eyebrow">My comment</span>
-              <p>{w.comment}</p>
-            </div>
-          )}
-
-          <div className="dash-word-foot">
-            {w.reference ? (
-              <button
-                type="button"
-                className="dash-word-ref"
-                onClick={onVerse}
-                aria-expanded={Boolean(verse)}
-                title={verse ? "Hide the passage" : "Read the passage"}
-              >
-                ↗ {w.reference}
-              </button>
-            ) : (
-              <span />
-            )}
-            <span className="dash-word-date">{formatShort(wordDate(w))}</span>
-            <button type="button" className="dash-word-link" onClick={onEdit}>
-              Edit
-            </button>
-            <button type="button" className="dash-word-link is-danger" onClick={onDelete}>
-              Delete
-            </button>
-          </div>
-
-          {verse && (
-            <div className="dash-word-verse">
-              {verse.loading && <span className="dash-word-hint">Opening the passage…</span>}
-              {verse.error && <span className="text-[12.5px] text-[#f1a07d]">{verse.error}</span>}
-              {verse.verses && (
-                <>
-                  <div className="eyebrow eyebrow-amber mb-1.5">{verse.label}</div>
-                  <div className="dash-verse">
-                    {verse.verses.map((x) => (
-                      <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
-                        <span className="dash-verse-num">{x.verse}</span>
-                        {x.text}
-                      </p>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </article>
   );
 }

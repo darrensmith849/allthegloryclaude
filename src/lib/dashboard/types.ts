@@ -268,6 +268,7 @@ export interface BibleWord {
   englishMeaning: string; // plain English meaning
   application: string; // one short sentence applying it to life
   reference?: string; // where it was found, e.g. "Psalm 136:1"
+  day?: ISODate; // the reading-plan day it was studied on (Study Notes)
   keyVerses?: KeyVerse[]; // verses that use this Hebrew / Greek word
   comment?: string; // the user's own note, added at the end
   createdAt: string;
