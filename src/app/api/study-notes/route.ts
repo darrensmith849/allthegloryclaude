@@ -3,11 +3,13 @@
  * (table study_notes, see db/schema.sql) so the list can grow without the
  * size limits of the dashboard's single state blob.
  *
- *   GET                                   -> { notes }  (order written, incl. deleted)
+ *   GET    [?since=ms]                    -> { notes, syncedAt }  (incl. deleted; only
+ *                                            notes changed since `since` when given)
  *   POST   { note }                       -> { note }   new note, next seq
  *   POST   { import: [...] }              -> { notes }  many, in the given order
  *   PATCH  { id, ...note }                -> { note }   edit one note
  *   PATCH  { id, restore: true }          -> { note }   back from Recently deleted
+ *   PATCH  { id, private: boolean }       -> { note }   keep out of the shared study
  *   PATCH  { moves: [{ id, position }] }  -> { notes }  reorder
  *   PATCH  { ids: [...], day?, page? }    -> { notes }  set day / page on many
  *   DELETE ?id=...                        -> 204        to Recently deleted
@@ -31,6 +33,7 @@ interface Row {
   seq: number;
   position: number | null;
   deleted_at: number | null;
+  private: number | null;
   book: number | null;
   chapter: number | null;
   verse: number | null;
@@ -47,6 +50,7 @@ const toNote = (r: Row): StudyNote => ({
   seq: r.seq,
   position: r.position ?? r.seq,
   deletedAt: r.deleted_at ?? null,
+  private: Boolean(r.private),
   book: r.book,
   chapter: r.chapter,
   verse: r.verse,
@@ -88,6 +92,7 @@ function insert(db: D1Db, n: NoteInput, seq: number, now: number): { stmt: Retur
     seq,
     position: seq,
     deletedAt: null,
+    private: false,
     createdAt: now,
     updatedAt: now,
     ...n,
@@ -119,12 +124,16 @@ async function fetchNotes(db: D1Db, ids: string[]): Promise<StudyNote[]> {
   return results.map(toNote);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
   try {
-    const { results } = await db.prepare("SELECT * FROM study_notes ORDER BY seq").all<Row>();
-    return Response.json({ notes: results.map(toNote) }, { headers: { "cache-control": "no-store" } });
+    const syncedAt = Date.now();
+    const since = Number(new URL(req.url).searchParams.get("since")) || 0;
+    const { results } = since
+      ? await db.prepare("SELECT * FROM study_notes WHERE updated_at > ?1 ORDER BY seq").bind(since).all<Row>()
+      : await db.prepare("SELECT * FROM study_notes ORDER BY seq").all<Row>();
+    return Response.json({ notes: results.map(toNote), syncedAt }, { headers: { "cache-control": "no-store" } });
   } catch (e) {
     console.error("study-notes GET:", e);
     return Response.json({ error: "Couldn't load your notes." }, { status: 500 });
@@ -163,6 +172,7 @@ export async function PATCH(req: Request) {
     ids?: unknown;
     moves?: unknown;
     restore?: unknown;
+    private?: unknown;
   };
   const now = Date.now();
   try {
@@ -184,6 +194,16 @@ export async function PATCH(req: Request) {
     // Restore from Recently deleted.
     if (body.restore === true && typeof body.id === "string") {
       await db.prepare("UPDATE study_notes SET deleted_at=NULL, updated_at=?2 WHERE id=?1").bind(body.id, now).run();
+      const [note] = await fetchNotes(db, [body.id]);
+      return note ? Response.json({ note }) : Response.json({ error: "Note not found." }, { status: 404 });
+    }
+
+    // Keep a note out of the shared study (or let it back in).
+    if (typeof body.private === "boolean" && typeof body.id === "string" && !("text" in body)) {
+      await db
+        .prepare("UPDATE study_notes SET private=?2, updated_at=?3 WHERE id=?1")
+        .bind(body.id, body.private ? 1 : 0, now)
+        .run();
       const [note] = await fetchNotes(db, [body.id]);
       return note ? Response.json({ note }) : Response.json({ error: "Note not found." }, { status: 404 });
     }

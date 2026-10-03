@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS dashboard_state_history (
 --   ALTER TABLE study_notes ADD COLUMN day TEXT;
 --   ALTER TABLE study_notes ADD COLUMN position REAL;
 --   ALTER TABLE study_notes ADD COLUMN deleted_at INTEGER;
+--   ALTER TABLE study_notes ADD COLUMN private INTEGER NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS study_notes (
   id         TEXT PRIMARY KEY,
   day        TEXT,                -- reading-plan day, YYYY-MM-DD (nullable)
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS study_notes (
   seq        INTEGER NOT NULL,    -- order written
   position   REAL,                -- order within a day/page; starts as seq
   deleted_at INTEGER,             -- epoch ms when moved to Recently deleted
+  private    INTEGER NOT NULL DEFAULT 0, -- 1 = never included when the study is shared
   book       INTEGER,             -- 1-66, canonical order (nullable)
   chapter    INTEGER,
   verse      INTEGER,
@@ -73,6 +75,25 @@ CREATE TABLE IF NOT EXISTS study_notes (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);
+CREATE INDEX IF NOT EXISTS idx_study_notes_updated ON study_notes(updated_at);
+
+-- Each reading day's own details: a title and key takeaway, and whether the
+-- day is included when the study is shared. Edits keep their old version.
+CREATE TABLE IF NOT EXISTS study_days (
+  day        TEXT PRIMARY KEY,    -- YYYY-MM-DD
+  title      TEXT,
+  takeaway   TEXT,
+  shared     INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL     -- epoch ms
+);
+CREATE TABLE IF NOT EXISTS study_day_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  day      TEXT NOT NULL,
+  title    TEXT,
+  takeaway TEXT,
+  shared   INTEGER,
+  saved_at INTEGER NOT NULL
+);
 
 -- Every earlier version of an edited study note, so an edit never loses text.
 CREATE TABLE IF NOT EXISTS study_note_versions (
@@ -122,6 +143,7 @@ CREATE TABLE IF NOT EXISTS study_words (
   deleted_at INTEGER              -- epoch ms when moved to Recently deleted
 );
 CREATE INDEX IF NOT EXISTS idx_study_words_day ON study_words(day);
+CREATE INDEX IF NOT EXISTS idx_study_words_updated ON study_words(updated_at);
 
 CREATE TABLE IF NOT EXISTS study_word_versions (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,

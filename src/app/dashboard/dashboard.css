@@ -1826,7 +1826,7 @@
 
 
 /* ── Study notes ──────────────────────────────────────────────── */
-.dash-note-nav { padding: 6px 11px; font-size: 12px; }
+.dash-note-nav { padding: 6px 11px; font-size: 12px; white-space: nowrap; }
 
 /* Calendar */
 .dash-note-cal {
@@ -2024,6 +2024,34 @@
 .dash-note-mini-grid button.is-today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5); }
 .dash-note-mini-grid button.is-selected { background: var(--colour-glow); }
 
+/* A day's title and key takeaway */
+.dash-day-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-left: 2px solid var(--colour-amber);
+  background: rgba(216, 178, 90, 0.05);
+  text-align: left;
+}
+.dash-day-head:hover { background: rgba(216, 178, 90, 0.09); }
+.dash-day-title { font-family: var(--font-display), serif; font-size: 19px; color: var(--colour-ink-strong); }
+.dash-day-takeaway {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--colour-ink-soft);
+  white-space: pre-line;
+}
+.dash-day-private { font-size: 11.5px; color: var(--colour-ink-quiet); }
+.dash-day-edit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.dash-day-title-input { font-family: var(--font-display), serif; font-size: 17px; }
+.dash-day-share { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--colour-ink-soft); }
+
 /* Collapsible day sections */
 .dash-note-section {
   display: flex;
@@ -2140,3 +2168,142 @@
   color: var(--colour-ink-quiet);
 }
 .dash-login-back:hover { color: var(--colour-glow); }
+
+/* ── Reader view (/dashboard/notes/read) ───────────────────────── */
+.dash-reader { max-width: 720px; margin: 0 auto; padding-bottom: 48px; }
+.dash-reader-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.dash-reader-badge {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 178, 90, 0.35);
+  color: var(--colour-amber);
+}
+.dash-reader-warn {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  color: var(--colour-ink-soft);
+}
+.dash-reader-page {
+  padding: clamp(22px, 5vw, 44px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+}
+.dash-reader-eyebrow {
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colour-amber);
+}
+.dash-reader-title {
+  margin-top: 8px;
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 4.5vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--colour-ink-strong);
+}
+.dash-reader-chapters { margin-top: 6px; font-size: 13.5px; color: var(--colour-ink-quiet); }
+.dash-reader-takeaway {
+  margin: 22px 0 6px;
+  padding: 4px 0 4px 16px;
+  border-left: 2px solid var(--colour-amber);
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--colour-ink-soft);
+  white-space: pre-line;
+}
+.dash-reader-note { margin-top: 26px; }
+.dash-reader-note .dash-note-text { font-size: 16px; line-height: 1.75; }
+.dash-reader-ref {
+  margin-bottom: 6px;
+  font-family: var(--font-display), serif;
+  font-size: 17px;
+  color: var(--colour-glow);
+}
+.dash-reader-empty { margin-top: 24px; color: var(--colour-ink-quiet); font-size: 14px; }
+.dash-reader-hidden { margin-top: 18px; font-size: 12.5px; color: var(--colour-ink-quiet); }
+.dash-reader-words { margin-top: 36px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.dash-reader-section {
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colour-amber);
+}
+.dash-reader-word { margin-top: 18px; }
+.dash-reader-word p { margin-top: 5px; font-size: 14.5px; line-height: 1.6; color: var(--colour-ink-soft); }
+.dash-reader-word-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dash-reader-word-name { font-family: var(--font-display), serif; font-size: 20px; color: var(--colour-ink-strong); }
+.dash-reader-label {
+  margin-right: 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--colour-ink-quiet);
+}
+.dash-reader-word-life { font-family: var(--font-display), serif; font-style: italic; color: var(--colour-ink-strong) !important; }
+.dash-reader-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.dash-reader-step {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  font-family: var(--font-display), serif;
+  font-size: 15px;
+  color: var(--colour-ink-strong);
+}
+.dash-reader-step span { font-family: inherit; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--colour-ink-quiet); }
+.dash-reader-step.is-next { text-align: right; align-items: flex-end; }
+.dash-reader-step:hover { border-color: rgba(216, 178, 90, 0.45); }
+.dash-reader-contents {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dash-reader-contents summary { cursor: pointer; font-size: 13px; color: var(--colour-ink-soft); }
+.dash-reader-month { margin-top: 14px; }
+.dash-reader-month-label {
+  margin-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--colour-amber);
+}
+.dash-reader-toc {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--colour-ink-soft);
+}
+.dash-reader-toc:hover { background: rgba(255, 255, 255, 0.04); color: var(--colour-ink-strong); }
+.dash-reader-toc.is-on { background: rgba(216, 178, 90, 0.1); color: var(--colour-ink-strong); }
+.dash-reader-toc-day { flex: none; width: 64px; font-size: 12px; color: var(--colour-ink-quiet); }
+.dash-reader-toc-title { flex: 1; min-width: 0; }
+@media (max-width: 560px) {
+  .dash-reader-nav { grid-template-columns: 1fr; }
+  .dash-reader-step.is-next { text-align: left; align-items: flex-start; }
+}

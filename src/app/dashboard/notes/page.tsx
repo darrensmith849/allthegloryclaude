@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
+import { NoteText } from "@/components/dashboard/note-text";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -15,6 +16,8 @@ import {
   isDay,
   latestNote,
   matchesNote,
+  mergeNotes,
+  planDay,
   parseImport,
   parsePassage,
   passageOf,
@@ -23,11 +26,14 @@ import {
   todayDay,
   type NoteInput,
   type Passage,
+  type StudyDay,
   type StudyNote,
 } from "@/lib/dashboard/notes";
 
 const API = "/api/study-notes";
 const CACHE_KEY = "atg:notes:v1"; // last copy from the server, for instant load
+const SYNCED_KEY = "atg:notes:synced"; // server time of the last fetch
+const DAYS_KEY = "atg:notes:days"; // day titles / takeaways
 const DRAFT_KEY = "atg:notes:drafts"; // unsaved writing, per day
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNDATED = "undated";
@@ -86,34 +92,6 @@ async function send<T>(method: string, body?: unknown, query = ""): Promise<T> {
   return data;
 }
 
-// Note text: "•", "-" or "*" lines become bullets; everything else keeps
-// its line breaks.
-function NoteText({ text }: { text: string }) {
-  const blocks: { bullet: boolean; lines: string[] }[] = [];
-  for (const line of text.split("\n")) {
-    const bullet = /^\s*(?:[•●▪◦*]|-(?=\s))\s*/.test(line);
-    const clean = line.replace(/^\s*(?:[•●▪◦*]|-(?=\s))\s*/, "");
-    const last = blocks[blocks.length - 1];
-    if (last && last.bullet === bullet) last.lines.push(clean);
-    else blocks.push({ bullet, lines: [clean] });
-  }
-  return (
-    <div className="dash-note-text">
-      {blocks.map((b, i) =>
-        b.bullet ? (
-          <ul key={i}>
-            {b.lines.map((l, j) => (
-              <li key={j}>{l}</li>
-            ))}
-          </ul>
-        ) : (
-          <p key={i}>{b.lines.join("\n")}</p>
-        ),
-      )}
-    </div>
-  );
-}
-
 export default function StudyNotesPage() {
   const { words: allWords, remove: removeWordById } = useWords();
   const [openWord, setOpenWord] = useState<string | null>(null);
@@ -126,6 +104,8 @@ export default function StudyNotesPage() {
   const [calView, setCalView] = useState<"month" | "year">("month");
   const [sections, setSections] = useState<{ notes: boolean; words: boolean }>({ notes: true, words: true });
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
+  const [days, setDays] = useState<Record<string, StudyDay>>({});
+  const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
       const next = new Set(s);
@@ -148,14 +128,15 @@ export default function StudyNotesPage() {
   const [importing, setImporting] = useState(false);
   const writeBox = useRef<HTMLTextAreaElement>(null);
 
-  // Instant load from the last copy, then the server. Opens on the day
-  // of the latest note written.
+  // Instant load from the last copy, then the server. Opens on ?day= when
+  // given (e.g. back from the reader view), else the latest note's day.
   useEffect(() => {
+    const asked = new URLSearchParams(window.location.search).get("day");
     const open = (list: StudyNote[]) => {
-      const last = latestNote(list);
-      if (last?.day) {
-        setDay(last.day);
-        setMonth(startOfMonth(last.day));
+      const d = isDay(asked) ? asked : latestNote(list)?.day;
+      if (d) {
+        setDay(d);
+        setMonth(startOfMonth(d));
       }
     };
     const cachedNotes = readStore<StudyNote[]>(CACHE_KEY, []);
@@ -163,15 +144,53 @@ export default function StudyNotesPage() {
     open(cachedNotes);
     setDrafts(readStore<Record<string, string>>(DRAFT_KEY, {}));
     setSections(readStore(SECTIONS_KEY, { notes: true, words: true }));
-    send<{ notes: StudyNote[] }>("GET")
-      .then(({ notes: fresh }) => {
-        setNotes(fresh);
-        writeStore(CACHE_KEY, fresh);
+    // After the first load only what changed is fetched (with a minute of
+    // overlap) and merged into the copy on this device.
+    const since = cachedNotes.length ? readStore<number>(SYNCED_KEY, 0) : 0;
+    send<{ notes: StudyNote[]; syncedAt?: number }>("GET", undefined, since ? `?since=${since - 60_000}` : "")
+      .then(({ notes: fresh, syncedAt }) => {
+        const next = since ? mergeNotes(cachedNotes, fresh) : fresh;
+        setNotes(next);
+        writeStore(CACHE_KEY, next);
+        if (syncedAt) writeStore(SYNCED_KEY, syncedAt);
         setOffline(null);
-        if (!cachedNotes.length) open(fresh);
+        if (!cachedNotes.length) open(next);
       })
       .catch((e: Error) => setOffline(`${e.message} Showing the copy saved on this device.`))
       .finally(() => setLoaded(true));
+
+    const cachedDays = readStore<Record<string, StudyDay>>(DAYS_KEY, {});
+    setDays(cachedDays);
+    fetch("/api/study-days", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { days?: StudyDay[] } | null) => {
+        if (!data?.days) return;
+        const map = Object.fromEntries(data.days.map((d) => [d.day, d]));
+        setDays(map);
+        writeStore(DAYS_KEY, map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // ← → step through the days when not typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        setDay((d) => {
+          if (!isDay(d)) return d;
+          const next = shiftDay(d, e.key === "ArrowLeft" ? -1 : 1);
+          setMonth(startOfMonth(next));
+          return next;
+        });
+        setEditing(null);
+        setDayEdit(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const commit = (next: StudyNote[]) => {
@@ -198,6 +217,7 @@ export default function StudyNotesPage() {
 
   function openDay(d: string) {
     setDay(d);
+    setDayEdit(null);
     if (isDay(d)) setMonth(startOfMonth(d));
     setEditing(null);
     setError(null);
@@ -354,6 +374,34 @@ export default function StudyNotesPage() {
       setEditing(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Couldn't delete that note.");
+    }
+  }
+
+  async function togglePrivate(n: StudyNote) {
+    try {
+      const { note } = await send<{ note: StudyNote }>("PATCH", { id: n.id, private: !n.private });
+      commit(notes.map((x) => (x.id === note.id ? note : x)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't change that.");
+    }
+  }
+
+  async function saveDayDetails() {
+    if (!dayEdit || !isDay(day)) return;
+    try {
+      const r = await fetch("/api/study-days", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ day, ...dayEdit }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; error?: string };
+      if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
+      const next = { ...days, [day]: data.day };
+      setDays(next);
+      writeStore(DAYS_KEY, next);
+      setDayEdit(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't save that.");
     }
   }
 
@@ -676,13 +724,25 @@ export default function StudyNotesPage() {
                 ? "Nothing is ever lost"
                 : day === UNDATED
                 ? "Notes without a day"
-                : [dayPages.length ? `Page ${dayPages.join(", ")}` : "", dayChapters.join(" · ")].filter(Boolean).join(" · ") ||
-                  "Reading"
+                : [
+                    `Day ${planDay(day).n} of ${planDay(day).of}`,
+                    dayPages.length ? `Page ${dayPages.join(", ")}` : "",
+                    dayChapters.join(" · "),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
             }
             title={day === TRASH ? "Recently deleted" : day === UNDATED ? "No day set" : dayLabel(day)}
             action={
               isDay(day) ? (
                 <div className="flex gap-1">
+                  <a
+                    className="dash-btn dash-btn-ghost dash-note-nav"
+                    href={`/dashboard/notes/read?day=${day}`}
+                    title="See this day the way a reader would"
+                  >
+                    Reader view
+                  </a>
                   <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
                     ‹
                   </button>
@@ -716,6 +776,62 @@ export default function StudyNotesPage() {
                 ))}
               </div>
             )}
+
+            {isDay(day) &&
+              (dayEdit ? (
+                <div className="dash-day-edit">
+                  <input
+                    className="dash-input dash-day-title-input"
+                    placeholder="A title for this day, e.g. Jesus and the woman at the well"
+                    value={dayEdit.title}
+                    onChange={(e) => setDayEdit({ ...dayEdit, title: e.target.value })}
+                    autoFocus
+                  />
+                  <GrowingTextarea
+                    className="dash-textarea dash-word-field"
+                    placeholder="Key takeaway - the one thing to remember from today's reading."
+                    value={dayEdit.takeaway}
+                    onChange={(e) => setDayEdit({ ...dayEdit, takeaway: e.target.value })}
+                  />
+                  <label className="dash-day-share">
+                    <input
+                      type="checkbox"
+                      checked={dayEdit.shared}
+                      onChange={(e) => setDayEdit({ ...dayEdit, shared: e.target.checked })}
+                    />
+                    Include this day when I share my study
+                  </label>
+                  <div className="flex gap-2">
+                    <button type="button" className="dash-btn dash-btn-primary" onClick={saveDayDetails}>
+                      Save
+                    </button>
+                    <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setDayEdit(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : days[day]?.title || days[day]?.takeaway ? (
+                <button
+                  type="button"
+                  className="dash-day-head"
+                  onClick={() =>
+                    setDayEdit({ title: days[day].title, takeaway: days[day].takeaway, shared: days[day].shared })
+                  }
+                  title="Edit the title and takeaway"
+                >
+                  {days[day].title && <span className="dash-day-title">{days[day].title}</span>}
+                  {days[day].takeaway && <span className="dash-day-takeaway">{days[day].takeaway}</span>}
+                  {!days[day].shared && <span className="dash-day-private">🔒 Not included when shared</span>}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="dash-word-link mb-3"
+                  onClick={() => setDayEdit({ title: "", takeaway: "", shared: true })}
+                >
+                  + Add a title and key takeaway for this day
+                </button>
+              ))}
 
             {otherYears.length > 0 && (
               <div className="dash-note-years">
@@ -783,7 +899,10 @@ export default function StudyNotesPage() {
                         onClick={() => !isEditing && toggleNote(n.id)}
                         aria-expanded={open}
                       >
-                        <span className="dash-note-head-ref">{p ? formatPassage(p) : "Note"}</span>
+                        <span className="dash-note-head-ref">
+                          {p ? formatPassage(p) : "Note"}
+                          {n.private ? " 🔒" : ""}
+                        </span>
                         <span className="dash-note-head-text">{open ? "" : preview}</span>
                         <span className="dash-note-chev" aria-hidden>
                           ›
@@ -871,6 +990,14 @@ export default function StudyNotesPage() {
                                   {v ? "Hide verse" : "Read verse"}
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                className="dash-word-link"
+                                onClick={() => togglePrivate(n)}
+                                title={n.private ? "Include this note when you share your study" : "Never include this note when you share your study"}
+                              >
+                                {n.private ? "🔒 Private" : "Make private"}
+                              </button>
                               <span className="flex-1" />
                               <button
                                 type="button"

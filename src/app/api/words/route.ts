@@ -3,7 +3,7 @@
  * db/schema.sql), so the journal can grow for years without the size limit
  * of the dashboard's single state blob.
  *
- *   GET                        -> { words }   all, including deleted (deletedAt set)
+ *   GET    [?since=ms]         -> { words, syncedAt }  all (or changed since), incl. deleted
  *   PUT    { word }            -> { word }    create or update one entry
  *   PATCH  { id, restore: true } -> { word }  back from Recently deleted
  *   DELETE ?id=...             -> 204         to Recently deleted
@@ -83,16 +83,21 @@ async function migrateFromBlob(db: D1Db) {
   );
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
   try {
     await migrateFromBlob(db);
-    const { results } = await db
-      .prepare("SELECT json, deleted_at FROM study_words ORDER BY created_at DESC")
-      .all<Row>();
+    const syncedAt = Date.now();
+    const since = Number(new URL(req.url).searchParams.get("since")) || 0;
+    const { results } = since
+      ? await db
+          .prepare("SELECT json, deleted_at FROM study_words WHERE updated_at > ?1 ORDER BY created_at DESC")
+          .bind(since)
+          .all<Row>()
+      : await db.prepare("SELECT json, deleted_at FROM study_words ORDER BY created_at DESC").all<Row>();
     const words = results.map(toWord).filter((w): w is BibleWord => Boolean(w));
-    return Response.json({ words }, { headers: { "cache-control": "no-store" } });
+    return Response.json({ words, syncedAt }, { headers: { "cache-control": "no-store" } });
   } catch (e) {
     console.error("words GET:", e);
     return Response.json({ error: "Couldn't load your words." }, { status: 500 });

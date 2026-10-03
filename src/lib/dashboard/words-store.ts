@@ -12,6 +12,7 @@ import type { BibleWord } from "./types";
 const API = "/api/words";
 const CACHE_KEY = "atg:words:v1";
 const PENDING_KEY = "atg:words:pending";
+const SYNCED_KEY = "atg:words:synced"; // server time of the last fetch
 
 type Op =
   | { kind: "put"; word: BibleWord }
@@ -105,11 +106,18 @@ function load(): Promise<void> {
   loading = (async () => {
     await flush(); // anything saved while offline goes first
     try {
-      const r = await fetch(API, { cache: "no-store" });
+      // After the first load, only ask for what changed (with a minute of
+      // overlap) and merge it into the local copy.
+      const since = words.length ? read<number>(SYNCED_KEY, 0) : 0;
+      const r = await fetch(since ? `${API}?since=${since - 60_000}` : API, { cache: "no-store" });
       if (r.ok) {
-        const data = (await r.json()) as { words?: BibleWord[] };
+        const data = (await r.json()) as { words?: BibleWord[]; syncedAt?: number };
+        const changed = data.words ?? [];
+        let next = since
+          ? [...changed, ...words.filter((w) => !changed.some((c) => c.id === w.id))]
+          : changed;
+        if (data.syncedAt) write(SYNCED_KEY, data.syncedAt);
         // Keep anything still waiting to be sent on top of the server copy.
-        let next = data.words ?? [];
         for (const op of read<Op[]>(PENDING_KEY, [])) next = applyOp(next, op);
         words = next;
         write(CACHE_KEY, next);

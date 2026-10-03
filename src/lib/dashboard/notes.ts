@@ -19,6 +19,7 @@ export interface StudyNote {
   seq: number; // order written
   position: number; // order within its day / page - movable
   deletedAt: number | null; // in Recently deleted since (epoch ms); never removed
+  private: boolean; // never included when the study is shared
   book: number | null; // 1-66
   chapter: number | null;
   verse: number | null;
@@ -362,4 +363,33 @@ export function exportText(notes: StudyNote[]): string {
     if (p) prev = p;
   }
   return `${lines.join("\n").replace(/^\n+/, "")}\n`;
+}
+
+// ── Days ─────────────────────────────────────────────────────────
+
+// A reading day's own details (table study_days).
+export interface StudyDay {
+  day: string; // YYYY-MM-DD
+  title: string;
+  takeaway: string;
+  shared: boolean; // included when the study is shared
+  updatedAt: number;
+}
+
+// Day of the reading plan: 1 January is day 1.
+export function planDay(iso: string): { n: number; of: number } {
+  const [y] = iso.split("-").map(Number);
+  const start = Date.UTC(y, 0, 1);
+  const [, m, d] = iso.split("-").map(Number);
+  const n = Math.round((Date.UTC(y, m - 1, d) - start) / 86_400_000) + 1;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  return { n, of: leap ? 366 : 365 };
+}
+
+// Merge a set of changed notes into a cached list (by id).
+export function mergeNotes(list: StudyNote[], changed: StudyNote[]): StudyNote[] {
+  if (!changed.length) return list;
+  const byId = new Map(list.map((n) => [n.id, n]));
+  for (const n of changed) byId.set(n.id, n);
+  return [...byId.values()];
 }
