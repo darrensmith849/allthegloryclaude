@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { MemberOnly, useMe } from "@/components/study/shell";
+import { ThemeSwitch } from "@/components/study/theme-toggle";
 
 const MIN_PASSWORD = 8;
 
@@ -190,20 +191,29 @@ function Account() {
         </div>
 
         <div className="dash-col-6">
-          <Panel eyebrow="Staying in touch" title="Email updates">
+          <Panel eyebrow="Reading comfort" title="Light or dark">
             <p className="dash-word-hint mb-3">
-              {subscribed
-                ? `You're on the All The Glory email list (${me.member?.email}) - the occasional note about new studies, music and videos.`
-                : "Get the occasional email about new studies, music and videos from All The Glory."}
+              Light reads like paper by day; dark is easier at night. Auto follows your phone or computer.
             </p>
-            <button
-              type="button"
-              className={`dash-btn ${subscribed ? "dash-btn-ghost" : "dash-btn-primary"}`}
-              onClick={() => setEmailUpdates(!subscribed)}
-            >
-              {subscribed ? "Unsubscribe" : "Yes, email me"}
-            </button>
+            <ThemeSwitch />
           </Panel>
+
+          <div className="mt-[18px]">
+            <Panel eyebrow="Staying in touch" title="Email updates">
+              <p className="dash-word-hint mb-3">
+                {subscribed
+                  ? `You're on the All The Glory email list (${me.member?.email}) - the occasional note about new studies, music and videos.`
+                  : "Get the occasional email about new studies, music and videos from All The Glory."}
+              </p>
+              <button
+                type="button"
+                className={`dash-btn ${subscribed ? "dash-btn-ghost" : "dash-btn-primary"}`}
+                onClick={() => setEmailUpdates(!subscribed)}
+              >
+                {subscribed ? "Unsubscribe" : "Yes, email me"}
+              </button>
+            </Panel>
+          </div>
 
           <div className="mt-[18px]">
             <Panel eyebrow="Your data" title="Download everything">

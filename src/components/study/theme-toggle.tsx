@@ -48,3 +48,55 @@ export function ThemeToggle({ className = "study-theme", label = false }: { clas
     </button>
   );
 }
+
+type Mode = "light" | "dark" | "auto";
+
+// Light / Dark / Auto (match the device) - the owner's sidebar and members'
+// Account page.
+export function ThemeSwitch({ className = "" }: { className?: string }) {
+  const [mode, setMode] = useState<Mode | null>(null);
+
+  useEffect(() => {
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(KEY);
+    } catch {
+      // private window
+    }
+    setMode(saved === "light" || saved === "dark" ? saved : "auto");
+  }, []);
+
+  const choose = (m: Mode) => {
+    const root = document.documentElement;
+    try {
+      if (m === "auto") window.localStorage.removeItem(KEY);
+      else window.localStorage.setItem(KEY, m);
+    } catch {
+      // private window - lasts until they leave
+    }
+    if (m === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", m);
+    setMode(m);
+  };
+
+  const options: { m: Mode; label: string }[] = [
+    { m: "light", label: "☀ Light" },
+    { m: "dark", label: "☾ Dark" },
+    { m: "auto", label: "Auto" },
+  ];
+  return (
+    <div className={`dash-toggle dash-theme-switch ${className}`} role="group" aria-label="Light or dark look">
+      {options.map((o) => (
+        <button
+          key={o.m}
+          type="button"
+          className={mode === o.m ? "is-on" : ""}
+          onClick={() => choose(o.m)}
+          title={o.m === "auto" ? "Follow this device's light / dark setting" : undefined}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

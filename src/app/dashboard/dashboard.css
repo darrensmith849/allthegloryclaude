@@ -3093,3 +3093,70 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-note-cal-day.is-other { color: var(--colour-ink-faint); }
 .dash-note-cal-day.is-selected { color: var(--on-gold); }
 .dash-note-text ul { color: var(--colour-ink); }
+
+/* ── Typography ────────────────────────────────────────────────────
+ * Like the album flyer: a Georgia-style serif (Gelasio, --font-read) for
+ * headings and for anything you read at length - notes, takeaways, word
+ * meanings, the writing box - and Inter for small labels and controls.
+ * Buttons in normal case so pages read calmly. ("Who am I?" keeps its own.)
+ */
+.dash-root,
+.dash-login,
+.study-root {
+  --font-display: var(--font-read);
+}
+:is(.dash-root, .dash-login, .study-root) :is(.font-display, .dash-title, h1, h2) {
+  font-family: var(--font-read), Georgia, serif;
+  font-feature-settings: "kern", "liga";
+  letter-spacing: -0.005em;
+}
+.dash-title { font-weight: 500; letter-spacing: -0.01em; }
+:is(.dash-root, .study-root) :is(
+  .dash-note-text,
+  .dash-note-head-text,
+  .dash-reader-takeaway,
+  .dash-day-takeaway,
+  .dash-day-title,
+  .dash-reader-word p,
+  .dash-word-defs dd,
+  .dash-word-field,
+  .dash-verse,
+  .study-home-lead,
+  .study-player-verse
+) {
+  font-family: var(--font-read), Georgia, serif;
+}
+.dash-note-text { font-size: 15.5px; line-height: 1.7; }
+.dash-reader-note .dash-note-text { font-size: 17px; line-height: 1.75; }
+.dash-reader-page.size-0 .dash-reader-note .dash-note-text { font-size: 15.5px; }
+.dash-reader-page.size-2 .dash-reader-note .dash-note-text { font-size: 19.5px; }
+.dash-note-head-text { font-size: 14.5px; }
+.dash-word-field { font-size: 15.5px; line-height: 1.65; }
+.dash-word-defs dd { font-size: 15.5px; line-height: 1.6; }
+.dash-reader-word p { font-size: 15.5px; }
+.dash-reader-takeaway,
+.dash-day-takeaway { font-style: italic; }
+
+/* Controls: normal case, steady weight */
+.dash-btn {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.dash-toggle button {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dash-word-link {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 12.5px;
+}
+.dash-label { letter-spacing: 0.16em; font-weight: 600; }
+.dash-theme-switch button { padding: 5px 11px; }
+.dash-theme-switch button { white-space: nowrap; }
+.dash-sidebar .dash-theme-switch { display: flex; width: 100%; }
+.dash-sidebar .dash-theme-switch button { flex: 1; padding: 5px 6px; }

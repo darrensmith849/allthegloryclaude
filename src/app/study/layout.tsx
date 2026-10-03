@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { StudyShell } from "@/components/study/shell";
 import { ThemeScript } from "@/components/study/theme-toggle";
+import { readFont } from "@/lib/fonts";
 import "../dashboard/dashboard.css";
 
 // The Study: members' own Bible study journals and (when the owner opens it)
@@ -15,9 +16,9 @@ export const viewport: Viewport = { themeColor: "#f6f1e7" };
 
 export default function StudyLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className={readFont.variable}>
       <ThemeScript />
       <StudyShell>{children}</StudyShell>
-    </>
+    </div>
   );
 }
