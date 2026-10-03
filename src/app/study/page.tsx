@@ -1,0 +1,74 @@
+"use client";
+
+import Link from "next/link";
+import { canRead, useMe } from "@/components/study/shell";
+import { dayLabel, todayDay } from "@/lib/dashboard/notes";
+
+// The Study's front door.
+export default function StudyHome() {
+  const me = useMe();
+  const readable = canRead(me);
+  const today = todayDay();
+
+  return (
+    <div className="study-home">
+      <div className="eyebrow eyebrow-amber">The One Year Chronological Bible</div>
+      <h1 className="study-home-title">Read through the Bible in the order it happened.</h1>
+      <p className="study-home-lead">
+        {me.study?.intro ||
+          "One day at a time - with notes on what each passage says, the Hebrew and Greek behind its key words, and room to write your own."}
+      </p>
+
+      {me.member && <p className="study-home-hello">Welcome back, {me.member.name.split(" ")[0]}.</p>}
+
+      <div className="study-cards">
+        {readable && (
+          <Link href="/study/read" className="study-card">
+            <span className="eyebrow eyebrow-amber">Today · {dayLabel(today, { weekday: false })}</span>
+            <span className="study-card-title">Read the study</span>
+            <span className="study-card-text">
+              {me.study?.author ? `${me.study.author}'s notes` : "The notes"}, day by day through the year.
+            </span>
+          </Link>
+        )}
+        {me.member ? (
+          <>
+            <Link href={`/study/journal?day=${today}`} className="study-card">
+              <span className="eyebrow eyebrow-amber">Your journal</span>
+              <span className="study-card-title">Write today&apos;s notes</span>
+              <span className="study-card-text">Your own calendar of notes and words - private to you.</span>
+            </Link>
+            <Link href="/study/words" className="study-card">
+              <span className="eyebrow eyebrow-amber">Word study</span>
+              <span className="study-card-title">My words</span>
+              <span className="study-card-text">Every Hebrew and Greek word you&apos;ve looked into, searchable.</span>
+            </Link>
+          </>
+        ) : (
+          me.loaded && (
+            <div className="study-card is-static">
+              <span className="eyebrow eyebrow-amber">Your own journal</span>
+              <span className="study-card-title">Keep your notes as you read</span>
+              <span className="study-card-text">
+                A calendar of your notes by reading day, with word studies from the Hebrew and Greek.
+              </span>
+              <span className="flex gap-2 mt-3 flex-wrap">
+                <Link href="/study/login" className="dash-btn dash-btn-ghost">
+                  Log in
+                </Link>
+                {me.study?.signup === "open" && (
+                  <Link href="/study/join" className="dash-btn dash-btn-primary">
+                    Make an account
+                  </Link>
+                )}
+              </span>
+              {me.study?.signup === "invite" && (
+                <span className="dash-word-hint mt-2">Joining is by invite for now.</span>
+              )}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}

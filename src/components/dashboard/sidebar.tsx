@@ -7,6 +7,7 @@ const NAV = [
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
+  { href: "/dashboard/members", label: "Members", glyph: "☍" },
   { href: "/dashboard/today", label: "Today", glyph: "✦" },
   { href: "/dashboard/calendar", label: "Calendar", glyph: "▦" },
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },

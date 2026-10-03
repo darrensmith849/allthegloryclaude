@@ -27,7 +27,7 @@ export default function SiteFooter() {
   // /dashboard ships its own layout; /press is an unlisted press-kit
   // landing meant to read as a standalone share link. Neither gets
   // the public marketing footer.
-  const isDashboard = pathname?.startsWith("/dashboard") ?? false;
+  const isDashboard = (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study")) ?? false;
   const isPress = pathname?.startsWith("/press") ?? false;
 
   useEffect(() => {

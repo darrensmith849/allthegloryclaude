@@ -1,29 +1,22 @@
 "use client";
 
-// The word journal's words, shared by every page that shows them. The
-// server (/api/words, one D1 row per word) is the record; this keeps an
-// instant local copy and a queue of changes not yet confirmed, so a word
-// saved with no signal is sent the next time the dashboard opens - never
-// dropped. Deleting only moves a word to Recently deleted.
+// The word journal's words, shared by every screen that shows them. The
+// server (one D1 row per word) is the record; this keeps an instant local
+// copy and a queue of changes not yet confirmed, so a word saved with no
+// signal is sent the next time the journal opens - never dropped. Deleting
+// only moves a word to Recently deleted.
+//
+// One store per study (the owner's, or a member's - see
+// src/lib/study/client.tsx), each with its own API and cache keys.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStudyClient, type StudyClient } from "@/lib/study/client";
 import type { BibleWord } from "./types";
-
-const API = "/api/words";
-const CACHE_KEY = "atg:words:v1";
-const PENDING_KEY = "atg:words:pending";
-const SYNCED_KEY = "atg:words:synced"; // server time of the last fetch
 
 type Op =
   | { kind: "put"; word: BibleWord }
   | { kind: "delete"; id: string; at: string }
   | { kind: "restore"; id: string };
-
-let words: BibleWord[] = [];
-let synced = false;
-let loading: Promise<void> | null = null;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -41,12 +34,6 @@ function write(key: string, value: unknown) {
   }
 }
 
-function setWords(next: BibleWord[]) {
-  words = next;
-  write(CACHE_KEY, next);
-  emit();
-}
-
 function applyOp(list: BibleWord[], op: Op): BibleWord[] {
   if (op.kind === "put") {
     return list.some((w) => w.id === op.word.id)
@@ -57,108 +44,156 @@ function applyOp(list: BibleWord[], op: Op): BibleWord[] {
   return list.map((w) => (w.id === op.id ? { ...w, deletedAt: undefined } : w));
 }
 
-async function send(op: Op): Promise<boolean> {
-  try {
-    const r =
-      op.kind === "put"
-        ? await fetch(API, {
-            method: "PUT",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ word: op.word }),
-          })
-        : op.kind === "delete"
-          ? await fetch(`${API}?id=${encodeURIComponent(op.id)}`, { method: "DELETE" })
-          : await fetch(API, {
-              method: "PATCH",
+class WordsStore {
+  words: BibleWord[] = [];
+  synced = false;
+  private loading: Promise<void> | null = null;
+  private flushing: Promise<void> | null = null;
+  readonly listeners = new Set<() => void>();
+
+  constructor(private readonly c: StudyClient) {}
+
+  private get cacheKey() {
+    return this.c.key("words");
+  }
+  private get pendingKey() {
+    return this.c.key("wordsPending");
+  }
+  private get syncedKey() {
+    return this.c.key("wordsSynced");
+  }
+
+  private emit() {
+    this.listeners.forEach((l) => l());
+  }
+
+  private setWords(next: BibleWord[]) {
+    this.words = next;
+    write(this.cacheKey, next);
+    this.emit();
+  }
+
+  private async send(op: Op): Promise<boolean> {
+    const api = this.c.wordsApi;
+    try {
+      const r =
+        op.kind === "put"
+          ? await fetch(api, {
+              method: "PUT",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ id: op.id, restore: true }),
-            });
-    return r.ok;
-  } catch {
-    return false;
+              body: JSON.stringify({ word: op.word }),
+            })
+          : op.kind === "delete"
+            ? await fetch(`${api}?id=${encodeURIComponent(op.id)}`, { method: "DELETE" })
+            : await fetch(api, {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ id: op.id, restore: true }),
+              });
+      return r.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  flush(): Promise<void> {
+    if (this.flushing) return this.flushing;
+    this.flushing = (async () => {
+      for (;;) {
+        const [op] = read<Op[]>(this.pendingKey, []);
+        if (!op || !(await this.send(op))) break;
+        write(this.pendingKey, read<Op[]>(this.pendingKey, []).slice(1));
+      }
+    })().finally(() => {
+      this.flushing = null;
+    });
+    return this.flushing;
+  }
+
+  queue(op: Op) {
+    write(this.pendingKey, [...read<Op[]>(this.pendingKey, []), op]);
+    this.setWords(applyOp(this.words, op));
+    void this.flush();
+  }
+
+  load(): Promise<void> {
+    if (this.loading) return this.loading;
+    this.words = read<BibleWord[]>(this.cacheKey, []);
+    this.loading = (async () => {
+      await this.flush(); // anything saved while offline goes first
+      try {
+        // After the first load, only ask for what changed (with a minute of
+        // overlap) and merge it into the local copy.
+        const since = this.words.length ? read<number>(this.syncedKey, 0) : 0;
+        const r = await fetch(since ? `${this.c.wordsApi}?since=${since - 60_000}` : this.c.wordsApi, {
+          cache: "no-store",
+        });
+        if (r.ok) {
+          const data = (await r.json()) as { words?: BibleWord[]; syncedAt?: number };
+          const changed = data.words ?? [];
+          let next = since
+            ? [...changed, ...this.words.filter((w) => !changed.some((c) => c.id === w.id))]
+            : changed;
+          if (data.syncedAt) write(this.syncedKey, data.syncedAt);
+          // Keep anything still waiting to be sent on top of the server copy.
+          for (const op of read<Op[]>(this.pendingKey, [])) next = applyOp(next, op);
+          this.words = next;
+          write(this.cacheKey, next);
+        }
+      } catch {
+        // offline - the local copy stands until next time
+      }
+      this.synced = true;
+      this.emit();
+    })();
+    return this.loading;
   }
 }
 
-let flushing: Promise<void> | null = null;
-function flush(): Promise<void> {
-  if (flushing) return flushing;
-  flushing = (async () => {
-    for (;;) {
-      const [op] = read<Op[]>(PENDING_KEY, []);
-      if (!op || !(await send(op))) break;
-      write(PENDING_KEY, read<Op[]>(PENDING_KEY, []).slice(1));
-    }
-  })().finally(() => {
-    flushing = null;
-  });
-  return flushing;
-}
-
-function queue(op: Op) {
-  write(PENDING_KEY, [...read<Op[]>(PENDING_KEY, []), op]);
-  setWords(applyOp(words, op));
-  void flush();
-}
-
-function load(): Promise<void> {
-  if (loading) return loading;
-  words = read<BibleWord[]>(CACHE_KEY, []);
-  loading = (async () => {
-    await flush(); // anything saved while offline goes first
-    try {
-      // After the first load, only ask for what changed (with a minute of
-      // overlap) and merge it into the local copy.
-      const since = words.length ? read<number>(SYNCED_KEY, 0) : 0;
-      const r = await fetch(since ? `${API}?since=${since - 60_000}` : API, { cache: "no-store" });
-      if (r.ok) {
-        const data = (await r.json()) as { words?: BibleWord[]; syncedAt?: number };
-        const changed = data.words ?? [];
-        let next = since
-          ? [...changed, ...words.filter((w) => !changed.some((c) => c.id === w.id))]
-          : changed;
-        if (data.syncedAt) write(SYNCED_KEY, data.syncedAt);
-        // Keep anything still waiting to be sent on top of the server copy.
-        for (const op of read<Op[]>(PENDING_KEY, [])) next = applyOp(next, op);
-        words = next;
-        write(CACHE_KEY, next);
-      }
-    } catch {
-      // offline - the local copy stands until next time
-    }
-    synced = true;
-    emit();
-  })();
-  return loading;
+const stores = new Map<string, WordsStore>();
+function storeFor(c: StudyClient): WordsStore {
+  const id = `${c.wordsApi}|${c.key("words")}`;
+  let s = stores.get(id);
+  if (!s) {
+    s = new WordsStore(c);
+    stores.set(id, s);
+  }
+  return s;
 }
 
 export function useWords() {
+  const client = useStudyClient();
+  const store = storeFor(client);
   const [, setTick] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const listener = () => setTick((t) => t + 1);
-    listeners.add(listener);
-    void load();
+    store.listeners.add(listener);
+    void store.load();
     setMounted(true);
     // Retry unsent changes when the connection comes back.
-    const online = () => void flush();
+    const online = () => void store.flush();
     window.addEventListener("online", online);
     return () => {
-      listeners.delete(listener);
+      store.listeners.delete(listener);
       window.removeEventListener("online", online);
     };
-  }, []);
+  }, [store]);
 
-  const all = mounted ? words : [];
+  const all = mounted ? store.words : [];
   const live = useMemo(() => all.filter((w) => !w.deletedAt), [all]);
   const deleted = useMemo(
     () => all.filter((w) => w.deletedAt).sort((a, b) => (b.deletedAt ?? "").localeCompare(a.deletedAt ?? "")),
     [all],
   );
 
-  const save = useCallback((w: BibleWord) => queue({ kind: "put", word: w }), []);
-  const remove = useCallback((id: string) => queue({ kind: "delete", id, at: new Date().toISOString() }), []);
-  const restore = useCallback((id: string) => queue({ kind: "restore", id }), []);
+  const save = useCallback((w: BibleWord) => store.queue({ kind: "put", word: w }), [store]);
+  const remove = useCallback(
+    (id: string) => store.queue({ kind: "delete", id, at: new Date().toISOString() }),
+    [store],
+  );
+  const restore = useCallback((id: string) => store.queue({ kind: "restore", id }), [store]);
 
-  return { words: live, deleted, ready: mounted, synced, save, remove, restore };
+  return { words: live, deleted, ready: mounted, synced: store.synced, save, remove, restore };
 }

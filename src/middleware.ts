@@ -4,7 +4,8 @@
 // the first time - and APIs answer 401.
 //
 // The public site and its APIs (track, contact, verse, donations) are not
-// matched and stay open. The dashboard is also kept out of search engines
+// matched and stay open. The Study's member APIs (/api/study/*) check their
+// own member session (src/lib/study/members.ts). The dashboard is also kept out of search engines
 // via `robots` in src/app/dashboard/layout.tsx.
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -35,5 +36,6 @@ export const config = {
     "/api/study-days",
     "/api/word-fill",
     "/api/analytics",
+    "/api/members",
   ],
 };

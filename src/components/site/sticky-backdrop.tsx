@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 export default function StickyBackdrop() {
   const pathname = usePathname();
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const isDashboard = pathname?.startsWith("/dashboard") || pathname?.startsWith("/study");
   // Lightning video runs as part of the painted backdrop ONLY on the
   // home page, so it reads as part of the hero scene as the visitor
   // lands. Other pages keep the calmer clouds + stars only. The footer

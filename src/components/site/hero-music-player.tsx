@@ -41,7 +41,7 @@ export default function HeroMusicPlayer() {
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false); // hides the "tap me" pulse once it has ever played
 
-  const hidden = !!pathname && pathname.startsWith("/dashboard");
+  const hidden = !!pathname && (pathname.startsWith("/dashboard") || pathname.startsWith("/study"));
 
   const optedOut = useCallback(() => {
     try {

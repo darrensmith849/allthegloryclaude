@@ -152,3 +152,143 @@ CREATE TABLE IF NOT EXISTS study_word_versions (
   saved_at INTEGER NOT NULL       -- epoch ms the version was replaced
 );
 CREATE INDEX IF NOT EXISTS idx_study_word_versions_word ON study_word_versions(word_id, saved_at);
+
+-- ── The Study: member accounts ───────────────────────────────────
+-- People who join /study get their own journal (notes, words, day titles)
+-- in the member_* tables, kept apart from the owner's study_* tables so a
+-- member's data can never touch the owner's. Every member_* row carries
+-- member_id and every query filters on it.
+
+CREATE TABLE IF NOT EXISTS members (
+  id          TEXT PRIMARY KEY,
+  email       TEXT NOT NULL UNIQUE,  -- lower-cased
+  name        TEXT NOT NULL,
+  hash        TEXT NOT NULL,         -- PBKDF2-SHA256, base64url
+  salt        TEXT NOT NULL,
+  iterations  INTEGER NOT NULL,
+  invite_code TEXT,                  -- the invite used to join, if any
+  created_at  INTEGER NOT NULL,      -- epoch ms
+  last_seen   INTEGER,
+  disabled_at INTEGER                -- set by the owner; can't log in
+);
+
+-- Logged-in devices. Only a SHA-256 of the cookie token is stored.
+CREATE TABLE IF NOT EXISTS member_sessions (
+  token_hash TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_sessions_member ON member_sessions(member_id);
+
+-- Invite links the owner makes on /dashboard/members.
+CREATE TABLE IF NOT EXISTS member_invites (
+  code       TEXT PRIMARY KEY,
+  label      TEXT,
+  max_uses   INTEGER,                -- NULL = unlimited
+  uses       INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  revoked_at INTEGER
+);
+
+-- One-time password reset links the owner makes for a member.
+CREATE TABLE IF NOT EXISTS member_resets (
+  token_hash TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+
+-- Owner's switches for the study: signup ('invite' | 'open' | 'closed'),
+-- reading ('off' | 'members' | 'public'), author, intro.
+CREATE TABLE IF NOT EXISTS study_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS member_notes (
+  id         TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  day        TEXT,
+  page       INTEGER,
+  seq        INTEGER NOT NULL,
+  position   REAL,
+  deleted_at INTEGER,
+  private    INTEGER NOT NULL DEFAULT 0,
+  book       INTEGER,
+  chapter    INTEGER,
+  verse      INTEGER,
+  verse_end  INTEGER,
+  text       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_notes_member ON member_notes(member_id, updated_at);
+
+CREATE TABLE IF NOT EXISTS member_note_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id   TEXT NOT NULL,
+  member_id TEXT NOT NULL,
+  day       TEXT,
+  page      INTEGER,
+  book      INTEGER,
+  chapter   INTEGER,
+  verse     INTEGER,
+  verse_end INTEGER,
+  text      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_note_versions_member ON member_note_versions(member_id, note_id);
+
+CREATE TABLE IF NOT EXISTS member_words (
+  member_id  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  day        TEXT,
+  word       TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  PRIMARY KEY (member_id, id)
+);
+CREATE INDEX IF NOT EXISTS idx_member_words_updated ON member_words(member_id, updated_at);
+
+CREATE TABLE IF NOT EXISTS member_word_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id TEXT NOT NULL,
+  word_id   TEXT NOT NULL,
+  json      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_word_versions_member ON member_word_versions(member_id, word_id);
+
+CREATE TABLE IF NOT EXISTS member_days (
+  member_id  TEXT NOT NULL,
+  day        TEXT NOT NULL,
+  title      TEXT,
+  takeaway   TEXT,
+  shared     INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (member_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS member_day_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id TEXT NOT NULL,
+  day       TEXT NOT NULL,
+  title     TEXT,
+  takeaway  TEXT,
+  shared    INTEGER,
+  saved_at  INTEGER NOT NULL
+);
+
+-- AI word fills used per day, per member and in total, so members share
+-- the free Workers AI allowance fairly. who = member id or '*members'.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  day TEXT NOT NULL,                 -- YYYY-MM-DD (UTC)
+  who TEXT NOT NULL,
+  n   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, who)
+);

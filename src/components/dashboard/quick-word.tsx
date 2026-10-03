@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
+import { useStudyClient } from "@/lib/study/client";
 import type { BibleWord, WordLanguage } from "@/lib/dashboard/types";
 import type { LanguageFill, WordFill } from "@/lib/dashboard/words";
 
@@ -27,6 +28,7 @@ export function QuickWord({
   verseHint: string; // the passage being read, e.g. "John 2:11"
   onSaved?: (w: BibleWord) => void;
 }) {
+  const client = useStudyClient();
   const { save: saveWord } = useWords();
   const [word, setWord] = useState("");
   const [verse, setVerse] = useState(verseHint);
@@ -51,12 +53,15 @@ export function QuickWord({
     setNote(null);
     setSaved(null);
     try {
-      const r = await fetch("/api/word-fill", {
+      const r = await fetch(client.fillApi, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ word: w, reference: verse, pick }),
       });
-      if (!r.ok) throw new Error(String(r.status));
+      if (!r.ok) {
+        const err = (await r.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? String(r.status));
+      }
       const fresh = (await r.json()) as WordFill;
       // A "Try ..." pick only re-looks-up that one language.
       const merged: WordFill =
@@ -71,8 +76,9 @@ export function QuickWord({
         greek: pick && target !== "greek" ? a.greek : (merged.greek?.application ?? ""),
       }));
       setNote(fresh.note ?? null);
-    } catch {
-      setNote("Couldn't fill it in just now - check your connection and try again.");
+    } catch (e) {
+      const msg = e instanceof Error && !/^\d+$/.test(e.message) ? e.message : "";
+      setNote(msg || "Couldn't fill it in just now - check your connection and try again.");
     } finally {
       setBusy(false);
     }

@@ -117,6 +117,7 @@ export default function SocialDock() {
   // press-kit landing read as a standalone share link).
   if (
     pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/study") ||
     pathname?.startsWith("/album") ||
     pathname?.startsWith("/press")
   ) {
