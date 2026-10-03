@@ -5,15 +5,19 @@
 // comes from /api/study/read, which already leaves out private notes,
 // unshared days and personal word comments - so the owner's preview
 // (/dashboard/notes/read) shows exactly what members read (/study/read).
+// Laid out like the journal: a calendar of the study's days beside the day.
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NoteText } from "@/components/dashboard/note-text";
 import { languageLabel } from "@/lib/dashboard/words";
-import { dayLabel, formatPassage, passageOf, planDay } from "@/lib/dashboard/notes";
+import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
+import { dayLabel, formatPassage, passageOf, planDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { bibleAppDay } from "@/lib/study/plan";
 import type { ReaderData } from "@/lib/study/types";
 
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+const SIZE_KEY = "atg:reader:size";
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -24,6 +28,7 @@ interface Props {
   preview?: boolean; // owner preview: shows unshared days, hidden counts
   back?: { href: (day: string | null) => string; label: string };
   badge?: string;
+  member?: boolean; // a signed-in member: can tick the day read in their own plan
 }
 
 export function Reader(props: Props) {
@@ -34,7 +39,7 @@ export function Reader(props: Props) {
   );
 }
 
-function ReaderInner({ basePath, preview, back, badge }: Props) {
+function ReaderInner({ basePath, preview, back, badge, member }: Props) {
   const params = useSearchParams();
   const router = useRouter();
   const [data, setData] = useState<ReaderData | null>(null);
@@ -108,6 +113,68 @@ function ReaderInner({ basePath, preview, back, badge }: Props) {
     return groups;
   }, [days]);
 
+  // The calendar shows the month of the open day.
+  const today = todayDay();
+  const dayset = useMemo(() => new Set(days), [days]);
+  const [month, setMonth] = useState<string | null>(null);
+  useEffect(() => {
+    if (day) setMonth(startOfMonth(day));
+    else if (days.length) setMonth((m) => m ?? startOfMonth(days[days.length - 1]));
+  }, [day, days]);
+  const goToday = () => {
+    const hit = [...days].reverse().find((d) => d.slice(5) === today.slice(5));
+    if (hit) go(hit);
+    else setMonth(startOfMonth(today));
+  };
+
+  // Comfortable reading size, remembered on this device.
+  const [size, setSize] = useState(1);
+  useEffect(() => {
+    try {
+      const v = Number(window.localStorage.getItem(SIZE_KEY));
+      if (v === 0 || v === 1 || v === 2) setSize(v);
+    } catch {
+      // private window
+    }
+  }, []);
+  const resize = (v: number) => {
+    setSize(v);
+    try {
+      window.localStorage.setItem(SIZE_KEY, String(v));
+    } catch {
+      // private window
+    }
+  };
+
+  // Members tick the same date in their own reading year.
+  const [myRead, setMyRead] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (!member) return;
+    fetch("/api/study/days", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { days?: StudyDay[] } | null) =>
+        setMyRead(new Set((d?.days ?? []).filter((x) => x.readAt).map((x) => x.day))),
+      )
+      .catch(() => {});
+  }, [member]);
+  const myDay = day ? `${today.slice(0, 4)}-${day.slice(5)}` : null;
+  async function toggleMyRead() {
+    if (!myDay) return;
+    const on = !myRead.has(myDay);
+    const r = await fetch("/api/study/days", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ day: myDay, read: on }),
+    }).catch(() => null);
+    if (r?.ok)
+      setMyRead((set) => {
+        const next = new Set(set);
+        if (on) next.add(myDay);
+        else next.delete(myDay);
+        return next;
+      });
+  }
+
   const badgeText =
     badge ??
     (preview && data
@@ -127,9 +194,22 @@ function ReaderInner({ basePath, preview, back, badge }: Props) {
       ) : (
         <span />
       )}
-      {badgeText && <span className="dash-reader-badge">{badgeText}</span>}
+      <span className="dash-reader-bar-tools">
+        <span className="dash-reader-size" role="group" aria-label="Text size">
+          <button type="button" onClick={() => resize(Math.max(0, size - 1))} disabled={size === 0} aria-label="Smaller text">
+            A−
+          </button>
+          <button type="button" onClick={() => resize(Math.min(2, size + 1))} disabled={size === 2} aria-label="Bigger text">
+            A+
+          </button>
+        </span>
+        {badgeText && <span className="dash-reader-badge">{badgeText}</span>}
+      </span>
     </div>
   );
+
+  const studyTitle =
+    data?.study.author && data.study.author !== "All The Glory" ? `${data.study.author}'s study` : "The study";
 
   if (error) {
     return (
@@ -158,140 +238,205 @@ function ReaderInner({ basePath, preview, back, badge }: Props) {
 
   const asked = params.get("on") ?? params.get("day");
 
+  const calendar = month && (
+    <div className="dash-reader-cal">
+      <div className="eyebrow eyebrow-amber">{studyTitle}</div>
+      <div className="dash-reader-cal-title">
+        {new Date(`${month}T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+      </div>
+      <div className="dash-note-calnav dash-reader-cal-nav">
+        <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month">
+          ‹
+        </button>
+        <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={goToday}>
+          Today
+        </button>
+        <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setMonth(shiftMonth(month, 1))} aria-label="Next month">
+          ›
+        </button>
+      </div>
+      <div className="dash-reader-cal-grid">
+        {WEEK.map((w, i) => (
+          <span key={i} className="dash-reader-cal-head">
+            {w}
+          </span>
+        ))}
+        {monthGrid(month).map((d) => {
+          const has = dayset.has(d);
+          return (
+            <button
+              key={d}
+              type="button"
+              disabled={!has}
+              onClick={() => go(d)}
+              className={`dash-reader-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${has ? "has-study" : ""} ${
+                d === day ? "is-selected" : ""
+              } ${d === today ? "is-today" : ""}`}
+              aria-label={`${dayLabel(d)}${has ? `, ${titleOf(d)}` : ", no notes"}`}
+              title={has ? titleOf(d) : undefined}
+            >
+              {Number(d.slice(8))}
+            </button>
+          );
+        })}
+      </div>
+      <p className="dash-reader-cal-key">
+        <span className="dash-reader-cal-dot" /> {days.length} {days.length === 1 ? "day" : "days"} with notes - tap one to read it
+      </p>
+    </div>
+  );
+
   return (
-    <div className={`dash-reader ${loading ? "is-loading" : ""}`}>
+    <div className={`dash-reader-layout ${loading ? "is-loading" : ""}`}>
       {bar}
 
-      {data.study.intro && !params.toString() && <p className="dash-reader-intro">{data.study.intro}</p>}
+      <aside className="dash-reader-side">
+        {calendar}
+        {days.length > 0 && (
+          <details className="dash-reader-contents">
+            <summary>
+              All days · {days.length}
+            </summary>
+            {contents.map((g) => (
+              <div key={g.label} className="dash-reader-month">
+                <div className="dash-reader-month-label">{g.label}</div>
+                {g.days.map((d) => {
+                  const c = data.contents.find((x) => x.day === d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`dash-reader-toc ${d === day ? "is-on" : ""}`}
+                      onClick={() => go(d)}
+                    >
+                      <span className="dash-reader-toc-day">Day {planDay(d).n}</span>
+                      <span className="dash-reader-toc-title">{titleOf(d)}</span>
+                      {preview && c && !c.shared && <span title="Not included when shared">🔒</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </details>
+        )}
+      </aside>
 
-      {!day ? (
-        <div className="dash-reader-page">
-          <p className="dash-reader-empty">
-            {asked
-              ? "There are no notes in the study for that day yet - pick another day below."
-              : "Nothing to read yet."}
-          </p>
-        </div>
-      ) : (
-        <>
-          {preview && data.info && !data.info.shared && (
-            <div className="dash-reader-warn">🔒 This day is set to stay out when you share your study.</div>
-          )}
+      <div className="dash-reader-main">
+        {data.study.intro && !params.toString() && <p className="dash-reader-intro">{data.study.intro}</p>}
 
-          <article className="dash-reader-page">
-            <div className="dash-reader-eyebrow">
-              Day {planDay(day).n} · {dayLabel(day)}
-              {data.study.author ? ` · ${data.study.author}` : ""}
-            </div>
-            <h1 className="dash-reader-title">{data.info?.title || titleOf(day)}</h1>
-            {data.info?.title && (data.contents.find((c) => c.day === day)?.chapters.length ?? 0) > 0 && (
-              <div className="dash-reader-chapters">{data.contents.find((c) => c.day === day)?.chapters.join(" · ")}</div>
-            )}
-            <a className="dash-plan-link mt-3" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-              📖 Read Day {planDay(day).n}&apos;s passages in the Bible App (NIV) ↗
-            </a>
-            {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
-
-            {data.notes.map((n) => {
-              const p = passageOf(n);
-              return (
-                <section key={n.id} className="dash-reader-note">
-                  {p && <h2 className="dash-reader-ref">{formatPassage(p)}</h2>}
-                  <NoteText text={n.text} />
-                </section>
-              );
-            })}
-            {!data.notes.length && (
-              <p className="dash-reader-empty">
-                {data.hidden ? "Every note on this day is private." : "No notes on this day - just the words below."}
-              </p>
-            )}
-            {preview && (data.hidden ?? 0) > 0 && (
-              <p className="dash-reader-hidden">
-                🔒 {data.hidden} private note{data.hidden === 1 ? "" : "s"} not shown.
-              </p>
+        {!day ? (
+          <div className="dash-reader-page">
+            <p className="dash-reader-empty">
+              {asked
+                ? "There are no notes in the study for that day yet - pick a gold day on the calendar."
+                : "Nothing to read yet."}
+            </p>
+          </div>
+        ) : (
+          <>
+            {preview && data.info && !data.info.shared && (
+              <div className="dash-reader-warn">🔒 This day is set to stay out when you share your study.</div>
             )}
 
-            {data.words.length > 0 && (
-              <section className="dash-reader-words">
-                <h2 className="dash-reader-section">Words studied</h2>
-                {data.words.map((w) => (
-                  <div key={w.id} className="dash-reader-word">
-                    <div className="dash-reader-word-head">
-                      <span className="dash-reader-word-name">{w.word}</span>
-                      {w.original && (
-                        <span className="dash-word-script" dir="auto">
-                          {w.original}
-                        </span>
-                      )}
-                      {w.translit && <span className="dash-word-translit">{w.translit}</span>}
-                      {w.strongs && <span className="dash-word-source">{w.strongs}</span>}
-                    </div>
-                    {w.originalMeaning && (
-                      <p>
-                        <span className="dash-reader-label">{languageLabel(w)}</span> {w.originalMeaning}
-                      </p>
-                    )}
-                    {w.englishMeaning && (
-                      <p>
-                        <span className="dash-reader-label">English</span> {w.englishMeaning}
-                      </p>
-                    )}
-                    {w.application && <p className="dash-reader-word-life">{w.application}</p>}
-                  </div>
-                ))}
-              </section>
-            )}
-          </article>
-
-          <nav className="dash-reader-nav" aria-label="Days">
-            {prev ? (
-              <button type="button" className="dash-reader-step" onClick={() => go(prev)}>
-                <span>← Previous day</span>
-                {titleOf(prev)}
-              </button>
-            ) : (
-              <span />
-            )}
-            {next ? (
-              <button type="button" className="dash-reader-step is-next" onClick={() => go(next)}>
-                <span>Next day →</span>
-                {titleOf(next)}
-              </button>
-            ) : (
-              <span />
-            )}
-          </nav>
-        </>
-      )}
-
-      {days.length > 0 && (
-        <details className="dash-reader-contents" open={!day}>
-          <summary>
-            Contents · {days.length} day{days.length === 1 ? "" : "s"}
-          </summary>
-          {contents.map((g) => (
-            <div key={g.label} className="dash-reader-month">
-              <div className="dash-reader-month-label">{g.label}</div>
-              {g.days.map((d) => {
-                const c = data.contents.find((x) => x.day === d);
-                return (
+            <article className={`dash-reader-page size-${size}`}>
+              <div className="dash-reader-eyebrow">
+                Day {planDay(day).n} · {dayLabel(day)}
+                {data.study.author ? ` · ${data.study.author}` : ""}
+              </div>
+              <h1 className="dash-reader-title">{data.info?.title || titleOf(day)}</h1>
+              {data.info?.title && (data.contents.find((c) => c.day === day)?.chapters.length ?? 0) > 0 && (
+                <div className="dash-reader-chapters">{data.contents.find((c) => c.day === day)?.chapters.join(" · ")}</div>
+              )}
+              <div className="dash-day-tools mt-3">
+                <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
+                  📖 Read Day {planDay(day).n}&apos;s passages in the Bible App (NIV) ↗
+                </a>
+                {member && myDay && (
                   <button
-                    key={d}
                     type="button"
-                    className={`dash-reader-toc ${d === day ? "is-on" : ""}`}
-                    onClick={() => go(d)}
+                    className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${myRead.has(myDay) ? "is-read" : ""}`}
+                    onClick={toggleMyRead}
+                    title="Ticks this day in your own reading plan"
                   >
-                    <span className="dash-reader-toc-day">Day {planDay(d).n}</span>
-                    <span className="dash-reader-toc-title">{titleOf(d)}</span>
-                    {preview && c && !c.shared && <span title="Not included when shared">🔒</span>}
+                    {myRead.has(myDay) ? `✓ Day ${planDay(myDay).n} read` : `Mark Day ${planDay(myDay).n} as read`}
                   </button>
+                )}
+              </div>
+              {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
+
+              {data.notes.map((n) => {
+                const p = passageOf(n);
+                return (
+                  <section key={n.id} className="dash-reader-note">
+                    {p && <h2 className="dash-reader-ref">{formatPassage(p)}</h2>}
+                    <NoteText text={n.text} />
+                  </section>
                 );
               })}
-            </div>
-          ))}
-        </details>
-      )}
+              {!data.notes.length && (
+                <p className="dash-reader-empty">
+                  {data.hidden ? "Every note on this day is private." : "No notes on this day - just the words below."}
+                </p>
+              )}
+              {preview && (data.hidden ?? 0) > 0 && (
+                <p className="dash-reader-hidden">
+                  🔒 {data.hidden} private note{data.hidden === 1 ? "" : "s"} not shown.
+                </p>
+              )}
+
+              {data.words.length > 0 && (
+                <section className="dash-reader-words">
+                  <h2 className="dash-reader-section">Words studied</h2>
+                  {data.words.map((w) => (
+                    <div key={w.id} className="dash-reader-word">
+                      <div className="dash-reader-word-head">
+                        <span className="dash-reader-word-name">{w.word}</span>
+                        {w.original && (
+                          <span className="dash-word-script" dir="auto">
+                            {w.original}
+                          </span>
+                        )}
+                        {w.translit && <span className="dash-word-translit">{w.translit}</span>}
+                        {w.strongs && <span className="dash-word-source">{w.strongs}</span>}
+                      </div>
+                      {w.originalMeaning && (
+                        <p>
+                          <span className="dash-reader-label">{languageLabel(w)}</span> {w.originalMeaning}
+                        </p>
+                      )}
+                      {w.englishMeaning && (
+                        <p>
+                          <span className="dash-reader-label">English</span> {w.englishMeaning}
+                        </p>
+                      )}
+                      {w.application && <p className="dash-reader-word-life">{w.application}</p>}
+                    </div>
+                  ))}
+                </section>
+              )}
+            </article>
+
+            <nav className="dash-reader-nav" aria-label="Days">
+              {prev ? (
+                <button type="button" className="dash-reader-step" onClick={() => go(prev)}>
+                  <span>← Previous day</span>
+                  {titleOf(prev)}
+                </button>
+              ) : (
+                <span />
+              )}
+              {next ? (
+                <button type="button" className="dash-reader-step is-next" onClick={() => go(next)}>
+                  <span>Next day →</span>
+                  {titleOf(next)}
+                </button>
+              ) : (
+                <span />
+              )}
+            </nav>
+          </>
+        )}
+      </div>
     </div>
   );
 }

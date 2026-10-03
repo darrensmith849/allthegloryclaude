@@ -28,6 +28,8 @@ export interface StudyClient {
   wordsUrl: string;
   readerUrl?: string; // owner: preview of the shared study
   studyUrl?: string; // member: the owner's study, when it's open to them
+  studyName?: string; // member: what the owner's study is called, e.g. "Daniel's study"
+  studyAuthor?: string; // member: the owner's name on it, e.g. "Daniel"
   sharing: boolean; // owner: private notes / "include when I share"
   key: (name: CacheName) => string;
 }
@@ -59,7 +61,11 @@ export const OWNER_CLIENT: StudyClient = {
   key: (name) => OWNER_KEYS[name],
 };
 
-export function memberClient(memberId: string, opts: { canReadStudy: boolean }): StudyClient {
+export function memberClient(
+  memberId: string,
+  opts: { canReadStudy: boolean; author?: string },
+): StudyClient {
+  const author = opts.author && opts.author !== "All The Glory" ? opts.author : undefined;
   return {
     kind: "member",
     notesApi: "/api/study/notes",
@@ -70,6 +76,8 @@ export function memberClient(memberId: string, opts: { canReadStudy: boolean }):
     notesUrl: "/study/journal",
     wordsUrl: "/study/words",
     studyUrl: opts.canReadStudy ? "/study/read" : undefined,
+    studyName: author ? `${author}'s study` : "The study",
+    studyAuthor: author,
     sharing: false,
     key: (name) => `atg:study:${memberId}:${name}`,
   };

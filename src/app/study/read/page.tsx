@@ -8,6 +8,7 @@ export default function ReadStudyPage() {
   return (
     <Reader
       basePath="/study/read"
+      member={Boolean(me.member)}
       back={
         me.member
           ? { href: (d) => (d ? `/study/journal?day=${d.replace(/^\d{4}/, String(new Date().getFullYear()))}` : "/study/journal"), label: "← My journal for this day" }

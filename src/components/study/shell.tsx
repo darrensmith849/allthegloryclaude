@@ -11,6 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { AlbumPlayerProvider, ListenButton } from "./album-player";
+import { ThemeToggle } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
 
 export type MeMember = Member & { emailUpdates?: boolean };
@@ -59,8 +60,8 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
 
   const readable = canRead(me);
   const client = useMemo(
-    () => (me.member ? memberClient(me.member.id, { canReadStudy: readable }) : null),
-    [me.member, readable],
+    () => (me.member ? memberClient(me.member.id, { canReadStudy: readable, author: me.study?.author }) : null),
+    [me.member, readable, me.study?.author],
   );
 
   const nav = [
@@ -112,6 +113,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
               </>
             )}
             <ListenButton />
+            <ThemeToggle />
           </nav>
         </header>
         <main className="dash-main study-main">

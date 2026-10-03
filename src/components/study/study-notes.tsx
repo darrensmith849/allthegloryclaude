@@ -603,6 +603,14 @@ export function StudyNotes() {
           <a className="dash-btn dash-btn-ghost" href={client.wordsUrl}>
             All words
           </a>
+          {client.studyUrl && (
+            <a
+              className="dash-btn dash-btn-primary"
+              href={isDay(day) && studyOn.has(day.slice(5)) ? `${client.studyUrl}?on=${day.slice(5)}` : client.studyUrl}
+            >
+              {client.studyName} →
+            </a>
+          )}
         </div>
       </div>
 
@@ -736,6 +744,7 @@ export function StudyNotes() {
                 const count = counts.get(d) ?? 0;
                 const hasWords = wordDays.has(d);
                 const read = readDays.has(d);
+                const study = studyOn.has(d.slice(5));
                 return (
                   <button
                     key={d}
@@ -743,10 +752,11 @@ export function StudyNotes() {
                     onClick={() => openDay(d)}
                     className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                       d === day ? "is-selected" : ""
-                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""}`}
+                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""}`}
                     aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
                   >
                     <span>{Number(d.slice(8))}</span>
+                    {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
                     {(count > 0 || hasWords || read) && (
                       <em>
                         {read ? "✓ " : ""}
@@ -758,6 +768,12 @@ export function StudyNotes() {
                 );
               })}
             </div>
+            )}
+            {client.studyUrl && studyOn.size > 0 && (
+              <p className="dash-cal-key">
+                <i className="dash-cal-study-dot" /> {client.studyAuthor ? `${client.studyAuthor} wrote on these days` : "The study has notes on these days"} -
+                open a day to read them
+              </p>
             )}
             {undatedCount > 0 && (
               <button type="button" className="dash-word-link mt-3" onClick={() => openDay(UNDATED)}>
@@ -986,9 +1002,20 @@ export function StudyNotes() {
                 </button>
               ))}
 
+            {client.studyUrl && isDay(day) && !studyOn.has(day.slice(5)) && studyOn.size > 0 && (
+              <a className="dash-study-link is-quiet" href={client.studyUrl}>
+                <span className="eyebrow">{client.studyName}</span>
+                <span className="dash-study-link-title">
+                  {client.studyAuthor ?? "The study"} hasn&apos;t written for {dayLabel(day, { weekday: false })} yet - read the latest day
+                </span>
+                <span className="dash-study-link-go">Open →</span>
+              </a>
+            )}
             {client.studyUrl && isDay(day) && studyOn.has(day.slice(5)) && (
               <a className="dash-study-link" href={`${client.studyUrl}?on=${day.slice(5)}`}>
-                <span className="eyebrow eyebrow-amber">The study for {dayLabel(day, { weekday: false })}</span>
+                <span className="eyebrow eyebrow-amber">
+                  {client.studyAuthor ? `${client.studyAuthor}'s notes` : "The study"} for {dayLabel(day, { weekday: false })}
+                </span>
                 <span className="dash-study-link-title">{studyOn.get(day.slice(5)) || "Read the notes"}</span>
                 <span className="dash-study-link-go">Read →</span>
               </a>

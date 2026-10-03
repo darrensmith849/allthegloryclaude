@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import LayoutShell from "./layout-shell";
+import { ThemeScript } from "@/components/study/theme-toggle";
 import "./dashboard.css";
 
 export const metadata: Metadata = {
@@ -17,5 +18,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#f6f1e7" };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <LayoutShell>{children}</LayoutShell>;
+  return (
+    <>
+      <ThemeScript />
+      <LayoutShell>{children}</LayoutShell>
+    </>
+  );
 }

@@ -39,8 +39,8 @@ export default function StickyBackdrop() {
   // made scrolling feel sluggish. Rendering it once keeps the scene
   // identical at rest while leaving scroll completely native and snappy.
 
-  // The dashboard and The Study are light (cream paper, see dashboard.css).
-  if (isDashboard) return <div className="fixed inset-0 -z-50 bg-[#f3ecdf]" />;
+  // The dashboard and The Study have their own light / dark theme (dashboard.css).
+  if (isDashboard) return <div className="dash-app-backdrop fixed inset-0 -z-50" />;
 
   return (
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">

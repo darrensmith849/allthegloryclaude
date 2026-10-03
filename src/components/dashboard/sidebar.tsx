@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/study/theme-toggle";
 
 const NAV = [
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
@@ -45,6 +46,10 @@ export default function DashboardSidebar() {
         })}
       </nav>
       <div className="mt-auto pt-8 flex flex-col gap-1">
+        <ThemeToggle className="dash-nav-link text-[12px] opacity-70 text-left" label />
+        <Link href="/study" className="dash-nav-link text-[12px] opacity-70">
+          The Study (members) ↗
+        </Link>
         <Link href="/" className="dash-nav-link text-[12px] opacity-70">
           ← Back to the public site
         </Link>
