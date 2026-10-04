@@ -179,11 +179,11 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
           )}
         </nav>
         <div className="study-side-foot">
-          <a href="/" className="dash-nav-link text-[12px] opacity-75">
+          <a href="/" className="dash-nav-link dash-nav-foot">
             ← alltheglory.co.za
           </a>
           {me.member && (
-            <button type="button" className="dash-nav-link text-[12px] opacity-75 text-left" onClick={logout}>
+            <button type="button" className="dash-nav-link dash-nav-foot text-left" onClick={logout}>
               Log out
             </button>
           )}

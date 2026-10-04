@@ -60,15 +60,15 @@ export default function DashboardSidebar() {
         })}
       </nav>
       <div className="mt-auto pt-8 flex flex-col gap-1">
-        <Link href="/study" className="dash-nav-link text-[12px] opacity-70">
+        <Link href="/study" className="dash-nav-link dash-nav-foot">
           The Study (members) ↗
         </Link>
-        <Link href="/" className="dash-nav-link text-[12px] opacity-70">
+        <Link href="/" className="dash-nav-link dash-nav-foot">
           ← Back to the public site
         </Link>
         <button
           type="button"
-          className="dash-nav-link text-[12px] opacity-70 text-left"
+          className="dash-nav-link dash-nav-foot text-left"
           onClick={async () => {
             await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
             window.location.assign("/dashboard/login");

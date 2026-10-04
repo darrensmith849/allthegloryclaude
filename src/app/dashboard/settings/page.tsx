@@ -312,7 +312,7 @@ export default function SettingsPage() {
                     placeholder="Subtitle"
                   />
                   <button
-                    className="opacity-50 hover:opacity-100"
+                    className="opacity-80 hover:opacity-100"
                     onClick={() => removeScheduleRow(row.id)}
                     title="Delete row"
                   >
@@ -373,7 +373,7 @@ export default function SettingsPage() {
                     title="Any CSS colour (e.g. #d8b25a or rgba(216,178,90,0.92))"
                   />
                   <button
-                    className="opacity-50 hover:opacity-100"
+                    className="opacity-80 hover:opacity-100"
                     onClick={() => removeTag(t.id)}
                   >
                     ✕

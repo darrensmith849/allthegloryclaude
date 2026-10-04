@@ -113,9 +113,12 @@ function Account() {
 
   async function deleteAccount(e: React.FormEvent) {
     e.preventDefault();
+    if (!delPassword) return setDelError("Enter your password first.");
+    if (delConfirm.trim() !== "DELETE") return setDelError("Type DELETE in capitals to confirm.");
+    setDelError(null);
     if (!confirm("Delete your account and everything in your journal? This can't be undone.")) return;
     try {
-      await call("DELETE", { password: delPassword, confirm: delConfirm });
+      await call("DELETE", { password: delPassword, confirm: delConfirm.trim() });
       forgetMe(true);
       window.location.assign("/study");
     } catch (err) {
@@ -249,17 +252,15 @@ function Account() {
                   autoComplete="current-password"
                   value={delPassword}
                   onChange={(e) => setDelPassword(e.target.value)}
-                  required
                 />
                 <input
                   className="dash-input"
                   placeholder="Type DELETE to confirm"
                   value={delConfirm}
                   onChange={(e) => setDelConfirm(e.target.value)}
-                  required
                 />
                 <div className="flex items-center gap-3 flex-wrap mt-1">
-                  <button type="submit" className="dash-btn dash-btn-danger" disabled={delConfirm !== "DELETE" || !delPassword}>
+                  <button type="submit" className="dash-btn dash-btn-danger">
                     Delete my account
                   </button>
                   {delError && <span className="text-[12.5px] text-[#f1a07d]">{delError}</span>}

@@ -10,6 +10,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { StudyPeek } from "@/components/study/study-peek";
+import { NoteStarter } from "@/components/study/note-starter";
 import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
@@ -132,6 +133,7 @@ export function StudyNotes() {
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
   // Members: the dates (MM-DD) the owner's study has notes for, with a label.
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
+  const [studyChapters, setStudyChapters] = useState<Map<string, string[]>>(() => new Map());
   const [studyIndex, setStudyIndex] = useState<PlanIndex>(() => new Map());
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
@@ -256,6 +258,7 @@ export function StudyNotes() {
       .then((data: { contents?: { day: string; title: string; chapters: string[]; passages?: string[] }[] } | null) => {
         if (!data?.contents) return;
         setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
+        setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
         const index: PlanIndex = new Map();
         for (const c of data.contents)
           for (const key of c.passages ?? [])
@@ -387,13 +390,35 @@ export function StudyNotes() {
   }
 
   const draft = drafts[day] ?? "";
+
+  // "Start a note": the day's chapters to pick from - this day's own notes,
+  // then the shared study's chapters for the same date.
+  const starterChapters = [
+    ...new Set([...dayChapters, ...(isDay(day) ? (studyChapters.get(day.slice(5)) ?? []) : [])]),
+  ].slice(0, 12);
+  function startLine(line: string) {
+    const current = draft.replace(/\s+$/, "");
+    const next = current ? `${current}\n${line}` : line;
+    setDraft(day, next);
+    window.setTimeout(() => {
+      const box = writeBox.current;
+      if (!box) return;
+      box.focus();
+      box.setSelectionRange(next.length, next.length);
+    }, 0);
+  }
   const preview = useMemo(
     () => parseImport(draft, { day: day === UNDATED ? null : day, page: context.page, prev: context.prev }),
     [draft, day, context],
   );
 
   async function saveWriting() {
-    if (!preview.length || saving) return;
+    if (saving) return;
+    if (!preview.length) {
+      setError("Write your note first - or fill in Start a note above.");
+      writeBox.current?.focus();
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -716,7 +741,7 @@ export function StudyNotes() {
                   <em>{PLAN.name}</em>.
                 </li>
                 <li>
-                  <strong>Read the passages</strong> with the 📖 Bible App link (NIV), or in your own copy of the book.
+                  <strong>Read the passages.</strong> Use the 📖 Bible App link (NIV), or your own copy of the book.
                 </li>
                 {client.studyUrl && (
                   <li>
@@ -726,16 +751,17 @@ export function StudyNotes() {
                   </li>
                 )}
                 <li>
-                  <strong>Write your notes</strong> the way you like. A new line like <code>Vs 14 - …</code> or{" "}
-                  <code>John 4 vs 10 - …</code> becomes its own note, filed under that verse.
+                  <strong>Write your notes.</strong> Fill in the page, passage and verse under &ldquo;Start a note&rdquo;,
+                  then write. Or just type - a new line like <code>Vs 14 - …</code> or <code>John 4 vs 10 - …</code>{" "}
+                  becomes its own note, filed under that verse.
                 </li>
                 <li>
                   <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
                   it in for the Hebrew or Greek, its meaning and the verses that use it.
                 </li>
                 <li>
-                  <strong>Tick &ldquo;Mark as read&rdquo;</strong> to keep your place and build a streak. Everything is
-                  saved and private to you.
+                  <strong>Tick &ldquo;Mark as read&rdquo;.</strong> It keeps your place and builds a streak. Everything
+                  is saved and private to you.
                 </li>
               </ol>
             </Panel>
@@ -1422,6 +1448,15 @@ export function StudyNotes() {
             {/* ── Write for this day ─────────────────────────────── */}
             {day !== TRASH && (
             <div className="dash-note-write">
+              <NoteStarter
+                key={`${day}:${loaded ? 1 : 0}`}
+                dayText={day === UNDATED ? "No day set" : `Day ${planDay(day).n} · ${dayLabel(day)}`}
+                chapters={starterChapters}
+                page={context.page}
+                passage={dayChapters[dayChapters.length - 1] ?? ""}
+                prev={[...dayNotes].reverse().map(passageOf).find(Boolean) ?? context.prev}
+                onStart={startLine}
+              />
               <label className="dash-label" htmlFor="sn-write">
                 {day === UNDATED ? "Write notes" : `Write for ${dayLabel(day, { weekday: false })}`}
               </label>
@@ -1436,7 +1471,10 @@ export function StudyNotes() {
                     : "Write the way you do in your doc:\n1257 - Matt 2 vs 7 - …\nVs 12 - …\n* a question or point"
                 }
                 value={draft}
-                onChange={(e) => setDraft(day, e.target.value)}
+                onChange={(e) => {
+                  setDraft(day, e.target.value);
+                  if (error) setError(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveWriting();
                 }}
@@ -1457,11 +1495,11 @@ export function StudyNotes() {
                   type="button"
                   className="dash-btn dash-btn-primary"
                   onClick={saveWriting}
-                  disabled={saving || !preview.length}
+                  disabled={saving}
                 >
                   {saving ? "Saving…" : preview.length > 1 ? `Save ${preview.length} notes` : "Save note"}
                 </button>
-                <span className="text-[11.5px] text-[var(--colour-ink-faint)]">⌘ / Ctrl + Enter · drafts are kept on this device</span>
+                <span className="text-[11.5px] text-[var(--colour-ink-faint)]">⌘ / Ctrl + Enter to save · Drafts are kept on this device</span>
                 {error && <span className="text-[12.5px] text-[#f1a07d]">{error}</span>}
               </div>
             </div>
