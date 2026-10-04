@@ -6,6 +6,7 @@
  *   GET                                   -> { days }
  *   PUT  { day, title, takeaway, shared } -> { day }
  *   PATCH { day, read: boolean }          -> { day }   tick the day's reading done (or not)
+ *   PATCH { day, star: boolean }          -> { day }   star the day as a favourite (or not)
  *
  * Nothing is ever lost: each change first copies the old row into the
  * versions table.
@@ -21,6 +22,7 @@ interface Row {
   shared: number;
   updated_at: number;
   read_at: number | null;
+  starred_at?: number | null;
 }
 
 const toDay = (r: Row): StudyDay => ({
@@ -30,6 +32,7 @@ const toDay = (r: Row): StudyDay => ({
   shared: Boolean(r.shared),
   updatedAt: r.updated_at,
   readAt: r.read_at ?? null,
+  starredAt: r.starred_at ?? null,
 });
 
 const unavailable = () => Response.json({ error: "Storage isn't available here." }, { status: 503 });
@@ -97,18 +100,20 @@ export function daysApi(scopeOf: ScopeOf) {
     if (s instanceof Response) return s;
     const db = await getDb();
     if (!db) return unavailable();
-    const body = (await req.json().catch(() => ({}))) as { day?: unknown; read?: unknown };
-    if (!isDay(body.day) || typeof body.read !== "boolean") {
+    const body = (await req.json().catch(() => ({}))) as { day?: unknown; read?: unknown; star?: unknown };
+    const field = typeof body.read === "boolean" ? "read_at" : typeof body.star === "boolean" ? "starred_at" : null;
+    if (!isDay(body.day) || !field) {
       return Response.json({ error: "Which day?" }, { status: 400 });
     }
+    const on = field === "read_at" ? body.read === true : body.star === true;
     const now = Date.now();
     try {
       await db
         .prepare(
-          `INSERT INTO ${s.days} (${pre(s)}day, read_at, updated_at) VALUES (${preQ(s)}?, ?, ?) ` +
-            `ON CONFLICT(${s.member ? "member_id, day" : "day"}) DO UPDATE SET read_at = excluded.read_at, updated_at = excluded.updated_at`,
+          `INSERT INTO ${s.days} (${pre(s)}day, ${field}, updated_at) VALUES (${preQ(s)}?, ?, ?) ` +
+            `ON CONFLICT(${s.member ? "member_id, day" : "day"}) DO UPDATE SET ${field} = excluded.${field}, updated_at = excluded.updated_at`,
         )
-        .bind(...mineArgs(s), body.day, body.read ? now : null, now)
+        .bind(...mineArgs(s), body.day, on ? now : null, now)
         .run();
       const row = await db
         .prepare(`SELECT * FROM ${s.days} WHERE day = ?${andMine(s)}`)

@@ -61,7 +61,7 @@ export function JournalPrint({ name }: { name?: string }) {
     const dayInfo = new Map(days.map((d) => [d.day, d]));
     const byDay = new Map<string, { notes: StudyNote[]; words: BibleWord[] }>();
     for (const n of readingOrder(notes)) {
-      if (!inRange(n.day) || (starredOnly && !n.starredAt)) continue;
+      if (!inRange(n.day) || (starredOnly && !n.starredAt && !dayInfo.get(n.day as string)?.starredAt)) continue;
       const e = byDay.get(n.day as string) ?? { notes: [], words: [] };
       e.notes.push(n);
       byDay.set(n.day as string, e);
@@ -116,7 +116,7 @@ export function JournalPrint({ name }: { name?: string }) {
           </select>
         )}
         <label className="dash-print-check">
-          <input type="checkbox" checked={starredOnly} onChange={(e) => setStarredOnly(e.target.checked)} /> Starred notes only
+          <input type="checkbox" checked={starredOnly} onChange={(e) => setStarredOnly(e.target.checked)} /> Starred days and notes only
         </label>
         {!starredOnly && (
           <label className="dash-print-check">
@@ -135,7 +135,7 @@ export function JournalPrint({ name }: { name?: string }) {
       <article className="dash-print-page">
         <header className="dash-print-cover">
           <div className="dash-print-eyebrow">All The Glory · The Study</div>
-          <h1>{starredOnly ? "Starred notes" : "My Bible study journal"}</h1>
+          <h1>{starredOnly ? "My starred days and notes" : "My Bible study journal"}</h1>
           <p className="dash-print-range">{rangeLabel}</p>
           {name && <p className="dash-print-name">{name}</p>}
           {notes && (
@@ -157,7 +157,7 @@ export function JournalPrint({ name }: { name?: string }) {
           return (
             <section key={day} className="dash-print-day">
               <div className="dash-print-dayhead">
-                Day {planDay(day).n} · {dayLabel(day)}
+                {info?.starredAt ? "★ " : ""}Day {planDay(day).n} · {dayLabel(day)}
               </div>
               {info?.title && <h2>{info.title}</h2>}
               {info?.takeaway && <blockquote>{info.takeaway}</blockquote>}

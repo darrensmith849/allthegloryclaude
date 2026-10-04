@@ -343,9 +343,9 @@ export default function StudyHome() {
         {me.member && (
           <Link href="/study/journal?day=starred" className="study-card">
             <span className="eyebrow eyebrow-amber">Your highlights</span>
-            <span className="study-card-title">Starred notes</span>
+            <span className="study-card-title">Starred days and notes</span>
             <span className="study-card-text">
-              Tap ☆ Star on any note that speaks to you, and find them all here. Print them too, from your journal.
+              Tap ☆ Star this day on a day you love, or ☆ Star on a single note - they&apos;re all kept here, on every device.
             </span>
           </Link>
         )}

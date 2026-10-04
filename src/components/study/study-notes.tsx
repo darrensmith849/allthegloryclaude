@@ -44,7 +44,7 @@ import {
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNDATED = "undated";
 const TRASH = "deleted"; // the Recently deleted view
-const STARRED = "starred"; // every starred note, newest star first
+const STARRED = "starred"; // starred days and notes, newest star first
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 interface Verse {
@@ -367,6 +367,15 @@ export function StudyNotes() {
     () => liveNotes.filter((n) => n.starredAt).sort((a, b) => (b.starredAt ?? 0) - (a.starredAt ?? 0)),
     [liveNotes],
   );
+  const starredDays = useMemo(
+    () => Object.values(days).filter((d) => d.starredAt).sort((a, b) => (b.starredAt ?? 0) - (a.starredAt ?? 0)),
+    [days],
+  );
+  const starCount = starred.length + starredDays.length;
+  const dayChaptersOf = (d: string) =>
+    [...new Set(liveNotes.filter((n) => n.day === d).map(passageOf).filter((p): p is Passage => Boolean(p)).map(chapterLabel))].join(
+      " · ",
+    );
   const special = day === TRASH || day === STARRED; // a list, not a day
   const dayNotes = useMemo(
     () => ordered.filter((n) => (day === UNDATED ? !n.day : n.day === day)),
@@ -599,6 +608,31 @@ export function StudyNotes() {
     }
   }
 
+  // Star a whole day as a favourite (or take the star off). Saved to the
+  // account, so it shows on every device.
+  async function toggleStarDay(d: string) {
+    const was = days[d]?.starredAt ?? null;
+    const base = days[d] ?? { day: d, title: "", takeaway: "", shared: true, updatedAt: Date.now() };
+    setDays((all) => ({ ...all, [d]: { ...base, starredAt: was ? null : Date.now() } }));
+    try {
+      const r = await fetch(client.daysApi, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ day: d, star: !was }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; error?: string };
+      if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
+      setDays((all) => {
+        const next = { ...all, [d]: data.day as StudyDay };
+        writeStore(DAYS_KEY, next);
+        return next;
+      });
+    } catch (err) {
+      setDays((all) => ({ ...all, [d]: { ...base, starredAt: was } }));
+      alert(err instanceof Error ? err.message : "Couldn't save that.");
+    }
+  }
+
   async function restore(n: StudyNote) {
     try {
       const { note } = await send<{ note: StudyNote }>("PATCH", { id: n.id, restore: true });
@@ -756,6 +790,14 @@ export function StudyNotes() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button
+            type="button"
+            className={`dash-btn dash-btn-ghost ${day === STARRED ? "is-on" : ""}`}
+            onClick={() => pickDay(STARRED)}
+            title="Your starred days and notes"
+          >
+            ★ Starred{starCount ? ` · ${starCount}` : ""}
+          </button>
           <a
             className="dash-btn dash-btn-ghost"
             href={`${client.printUrl}?month=${(isDay(day) ? day : todayDay()).slice(0, 7)}`}
@@ -962,7 +1004,7 @@ export function StudyNotes() {
                             type="button"
                             onClick={() => pickDay(d)}
                             title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
-                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${
+                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${days[d]?.starredAt ? "is-starred" : ""} ${
                               d === day ? "is-selected" : ""
                             } ${d === today ? "is-today" : ""}`}
                           />
@@ -986,6 +1028,7 @@ export function StudyNotes() {
                 const count = counts.get(d) ?? 0;
                 const hasWords = wordDays.has(d);
                 const read = readDays.has(d);
+                const starredDay = Boolean(days[d]?.starredAt);
                 const study = studyOn.has(d.slice(5));
                 return (
                   <button
@@ -994,10 +1037,11 @@ export function StudyNotes() {
                     onClick={() => pickDay(d)}
                     className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                       d === day ? "is-selected" : ""
-                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""}`}
+                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""} ${starredDay ? "is-starred" : ""}`}
                     aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
                   >
                     <span>{Number(d.slice(8))}</span>
+                    {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
                     {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
                     {(count > 0 || hasWords || read) && (
                       <em>
@@ -1022,9 +1066,9 @@ export function StudyNotes() {
                 {undatedCount} {undatedCount === 1 ? "note" : "notes"} without a day →
               </button>
             )}
-            {starred.length > 0 && (
-              <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(STARRED)}>
-                ★ Starred notes · {starred.length} →
+            {starCount > 0 && (
+              <button type="button" className="dash-word-link mt-3 block" onClick={() => pickDay(STARRED)}>
+                ★ Starred days and notes · {starCount} →
               </button>
             )}
             {trash.length > 0 && (
@@ -1154,7 +1198,7 @@ export function StudyNotes() {
                     .join(" · ")
             }
             title={
-              day === TRASH ? "Recently deleted" : day === STARRED ? "Starred notes" : day === UNDATED ? "No day set" : dayLabel(day)
+              day === TRASH ? "Recently deleted" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
             }
             action={
               isDay(day) ? (
@@ -1213,11 +1257,37 @@ export function StudyNotes() {
               </div>
             )}
 
+            {day === STARRED && starredDays.length > 0 && (
+              <div className="dash-star-days">
+                <div className="dash-note-section-label">Starred days · {starredDays.length}</div>
+                {starredDays.map((d) => (
+                  <div key={d.day} className="dash-star-day">
+                    <button type="button" className="dash-star-day-open" onClick={() => pickDay(d.day)}>
+                      <span className="dash-star-day-when">
+                        ★ Day {planDay(d.day).n} · {dayLabel(d.day)}
+                      </span>
+                      <span className="dash-star-day-title">
+                        {d.title ||
+                          dayChaptersOf(d.day) ||
+                          (studyChapters.get(d.day.slice(5)) ?? []).join(" · ") ||
+                          `Day ${planDay(d.day).n}'s reading`}
+                      </span>
+                      {d.takeaway && <span className="dash-star-day-take">{d.takeaway}</span>}
+                    </button>
+                    <button type="button" className="dash-word-link" onClick={() => toggleStarDay(d.day)} aria-label="Take the star off this day">
+                      Remove star
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {day === STARRED && (
               <div className="dash-note-list">
-                {starred.length === 0 && (
+                {starred.length > 0 && <div className="dash-note-section-label">Starred notes · {starred.length}</div>}
+                {starCount === 0 && (
                   <div className="dash-word-hint">
-                    Nothing starred yet. Open a note and tap ☆ Star to keep the ones that speak to you here.
+                    Nothing starred yet. Tap ☆ Star this day on a day you love - or ☆ Star on a single note - and it&apos;s kept
+                    here, on every device.
                   </div>
                 )}
                 {starred.map((n) => (
@@ -1258,6 +1328,14 @@ export function StudyNotes() {
                   title={readDays.has(day) ? "Read - tap to undo" : "Tick when you've read this day's passages"}
                 >
                   {readDays.has(day) ? "✓ Read" : "Mark as read"}
+                </button>
+                <button
+                  type="button"
+                  className={`dash-btn dash-btn-ghost dash-note-nav dash-star-btn ${days[day]?.starredAt ? "is-starred" : ""}`}
+                  onClick={() => toggleStarDay(day)}
+                  title={days[day]?.starredAt ? "Starred - tap to take the star off" : "Keep this day in your starred days"}
+                >
+                  {days[day]?.starredAt ? "★ Starred day" : "☆ Star this day"}
                 </button>
               </div>
             )}
