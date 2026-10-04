@@ -336,7 +336,7 @@ export default function StudyHome() {
             <span className="eyebrow eyebrow-amber">Private to you</span>
             <span className="study-card-title">Prayer list</span>
             <span className="study-card-text">
-              What you&apos;re praying for - and, when God answers, the date and how. Look back on His faithfulness.
+              Write down what you&apos;re praying for, with a verse to pray if you like - private to you.
             </span>
           </Link>
         )}

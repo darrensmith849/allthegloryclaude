@@ -224,19 +224,23 @@ export function StudyNotes() {
   }, []);
 
   // Open the owner's study in this day and bring it into view.
-  function showStudy() {
+  function showStudy(scroll = true) {
     if (!isDay(day)) openDay(todayDay());
     setSections((s) => {
       const next = { ...s, study: true };
       writeStore(SECTIONS_KEY, next);
       return next;
     });
-    window.setTimeout(() => document.getElementById("daniel-study")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    if (scroll) {
+      window.setTimeout(() => document.getElementById("daniel-study")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    }
   }
-  // ?daniel=1 (from the menu or home page) opens it straight away.
+  // ?daniel=1 (from the menu or home page) opens it straight away. On wide
+  // screens it scrolls to it; on phones / tablets the page stays at the top
+  // like every other menu link (the panel is just below, open).
   useEffect(() => {
     if (client.kind !== "member" || !new URLSearchParams(window.location.search).get("daniel")) return;
-    const t = window.setTimeout(showStudy, 600);
+    const t = window.setTimeout(() => showStudy(!window.matchMedia("(max-width: 1100px)").matches), 600);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client.kind, studyOn.size]);
@@ -754,7 +758,7 @@ export function StudyNotes() {
             All words
           </a>
           {client.studyUrl && (
-            <button type="button" className="dash-btn dash-btn-primary" onClick={showStudy}>
+            <button type="button" className="dash-btn dash-btn-primary" onClick={() => showStudy()}>
               {client.studyName} ▾
             </button>
           )}

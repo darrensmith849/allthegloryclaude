@@ -7,8 +7,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
@@ -125,18 +125,10 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   // Phones: the menu is one scrolling row - keep the open page's pill in
   // view, and drop the edge fade once it's scrolled to the end.
   const navRef = useRef<HTMLElement>(null);
-  const markNavEnd = () => {
+  const markNavEnd = useCallback(() => {
     const el = navRef.current;
     if (el) el.classList.toggle("is-end", el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
-  };
-  useEffect(() => {
-    const el = navRef.current;
-    const active = el?.querySelector<HTMLElement>(".is-active");
-    if (el && active && el.scrollWidth > el.clientWidth) {
-      el.scrollLeft = active.offsetLeft - el.clientWidth / 2 + active.offsetWidth / 2;
-    }
-    markNavEnd();
-  }, [pathname, me.loaded]);
+  }, []);
 
   const bare = ["/study/login", "/study/join", "/study/reset"].includes(pathname ?? "");
 
@@ -167,20 +159,9 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         </Link>
         <ThemeSwitch className="mt-4 study-side-theme" />
         <nav className="study-side-nav" aria-label="The Study" ref={navRef} onScroll={markNavEnd}>
-          {nav.map((n) => {
-            const active =
-              n.href === "/study"
-                ? pathname === "/study"
-                : n.href.includes("daniel=1")
-                  ? pathname?.startsWith("/study/read")
-                  : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
-            return (
-              <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
-                <span className="dash-nav-glyph">{n.glyph}</span>
-                <span>{n.label}</span>
-              </Link>
-            );
-          })}
+          <Suspense fallback={<NavLinks nav={nav} pathname={pathname} daniel={false} navRef={navRef} onMoved={markNavEnd} />}>
+            <NavLinksLive nav={nav} pathname={pathname} navRef={navRef} onMoved={markNavEnd} />
+          </Suspense>
           {me.loaded && !me.member && (
             <>
               <Link href={`/the-study?login=1&next=${encodeURIComponent(pathname ?? "/study")}`} className="dash-nav-link">
@@ -285,4 +266,52 @@ export function MemberOnly({ children }: { children: React.ReactNode }) {
   }, [me.loaded, me.member, router, pathname]);
   if (!me.member) return <p className="dash-reader-empty">{me.loaded ? "Taking you to log in…" : "Opening…"}</p>;
   return <>{children}</>;
+}
+
+// The menu's links. "Daniel's study" for members is the journal with
+// ?daniel=1, so it's the one lit up there (not "My journal"). On phones the
+// row scrolls: the lit link is brought into view, next to its neighbours.
+type NavItem = { href: string; label: string; glyph: string };
+interface NavProps {
+  nav: NavItem[];
+  pathname: string | null;
+  navRef: RefObject<HTMLElement | null>;
+  onMoved: () => void;
+}
+
+function NavLinksLive(props: NavProps) {
+  const daniel = useSearchParams().get("daniel") === "1";
+  return <NavLinks {...props} daniel={daniel} />;
+}
+
+function NavLinks({ nav, pathname, daniel, navRef, onMoved }: NavProps & { daniel: boolean }) {
+  useEffect(() => {
+    const el = navRef.current;
+    const active = el?.querySelector<HTMLElement>(".is-active");
+    if (el && active && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft = Math.max(0, active.offsetLeft - el.clientWidth / 2 + active.offsetWidth / 2);
+    }
+    onMoved();
+  }, [pathname, daniel, nav.length, navRef, onMoved]);
+
+  return (
+    <>
+      {nav.map((n) => {
+        const active =
+          n.href === "/study"
+            ? pathname === "/study"
+            : n.href.includes("daniel=1")
+              ? pathname?.startsWith("/study/read") || (pathname === "/study/journal" && daniel)
+              : n.href === "/study/journal"
+                ? pathname?.startsWith("/study/journal") && !daniel
+                : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
+        return (
+          <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
+            <span className="dash-nav-glyph">{n.glyph}</span>
+            <span>{n.label}</span>
+          </Link>
+        );
+      })}
+    </>
+  );
 }
