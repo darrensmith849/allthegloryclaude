@@ -245,6 +245,17 @@ export function StudyNotes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client.kind, studyOn.size]);
 
+  // The guide's steps swipe sideways on phones; which one is showing.
+  const guideRef = useRef<HTMLOListElement>(null);
+  const [guideStep, setGuideStep] = useState(0);
+  const guideCount = client.studyUrl ? 6 : 5;
+  const onGuideScroll = () => {
+    const el = guideRef.current;
+    const first = el?.children[0] as HTMLElement | undefined;
+    if (!el || !first) return;
+    setGuideStep(Math.min(guideCount - 1, Math.round(el.scrollLeft / (first.offsetWidth + 10))));
+  };
+
   // Members: a short how-it-works guide until they've seen it.
   const [guide, setGuide] = useState(false);
   useEffect(() => {
@@ -779,7 +790,7 @@ export function StudyNotes() {
                 </button>
               }
             >
-              <ol className="dash-guide">
+              <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
                 <li>
                   <strong>Open a day.</strong> Today is already open - each date is that day&apos;s reading in{" "}
                   <em>{PLAN.name}</em>.
@@ -808,6 +819,23 @@ export function StudyNotes() {
                   is saved and private to you.
                 </li>
               </ol>
+              {/* Phones: the steps are a row to swipe through. */}
+              <div className="dash-guide-dots" aria-hidden>
+                <span className="dash-guide-swipe">Swipe for the next step →</span>
+                {Array.from({ length: guideCount }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    tabIndex={-1}
+                    className={i === guideStep ? "is-on" : ""}
+                    onClick={() => {
+                      const el = guideRef.current;
+                      const item = el?.children[i] as HTMLElement | undefined;
+                      if (el && item) el.scrollTo({ left: item.offsetLeft - el.offsetLeft, behavior: "smooth" });
+                    }}
+                  />
+                ))}
+              </div>
             </Panel>
           </div>
         )}
