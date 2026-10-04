@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
-import { Reminders } from "@/components/study/reminders";
+import { AppCard } from "@/components/study/app-card";
 
 export default function StudyHome() {
   const me = useMe();
@@ -308,12 +308,11 @@ export default function StudyHome() {
             <span className="dash-read-bar" aria-hidden>
               <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
             </span>
-            <div className="study-remind">
-              <Reminders compact />
-            </div>
           </div>
         )}
       </section>
+
+      {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
 
       <div className="study-cards">
         {readable && (
