@@ -251,9 +251,15 @@ export function StudyNotes() {
   const guideCount = client.studyUrl ? 6 : 5;
   const onGuideScroll = () => {
     const el = guideRef.current;
-    const first = el?.children[0] as HTMLElement | undefined;
-    if (!el || !first) return;
-    setGuideStep(Math.min(guideCount - 1, Math.round(el.scrollLeft / (first.offsetWidth + 10))));
+    if (!el || !el.clientWidth) return;
+    setGuideStep(Math.max(0, Math.min(guideCount - 1, Math.round(el.scrollLeft / el.clientWidth))));
+  };
+  const goGuide = (i: number) => {
+    const el = guideRef.current;
+    if (!el) return;
+    const step = Math.max(0, Math.min(guideCount - 1, i));
+    el.scrollTo({ left: step * el.clientWidth, behavior: "smooth" });
+    setGuideStep(step);
   };
 
   // Members: a short how-it-works guide until they've seen it.
@@ -806,9 +812,8 @@ export function StudyNotes() {
                   </li>
                 )}
                 <li>
-                  <strong>Write your notes.</strong> Fill in the page, passage and verse under &ldquo;Start a note&rdquo;,
-                  then write. Or just type - a new line like <code>Vs 14 - …</code> or <code>John 4 vs 10 - …</code>{" "}
-                  becomes its own note, filed under that verse.
+                  <strong>Write your notes.</strong> Use the Page, Passage and Verse boxes under &ldquo;Start a note&rdquo;,
+                  then write. A line like <code>Vs 14 - …</code> becomes its own note under that verse.
                 </li>
                 <li>
                   <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
@@ -819,22 +824,37 @@ export function StudyNotes() {
                   is saved and private to you.
                 </li>
               </ol>
-              {/* Phones: the steps are a row to swipe through. */}
-              <div className="dash-guide-dots" aria-hidden>
-                <span className="dash-guide-swipe">Swipe for the next step →</span>
-                {Array.from({ length: guideCount }, (_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    tabIndex={-1}
-                    className={i === guideStep ? "is-on" : ""}
-                    onClick={() => {
-                      const el = guideRef.current;
-                      const item = el?.children[i] as HTMLElement | undefined;
-                      if (el && item) el.scrollTo({ left: item.offsetLeft - el.offsetLeft, behavior: "smooth" });
-                    }}
-                  />
-                ))}
+              {/* Phones: one step at a time - swipe, or Back / Next. */}
+              <div className="dash-guide-nav">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost dash-note-nav"
+                  onClick={() => goGuide(guideStep - 1)}
+                  disabled={guideStep === 0}
+                  aria-label="Previous step"
+                >
+                  ‹ Back
+                </button>
+                <span className="dash-guide-dots" aria-label={`Step ${guideStep + 1} of ${guideCount}`}>
+                  {Array.from({ length: guideCount }, (_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={i === guideStep ? "is-on" : ""}
+                      onClick={() => goGuide(i)}
+                      aria-label={`Step ${i + 1}`}
+                    />
+                  ))}
+                </span>
+                {guideStep < guideCount - 1 ? (
+                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => goGuide(guideStep + 1)}>
+                    Next ›
+                  </button>
+                ) : (
+                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={closeGuide}>
+                    Got it ✓
+                  </button>
+                )}
               </div>
             </Panel>
           </div>
