@@ -44,6 +44,7 @@ import {
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNDATED = "undated";
 const TRASH = "deleted"; // the Recently deleted view
+const STARRED = "starred"; // every starred note, newest star first
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 interface Verse {
@@ -116,11 +117,11 @@ export function StudyNotes() {
   const [day, setDay] = useState<string>(() => {
     if (client.kind === "member" && typeof window !== "undefined") {
       const asked = new URLSearchParams(window.location.search).get("day");
-      if (isDay(asked)) return asked;
+      if (isDay(asked) || asked === STARRED) return asked;
     }
     return todayDay();
   });
-  const [month, setMonth] = useState<string>(() => startOfMonth(day));
+  const [month, setMonth] = useState<string>(() => startOfMonth(isDay(day) ? day : todayDay()));
   const [calView, setCalView] = useState<"month" | "year">("month");
   const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean }>({
     notes: true,
@@ -183,10 +184,10 @@ export function StudyNotes() {
   useEffect(() => {
     const asked = new URLSearchParams(window.location.search).get("day");
     const open = (list: StudyNote[]) => {
-      const d = isDay(asked) ? asked : latestNote(list)?.day;
+      const d = isDay(asked) || asked === STARRED ? asked : latestNote(list)?.day;
       if (d) {
         setDay(d);
-        setMonth(startOfMonth(d));
+        if (isDay(d)) setMonth(startOfMonth(d));
       }
     };
     const cachedNotes = readStore<StudyNote[]>(CACHE_KEY, []);
@@ -293,6 +294,13 @@ export function StudyNotes() {
     setNotes(next);
     writeStore(CACHE_KEY, next);
   };
+  // Change one note on the latest list (safe when several changes overlap).
+  const patchNote = (id: string, change: (n: StudyNote) => StudyNote) =>
+    setNotes((list) => {
+      const next = list.map((x) => (x.id === id ? change(x) : x));
+      writeStore(CACHE_KEY, next);
+      return next;
+    });
   const setDraft = (d: string, text: string) => {
     setDrafts((all) => {
       const next = { ...all };
@@ -326,6 +334,11 @@ export function StudyNotes() {
     [notes],
   );
   const ordered = useMemo(() => readingOrder(liveNotes), [liveNotes]);
+  const starred = useMemo(
+    () => liveNotes.filter((n) => n.starredAt).sort((a, b) => (b.starredAt ?? 0) - (a.starredAt ?? 0)),
+    [liveNotes],
+  );
+  const special = day === TRASH || day === STARRED; // a list, not a day
   const dayNotes = useMemo(
     () => ordered.filter((n) => (day === UNDATED ? !n.day : n.day === day)),
     [ordered, day],
@@ -337,7 +350,7 @@ export function StudyNotes() {
   }, [liveNotes]);
   const dayWords = useMemo(
     () =>
-      day === UNDATED || day === TRASH
+      day === UNDATED || day === TRASH || day === STARRED
         ? []
         : allWords.filter((w) => w.day === day).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [allWords, day],
@@ -492,6 +505,18 @@ export function StudyNotes() {
       setEditing(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Couldn't delete that note.");
+    }
+  }
+
+  async function toggleStar(n: StudyNote) {
+    const star = !n.starredAt;
+    patchNote(n.id, (x) => ({ ...x, starredAt: star ? Date.now() : null }));
+    try {
+      const { note } = await send<{ note: StudyNote }>("PATCH", { id: n.id, star });
+      patchNote(note.id, () => note);
+    } catch (err) {
+      patchNote(n.id, (x) => ({ ...x, starredAt: n.starredAt ?? null }));
+      alert(err instanceof Error ? err.message : "Couldn't change that.");
     }
   }
 
@@ -702,6 +727,13 @@ export function StudyNotes() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <a
+            className="dash-btn dash-btn-ghost"
+            href={`${client.printUrl}?month=${(isDay(day) ? day : todayDay()).slice(0, 7)}`}
+            title="Lay out a month or a year of your journal to print or save as PDF"
+          >
+            Print
+          </a>
           <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setImportOpen((v) => !v)}>
             {importOpen ? "Close" : "Paste many days"}
           </button>
@@ -930,6 +962,11 @@ export function StudyNotes() {
                 {undatedCount} {undatedCount === 1 ? "note" : "notes"} without a day →
               </button>
             )}
+            {starred.length > 0 && (
+              <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(STARRED)}>
+                ★ Starred notes · {starred.length} →
+              </button>
+            )}
             {trash.length > 0 && (
               <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
                 Recently deleted · {trash.length} →
@@ -1012,7 +1049,7 @@ export function StudyNotes() {
             </div>
           )}
 
-          {day !== TRASH && (
+          {!special && (
             <div className="mt-[18px]">
               <Panel eyebrow="The Bible" title="Look up a verse">
                 <BibleLookup
@@ -1044,6 +1081,8 @@ export function StudyNotes() {
             eyebrow={
               day === TRASH
                 ? "Nothing is ever lost"
+                : day === STARRED
+                ? "Your highlights"
                 : day === UNDATED
                 ? "Notes without a day"
                 : [
@@ -1054,7 +1093,9 @@ export function StudyNotes() {
                     .filter(Boolean)
                     .join(" · ")
             }
-            title={day === TRASH ? "Recently deleted" : day === UNDATED ? "No day set" : dayLabel(day)}
+            title={
+              day === TRASH ? "Recently deleted" : day === STARRED ? "Starred notes" : day === UNDATED ? "No day set" : dayLabel(day)
+            }
             action={
               isDay(day) ? (
                 <div className="flex gap-1">
@@ -1094,6 +1135,39 @@ export function StudyNotes() {
                     <div className="dash-note-actions" style={{ opacity: 1 }}>
                       <button type="button" className="dash-word-link" onClick={() => restore(n)}>
                         Restore
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {day === STARRED && (
+              <div className="dash-note-list">
+                {starred.length === 0 && (
+                  <div className="dash-word-hint">
+                    Nothing starred yet. Open a note and tap ☆ Star to keep the ones that speak to you here.
+                  </div>
+                )}
+                {starred.map((n) => (
+                  <article key={n.id} className="dash-note-trash dash-note-starred">
+                    <div className="dash-note-ref">
+                      <span className="text-[12px] text-[var(--colour-amber-soft)]">
+                        {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
+                        {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
+                        {n.page != null ? ` · Page ${n.page}` : ""}
+                      </span>
+                    </div>
+                    <div className="dash-note-body">
+                      <NoteText text={n.text} />
+                    </div>
+                    <div className="dash-note-actions" style={{ opacity: 1 }}>
+                      <button type="button" className="dash-word-link" onClick={() => openResult(n)}>
+                        Open this day →
+                      </button>
+                      <span className="flex-1" />
+                      <button type="button" className="dash-word-link" onClick={() => toggleStar(n)}>
+                        Remove star
                       </button>
                     </div>
                   </article>
@@ -1219,11 +1293,11 @@ export function StudyNotes() {
               </div>
             )}
 
-            {day !== TRASH && loaded && dayNotes.length === 0 && (
+            {!special && loaded && dayNotes.length === 0 && (
               <div className="dash-word-hint mb-4">No notes on this day yet - write them below.</div>
             )}
 
-            {day !== TRASH && dayNotes.length > 0 && (
+            {!special && dayNotes.length > 0 && (
               <div className="dash-note-section-row">
                 <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
                   <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
@@ -1247,7 +1321,7 @@ export function StudyNotes() {
               </div>
             )}
 
-            {day !== TRASH && sections.notes && (
+            {!special && sections.notes && (
             <div className="dash-note-list">
               {dayNotes.map((n, i) => {
                 const p = passageOf(n);
@@ -1274,6 +1348,7 @@ export function StudyNotes() {
                       >
                         <span className="dash-note-head-ref">
                           {p ? formatPassage(p) : "Note"}
+                          {n.starredAt ? <span className="dash-note-star" aria-label="Starred"> ★</span> : null}
                           {client.sharing && n.private ? " 🔒" : ""}
                         </span>
                         <span className="dash-note-head-text">{open ? "" : preview}</span>
@@ -1363,6 +1438,14 @@ export function StudyNotes() {
                                   {v ? "Hide verse" : "Read verse"}
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                className={`dash-word-link ${n.starredAt ? "is-starred" : ""}`}
+                                onClick={() => toggleStar(n)}
+                                title={n.starredAt ? "Take the star off" : "Keep this note in your starred notes"}
+                              >
+                                {n.starredAt ? "★ Starred" : "☆ Star"}
+                              </button>
                               {client.sharing && (
                                 <button
                                   type="button"
@@ -1446,7 +1529,7 @@ export function StudyNotes() {
             )}
 
             {/* ── Write for this day ─────────────────────────────── */}
-            {day !== TRASH && (
+            {!special && (
             <div className="dash-note-write">
               <NoteStarter
                 key={`${day}:${loaded ? 1 : 0}`}

@@ -5,6 +5,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { forgetMe, MemberOnly, useMe } from "@/components/study/shell";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 import { InstallCard } from "@/components/study/install-card";
+import { Reminders } from "@/components/study/reminders";
 
 const MIN_PASSWORD = 8;
 
@@ -197,9 +198,20 @@ function Account() {
         </div>
 
         <div className="dash-col-6">
-          <Panel eyebrow="On your phone" title="Get The Study as an app">
-            <InstallCard />
-          </Panel>
+          <div id="reminder">
+            <Panel eyebrow="Each day" title="Daily reminder">
+              <p className="dash-word-hint mb-3">
+                A gentle nudge on this phone or computer when it&apos;s time for the day&apos;s reading - &ldquo;Day 277 is
+                ready&rdquo;. Skipped on days you&apos;ve already marked as read. Turn it on on each device you use.
+              </p>
+              <Reminders />
+            </Panel>
+          </div>
+          <div className="mt-[18px]">
+            <Panel eyebrow="On your phone" title="Get The Study as an app">
+              <InstallCard />
+            </Panel>
+          </div>
 
           <div className="mt-[18px]">
           <Panel eyebrow="Reading comfort" title="Light or dark">
@@ -233,9 +245,14 @@ function Account() {
                 Everything you write - every note, word and day - is saved permanently, and a full copy is backed up every
                 night. Nothing is ever wiped. Your journal is private to you, and you can download your own copy any time.
               </p>
-              <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>
-                {downloading ? "Preparing…" : "Download my journal"}
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>
+                  {downloading ? "Preparing…" : "Download my journal"}
+                </button>
+                <a className="dash-btn dash-btn-ghost" href="/study/print">
+                  Print my journal
+                </a>
+              </div>
             </Panel>
           </div>
 

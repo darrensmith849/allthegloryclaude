@@ -1,7 +1,7 @@
 /**
  * The owner's weekly reflection, for members.
  *
- *   GET                                 -> { reflection | null, replies }  the latest, and your replies to it
+ *   GET                                 -> { reflection | null, replies }  the latest (with its memory verse), and your replies to it
  *   POST { reflectionId, text }          -> { reply }   a private reply - only the owner reads it
  */
 import { getDb } from "@/lib/analytics/store";
@@ -18,8 +18,10 @@ export async function GET(req: Request) {
   const member = await getMember(req, db);
   if (!member) return Response.json({ error: "Please log in.", login: true }, { status: 401 });
   const reflection = await db
-    .prepare("SELECT id, title, body, question, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 1")
-    .first<{ id: string; title: string; body: string; question: string | null; published_at: number }>();
+    .prepare(
+      "SELECT id, title, body, question, memory_verse, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 1",
+    )
+    .first<{ id: string; title: string; body: string; question: string | null; memory_verse: string | null; published_at: number }>();
   const { results: replies } = reflection
     ? await db
         .prepare("SELECT id, text, created_at FROM checkin_replies WHERE reflection_id = ?1 AND member_id = ?2 ORDER BY created_at")
@@ -33,6 +35,7 @@ export async function GET(req: Request) {
         title: reflection.title,
         body: reflection.body,
         question: reflection.question,
+        memoryVerse: reflection.memory_verse ?? null,
         publishedAt: reflection.published_at,
       },
       replies: replies.map((r) => ({ id: r.id, text: r.text, createdAt: r.created_at })),

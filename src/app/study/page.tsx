@@ -12,6 +12,8 @@ import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
 import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
+import { CatchUp, missedDays } from "@/components/study/catch-up";
+import { MemoryVerse } from "@/components/study/memory-verse";
 
 export default function StudyHome() {
   const me = useMe();
@@ -42,14 +44,13 @@ export default function StudyHome() {
   }, [readable, today]);
 
   // This week's reflection from the owner (members).
-  const [weekly, setWeekly] = useState<{ title: string; body: string; question: string | null } | null>(null);
+  type Weekly = { id: string; title: string; body: string; question: string | null; memoryVerse?: string | null };
+  const [weekly, setWeekly] = useState<Weekly | null>(null);
   useEffect(() => {
     if (!memberId) return;
     fetch("/api/study/weekly", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { reflection?: { title: string; body: string; question: string | null } | null } | null) =>
-        setWeekly(d?.reflection ?? null),
-      )
+      .then((d: { reflection?: Weekly | null } | null) => setWeekly(d?.reflection ?? null))
       .catch(() => {});
   }, [memberId]);
 
@@ -83,6 +84,7 @@ export default function StudyHome() {
 
   // Where they left off: the latest day they wrote in or ticked as read.
   const [lastDay, setLastDay] = useState<string | null>(null);
+  const [noteDays, setNoteDays] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     if (!memberId) return;
     try {
@@ -90,11 +92,9 @@ export default function StudyHome() {
         day: string | null;
         deletedAt: number | null;
       }[];
-      const latest = notes
-        .filter((n) => n.day && !n.deletedAt)
-        .map((n) => n.day as string)
-        .sort()
-        .pop();
+      const written = notes.filter((n) => n.day && !n.deletedAt).map((n) => n.day as string);
+      setNoteDays(new Set(written));
+      const latest = written.sort().pop();
       if (latest) setLastDay((d) => (d && d > latest ? d : latest));
     } catch {
       // private window
@@ -103,12 +103,14 @@ export default function StudyHome() {
 
   // The member's reading progress.
   const [days, setDays] = useState<StudyDay[]>([]);
+  const [daysLoaded, setDaysLoaded] = useState(false);
   useEffect(() => {
     if (!memberId) return;
     fetch("/api/study/days", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { days?: StudyDay[] } | null) => {
         setDays(d?.days ?? []);
+        setDaysLoaded(true);
         const lastRead = (d?.days ?? []).filter((x) => x.readAt).map((x) => x.day).sort().pop();
         if (lastRead) setLastDay((cur) => (cur && cur > lastRead ? cur : lastRead));
       })
@@ -116,6 +118,12 @@ export default function StudyHome() {
   }, [memberId]);
   const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
   const readThisYear = [...read].filter((d) => d.startsWith(today.slice(0, 4))).length;
+  // Days missed lately (not read and nothing written), since they joined.
+  const joined = me.member ? new Date(me.member.createdAt).toLocaleDateString("en-CA") : today;
+  const missed = useMemo(
+    () => (memberId && daysLoaded ? missedDays(today, joined, new Set([...read, ...noteDays])) : []),
+    [memberId, daysLoaded, today, joined, read, noteDays],
+  );
   const streak = useMemo(() => {
     let d = read.has(today) ? today : shiftDay(today, -1);
     let count = 0;
@@ -213,6 +221,14 @@ export default function StudyHome() {
         </Link>
       )}
 
+      {me.member && missed.length > 0 && (
+        <CatchUp
+          missed={missed}
+          hideKey={`atg:study:${me.member.id}:catchupHidden`}
+          onRead={(made) => setDays((list) => [...list.filter((x) => !made.some((m) => m.day === x.day)), ...made])}
+        />
+      )}
+
       {weekly && (
         <Link href="/study/community" className="study-weekly">
           <span className="eyebrow eyebrow-amber">This week from {author ?? "the study"}</span>
@@ -221,6 +237,7 @@ export default function StudyHome() {
           <span className="study-weekly-go">{weekly.question ? "Read it and check in →" : "Read it →"}</span>
         </Link>
       )}
+      {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={author} />}
 
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">
@@ -290,6 +307,9 @@ export default function StudyHome() {
             <span className="dash-read-bar" aria-hidden>
               <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
             </span>
+            <Link href="/study/account#reminder" className="study-remind-link">
+              🔔 Get a daily reminder on your phone →
+            </Link>
           </div>
         )}
       </section>
@@ -308,6 +328,24 @@ export default function StudyHome() {
             <span className="study-card-title">My journal</span>
             <span className="study-card-text">
               Your notes and word studies on a calendar - private to you, kept for good.
+            </span>
+          </Link>
+        )}
+        {me.member && (
+          <Link href="/study/prayers" className="study-card">
+            <span className="eyebrow eyebrow-amber">Private to you</span>
+            <span className="study-card-title">Prayer list</span>
+            <span className="study-card-text">
+              What you&apos;re praying for - and, when God answers, the date and how. Look back on His faithfulness.
+            </span>
+          </Link>
+        )}
+        {me.member && (
+          <Link href="/study/journal?day=starred" className="study-card">
+            <span className="eyebrow eyebrow-amber">Your highlights</span>
+            <span className="study-card-title">Starred notes</span>
+            <span className="study-card-text">
+              Tap ☆ Star on any note that speaks to you, and find them all here. Print them too, from your journal.
             </span>
           </Link>
         )}

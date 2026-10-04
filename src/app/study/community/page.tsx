@@ -37,6 +37,7 @@ interface Question {
   askerName?: string;
 }
 interface Weekly {
+  memoryVerse?: string | null;
   id: string;
   title: string;
   body: string;
@@ -228,6 +229,11 @@ function Community() {
                 <div className="dash-community-body">
                   <NoteText text={weekly.body} />
                 </div>
+                {weekly.memoryVerse && (
+                  <a href="/study" className="dash-community-memory">
+                    Memory verse this week: <strong>{weekly.memoryVerse}</strong> - on your home page →
+                  </a>
+                )}
                 {weekly.question && (
                   <div className="dash-checkin">
                     <div className="eyebrow eyebrow-amber">Check-in</div>

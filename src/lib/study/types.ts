@@ -53,3 +53,14 @@ export interface ReaderData {
   words: ReaderWord[];
   hidden?: number;
 }
+
+// A member's prayer list entry (/api/study/prayers).
+export interface Prayer {
+  id: string;
+  text: string;
+  ref: string | null; // a verse they're praying, e.g. "Philippians 4:6"
+  answeredAt: number | null;
+  answer: string | null; // how it was answered
+  deletedAt: number | null;
+  createdAt: number;
+}

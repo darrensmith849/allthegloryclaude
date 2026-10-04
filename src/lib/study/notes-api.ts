@@ -9,6 +9,7 @@
  *   PATCH  { id, ...note }                -> { note }   edit one note
  *   PATCH  { id, restore: true }          -> { note }   back from Recently deleted
  *   PATCH  { id, private: boolean }       -> { note }   keep out of the shared study
+ *   PATCH  { id, star: boolean }          -> { note }   star as a highlight (or not)
  *   PATCH  { moves: [{ id, position }] }  -> { notes }  reorder
  *   PATCH  { ids: [...], day?, page? }    -> { notes }  set day / page on many
  *   DELETE ?id=...                        -> 204        to Recently deleted
@@ -33,6 +34,7 @@ interface Row {
   position: number | null;
   deleted_at: number | null;
   private: number | null;
+  starred_at?: number | null;
   book: number | null;
   chapter: number | null;
   verse: number | null;
@@ -50,6 +52,7 @@ const toNote = (r: Row): StudyNote => ({
   position: r.position ?? r.seq,
   deletedAt: r.deleted_at ?? null,
   private: Boolean(r.private),
+  starredAt: r.starred_at ?? null,
   book: r.book,
   chapter: r.chapter,
   verse: r.verse,
@@ -94,6 +97,7 @@ function insert(db: D1Db, s: Scope, n: NoteInput, seq: number, now: number) {
     position: seq,
     deletedAt: null,
     private: false,
+    starredAt: null,
     createdAt: now,
     updatedAt: now,
     ...n,
@@ -206,6 +210,7 @@ export function notesApi(scopeOf: ScopeOf) {
       moves?: unknown;
       restore?: unknown;
       private?: unknown;
+      star?: unknown;
     };
     const now = Date.now();
     const notFound = () => Response.json({ error: "Note not found." }, { status: 404 });
@@ -242,6 +247,16 @@ export function notesApi(scopeOf: ScopeOf) {
         await db
           .prepare(`UPDATE ${s.notes} SET private = ?, updated_at = ? WHERE id = ?${andMine(s)}`)
           .bind(body.private ? 1 : 0, now, body.id, ...mineArgs(s))
+          .run();
+        const [note] = await fetchNotes(db, s, [body.id]);
+        return note ? Response.json({ note }) : notFound();
+      }
+
+      // Star a note as a highlight (or take the star off).
+      if (typeof body.star === "boolean" && typeof body.id === "string" && !("text" in body)) {
+        await db
+          .prepare(`UPDATE ${s.notes} SET starred_at = ?, updated_at = ? WHERE id = ?${andMine(s)}`)
+          .bind(body.star ? now : null, now, body.id, ...mineArgs(s))
           .run();
         const [note] = await fetchNotes(db, s, [body.id]);
         return note ? Response.json({ note }) : notFound();

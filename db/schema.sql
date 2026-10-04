@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS study_notes (
   position   REAL,                -- order within a day/page; starts as seq
   deleted_at INTEGER,             -- epoch ms when moved to Recently deleted
   private    INTEGER NOT NULL DEFAULT 0, -- 1 = never included when the study is shared
+  starred_at INTEGER,             -- starred as a highlight (ALTER TABLE study_notes ADD COLUMN starred_at INTEGER)
   book       INTEGER,             -- 1-66, canonical order (nullable)
   chapter    INTEGER,
   verse      INTEGER,
@@ -222,6 +223,7 @@ CREATE TABLE IF NOT EXISTS member_notes (
   position   REAL,
   deleted_at INTEGER,
   private    INTEGER NOT NULL DEFAULT 0,
+  starred_at INTEGER,             -- (ALTER TABLE member_notes ADD COLUMN starred_at INTEGER)
   book       INTEGER,
   chapter    INTEGER,
   verse      INTEGER,
@@ -349,6 +351,7 @@ CREATE TABLE IF NOT EXISTS weekly_reflections (
   title        TEXT NOT NULL,
   body         TEXT NOT NULL,
   question     TEXT,
+  memory_verse TEXT,               -- the week's memory verse, e.g. "John 4:14" (ALTER TABLE weekly_reflections ADD COLUMN memory_verse TEXT)
   published_at INTEGER NOT NULL,
   updated_at   INTEGER NOT NULL,
   deleted_at   INTEGER
@@ -383,3 +386,43 @@ CREATE TABLE IF NOT EXISTS community_questions (
 );
 CREATE INDEX IF NOT EXISTS idx_questions_status ON community_questions(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_questions_member ON community_questions(member_id);
+
+
+-- A member's private prayer list. Answered prayers keep the date and how.
+-- Removing one moves it to deleted_at (restorable); account deletion removes all.
+CREATE TABLE IF NOT EXISTS member_prayers (
+  id          TEXT PRIMARY KEY,
+  member_id   TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  ref         TEXT,                  -- a verse they're praying, optional
+  answered_at INTEGER,               -- epoch ms
+  answer      TEXT,                  -- how it was answered, optional
+  deleted_at  INTEGER,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_prayers_member ON member_prayers(member_id, created_at);
+
+-- Memory verses a member has ticked as known by heart.
+CREATE TABLE IF NOT EXISTS member_memory (
+  member_id     TEXT NOT NULL,
+  ref           TEXT NOT NULL,       -- "John 4:14"
+  reflection_id TEXT,
+  known_at      INTEGER NOT NULL,
+  PRIMARY KEY (member_id, ref)
+);
+
+-- Daily reading reminders: one row per device that turned them on (a Web
+-- Push subscription). Sent hourly by the Cron Trigger in custom-worker.ts
+-- at the member's chosen local hour; no message body, so nothing personal
+-- passes through the push service.
+CREATE TABLE IF NOT EXISTS member_reminders (
+  endpoint   TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  hour       INTEGER NOT NULL,       -- local hour, 0-23
+  tz         TEXT NOT NULL,          -- IANA time zone, e.g. Africa/Johannesburg
+  last_sent  TEXT,                   -- local date last sent, YYYY-MM-DD
+  failures   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_reminders_member ON member_reminders(member_id);

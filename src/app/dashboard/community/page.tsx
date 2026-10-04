@@ -31,6 +31,7 @@ interface Weekly {
   title: string;
   body: string;
   question: string | null;
+  memoryVerse?: string | null;
   publishedAt: number;
   replies: number;
 }
@@ -125,7 +126,12 @@ export default function CommunityAdminPage() {
   const [answers, setAnswers] = useState<Record<string, { text: string; publish: boolean }>>({});
   const [showAnswered, setShowAnswered] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ title: "", body: "", question: "How are you doing this week - what's God been showing you?" });
+  const [draft, setDraft] = useState({
+    title: "",
+    body: "",
+    question: "How are you doing this week - what's God been showing you?",
+    memoryVerse: "",
+  });
   const [posting, setPosting] = useState(false);
   const [showShared, setShowShared] = useState(false);
 
@@ -185,11 +191,22 @@ export default function CommunityAdminPage() {
     try {
       const { weekly: w } = await api<{ weekly: Weekly }>("POST", { weekly: draft });
       setWeekly((list) => [w, ...list]);
-      setDraft({ title: "", body: "", question: draft.question });
+      setDraft({ title: "", body: "", question: draft.question, memoryVerse: "" });
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't post that.");
     } finally {
       setPosting(false);
+    }
+  }
+
+  async function setMemoryVerse(w: Weekly) {
+    const next = prompt("Memory verse for this week, e.g. John 4:14 - leave it empty to remove it.", w.memoryVerse ?? "");
+    if (next === null) return;
+    try {
+      const { memoryVerse } = await api<{ memoryVerse: string | null }>("PATCH", { weekly: w.id, memoryVerse: next });
+      setWeekly((list) => list.map((x) => (x.id === w.id ? { ...x, memoryVerse } : x)));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't save that.");
     }
   }
 
@@ -374,6 +391,20 @@ export default function CommunityAdminPage() {
               value={draft.question}
               onChange={(e) => setDraft({ ...draft, question: e.target.value })}
             />
+            <label className="dash-label mt-3" htmlFor="cmv">
+              Memory verse for the week · optional
+            </label>
+            <input
+              id="cmv"
+              className="dash-input"
+              placeholder="e.g. John 4:14"
+              value={draft.memoryVerse}
+              onChange={(e) => setDraft({ ...draft, memoryVerse: e.target.value })}
+            />
+            <p className="dash-word-hint mt-1">
+              Members see it on their home page with the words (BSB) and a link to the NIV, and tick it when they know it by
+              heart.
+            </p>
             <button
               type="button"
               className="dash-btn dash-btn-primary mt-3"
@@ -398,7 +429,13 @@ export default function CommunityAdminPage() {
                       </div>
                       <div className="dash-word-hint">
                         {when(w.publishedAt)} · {w.replies} {w.replies === 1 ? "reply" : "replies"}
+                        {w.memoryVerse ? ` · Memory verse: ${w.memoryVerse}` : ""}
                       </div>
+                      {i === 0 && (
+                        <button type="button" className="dash-word-link" onClick={() => setMemoryVerse(w)}>
+                          {w.memoryVerse ? "Change the memory verse" : "+ Add a memory verse"}
+                        </button>
+                      )}
                     </div>
                     <button type="button" className="dash-word-link" onClick={() => takeDown(w)}>
                       Take down

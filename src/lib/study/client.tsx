@@ -28,6 +28,7 @@ export interface StudyClient {
   loginUrl: string;
   notesUrl: string;
   wordsUrl: string;
+  printUrl: string; // the journal laid out to print or save as PDF
   readerUrl?: string; // owner: preview of the shared study
   studyUrl?: string; // member: the owner's study, when it's open to them
   studyName?: string; // member: what the owner's study is called, e.g. "Daniel's study"
@@ -60,6 +61,7 @@ export const OWNER_CLIENT: StudyClient = {
   loginUrl: "/dashboard/login",
   notesUrl: "/dashboard/notes",
   wordsUrl: "/dashboard/word-study",
+  printUrl: "/dashboard/print",
   readerUrl: "/dashboard/notes/read",
   sharing: true,
   key: (name) => OWNER_KEYS[name],
@@ -79,6 +81,7 @@ export function memberClient(
     loginUrl: "/study/login",
     notesUrl: "/study/journal",
     wordsUrl: "/study/words",
+    printUrl: "/study/print",
     studyUrl: opts.canReadStudy ? "/study/read" : undefined,
     studyName: author ? `${author}'s study` : "The study",
     studyAuthor: author,

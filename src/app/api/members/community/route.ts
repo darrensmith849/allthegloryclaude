@@ -4,8 +4,8 @@
  *
  *   GET [?count=1]                            -> { posts, reports, weekly, replies } | { pending, unread }
  *   PATCH { post: id, status: "approved" | "declined" } -> { ok }
- *   POST  { weekly: { title, body, question? } }        -> { weekly }   publish this week's reflection
- *   PATCH { weekly: id, title?, body?, question? }      -> { ok }       edit it
+ *   POST  { weekly: { title, body, question?, memoryVerse? } } -> { weekly }   publish this week's reflection
+ *   PATCH { weekly: id, title?, body?, question?, memoryVerse? } -> { ok }   edit it ("" memoryVerse clears it)
  *   DELETE ?weekly=id                                    -> { ok }       take it down (kept)
  *   PATCH { reply: id | "all", read: true }             -> { ok }
  *   PATCH { question: id, answer?, publish? }           -> { ok }   answer a member's question / share it as a Q&A
@@ -13,6 +13,7 @@
  */
 import { getSettings } from "@/lib/study/members";
 import { getDb } from "@/lib/analytics/store";
+import { cleanVerseRef } from "@/lib/study/memory";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,7 @@ export async function GET(req: Request) {
         title: w.title,
         body: w.body,
         question: w.question,
+        memoryVerse: w.memory_verse ?? null,
         publishedAt: w.published_at,
         replies: Number(w.replies ?? 0),
       })),
@@ -146,6 +148,14 @@ export async function PATCH(req: Request) {
       )
       .bind(body.weekly, title || null, text || null, question, now)
       .run();
+    if ("memoryVerse" in body) {
+      const verse = String(body.memoryVerse ?? "").trim() ? cleanVerseRef(body.memoryVerse) : null;
+      if (String(body.memoryVerse ?? "").trim() && !verse) {
+        return Response.json({ error: "Write the memory verse like John 4:14 (a verse or a few)." }, { status: 400 });
+      }
+      await db.prepare("UPDATE weekly_reflections SET memory_verse = ?2, updated_at = ?3 WHERE id = ?1").bind(body.weekly, verse, now).run();
+      return Response.json({ ok: true, memoryVerse: verse });
+    }
     return Response.json({ ok: true });
   }
   if (typeof body.question === "string") {
@@ -178,18 +188,27 @@ export async function PATCH(req: Request) {
 export async function POST(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
-  const body = (await req.json().catch(() => ({}))) as { weekly?: { title?: unknown; body?: unknown; question?: unknown } };
+  const body = (await req.json().catch(() => ({}))) as {
+    weekly?: { title?: unknown; body?: unknown; question?: unknown; memoryVerse?: unknown };
+  };
   const title = String(body.weekly?.title ?? "").trim().slice(0, 160);
   const text = String(body.weekly?.body ?? "").trim().slice(0, 8000);
   const question = String(body.weekly?.question ?? "").trim().slice(0, 300) || null;
   if (!title || !text) return Response.json({ error: "Add a title and your reflection." }, { status: 400 });
+  const rawVerse = String(body.weekly?.memoryVerse ?? "").trim();
+  const memoryVerse = rawVerse ? cleanVerseRef(rawVerse) : null;
+  if (rawVerse && !memoryVerse) {
+    return Response.json({ error: "Write the memory verse like John 4:14 (a verse or a few)." }, { status: 400 });
+  }
   const id = crypto.randomUUID();
   const now = Date.now();
   await db
-    .prepare("INSERT INTO weekly_reflections (id, title, body, question, published_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)")
-    .bind(id, title, text, question, now)
+    .prepare(
+      "INSERT INTO weekly_reflections (id, title, body, question, memory_verse, published_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+    )
+    .bind(id, title, text, question, memoryVerse, now)
     .run();
-  return Response.json({ weekly: { id, title, body: text, question, publishedAt: now, replies: 0 } });
+  return Response.json({ weekly: { id, title, body: text, question, memoryVerse, publishedAt: now, replies: 0 } });
 }
 
 export async function DELETE(req: Request) {

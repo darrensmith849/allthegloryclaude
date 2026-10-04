@@ -270,6 +270,9 @@ export const MEMBER_TABLES = [
   "community_reports",
   "checkin_replies",
   "community_questions",
+  "member_prayers",
+  "member_memory",
+  "member_reminders",
 ] as const;
 
 // ── The owner's email list (table email_list) ────────────────────

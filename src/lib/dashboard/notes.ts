@@ -20,6 +20,7 @@ export interface StudyNote {
   position: number; // order within its day / page - movable
   deletedAt: number | null; // in Recently deleted since (epoch ms); never removed
   private: boolean; // never included when the study is shared
+  starredAt?: number | null; // starred as a highlight since (epoch ms)
   book: number | null; // 1-66
   chapter: number | null;
   verse: number | null;
