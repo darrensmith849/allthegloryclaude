@@ -3772,3 +3772,118 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .study-remind-link { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--colour-glow); }
 .dash-community-memory { display: inline-block; margin-top: 12px; font-size: 13.5px; color: var(--colour-glow); }
 .dash-community-memory strong { color: var(--colour-ink-strong); }
+
+/* ── Phones and tablets ─────────────────────────────────────────────── */
+/* The members' menu scrolls inside its own row - never makes the page
+ * wider than the phone - and fades at the edge to show there's more. */
+@media (max-width: 900px) {
+  .study-app { grid-template-columns: minmax(0, 1fr); }
+  .study-sidebar,
+  .study-main { min-width: 0; }
+  .study-side-nav {
+    -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
+    mask-image: linear-gradient(90deg, #000 82%, transparent);
+    scroll-padding-inline: 16px;
+  }
+  .study-side-nav.is-end { -webkit-mask-image: none; mask-image: none; }
+  .study-side-nav .dash-nav-link { padding: 9px 14px; }
+  .study-side-foot .dash-nav-link { padding: 8px 10px; }
+}
+/* Stacked (phones / tablets): the day comes first, the calendar under it. */
+@media (max-width: 1100px) {
+  .dash-note-side { display: contents; }
+  .dash-note-side > * { order: 2; margin-top: 0 !important; }
+  .dash-note-main { order: 1; }
+}
+.dash-only-stacked { display: none; }
+@media (max-width: 1100px) {
+  .dash-only-stacked { display: inline-flex; }
+}
+@media (max-width: 960px) {
+  .dash-reader-main { order: 1; }
+  .dash-reader-side { order: 2; }
+}
+/* Phones: a little less padding so text has room. */
+@media (max-width: 640px) {
+  .dash-panel-head { padding: 16px 16px 4px; }
+  .dash-panel-body { padding: 16px 16px 18px; }
+  .dash-daniel-head { padding-left: 14px; padding-right: 14px; }
+  .dash-daniel-body { padding: 14px 14px 16px; }
+  .dash-starter { padding: 12px 12px 14px; }
+  .dash-hide-phone { display: none !important; }
+  .dash-print-tools .dash-btn-primary { width: 100%; justify-content: center; }
+}
+/* Typing boxes at 16px on phones - smaller makes iPhones zoom in on tap. */
+@media (max-width: 900px), (pointer: coarse) {
+  .dash-input,
+  .dash-textarea,
+  .dash-select,
+  .study-root input:not([type="checkbox"]):not([type="radio"]),
+  .study-root textarea,
+  .study-root select,
+  .dash-root input:not([type="checkbox"]):not([type="radio"]),
+  .dash-root textarea,
+  .dash-root select { font-size: 16px; }
+}
+/* Touch screens: small text links get a finger-sized tap area (no layout change). */
+@media (pointer: coarse) {
+  .dash-word-link,
+  .dash-plan-link,
+  .study-remind-link,
+  .dash-community-memory { position: relative; }
+  .dash-word-link::after,
+  .dash-plan-link::after,
+  .study-remind-link::after,
+  .dash-community-memory::after { content: ""; position: absolute; inset: -9px -6px; }
+  .dash-word-link { font-size: 13.5px; }
+  .hide-touch { display: none; }
+}
+.eyebrow { text-wrap: balance; }
+.dash-print-cover h1 { line-height: 1.15; }
+@media (max-width: 640px) {
+  .dash-print-cover h1 { font-size: 28px; }
+  .dash-print-day h2 { font-size: 21px; }
+}
+
+/* Owner's dashboard on phones: a compact bar with a Menu button. */
+.dash-brand-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dash-brand-here { display: none; }
+.dash-menu-toggle { display: none; }
+.dash-side-menu { display: flex; flex-direction: column; flex: 1 1 auto; }
+@media (max-width: 900px) {
+  .dash-root { grid-template-columns: minmax(0, 1fr); }
+  .dash-main { min-width: 0; }
+  .dash-sidebar { padding: 14px 16px 12px; }
+  .dash-brand { padding: 0; }
+  .dash-brand-row { align-items: center; }
+  .dash-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--gold-rgb) / 0.4);
+    background: var(--field);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--colour-ink-strong);
+  }
+  .dash-side-theme:not(.is-open),
+  .dash-side-menu:not(.is-open) { display: none !important; }
+  .dash-side-menu nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
+  .dash-side-menu nav .dash-nav-link { padding: 10px 12px; }
+  .dash-side-menu > .mt-auto { padding-top: 12px; flex-direction: row; flex-wrap: wrap; gap: 4px 8px; }
+}
+/* Stacked: one column exactly the screen's width, and panel headings let
+ * their buttons drop below the title instead of squeezing it. */
+@media (max-width: 1100px) {
+  .dash-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .dash-panel-head { flex-wrap: wrap; align-items: flex-end; row-gap: 10px; }
+  .dash-panel-head > div:first-child { flex: 1 1 150px; min-width: 0; }
+  .dash-pagehead { flex-wrap: wrap; }
+  .dash-brand-title { display: none; }
+  .dash-brand-here { display: inline !important; font-size: inherit !important; color: inherit !important; }
+}

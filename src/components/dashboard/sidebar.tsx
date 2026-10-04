@@ -33,13 +33,36 @@ export default function DashboardSidebar() {
       )
       .catch(() => {});
   }, [pathname]);
+  // Phones: the menu folds away behind a Menu button so each page starts at
+  // the top of the screen; it closes again once you pick a page.
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [pathname]);
+  const here = NAV.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
   return (
     <aside className="dash-sidebar">
       <div className="dash-brand">
-        <div className="eyebrow eyebrow-amber">All The Glory</div>
-        <div className="font-display text-[20px] tracking-tight mt-1">Private dashboard</div>
-        <ThemeSwitch className="mt-4" />
+        <div className="dash-brand-row">
+          <div className="min-w-0">
+            <div className="eyebrow eyebrow-amber">All The Glory</div>
+            <div className="font-display text-[20px] tracking-tight mt-1">
+              <span className="dash-brand-title">Private dashboard</span>
+              {here && <span className="dash-brand-here">{here.label}</span>}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="dash-menu-toggle"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="dash-side-menu"
+          >
+            {open ? "Close ✕" : "Menu"}
+            {!open && waiting > 0 && <span className="dash-nav-badge">{waiting}</span>}
+          </button>
+        </div>
+        <ThemeSwitch className={`mt-4 dash-side-theme ${open ? "is-open" : ""}`} />
       </div>
+      <div id="dash-side-menu" className={`dash-side-menu ${open ? "is-open" : ""}`}>
       <nav className="mt-7 flex flex-col gap-1">
         {NAV.map((item) => {
           const active =
@@ -76,6 +99,7 @@ export default function DashboardSidebar() {
         >
           Log out
         </button>
+      </div>
       </div>
     </aside>
   );

@@ -122,6 +122,22 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         ]
       : []),
   ];
+  // Phones: the menu is one scrolling row - keep the open page's pill in
+  // view, and drop the edge fade once it's scrolled to the end.
+  const navRef = useRef<HTMLElement>(null);
+  const markNavEnd = () => {
+    const el = navRef.current;
+    if (el) el.classList.toggle("is-end", el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    const el = navRef.current;
+    const active = el?.querySelector<HTMLElement>(".is-active");
+    if (el && active && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft = active.offsetLeft - el.clientWidth / 2 + active.offsetWidth / 2;
+    }
+    markNavEnd();
+  }, [pathname, me.loaded]);
+
   const bare = ["/study/login", "/study/join", "/study/reset"].includes(pathname ?? "");
 
   const body = (
@@ -150,7 +166,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <ThemeSwitch className="mt-4 study-side-theme" />
-        <nav className="study-side-nav" aria-label="The Study">
+        <nav className="study-side-nav" aria-label="The Study" ref={navRef} onScroll={markNavEnd}>
           {nav.map((n) => {
             const active =
               n.href === "/study"

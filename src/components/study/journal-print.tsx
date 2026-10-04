@@ -88,6 +88,13 @@ export function JournalPrint({ name }: { name?: string }) {
 
   return (
     <div className="dash-print">
+      <div className="dash-pagehead no-print">
+        <div>
+          <div className="eyebrow eyebrow-amber">Keep it on paper</div>
+          <h1 className="dash-title mt-1">Print my journal</h1>
+          <div className="dash-subtitle">A month or a year of your notes, laid out like a book - print it, or save it as a PDF.</div>
+        </div>
+      </div>
       <div className="dash-print-tools no-print">
         <div className="dash-toggle">
           <button type="button" className={range === "month" ? "is-on" : ""} onClick={() => setRange("month")}>

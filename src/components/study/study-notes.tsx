@@ -326,6 +326,14 @@ export function StudyNotes() {
     setEditing(null);
     setError(null);
   }
+  // From the calendar: open the day, and on phones / tablets (where the day
+  // sits above the calendar) bring it into view.
+  function pickDay(d: string) {
+    openDay(d);
+    if (window.matchMedia("(max-width: 1100px)").matches) {
+      window.setTimeout(() => document.getElementById("journal-day")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    }
+  }
 
   // ── The open day ──────────────────────────────────────────────
   const liveNotes = useMemo(() => notes.filter((n) => !n.deletedAt), [notes]);
@@ -734,11 +742,11 @@ export function StudyNotes() {
           >
             Print
           </a>
-          <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setImportOpen((v) => !v)}>
+          <button type="button" className="dash-btn dash-btn-ghost dash-hide-phone" onClick={() => setImportOpen((v) => !v)}>
             {importOpen ? "Close" : "Paste many days"}
           </button>
           {liveNotes.length > 0 && (
-            <button type="button" className="dash-btn dash-btn-ghost" onClick={download}>
+            <button type="button" className="dash-btn dash-btn-ghost dash-hide-phone" onClick={download}>
               Download
             </button>
           )}
@@ -858,7 +866,7 @@ export function StudyNotes() {
                 >
                   ‹
                 </button>
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(today)}>
+                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(today)}>
                   Today
                 </button>
                 <button
@@ -900,7 +908,7 @@ export function StudyNotes() {
                           <button
                             key={d}
                             type="button"
-                            onClick={() => openDay(d)}
+                            onClick={() => pickDay(d)}
                             title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
                             className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${
                               d === day ? "is-selected" : ""
@@ -931,7 +939,7 @@ export function StudyNotes() {
                   <button
                     key={d}
                     type="button"
-                    onClick={() => openDay(d)}
+                    onClick={() => pickDay(d)}
                     className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                       d === day ? "is-selected" : ""
                     } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""}`}
@@ -1076,7 +1084,7 @@ export function StudyNotes() {
         </div>
 
         {/* ── The open day ────────────────────────────────────────── */}
-        <div className="dash-col-7">
+        <div className="dash-col-7 dash-note-main" id="journal-day">
           <Panel
             eyebrow={
               day === TRASH
@@ -1108,6 +1116,17 @@ export function StudyNotes() {
                       Reader view
                     </a>
                   )}
+                  <button
+                    type="button"
+                    className="dash-btn dash-btn-ghost dash-note-nav dash-only-stacked"
+                    onClick={() =>
+                      document.querySelector(".dash-note-side > *")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                    aria-label="Calendar"
+                    title="Calendar"
+                  >
+                    📅
+                  </button>
                   <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
                     ‹
                   </button>
@@ -1582,7 +1601,7 @@ export function StudyNotes() {
                 >
                   {saving ? "Saving…" : preview.length > 1 ? `Save ${preview.length} notes` : "Save note"}
                 </button>
-                <span className="text-[11.5px] text-[var(--colour-ink-faint)]">⌘ / Ctrl + Enter to save · Drafts are kept on this device</span>
+                <span className="text-[11.5px] text-[var(--colour-ink-faint)]"><span className="hide-touch">⌘ / Ctrl + Enter to save · </span>Drafts are kept on this device</span>
                 {error && <span className="text-[12.5px] text-[#f1a07d]">{error}</span>}
               </div>
             </div>

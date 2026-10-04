@@ -105,7 +105,7 @@ function PrayerList() {
         />
         <input
           className="dash-input"
-          placeholder="A verse to pray (optional), e.g. Philippians 4:6"
+          placeholder="A verse (optional), e.g. Phil 4:6"
           value={editing.ref}
           onChange={(e) => setEditing({ ...editing, ref: e.target.value })}
         />
@@ -170,7 +170,7 @@ function PrayerList() {
               <div className="flex gap-2 flex-wrap items-center">
                 <input
                   className="dash-input dash-prayer-ref"
-                  placeholder="A verse to pray (optional), e.g. Philippians 4:6"
+                  placeholder="A verse (optional), e.g. Phil 4:6"
                   value={ref}
                   onChange={(e) => setRef(e.target.value)}
                   aria-label="A verse to pray"

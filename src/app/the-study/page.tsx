@@ -255,7 +255,7 @@ export default function TheStudyPage() {
       <section className="w-full py-10 md:py-14">
         <motion.div {...fade(0.2)} className="max-w-3xl mx-auto px-6 text-center">
           <div className="eyebrow eyebrow-amber mb-4">{author}&apos;s study</div>
-          <p className="font-display text-2xl md:text-[32px] leading-snug text-white/90 italic">&ldquo;{heart}&rdquo;</p>
+          <p className="font-display text-[22px] md:text-[32px] leading-relaxed md:leading-snug text-white/90 italic">&ldquo;{heart}&rdquo;</p>
           <p className="mt-5 text-sm text-white/55">
             Read {author}&apos;s notes and word studies for every day of the reading plan once you&apos;ve joined.
           </p>
