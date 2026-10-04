@@ -3887,3 +3887,38 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
   .dash-brand-title { display: none; }
   .dash-brand-here { display: inline !important; font-size: inherit !important; color: inherit !important; }
 }
+
+/* iPhone: add to Home Screen, step by step */
+.ios-guide { display: flex; flex-direction: column; gap: 12px; }
+.ios-guide-lead { font-size: 14.5px; line-height: 1.55; color: var(--colour-ink); }
+.ios-guide-steps { display: flex; flex-direction: column; gap: 8px; }
+.ios-guide-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--colour-ink-strong);
+}
+.ios-guide-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--colour-amber);
+  color: var(--on-gold);
+  font-size: 13px;
+  font-weight: 700;
+}
+.ios-guide-icon { display: inline-block; width: 20px; height: 20px; vertical-align: -4px; color: #2f7cf6; }
+/* The reminder switch on members' home page */
+.study-remind { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.dash-reminder.is-compact .dash-reminder-title { margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--colour-ink-strong); }
+.study-remind-on { font-size: 13px; font-weight: 600; color: var(--colour-glow); }
+.study-remind .study-remind-link { margin-top: 0; }

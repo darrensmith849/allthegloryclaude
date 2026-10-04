@@ -5,13 +5,14 @@
 // app is the same site, from public/study-manifest.webmanifest.
 
 import { useEffect, useState } from "react";
+import { IosInstallGuide } from "./ios-install-guide";
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-export function InstallCard() {
+export function InstallCard({ stepsAbove = false }: { stepsAbove?: boolean }) {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [installed, setInstalled] = useState(false);
   const [ios, setIos] = useState(false);
@@ -52,12 +53,10 @@ export function InstallCard() {
         >
           Add The Study to my home screen
         </button>
+      ) : ios && stepsAbove ? (
+        <p className="dash-word-hint">Use the 3 steps under Daily reminder above - they put The Study on your Home Screen too.</p>
       ) : ios ? (
-        <ol className="dash-install-steps">
-          <li>Open this page in Safari.</li>
-          <li>Tap the Share button (the square with the arrow).</li>
-          <li>Tap &ldquo;Add to Home Screen&rdquo;, then Add.</li>
-        </ol>
+        <IosInstallGuide />
       ) : (
         <ol className="dash-install-steps">
           <li>On Android: tap the ⋮ menu, then &ldquo;Install app&rdquo; or &ldquo;Add to Home screen&rdquo;.</li>

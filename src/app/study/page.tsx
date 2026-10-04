@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
+import { Reminders } from "@/components/study/reminders";
 
 export default function StudyHome() {
   const me = useMe();
@@ -307,9 +308,9 @@ export default function StudyHome() {
             <span className="dash-read-bar" aria-hidden>
               <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
             </span>
-            <Link href="/study/account#reminder" className="study-remind-link">
-              🔔 Get a daily reminder on your phone →
-            </Link>
+            <div className="study-remind">
+              <Reminders compact />
+            </div>
           </div>
         )}
       </section>

@@ -209,7 +209,7 @@ function Account() {
           </div>
           <div className="mt-[18px]">
             <Panel eyebrow="On your phone" title="Get The Study as an app">
-              <InstallCard />
+              <InstallCard stepsAbove />
             </Panel>
           </div>
 
