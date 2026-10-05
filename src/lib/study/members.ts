@@ -20,6 +20,7 @@ export interface Member {
   name: string;
   createdAt: number;
   helper?: boolean; // may answer members' questions
+  team?: boolean; // on the owner's team: Study Notes (their own), Members and Community in the dashboard
 }
 
 export type SignupMode = "invite" | "open" | "closed";
@@ -192,7 +193,14 @@ export async function getMember(req: Request, db?: D1Db | null): Promise<Member 
   if (!row.last_seen || Date.now() - row.last_seen > 3_600_000) {
     await d.prepare("UPDATE members SET last_seen = ?2 WHERE id = ?1").bind(row.id, Date.now()).run().catch(() => {});
   }
-  return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at, helper: row.role === "helper" };
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    createdAt: row.created_at,
+    helper: row.role === "helper" || row.role === "team",
+    team: row.role === "team",
+  };
 }
 
 export async function endSession(req: Request, db: D1Db): Promise<void> {

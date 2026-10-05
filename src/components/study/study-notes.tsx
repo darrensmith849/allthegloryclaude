@@ -1079,8 +1079,7 @@ export function StudyNotes() {
             )}
             {reflections.byDay.size > 0 && (
               <p className="dash-cal-key">
-                <span aria-hidden>❧</span> {client.studyAuthor ?? reflections.author ?? "Daniel"}&apos;s weekly reflection - open the
-                day to read it
+                <span aria-hidden>❧</span> Weekly reflection - open the day to read it
               </p>
             )}
             {client.studyUrl && studyOn.size > 0 && (
@@ -1459,7 +1458,7 @@ export function StudyNotes() {
 
             {isDay(day) && reflections.byDay.get(day) && (() => {
               const r = reflections.byDay.get(day) as Reflection;
-              const writer = client.studyAuthor ?? reflections.author ?? "Daniel";
+              const writer = r.author ?? client.studyAuthor ?? reflections.author ?? "Daniel";
               const current = r.id === reflections.latest;
               return (
                 <div className={`dash-daniel dash-weekly-panel ${weeklyOpen ? "is-open" : ""}`}>

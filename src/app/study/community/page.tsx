@@ -39,6 +39,7 @@ interface Question {
 }
 interface Weekly {
   memoryVerse?: string | null;
+  author?: string | null;
   id: string;
   title: string;
   body: string;
@@ -259,7 +260,7 @@ function Community() {
       <div className="dash-grid">
         <div className="dash-col-7">
           <Panel
-            eyebrow={weekly ? `This week · ${when(weekly.publishedAt)} · from ${writer ?? author}` : "This week"}
+            eyebrow={weekly ? `This week · ${when(weekly.publishedAt)} · from ${weekly.author ?? writer ?? author}` : "This week"}
             title={weekly?.title ?? "This week's reflection"}
             action={
               weekly ? (
@@ -279,7 +280,7 @@ function Community() {
             )}
             {weekly && weekOpen && (
               <>
-                <ReflectionBody r={weekly} author={writer ?? author} current />
+                <ReflectionBody r={weekly} author={weekly.author ?? writer ?? author} current />
                 {weekly.question && (
                   <div className="dash-checkin">
                     <div className="eyebrow eyebrow-amber">Check-in</div>
@@ -310,7 +311,7 @@ function Community() {
 
           {past.length > 0 && (
             <div className="mt-[18px]">
-              <Panel eyebrow={`From ${writer ?? author} · ${past.length}`} title="Earlier weeks">
+              <Panel eyebrow={`Weekly reflections · ${past.length}`} title="Earlier weeks">
                 {pastByMonth(past).map(([month, list]) => (
                   <div key={month} className="dash-weeks-month">
                     <div className="dash-note-section-label">{month}</div>
@@ -334,7 +335,7 @@ function Community() {
                             {isOpen && (
                               <div className="dash-note-open">
                                 <h3 className="dash-reflection-title">{r.title}</h3>
-                                <ReflectionBody r={r} author={writer ?? author} />
+                                <ReflectionBody r={r} author={r.author ?? writer ?? author} />
                               </div>
                             )}
                           </article>

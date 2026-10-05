@@ -9,6 +9,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/lib/analytics/store";
 import { BACKUP_PREFIX, runBackup, type R2Like } from "@/lib/study/backup-core";
+import { isSignedIn } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export async function GET(req: Request) {
   if (!b || !db) return Response.json({ error: "Backups aren't available here." }, { status: 503 });
   const key = new URL(req.url).searchParams.get("key");
   if (key) {
+    if (!(await isSignedIn(req.headers.get("cookie")))) {
+      return Response.json({ error: "Only Daniel can download backups." }, { status: 403 });
+    }
     if (!key.startsWith(BACKUP_PREFIX) || key.includes("..")) return Response.json({ error: "No such backup." }, { status: 404 });
     const obj = await b.get(key);
     if (!obj) return Response.json({ error: "No such backup." }, { status: 404 });

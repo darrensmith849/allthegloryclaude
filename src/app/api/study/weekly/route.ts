@@ -19,11 +19,19 @@ export async function GET(req: Request) {
   if (!db) return Response.json({ error: "Not available right now." }, { status: 503 });
   const member = await getMember(req, db);
   if (!member) return Response.json({ error: "Please log in.", login: true }, { status: 401 });
-  type Row = { id: string; title: string; body: string; question: string | null; memory_verse: string | null; published_at: number };
+  type Row = {
+    id: string;
+    title: string;
+    body: string;
+    question: string | null;
+    memory_verse: string | null;
+    author_name: string | null;
+    published_at: number;
+  };
   const [{ results: all }, settings] = await Promise.all([
     db
       .prepare(
-        "SELECT id, title, body, question, memory_verse, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 104",
+        "SELECT id, title, body, question, memory_verse, author_name, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 104",
       )
       .all<Row>(),
     getSettings(db),
@@ -35,6 +43,7 @@ export async function GET(req: Request) {
     body: r.body,
     question: r.question,
     memoryVerse: r.memory_verse ?? null,
+    author: r.author_name ?? null, // who wrote it (null = the study's author)
     publishedAt: r.published_at,
   });
   const { results: replies } = reflection

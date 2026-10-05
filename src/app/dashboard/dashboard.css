@@ -3992,3 +3992,5 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-weeks-month + .dash-weeks-month { margin-top: 16px; }
 .dash-weekly-panel { margin-top: 14px; }
 .dash-weekly-panel .dash-community-body { font-size: 16px; }
+.dash-login-team { display: block; margin-top: 18px; text-align: center; font-size: 13.5px; font-weight: 600; color: var(--colour-glow); }
+.dash-team-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: rgb(var(--gold-rgb) / 0.18); color: var(--colour-glow); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; vertical-align: 2px; }

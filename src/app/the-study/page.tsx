@@ -22,8 +22,10 @@ interface QA {
 }
 
 
-// Only paths inside The Study are followed after logging in.
-const safeNext = (raw: string | null) => (raw && raw.startsWith("/study") && !raw.startsWith("//") ? raw : "/study");
+// Only paths inside The Study (or, for Daniel's team, the dashboard) are
+// followed after logging in.
+const safeNext = (raw: string | null) =>
+  raw && (raw.startsWith("/study") || raw.startsWith("/dashboard/")) && !raw.startsWith("//") ? raw : "/study";
 
 const input =
   "w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-base text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors";

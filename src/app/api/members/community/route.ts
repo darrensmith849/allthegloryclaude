@@ -14,6 +14,7 @@
 import { getSettings } from "@/lib/study/members";
 import { getDb } from "@/lib/analytics/store";
 import { cleanVerseRef } from "@/lib/study/memory";
+import { dashboardUser, firstName } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +96,7 @@ export async function GET(req: Request) {
         body: w.body,
         question: w.question,
         memoryVerse: w.memory_verse ?? null,
+        authorName: w.author_name ?? null,
         publishedAt: w.published_at,
         replies: Number(w.replies ?? 0),
       })),
@@ -142,33 +144,38 @@ export async function PATCH(req: Request) {
     const title = typeof body.title === "string" ? body.title.trim().slice(0, 160) : null;
     const text = typeof body.body === "string" ? body.body.trim().slice(0, 8000) : null;
     const question = typeof body.question === "string" ? body.question.trim().slice(0, 300) : null;
+    // Check the memory verse first, so nothing half-saves.
+    const rawVerse = "memoryVerse" in body ? String(body.memoryVerse ?? "").trim() : null;
+    const verse = rawVerse ? cleanVerseRef(rawVerse) : null;
+    if (rawVerse && !verse) {
+      return Response.json({ error: "Write the memory verse like John 4:14 or Hebrews 12:1-13 (one chapter, up to 40 verses)." }, { status: 400 });
+    }
+    if (("title" in body && !title) || ("body" in body && !text)) {
+      return Response.json({ error: "Keep a title and the reflection itself." }, { status: 400 });
+    }
     await db
       .prepare(
-        "UPDATE weekly_reflections SET title = COALESCE(?2, title), body = COALESCE(?3, body), question = COALESCE(?4, question), updated_at = ?5 WHERE id = ?1",
+        "UPDATE weekly_reflections SET title = COALESCE(?2, title), body = COALESCE(?3, body), question = COALESCE(?4, question), " +
+          "memory_verse = CASE WHEN ?6 = 1 THEN ?5 ELSE memory_verse END, updated_at = ?7 WHERE id = ?1",
       )
-      .bind(body.weekly, title || null, text || null, question, now)
+      .bind(body.weekly, title || null, text || null, question, verse, rawVerse === null ? 0 : 1, now)
       .run();
-    if ("memoryVerse" in body) {
-      const verse = String(body.memoryVerse ?? "").trim() ? cleanVerseRef(body.memoryVerse) : null;
-      if (String(body.memoryVerse ?? "").trim() && !verse) {
-        return Response.json({ error: "Write the memory verse like John 4:14 or Hebrews 12:1-13 (one chapter, up to 40 verses)." }, { status: 400 });
-      }
-      await db.prepare("UPDATE weekly_reflections SET memory_verse = ?2, updated_at = ?3 WHERE id = ?1").bind(body.weekly, verse, now).run();
-      return Response.json({ ok: true, memoryVerse: verse });
-    }
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, memoryVerse: verse });
   }
   if (typeof body.question === "string") {
     const answer = typeof body.answer === "string" ? body.answer.trim().slice(0, 6000) : null;
     const publish = typeof body.publish === "boolean" ? (body.publish ? 1 : 0) : null;
     if (answer) {
-      const settings = await getSettings(db);
+      // Signed by whoever answers: the owner, or a team member by name.
+      const who = await dashboardUser(req);
+      const byId = who?.role === "team" ? who.member.id : "owner";
+      const byName = who?.role === "team" ? firstName(who.member.name) : (await getSettings(db)).author;
       await db
         .prepare(
-          "UPDATE community_questions SET answer = ?2, status = 'answered', answered_by = 'owner', answerer_name = ?3, " +
+          "UPDATE community_questions SET answer = ?2, status = 'answered', answered_by = ?6, answerer_name = ?3, " +
             "answered_at = ?4, published = COALESCE(?5, published) WHERE id = ?1",
         )
-        .bind(body.question, answer, settings.author, now, publish)
+        .bind(body.question, answer, byName, now, publish, byId)
         .run();
     } else if (publish !== null) {
       await db.prepare("UPDATE community_questions SET published = ?2 WHERE id = ?1 AND status = 'answered'").bind(body.question, publish).run();
@@ -202,13 +209,16 @@ export async function POST(req: Request) {
   }
   const id = crypto.randomUUID();
   const now = Date.now();
+  // Signed by whoever posts it (members see "from Daniel" / "from Reggie").
+  const who = await dashboardUser(req);
+  const authorName = who?.role === "team" ? firstName(who.member.name) : (await getSettings(db)).author;
   await db
     .prepare(
-      "INSERT INTO weekly_reflections (id, title, body, question, memory_verse, published_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+      "INSERT INTO weekly_reflections (id, title, body, question, memory_verse, author_name, published_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
     )
-    .bind(id, title, text, question, memoryVerse, now)
+    .bind(id, title, text, question, memoryVerse, authorName, now)
     .run();
-  return Response.json({ weekly: { id, title, body: text, question, memoryVerse, publishedAt: now, replies: 0 } });
+  return Response.json({ weekly: { id, title, body: text, question, memoryVerse, authorName, publishedAt: now, replies: 0 } });
 }
 
 export async function DELETE(req: Request) {

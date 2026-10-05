@@ -13,6 +13,7 @@ export interface Reflection {
   body: string;
   question: string | null;
   memoryVerse?: string | null;
+  author?: string | null; // who wrote it, when not the study's author (a team member)
   publishedAt: number;
 }
 

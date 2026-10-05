@@ -354,6 +354,7 @@ CREATE TABLE IF NOT EXISTS weekly_reflections (
   body         TEXT NOT NULL,
   question     TEXT,
   memory_verse TEXT,               -- the week's memory verse, e.g. "John 4:14" (ALTER TABLE weekly_reflections ADD COLUMN memory_verse TEXT)
+  author_name  TEXT,               -- who wrote it: the owner, or a team member (ALTER TABLE weekly_reflections ADD COLUMN author_name TEXT)
   published_at INTEGER NOT NULL,
   updated_at   INTEGER NOT NULL,
   deleted_at   INTEGER

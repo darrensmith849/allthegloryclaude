@@ -28,8 +28,9 @@ export default function AdminLoginPage() {
   useEffect(() => {
     fetch("/api/admin/status", { cache: "no-store" })
       .then((r) => r.json())
-      .then((s: { configured?: boolean; signedIn?: boolean }) => {
+      .then((s: { configured?: boolean; signedIn?: boolean; role?: string | null }) => {
         if (s.signedIn) goIn();
+        else if (s.role === "team") window.location.assign("/dashboard/community");
         else setMode(s.configured ? "login" : "setup");
       })
       .catch(() => {
@@ -136,6 +137,11 @@ export default function AdminLoginPage() {
               {busy ? (setup ? "Saving…" : "Logging in…") : setup ? "Create password & log in" : "Log in"}
             </button>
           </>
+        )}
+        {!setup && (
+          <a href="/the-study?login=1&next=%2Fdashboard%2Fcommunity" className="dash-login-team">
+            On Daniel&apos;s team? Log in with your Study account →
+          </a>
         )}
         <a href="/" className="dash-login-back">
           ← Back to the public site

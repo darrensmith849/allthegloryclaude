@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
+import { TEAM_NAV, useDashUser } from "@/lib/dashboard/who";
 
 const NAV = [
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
@@ -23,6 +24,10 @@ const NAV = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  // The owner sees everything; a team member only their part.
+  const user = useDashUser();
+  const team = user?.role === "team";
+  const nav = team ? NAV.filter((item) => TEAM_NAV.includes(item.href)) : user === undefined ? [] : NAV;
   // Things waiting in Community (shared posts to approve, new check-in replies).
   const [waiting, setWaiting] = useState(0);
   useEffect(() => {
@@ -37,7 +42,7 @@ export default function DashboardSidebar() {
   // the top of the screen; it closes again once you pick a page.
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
-  const here = NAV.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
+  const here = nav.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
   return (
     <aside className="dash-sidebar">
       <div className="dash-brand">
@@ -45,7 +50,7 @@ export default function DashboardSidebar() {
           <div className="min-w-0">
             <div className="eyebrow eyebrow-amber">All The Glory</div>
             <div className="font-display text-[20px] tracking-tight mt-1">
-              <span className="dash-brand-title">Private dashboard</span>
+              <span className="dash-brand-title">{team ? `Team · ${user.name}` : "Private dashboard"}</span>
               {here && <span className="dash-brand-here">{here.label}</span>}
             </div>
           </div>
@@ -64,7 +69,7 @@ export default function DashboardSidebar() {
       </div>
       <div id="dash-side-menu" className={`dash-side-menu ${open ? "is-open" : ""}`}>
       <nav className="mt-7 flex flex-col gap-1">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           const active =
             item.href === "/dashboard"
               ? pathname === "/dashboard"
@@ -93,6 +98,11 @@ export default function DashboardSidebar() {
           type="button"
           className="dash-nav-link dash-nav-foot text-left"
           onClick={async () => {
+            if (team) {
+              await fetch("/api/study/logout", { method: "POST" }).catch(() => {});
+              window.location.assign("/the-study");
+              return;
+            }
             await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
             window.location.assign("/dashboard/login");
           }}

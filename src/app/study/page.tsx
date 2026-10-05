@@ -45,7 +45,7 @@ export default function StudyHome() {
   }, [readable, today]);
 
   // This week's reflection from the owner (members).
-  type Weekly = { id: string; title: string; body: string; question: string | null; memoryVerse?: string | null };
+  type Weekly = { id: string; title: string; body: string; question: string | null; memoryVerse?: string | null; author?: string | null };
   const [weekly, setWeekly] = useState<Weekly | null>(null);
   useEffect(() => {
     if (!memberId) return;
@@ -232,13 +232,13 @@ export default function StudyHome() {
 
       {weekly && (
         <Link href="/study/community" className="study-weekly">
-          <span className="eyebrow eyebrow-amber">This week from {author ?? "the study"}</span>
+          <span className="eyebrow eyebrow-amber">This week from {weekly.author ?? author ?? "the study"}</span>
           <span className="study-weekly-title">{weekly.title}</span>
           <span className="study-weekly-text">{weekly.body.replace(/\s+/g, " ").slice(0, 220)}{weekly.body.length > 220 ? "…" : ""}</span>
           <span className="study-weekly-go">{weekly.question ? "Read it and check in →" : "Read it →"}</span>
         </Link>
       )}
-      {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={author} />}
+      {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
 
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">

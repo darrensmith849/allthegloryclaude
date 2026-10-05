@@ -32,6 +32,7 @@ interface Weekly {
   body: string;
   question: string | null;
   memoryVerse?: string | null;
+  authorName?: string | null;
   publishedAt: number;
   replies: number;
 }
@@ -59,6 +60,7 @@ interface Reply {
 }
 
 const when = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const shortWhen = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
 async function api<T>(method: string, body?: unknown, query = ""): Promise<T> {
   const r = await fetch(`/api/members/community${query}`, {
@@ -223,14 +225,33 @@ export default function CommunityAdminPage() {
     }
   }
 
-  async function setMemoryVerse(w: Weekly) {
-    const next = prompt("Memory verse for this week, e.g. John 4:14 - leave it empty to remove it.", w.memoryVerse ?? "");
-    if (next === null) return;
+  // Posted reflections: open one to read it, Edit to change it.
+  const [openWeekly, setOpenWeekly] = useState<string | null>(null);
+  const [editWeekly, setEditWeekly] = useState<{ id: string; title: string; body: string; question: string; memoryVerse: string } | null>(null);
+  const [savingWeekly, setSavingWeekly] = useState(false);
+  async function saveWeekly() {
+    if (!editWeekly || savingWeekly) return;
+    setSavingWeekly(true);
     try {
-      const { memoryVerse } = await api<{ memoryVerse: string | null }>("PATCH", { weekly: w.id, memoryVerse: next });
-      setWeekly((list) => list.map((x) => (x.id === w.id ? { ...x, memoryVerse } : x)));
+      const { memoryVerse } = await api<{ memoryVerse: string | null }>("PATCH", {
+        weekly: editWeekly.id,
+        title: editWeekly.title,
+        body: editWeekly.body,
+        question: editWeekly.question,
+        memoryVerse: editWeekly.memoryVerse,
+      });
+      setWeekly((list) =>
+        list.map((x) =>
+          x.id === editWeekly.id
+            ? { ...x, title: editWeekly.title.trim(), body: editWeekly.body.trim(), question: editWeekly.question.trim() || null, memoryVerse }
+            : x,
+        ),
+      );
+      setEditWeekly(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't save that.");
+    } finally {
+      setSavingWeekly(false);
     }
   }
 
@@ -444,28 +465,116 @@ export default function CommunityAdminPage() {
 
             {weekly.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
-                <div className="eyebrow">Posted</div>
-                {weekly.map((w, i) => (
-                  <div key={w.id} className="dash-members-row">
-                    <div className="min-w-0">
-                      <div className="dash-members-name">
-                        {w.title} {i === 0 && <span className="dash-word-hint">· showing now</span>}
-                      </div>
-                      <div className="dash-word-hint">
-                        {when(w.publishedAt)} · {w.replies} {w.replies === 1 ? "reply" : "replies"}
-                        {w.memoryVerse ? ` · Memory verse: ${w.memoryVerse}` : ""}
-                      </div>
-                      {i === 0 && (
-                        <button type="button" className="dash-word-link" onClick={() => setMemoryVerse(w)}>
-                          {w.memoryVerse ? "Change the memory verse" : "+ Add a memory verse"}
+                <div className="eyebrow">Posted · tap one to read or edit it</div>
+                <div className="dash-note-list">
+                  {weekly.map((w, i) => {
+                    const isOpen = openWeekly === w.id;
+                    const isEditing = editWeekly?.id === w.id;
+                    return (
+                      <article key={w.id} className={`dash-note ${isOpen ? "is-open" : ""}`}>
+                        <button
+                          type="button"
+                          className="dash-note-head"
+                          onClick={() => {
+                            setOpenWeekly(isOpen ? null : w.id);
+                            if (isOpen) setEditWeekly(null);
+                          }}
+                          aria-expanded={isOpen}
+                        >
+                          <span className="dash-note-head-ref">{shortWhen(w.publishedAt)}</span>
+                          <span className="dash-note-head-text">
+                            {w.title}
+                            {i === 0 ? " · showing now" : ""}
+                          </span>
+                          <span className="dash-note-chev" aria-hidden>
+                            ›
+                          </span>
                         </button>
-                      )}
-                    </div>
-                    <button type="button" className="dash-word-link" onClick={() => takeDown(w)}>
-                      Take down
-                    </button>
-                  </div>
-                ))}
+                        {isOpen && (
+                          <div className="dash-note-open">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  className="dash-input"
+                                  value={editWeekly.title}
+                                  onChange={(e) => setEditWeekly({ ...editWeekly, title: e.target.value })}
+                                  aria-label="Title"
+                                />
+                                <GrowingTextarea
+                                  className="dash-textarea dash-word-field"
+                                  minRows={6}
+                                  value={editWeekly.body}
+                                  onChange={(e) => setEditWeekly({ ...editWeekly, body: e.target.value })}
+                                  aria-label="Reflection"
+                                />
+                                <label className="dash-label mt-1">Check-in question · optional</label>
+                                <input
+                                  className="dash-input"
+                                  value={editWeekly.question}
+                                  onChange={(e) => setEditWeekly({ ...editWeekly, question: e.target.value })}
+                                />
+                                <label className="dash-label mt-1">Memory verse · optional</label>
+                                <input
+                                  className="dash-input"
+                                  placeholder="e.g. John 4:14 or Hebrews 12:1-13"
+                                  value={editWeekly.memoryVerse}
+                                  onChange={(e) => setEditWeekly({ ...editWeekly, memoryVerse: e.target.value })}
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={saveWeekly} disabled={savingWeekly}>
+                                    {savingWeekly ? "Saving…" : "Save changes"}
+                                  </button>
+                                  <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setEditWeekly(null)}>
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="dash-word-hint mb-2">
+                                  {when(w.publishedAt)}
+                                  {w.authorName ? ` · by ${w.authorName}` : ""} · {w.replies} {w.replies === 1 ? "reply" : "replies"}
+                                </div>
+                                <div className="dash-community-body">
+                                  <NoteText text={w.body} />
+                                </div>
+                                {w.question && (
+                                  <p className="dash-word-hint mt-2">
+                                    Check-in: <em>{w.question}</em>
+                                  </p>
+                                )}
+                                <p className="dash-word-hint mt-1">
+                                  Memory verse: {w.memoryVerse ? <strong>{w.memoryVerse}</strong> : "none"}
+                                </p>
+                                <div className="dash-note-actions" style={{ opacity: 1 }}>
+                                  <button
+                                    type="button"
+                                    className="dash-btn dash-btn-ghost dash-note-nav"
+                                    onClick={() =>
+                                      setEditWeekly({
+                                        id: w.id,
+                                        title: w.title,
+                                        body: w.body,
+                                        question: w.question ?? "",
+                                        memoryVerse: w.memoryVerse ?? "",
+                                      })
+                                    }
+                                  >
+                                    Edit
+                                  </button>
+                                  <span className="flex-1" />
+                                  <button type="button" className="dash-word-link" onClick={() => takeDown(w)}>
+                                    Take down
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </Panel>

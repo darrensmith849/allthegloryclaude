@@ -8,7 +8,8 @@
  *   (CSV columns EMAIL, FIRSTNAME, LASTNAME ... import straight into Brevo)
  *   PATCH { settings: {...} }             -> { settings }
  *   PATCH { member: id, disabled: bool }  -> { ok }      pause / un-pause an account
- *   PATCH { member: id, helper: bool }    -> { ok }      let them answer members' questions
+ *   PATCH { member: id, helper: bool }    -> { ok }      let them answer members' questions (owner only)
+ *   PATCH { member: id, team: bool }      -> { ok }      on the team: Study Notes, Members, Community (owner only)
  *   PATCH { unsubscribe: email }          -> { ok }      take someone off the email list (kept as unsubscribed)
  *   POST  { invite: { label?, maxUses? } } -> { invite }  new invite link (maxUses null = many people, default 1)
  *   POST  { reset: memberId }             -> { path }    one-time password reset link (7 days)
@@ -16,6 +17,7 @@
  */
 import { getDb } from "@/lib/analytics/store";
 import { getSettings, randomToken, saveSettings, sha256, type InviteRow, type StudySettings } from "@/lib/study/members";
+import { isSignedIn } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -131,7 +133,8 @@ export async function GET(req: Request) {
           disabled: Boolean(m.disabled_at),
           invite: m.invite_code,
           invitedVia: m.invite_label,
-          helper: m.role === "helper",
+          helper: m.role === "helper" || m.role === "team",
+          team: m.role === "team",
           notes: Number(notes.find((x) => x.member_id === m.id)?.n ?? 0),
           days: Number(notes.find((x) => x.member_id === m.id)?.days ?? 0),
           words: Number(words.find((x) => x.member_id === m.id)?.n ?? 0),
@@ -172,6 +175,16 @@ export async function PATCH(req: Request) {
     const unsubscribe = (body as { unsubscribe?: unknown }).unsubscribe;
     if (typeof unsubscribe === "string") {
       await db.prepare("UPDATE email_list SET unsubscribed_at = ?2 WHERE email = ?1").bind(unsubscribe.toLowerCase(), Date.now()).run();
+      return Response.json({ ok: true });
+    }
+    const role = body as { helper?: unknown; team?: unknown };
+    if (typeof body.member === "string" && (typeof role.helper === "boolean" || typeof role.team === "boolean")) {
+      if (!(await isSignedIn(req.headers.get("cookie")))) {
+        return Response.json({ error: "Only Daniel can change who helps." }, { status: 403 });
+      }
+    }
+    if (typeof body.member === "string" && typeof role.team === "boolean") {
+      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1").bind(body.member, role.team ? "team" : null).run();
       return Response.json({ ok: true });
     }
     if (typeof body.member === "string" && typeof (body as { helper?: unknown }).helper === "boolean") {

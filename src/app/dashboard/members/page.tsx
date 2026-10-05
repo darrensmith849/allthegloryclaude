@@ -9,6 +9,7 @@ import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { ShareLink } from "@/components/study/share-link";
 import type { ReadingMode, SignupMode, StudySettings } from "@/lib/study/members";
 import { EmailHealth } from "@/components/dashboard/email-health";
+import { useDashUser } from "@/lib/dashboard/who";
 
 interface Invite {
   code: string;
@@ -31,6 +32,7 @@ interface MemberRow {
   words: number;
   emailUpdates: boolean;
   helper: boolean;
+  team?: boolean;
   invitedVia: string | null;
 }
 interface Backup {
@@ -107,6 +109,8 @@ export default function MembersPage() {
   const [settings, setSettings] = useState<StudySettings | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
+  // Team members can use this page too; only Daniel gives out roles.
+  const isOwner = useDashUser()?.role === "owner";
   const [emailList, setEmailList] = useState<EmailCounts | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [subQuery, setSubQuery] = useState("");
@@ -221,6 +225,22 @@ export default function MembersPage() {
     try {
       await api("PATCH", { member: m.id, helper });
       setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, helper } : x)));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't change that.");
+    }
+  }
+
+  async function setTeam(m: MemberRow, team: boolean) {
+    if (
+      team &&
+      !confirm(
+        `Put ${m.name} on your team? With their Study account they can open the dashboard - their own Study Notes (private to them), Members and Community - and answer questions. Nothing else.`,
+      )
+    )
+      return;
+    try {
+      await api("PATCH", { member: m.id, team });
+      setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, team, helper: team } : x)));
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't change that.");
     }
@@ -542,7 +562,7 @@ export default function MembersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="dash-members-name">
                       {m.name} {m.emailUpdates && <span className="dash-email-badge">✉ Email updates</span>}{" "}
-                      {m.helper && <span className="dash-helper-badge">Helper</span>}{" "}
+                      {m.team ? <span className="dash-team-badge">Team</span> : m.helper && <span className="dash-helper-badge">Helper</span>}{" "}
                       {m.disabled && <span className="dash-word-hint">· paused</span>}
                     </div>
                     <div className="dash-word-hint">
@@ -562,9 +582,16 @@ export default function MembersPage() {
                     )}
                   </div>
                   <div className="flex gap-1 flex-wrap justify-end">
-                    <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setHelper(m, !m.helper)}>
-                      {m.helper ? "Remove helper" : "Make helper"}
-                    </button>
+                    {isOwner && (
+                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setTeam(m, !m.team)}>
+                        {m.team ? "Remove from team" : "Make team"}
+                      </button>
+                    )}
+                    {isOwner && !m.team && (
+                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setHelper(m, !m.helper)}>
+                        {m.helper ? "Remove helper" : "Make helper"}
+                      </button>
+                    )}
                     <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => resetLink(m)}>
                       Reset link
                     </button>
@@ -584,6 +611,7 @@ export default function MembersPage() {
             </p>
           </Panel>
         </div>
+        {isOwner && (
         <div className="dash-col-12">
           <Panel
             eyebrow="Kept for good"
@@ -636,6 +664,7 @@ export default function MembersPage() {
             )}
           </Panel>
         </div>
+        )}
       </div>
     </>
   );
