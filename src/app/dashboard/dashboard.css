@@ -3982,3 +3982,4 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-email-health { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); }
 .dash-email-health-title { font-size: 14px; font-weight: 600; color: var(--colour-ink-strong); }
 .dash-email-health-result { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--colour-glow); }
+.study-memory-more { display: inline-block; margin-top: 8px; }

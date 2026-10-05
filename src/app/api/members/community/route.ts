@@ -151,7 +151,7 @@ export async function PATCH(req: Request) {
     if ("memoryVerse" in body) {
       const verse = String(body.memoryVerse ?? "").trim() ? cleanVerseRef(body.memoryVerse) : null;
       if (String(body.memoryVerse ?? "").trim() && !verse) {
-        return Response.json({ error: "Write the memory verse like John 4:14 (a verse or a few)." }, { status: 400 });
+        return Response.json({ error: "Write the memory verse like John 4:14 or Hebrews 12:1-13 (one chapter, up to 40 verses)." }, { status: 400 });
       }
       await db.prepare("UPDATE weekly_reflections SET memory_verse = ?2, updated_at = ?3 WHERE id = ?1").bind(body.weekly, verse, now).run();
       return Response.json({ ok: true, memoryVerse: verse });
@@ -198,7 +198,7 @@ export async function POST(req: Request) {
   const rawVerse = String(body.weekly?.memoryVerse ?? "").trim();
   const memoryVerse = rawVerse ? cleanVerseRef(rawVerse) : null;
   if (rawVerse && !memoryVerse) {
-    return Response.json({ error: "Write the memory verse like John 4:14 (a verse or a few)." }, { status: 400 });
+    return Response.json({ error: "Write the memory verse like John 4:14 or Hebrews 12:1-13 (one chapter, up to 40 verses)." }, { status: 400 });
   }
   const id = crypto.randomUUID();
   const now = Date.now();

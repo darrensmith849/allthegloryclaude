@@ -7,8 +7,13 @@ import { useEffect, useState } from "react";
 import { parsePassage } from "@/lib/dashboard/notes";
 import { bibleAppVerse } from "@/lib/study/plan";
 
+// The passage's words inside our own quote marks (dropping any it opens or
+// closes with).
+const quoteOf = (verses: string[]) => verses.join(" ").replace(/^[\s“"‘']+|[\s”"’']+$/g, "");
+
 export function MemoryVerse({ verse, reflectionId, author }: { verse: string; reflectionId?: string; author?: string | null }) {
-  const [text, setText] = useState<string | null>(null);
+  const [verses, setVerses] = useState<string[] | null>(null);
+  const [all, setAll] = useState(false);
   const [known, setKnown] = useState<{ ref: string; knownAt: number }[] | null>(null);
   const p = parsePassage(verse);
 
@@ -18,11 +23,9 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { results?: { text: string }[] } | null) => {
         if (!live) return;
-        const words = (d?.results ?? []).map((r) => r.text.replace(/<\/?mark>/g, "")).join(" ");
-        // The verse sits inside our own quote marks, so drop any it opens or closes with.
-        setText(words.replace(/^[\s“"‘']+|[\s”"’']+$/g, ""));
+        setVerses((d?.results ?? []).map((r) => r.text.replace(/<\/?mark>/g, "")));
       })
-      .catch(() => live && setText(""));
+      .catch(() => live && setVerses([]));
     fetch("/api/study/memory", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { verses?: { ref: string; knownAt: number }[] } | null) => live && setKnown(d?.verses ?? []))
@@ -55,12 +58,20 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
         )}
       </div>
       <div className="study-memory-ref">{verse}</div>
-      {text === null ? (
+      {verses === null ? (
         <p className="study-memory-text is-loading">…</p>
-      ) : text ? (
-        <p className="study-memory-text">
-          &ldquo;{text}&rdquo; <span className="study-memory-version">BSB</span>
-        </p>
+      ) : verses.length ? (
+        <>
+          <p className="study-memory-text">
+            &ldquo;{quoteOf(all || verses.length <= 4 ? verses : verses.slice(0, 3))}
+            {all || verses.length <= 4 ? "”" : " …”"} <span className="study-memory-version">BSB</span>
+          </p>
+          {verses.length > 4 && (
+            <button type="button" className="dash-word-link study-memory-more" onClick={() => setAll((v) => !v)}>
+              {all ? "Show less" : `Show the whole passage · ${verses.length} verses`}
+            </button>
+          )}
+        </>
       ) : null}
       <div className="study-memory-actions">
         <button type="button" className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${isKnown ? "is-read" : ""}`} onClick={toggle}>

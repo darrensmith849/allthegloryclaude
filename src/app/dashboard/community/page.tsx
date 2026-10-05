@@ -126,12 +126,31 @@ export default function CommunityAdminPage() {
   const [answers, setAnswers] = useState<Record<string, { text: string; publish: boolean }>>({});
   const [showAnswered, setShowAnswered] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState({
+  const [draft, setDraftState] = useState({
     title: "",
     body: "",
     question: "How are you doing this week - what's God been showing you?",
     memoryVerse: "",
   });
+  // The reflection being written is kept on this device until it's posted,
+  // so closing the tab (or a hiccup when posting) never loses it.
+  const DRAFT_KEY = "atg:community:weeklyDraft";
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null") as typeof draft | null;
+      if (saved && (saved.title || saved.body)) setDraftState((d) => ({ ...d, ...saved }));
+    } catch {
+      // private window
+    }
+  }, []);
+  const setDraft = (next: typeof draft) => {
+    setDraftState(next);
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+    } catch {
+      // storage full / private window
+    }
+  };
   const [posting, setPosting] = useState(false);
   const [showShared, setShowShared] = useState(false);
 
@@ -192,6 +211,11 @@ export default function CommunityAdminPage() {
       const { weekly: w } = await api<{ weekly: Weekly }>("POST", { weekly: draft });
       setWeekly((list) => [w, ...list]);
       setDraft({ title: "", body: "", question: draft.question, memoryVerse: "" });
+      try {
+        window.localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // private window
+      }
     } catch (e) {
       alert(e instanceof Error ? e.message : "Couldn't post that.");
     } finally {
