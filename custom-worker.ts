@@ -12,7 +12,15 @@ import { runReminders } from "./src/lib/study/push";
 const BACKUP_CRON = "0 2 * * *";
 
 export default {
-  fetch: handler.fetch,
+  // Always the secure address: logins and member sessions need https.
+  fetch(req: Request, env: unknown, ctx: unknown) {
+    const url = new URL(req.url);
+    if (url.protocol === "http:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+      url.protocol = "https:";
+      return Response.redirect(url.toString(), 301);
+    }
+    return handler.fetch(req, env, ctx);
+  },
   async scheduled(
     event: { cron: string },
     env: { DB: never; BACKUPS: never; VAPID_PRIVATE_JWK?: string },
