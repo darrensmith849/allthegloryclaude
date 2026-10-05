@@ -287,9 +287,11 @@ export default function MembersPage() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <a className="dash-btn dash-btn-ghost" href="/dashboard/notes/read">
-            Preview your study
-          </a>
+          {isOwner && (
+            <a className="dash-btn dash-btn-ghost" href="/dashboard/notes/read">
+              Preview your study
+            </a>
+          )}
           <a className="dash-btn dash-btn-ghost" href="/the-study" target="_blank" rel="noreferrer">
             Open The Study page ↗
           </a>
@@ -327,6 +329,7 @@ export default function MembersPage() {
           </Panel>
         </div>
 
+        {isOwner && (
         <div className="dash-col-6">
           <Panel eyebrow="Switches" title="Who can join">
             <div className="dash-toggle dash-members-toggle" role="group" aria-label="Who can join">
@@ -410,6 +413,7 @@ export default function MembersPage() {
             </div>
           </Panel>
         </div>
+        )}
 
         <div className="dash-col-6">
           <Panel eyebrow="Invite links" title="Invite someone">

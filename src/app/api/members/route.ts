@@ -172,6 +172,10 @@ export async function PATCH(req: Request) {
   };
   try {
     if (body.settings && typeof body.settings === "object") {
+      // Who can join / read Daniel's study, and his name on it - his alone.
+      if (!(await isSignedIn(req.headers.get("cookie")))) {
+        return Response.json({ error: "Only Daniel can change these." }, { status: 403 });
+      }
       return Response.json({ settings: await saveSettings(db, body.settings) });
     }
     const unsubscribe = (body as { unsubscribe?: unknown }).unsubscribe;

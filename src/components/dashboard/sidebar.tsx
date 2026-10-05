@@ -50,7 +50,7 @@ export default function DashboardSidebar() {
           <div className="min-w-0">
             <div className="eyebrow eyebrow-amber">All The Glory</div>
             <div className="font-display text-[20px] tracking-tight mt-1">
-              <span className="dash-brand-title">{team ? `Team · ${user.name}` : "Private dashboard"}</span>
+              <span className="dash-brand-title">{user === undefined ? "\u00a0" : team ? `Team · ${user.name}` : "Private dashboard"}</span>
               {here && <span className="dash-brand-here">{here.label}</span>}
             </div>
           </div>
