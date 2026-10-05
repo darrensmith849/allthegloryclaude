@@ -13,9 +13,10 @@ const BACKUP_CRON = "0 2 * * *";
 
 export default {
   // Always the secure address: logins and member sessions need https.
-  fetch(req: Request, env: unknown, ctx: unknown) {
+  // (LOCAL_DEV is set in .dev.vars, so `wrangler dev` on plain http still works.)
+  fetch(req: Request, env: { LOCAL_DEV?: string }, ctx: unknown) {
     const url = new URL(req.url);
-    if (url.protocol === "http:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+    if (!env.LOCAL_DEV && url.protocol === "http:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
       url.protocol = "https:";
       return Response.redirect(url.toString(), 301);
     }

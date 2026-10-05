@@ -11,6 +11,7 @@ import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { StudyPeek } from "@/components/study/study-peek";
 import { NoteStarter } from "@/components/study/note-starter";
+import { ReflectionBody, reflectionDay, type Reflection } from "@/components/study/reflection";
 import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { WordRow } from "@/components/dashboard/word-entry";
@@ -123,12 +124,17 @@ export function StudyNotes() {
   });
   const [month, setMonth] = useState<string>(() => startOfMonth(isDay(day) ? day : todayDay()));
   const [calView, setCalView] = useState<"month" | "year">("month");
-  const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean }>({
+  const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean; weekly?: boolean }>({
     notes: true,
     words: true,
     study: true,
   });
   const studyOpen = sections.study !== false; // the owner's study in a member's day - open unless minimised
+  const weeklyOpen = sections.weekly !== false; // the owner's weekly reflection, on the day he posted it
+  // Members: the owner's weekly reflections, by the day each was posted.
+  const [reflections, setReflections] = useState<{ byDay: Map<string, Reflection>; latest: string | null; author: string | null }>(
+    () => ({ byDay: new Map(), latest: null, author: null }),
+  );
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
@@ -290,6 +296,20 @@ export function StudyNotes() {
       .catch(() => {});
   }, [client.studyUrl]);
 
+  useEffect(() => {
+    if (client.kind !== "member") return;
+    fetch("/api/study/weekly", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { reflection?: Reflection | null; past?: Reflection[]; author?: string | null } | null) => {
+        if (!d) return;
+        const all = [...(d.reflection ? [d.reflection] : []), ...(d.past ?? [])];
+        const byDay = new Map<string, Reflection>();
+        for (const r of all) if (!byDay.has(reflectionDay(r.publishedAt))) byDay.set(reflectionDay(r.publishedAt), r);
+        setReflections({ byDay, latest: d.reflection?.id ?? null, author: d.author ?? null });
+      })
+      .catch(() => {});
+  }, [client.kind]);
+
   // ← → step through the days when not typing.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -332,9 +352,9 @@ export function StudyNotes() {
     });
   };
 
-  function toggleSection(key: "notes" | "words" | "study") {
+  function toggleSection(key: "notes" | "words" | "study" | "weekly") {
     setSections((s) => {
-      const next = { ...s, [key]: key === "study" ? s.study === false : !s[key] };
+      const next = { ...s, [key]: key === "study" || key === "weekly" ? s[key] === false : !s[key] };
       writeStore(SECTIONS_KEY, next);
       return next;
     });
@@ -1029,6 +1049,7 @@ export function StudyNotes() {
                 const hasWords = wordDays.has(d);
                 const read = readDays.has(d);
                 const starredDay = Boolean(days[d]?.starredAt);
+                const reflected = reflections.byDay.has(d);
                 const study = studyOn.has(d.slice(5));
                 return (
                   <button
@@ -1043,17 +1064,24 @@ export function StudyNotes() {
                     <span>{Number(d.slice(8))}</span>
                     {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
                     {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
-                    {(count > 0 || hasWords || read) && (
+                    {(count > 0 || hasWords || read || reflected) && (
                       <em>
                         {read ? "✓ " : ""}
                         {count > 0 ? count : ""}
                         {hasWords ? " α" : ""}
+                        {reflected ? " ❧" : ""}
                       </em>
                     )}
                   </button>
                 );
               })}
             </div>
+            )}
+            {reflections.byDay.size > 0 && (
+              <p className="dash-cal-key">
+                <span aria-hidden>❧</span> {client.studyAuthor ?? reflections.author ?? "Daniel"}&apos;s weekly reflection - open the
+                day to read it
+              </p>
             )}
             {client.studyUrl && studyOn.size > 0 && (
               <p className="dash-cal-key">
@@ -1428,6 +1456,33 @@ export function StudyNotes() {
                 )}
               </div>
             )}
+
+            {isDay(day) && reflections.byDay.get(day) && (() => {
+              const r = reflections.byDay.get(day) as Reflection;
+              const writer = client.studyAuthor ?? reflections.author ?? "Daniel";
+              const current = r.id === reflections.latest;
+              return (
+                <div className={`dash-daniel dash-weekly-panel ${weeklyOpen ? "is-open" : ""}`}>
+                  <button type="button" className="dash-daniel-head" onClick={() => toggleSection("weekly")} aria-expanded={weeklyOpen}>
+                    <span className="dash-daniel-label">
+                      <span className="eyebrow eyebrow-amber">❧ Weekly reflection · from {writer}</span>
+                      <span className="dash-daniel-sub">{r.title}</span>
+                    </span>
+                    <span className="dash-daniel-toggle">{weeklyOpen ? "Minimise ▴" : "Open ▾"}</span>
+                  </button>
+                  {weeklyOpen && (
+                    <div className="dash-daniel-body">
+                      <ReflectionBody r={r} author={writer} current={current} />
+                      {current && r.question && (
+                        <a href="/study/community" className="dash-word-link dash-daniel-all">
+                          Check in with {writer} →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {otherYears.length > 0 && (
               <div className="dash-note-years">

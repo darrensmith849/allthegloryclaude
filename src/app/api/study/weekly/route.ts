@@ -1,11 +1,13 @@
 /**
  * The owner's weekly reflection, for members.
  *
- *   GET                                 -> { reflection | null, replies }  the latest (with its memory verse), and your replies to it
+ *   GET                                 -> { reflection | null, replies, past, author }
+ *        reflection: the latest (with its memory verse); replies: yours to it;
+ *        past: the earlier weeks, newest first; author: who writes them ("Daniel")
  *   POST { reflectionId, text }          -> { reply }   a private reply - only the owner reads it
  */
 import { getDb } from "@/lib/analytics/store";
-import { getMember } from "@/lib/study/members";
+import { getMember, getSettings } from "@/lib/study/members";
 import { notifyOwnerFrom } from "@/lib/study/notify";
 
 export const dynamic = "force-dynamic";
@@ -17,11 +19,24 @@ export async function GET(req: Request) {
   if (!db) return Response.json({ error: "Not available right now." }, { status: 503 });
   const member = await getMember(req, db);
   if (!member) return Response.json({ error: "Please log in.", login: true }, { status: 401 });
-  const reflection = await db
-    .prepare(
-      "SELECT id, title, body, question, memory_verse, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 1",
-    )
-    .first<{ id: string; title: string; body: string; question: string | null; memory_verse: string | null; published_at: number }>();
+  type Row = { id: string; title: string; body: string; question: string | null; memory_verse: string | null; published_at: number };
+  const [{ results: all }, settings] = await Promise.all([
+    db
+      .prepare(
+        "SELECT id, title, body, question, memory_verse, published_at FROM weekly_reflections WHERE deleted_at IS NULL ORDER BY published_at DESC LIMIT 104",
+      )
+      .all<Row>(),
+    getSettings(db),
+  ]);
+  const reflection = all[0] ?? null;
+  const shape = (r: Row) => ({
+    id: r.id,
+    title: r.title,
+    body: r.body,
+    question: r.question,
+    memoryVerse: r.memory_verse ?? null,
+    publishedAt: r.published_at,
+  });
   const { results: replies } = reflection
     ? await db
         .prepare("SELECT id, text, created_at FROM checkin_replies WHERE reflection_id = ?1 AND member_id = ?2 ORDER BY created_at")
@@ -30,15 +45,10 @@ export async function GET(req: Request) {
     : { results: [] };
   return Response.json(
     {
-      reflection: reflection && {
-        id: reflection.id,
-        title: reflection.title,
-        body: reflection.body,
-        question: reflection.question,
-        memoryVerse: reflection.memory_verse ?? null,
-        publishedAt: reflection.published_at,
-      },
+      reflection: reflection && shape(reflection),
       replies: replies.map((r) => ({ id: r.id, text: r.text, createdAt: r.created_at })),
+      past: all.slice(1).map(shape),
+      author: settings.author && settings.author !== "All The Glory" ? settings.author : null,
     },
     { headers: noStore },
   );

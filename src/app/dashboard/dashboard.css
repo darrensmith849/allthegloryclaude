@@ -3983,3 +3983,12 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-email-health-title { font-size: 14px; font-weight: 600; color: var(--colour-ink-strong); }
 .dash-email-health-result { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--colour-glow); }
 .study-memory-more { display: inline-block; margin-top: 8px; }
+
+/* Weekly reflections: signed by the owner, foldable, by date */
+.dash-reflection-sign { margin-top: 10px; font-family: var(--font-read), Georgia, serif; font-style: italic; font-size: 16px; color: var(--colour-glow); }
+.dash-reflection-title { margin-bottom: 8px; font-family: var(--font-read), Georgia, serif; font-size: 20px; font-weight: 400; color: var(--colour-ink-strong); }
+.dash-reflection-folded { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; text-align: left; font-family: var(--font-read), Georgia, serif; font-size: 15.5px; line-height: 1.55; color: var(--colour-ink-soft); }
+.dash-fold-btn { white-space: nowrap; cursor: pointer; }
+.dash-weeks-month + .dash-weeks-month { margin-top: 16px; }
+.dash-weekly-panel { margin-top: 14px; }
+.dash-weekly-panel .dash-community-body { font-size: 16px; }

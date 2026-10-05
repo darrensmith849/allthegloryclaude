@@ -11,6 +11,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { MemberOnly, useMe } from "@/components/study/shell";
+import { ReflectionBody } from "@/components/study/reflection";
 
 interface Post {
   id: string;
@@ -45,6 +46,16 @@ interface Weekly {
   publishedAt: number;
 }
 
+const shortDate = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+// Earlier weeks grouped by month, newest first: [["September 2026", [...]], …]
+function pastByMonth(list: Weekly[]): [string, Weekly[]][] {
+  const groups = new Map<string, Weekly[]>();
+  for (const r of list) {
+    const label = new Date(r.publishedAt).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    groups.set(label, [...(groups.get(label) ?? []), r]);
+  }
+  return [...groups.entries()];
+}
 const when = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 const STATUS: Record<string, string> = {
   pending: "Waiting for approval",
@@ -56,6 +67,30 @@ function Community() {
   const me = useMe();
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : "The study's host";
   const [weekly, setWeekly] = useState<Weekly | null | undefined>(undefined);
+  const [past, setPast] = useState<Weekly[]>([]);
+  const [writer, setWriter] = useState<string | null>(null);
+  // This week's reflection can be folded away (remembered on this device);
+  // earlier weeks open one at a time.
+  const foldKey = me.member ? `atg:study:${me.member.id}:weekFolded` : "";
+  const [weekOpen, setWeekOpen] = useState(true);
+  useEffect(() => {
+    if (!foldKey) return;
+    try {
+      setWeekOpen(window.localStorage.getItem(foldKey) !== "1");
+    } catch {
+      // private window
+    }
+  }, [foldKey]);
+  const toggleWeek = () =>
+    setWeekOpen((open) => {
+      try {
+        window.localStorage.setItem(foldKey, open ? "1" : "0");
+      } catch {
+        // private window
+      }
+      return !open;
+    });
+  const [openPast, setOpenPast] = useState<string | null>(null);
   const [replies, setReplies] = useState<{ id: string; text: string; createdAt: number }[]>([]);
   const [reply, setReply] = useState("");
   const [replyState, setReplyState] = useState<string | null>(null);
@@ -131,9 +166,11 @@ function Community() {
   useEffect(() => {
     fetch("/api/study/weekly", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { reflection?: Weekly | null; replies?: typeof replies } | null) => {
+      .then((d: { reflection?: Weekly | null; replies?: typeof replies; past?: Weekly[]; author?: string | null } | null) => {
         setWeekly(d?.reflection ?? null);
         setReplies(d?.replies ?? []);
+        setPast(d?.past ?? []);
+        setWriter(d?.author ?? null);
       })
       .catch(() => setWeekly(null));
     fetch("/api/study/community?kind=testimony", { cache: "no-store" })
@@ -221,19 +258,28 @@ function Community() {
 
       <div className="dash-grid">
         <div className="dash-col-7">
-          <Panel eyebrow={weekly ? `This week · ${when(weekly.publishedAt)}` : "This week"} title={weekly?.title ?? "This week's reflection"}>
+          <Panel
+            eyebrow={weekly ? `This week · ${when(weekly.publishedAt)} · from ${writer ?? author}` : "This week"}
+            title={weekly?.title ?? "This week's reflection"}
+            action={
+              weekly ? (
+                <button type="button" className="dash-daniel-toggle dash-fold-btn" onClick={toggleWeek} aria-expanded={weekOpen}>
+                  {weekOpen ? "Minimise ▴" : "Open ▾"}
+                </button>
+              ) : undefined
+            }
+          >
             {weekly === undefined && <p className="dash-word-hint">Opening…</p>}
             {weekly === null && <p className="dash-word-hint">{author} hasn&apos;t posted this week&apos;s reflection yet.</p>}
-            {weekly && (
+            {weekly && !weekOpen && (
+              <button type="button" className="dash-reflection-folded" onClick={toggleWeek}>
+                <span>{weekly.body.replace(/\s+/g, " ").slice(0, 140)}…</span>
+                <span className="dash-word-link">Read it →</span>
+              </button>
+            )}
+            {weekly && weekOpen && (
               <>
-                <div className="dash-community-body">
-                  <NoteText text={weekly.body} />
-                </div>
-                {weekly.memoryVerse && (
-                  <a href="/study" className="dash-community-memory">
-                    Memory verse this week: <strong>{weekly.memoryVerse}</strong> - on your home page →
-                  </a>
-                )}
+                <ReflectionBody r={weekly} author={writer ?? author} current />
                 {weekly.question && (
                   <div className="dash-checkin">
                     <div className="eyebrow eyebrow-amber">Check-in</div>
@@ -261,6 +307,45 @@ function Community() {
               </>
             )}
           </Panel>
+
+          {past.length > 0 && (
+            <div className="mt-[18px]">
+              <Panel eyebrow={`From ${writer ?? author} · ${past.length}`} title="Earlier weeks">
+                {pastByMonth(past).map(([month, list]) => (
+                  <div key={month} className="dash-weeks-month">
+                    <div className="dash-note-section-label">{month}</div>
+                    <div className="dash-note-list">
+                      {list.map((r) => {
+                        const isOpen = openPast === r.id;
+                        return (
+                          <article key={r.id} className={`dash-note ${isOpen ? "is-open" : ""}`}>
+                            <button
+                              type="button"
+                              className="dash-note-head"
+                              onClick={() => setOpenPast(isOpen ? null : r.id)}
+                              aria-expanded={isOpen}
+                            >
+                              <span className="dash-note-head-ref">{shortDate(r.publishedAt)}</span>
+                              <span className="dash-note-head-text">{r.title}</span>
+                              <span className="dash-note-chev" aria-hidden>
+                                ›
+                              </span>
+                            </button>
+                            {isOpen && (
+                              <div className="dash-note-open">
+                                <h3 className="dash-reflection-title">{r.title}</h3>
+                                <ReflectionBody r={r} author={writer ?? author} />
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </Panel>
+            </div>
+          )}
 
           <div className="mt-[18px] scroll-mt-6" id="questions">
             <Panel eyebrow="Ask" title="Ask a question">
