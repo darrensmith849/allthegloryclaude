@@ -252,6 +252,7 @@ export interface InviteRow {
   uses: number;
   created_at: number;
   revoked_at: number | null;
+  role?: string | null; // 'team' = a team invite
 }
 
 export async function usableInvite(db: D1Db, code: string): Promise<InviteRow | null> {

@@ -155,21 +155,23 @@ export default function TheStudyPage() {
             emailUpdates: f.get("updates") === "on",
             invite,
           }
-        : { email: f.get("email"), password: f.get("password") };
+        : { email: f.get("email"), password: f.get("password"), invite };
     try {
       const r = await fetch(tab === "join" ? "/api/study/join" : "/api/study/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await r.json().catch(() => ({}))) as { error?: string };
+      const data = (await r.json().catch(() => ({}))) as { error?: string; team?: boolean };
       if (!r.ok) throw new Error(data.error ?? "Something went wrong - try again.");
       try {
         window.sessionStorage.removeItem("atg:study:me");
       } catch {
         // private window
       }
-      window.location.assign(tab === "join" ? "/study/journal" : safeNext(new URLSearchParams(window.location.search).get("next")));
+      // Daniel's team invite: straight to the team dashboard.
+      if (data.team) window.location.assign("/dashboard/community");
+      else window.location.assign(tab === "join" ? "/study/journal" : safeNext(new URLSearchParams(window.location.search).get("next")));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong - try again.");
       setBusy(false);

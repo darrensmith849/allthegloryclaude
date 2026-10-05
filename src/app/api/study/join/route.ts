@@ -76,9 +76,10 @@ export async function POST(req: Request) {
     await db.batch([
       db
         .prepare(
-          "INSERT INTO members (id, email, name, hash, salt, iterations, invite_code, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+          "INSERT INTO members (id, email, name, hash, salt, iterations, invite_code, created_at, role) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         )
-        .bind(id, email, name, rec.hash, rec.salt, rec.iterations, invite?.code ?? null, now),
+        // A team invite (from Daniel) puts them straight on his team.
+        .bind(id, email, name, rec.hash, rec.salt, rec.iterations, invite?.code ?? null, now, invite?.role === "team" ? "team" : null),
       ...(invite ? [db.prepare("UPDATE member_invites SET uses = uses + 1 WHERE code = ?1").bind(invite.code)] : []),
       ...(body.emailUpdates === true ? [subscribeStmt(db, email, name, "study")] : []),
     ]);
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
     }),
   );
   return Response.json(
-    { member: { id, email, name, createdAt: now } },
+    { member: { id, email, name, createdAt: now }, team: invite?.role === "team" },
     { headers: { "set-cookie": memberCookie(token), "cache-control": "no-store" } },
   );
 }

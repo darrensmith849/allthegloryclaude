@@ -194,7 +194,8 @@ CREATE TABLE IF NOT EXISTS member_invites (
   uses       INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   revoked_at INTEGER,
-  member_id  TEXT                    -- a member's own "invite a friend" link (ALTER TABLE member_invites ADD COLUMN member_id TEXT)
+  member_id  TEXT,                   -- a member's own "invite a friend" link (ALTER TABLE member_invites ADD COLUMN member_id TEXT)
+  role       TEXT                    -- 'team' = whoever uses it joins Daniel's team (ALTER TABLE member_invites ADD COLUMN role TEXT)
 );
 CREATE INDEX IF NOT EXISTS idx_member_invites_member ON member_invites(member_id);
 

@@ -1,7 +1,8 @@
 /**
  * Member login for The Study.
  *
- *   POST { email, password } -> 200 + session cookie | 401 | 403 | 429
+ *   POST { email, password, invite? } -> 200 + session cookie | 401 | 403 | 429
+ *   (invite: Daniel's one-time team invite - logging in with it joins his team)
  *
  * Every try is counted before the password is checked - per address and
  * per email - so 8 tries from one address, or 10 at one account, in 15
@@ -9,7 +10,7 @@
  * email's count only (logging into your own account doesn't reset the
  * address's count).
  */
-import { getDb } from "@/lib/analytics/store";
+import { changesOf, getDb } from "@/lib/analytics/store";
 import {
   clearAttempts,
   clientIp,
@@ -19,6 +20,7 @@ import {
   noteAttempt,
   slowDown,
   tooMany,
+  usableInvite,
   verifyLogin,
 } from "@/lib/study/members";
 
@@ -54,9 +56,26 @@ export async function POST(req: Request) {
     clearAttempts(db, emailKey),
     db.prepare("DELETE FROM login_attempts WHERE ip = ?1 AND ts >= ?2").bind(key, started).run().catch(() => {}),
   ]);
+  // Already a member and opened Daniel's team invite? Logging in with it
+  // puts them on the team (the link works once).
+  let team = false;
+  const code = String(body.invite ?? "").trim();
+  if (code) {
+    const invite = await usableInvite(db, code);
+    if (invite?.role === "team") {
+      const used = await db
+        .prepare("UPDATE member_invites SET uses = uses + 1 WHERE code = ?1 AND revoked_at IS NULL AND (max_uses IS NULL OR uses < max_uses)")
+        .bind(invite.code)
+        .run();
+      if (changesOf(used)) {
+        await db.prepare("UPDATE members SET role = 'team' WHERE id = ?1").bind(member.id).run();
+        team = true;
+      }
+    }
+  }
   const token = await createMemberSession(db, member.id);
   return Response.json(
-    { member: { id: member.id, email: member.email, name: member.name, createdAt: member.created_at } },
+    { member: { id: member.id, email: member.email, name: member.name, createdAt: member.created_at }, team },
     { headers: { "set-cookie": memberCookie(token), "cache-control": "no-store" } },
   );
 }

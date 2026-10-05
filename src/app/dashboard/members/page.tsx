@@ -19,6 +19,7 @@ interface Invite {
   createdAt: number;
   revoked: boolean;
   byMember?: boolean;
+  team?: boolean;
 }
 interface MemberRow {
   id: string;
@@ -145,6 +146,7 @@ export default function MembersPage() {
   const [savedText, setSavedText] = useState(false);
   const [inviteLabel, setInviteLabel] = useState("");
   const [inviteMany, setInviteMany] = useState(false);
+  const [inviteTeam, setInviteTeam] = useState(false);
   const [newInvite, setNewInvite] = useState<string | null>(null);
   const [resetLinks, setResetLinks] = useState<Record<string, string>>({});
   const [showStopped, setShowStopped] = useState(false);
@@ -183,7 +185,7 @@ export default function MembersPage() {
   async function makeInvite() {
     try {
       const { invite } = await api<{ invite: Invite }>("POST", {
-        invite: { label: inviteLabel, maxUses: inviteMany ? null : 1 },
+        invite: { label: inviteLabel, maxUses: inviteMany && !inviteTeam ? null : 1, team: inviteTeam },
       });
       setInvites((list) => [invite, ...list]);
       setNewInvite(invite.code);
@@ -426,10 +428,30 @@ export default function MembersPage() {
                 <button type="button" className={!inviteMany ? "is-on" : ""} onClick={() => setInviteMany(false)}>
                   One person
                 </button>
-                <button type="button" className={inviteMany ? "is-on" : ""} onClick={() => setInviteMany(true)}>
+                <button
+                  type="button"
+                  className={inviteMany && !inviteTeam ? "is-on" : ""}
+                  onClick={() => {
+                    setInviteMany(true);
+                    setInviteTeam(false);
+                  }}
+                >
                   Many people
                 </button>
               </div>
+              {isOwner && (
+                <label className="dash-print-check" title="They join your team: their own Study Notes, Members and Community in the dashboard">
+                  <input
+                    type="checkbox"
+                    checked={inviteTeam}
+                    onChange={(e) => {
+                      setInviteTeam(e.target.checked);
+                      if (e.target.checked) setInviteMany(false);
+                    }}
+                  />{" "}
+                  On my team (admin)
+                </label>
+              )}
               <button type="button" className="dash-btn dash-btn-primary" onClick={makeInvite}>
                 Make link
               </button>
@@ -449,7 +471,8 @@ export default function MembersPage() {
                     <div className="min-w-0">
                       <div className="dash-members-name">{i.label || "Invite"}</div>
                       <div className="dash-word-hint">
-                        {i.maxUses == null ? `Many people · used ${i.uses}×` : `One person · not used yet`} · made {when(i.createdAt)}
+                        {i.team ? "Team invite · one person · " : ""}
+                        {i.maxUses == null ? `Many people · used ${i.uses}×` : `${i.team ? "" : "One person · "}not used yet`} · made {when(i.createdAt)}
                       </div>
                     </div>
                     <div className="flex gap-1">

@@ -11,7 +11,8 @@
  *   PATCH { member: id, helper: bool }    -> { ok }      let them answer members' questions (owner only)
  *   PATCH { member: id, team: bool }      -> { ok }      on the team: Study Notes, Members, Community (owner only)
  *   PATCH { unsubscribe: email }          -> { ok }      take someone off the email list (kept as unsubscribed)
- *   POST  { invite: { label?, maxUses? } } -> { invite }  new invite link (maxUses null = many people, default 1)
+ *   POST  { invite: { label?, maxUses?, team? } } -> { invite }  new invite link (maxUses null = many people, default 1;
+ *                                           team: whoever uses it joins Daniel's team - owner only)
  *   POST  { reset: memberId }             -> { path }    one-time password reset link (7 days)
  *   DELETE ?invite=code                   -> { ok }      stop an invite link working
  */
@@ -123,6 +124,7 @@ export async function GET(req: Request) {
           createdAt: i.created_at,
           revoked: Boolean(i.revoked_at),
           byMember: Boolean((i as InviteRow & { member_id?: string | null }).member_id),
+          team: i.role === "team",
         })),
         members: members.map((m) => ({
           id: m.id,
@@ -210,7 +212,7 @@ export async function POST(req: Request) {
   const db = await getDb();
   if (!db) return unavailable();
   const body = (await req.json().catch(() => ({}))) as {
-    invite?: { label?: unknown; maxUses?: unknown };
+    invite?: { label?: unknown; maxUses?: unknown; team?: unknown };
     reset?: unknown;
   };
   const now = Date.now();
@@ -220,12 +222,17 @@ export async function POST(req: Request) {
       const label = String(body.invite.label ?? "").trim().slice(0, 80);
       // null = many people; otherwise a count, one person by default.
       const n = Number(body.invite.maxUses);
-      const maxUses = body.invite.maxUses === null ? null : Number.isInteger(n) && n > 0 && n <= 10_000 ? n : 1;
+      const team = body.invite.team === true;
+      if (team && !(await isSignedIn(req.headers.get("cookie")))) {
+        return Response.json({ error: "Only Daniel can invite people to the team." }, { status: 403 });
+      }
+      // A team invite is always for one person.
+      const maxUses = team ? 1 : body.invite.maxUses === null ? null : Number.isInteger(n) && n > 0 && n <= 10_000 ? n : 1;
       await db
-        .prepare("INSERT INTO member_invites (code, label, max_uses, uses, created_at) VALUES (?1, ?2, ?3, 0, ?4)")
-        .bind(code, label || null, maxUses, now)
+        .prepare("INSERT INTO member_invites (code, label, max_uses, uses, created_at, role) VALUES (?1, ?2, ?3, 0, ?4, ?5)")
+        .bind(code, label || null, maxUses, now, team ? "team" : null)
         .run();
-      return Response.json({ invite: { code, label, maxUses, uses: 0, createdAt: now, revoked: false } });
+      return Response.json({ invite: { code, label, maxUses, uses: 0, createdAt: now, revoked: false, team } });
     }
     if (typeof body.reset === "string") {
       const exists = await db.prepare("SELECT id FROM members WHERE id = ?1").bind(body.reset).first();
