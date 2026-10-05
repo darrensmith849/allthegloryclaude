@@ -32,6 +32,16 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const email = normEmail(body.email);
   const password = String(body.password ?? "").slice(0, 200);
+  // "admin" (no @) is Daniel looking for his dashboard login, not a member.
+  if (!email.includes("@")) {
+    return Response.json(
+      {
+        error:
+          "This is the members' login, with an email address. Daniel - your dashboard is at alltheglory.co.za/dashboard and only asks for your password.",
+      },
+      { status: 400 },
+    );
+  }
   const key = `study:${clientIp(req)}`;
   const emailKey = `study-email:${email}`;
   const started = Date.now();

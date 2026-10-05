@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
         )}
         {!setup && (
           <a href="/the-study?login=1&next=%2Fdashboard%2Fcommunity" className="dash-login-team">
-            On Daniel&apos;s team? Log in with your Study account →
+            Not Daniel? Team members (like Reggie) log in here →
           </a>
         )}
         <a href="/" className="dash-login-back">
