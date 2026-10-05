@@ -68,7 +68,7 @@ export default function ContactPage() {
 
     try {
       // Posts to our own /api/contact route, which sends the message through
-      // Brevo from our authenticated domain (SPF/DKIM/DMARC aligned) so it
+      // Cloudflare from our own domain (SPF/DKIM/DMARC aligned) so it
       // lands in the inbox rather than spam. (Replaced Web3Forms, whose
       // shared-server mail kept getting binned by the recipient's spam filter.)
       const res = await fetch("/api/contact", {

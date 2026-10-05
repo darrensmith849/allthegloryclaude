@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 // Plain-English privacy policy, specific to what this site actually does
-// (contact form + newsletter via Brevo, donations via Paystack, light
+// (contact form + newsletter emails via Cloudflare, donations via Paystack, light
 // first-party analytics, Cloudflare hosting, YouTube embeds). Not legal
 // advice — review before relying on it.
 
@@ -104,18 +104,15 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2 marker:text-[var(--colour-amber)]/60">
               <li>
-                <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer" className={ext}>Brevo</a>{" "}
-                &mdash; delivers contact‑form and newsletter submissions to our
-                inbox.
-              </li>
-              <li>
                 <a href="https://paystack.com/terms" target="_blank" rel="noopener noreferrer" className={ext}>Paystack</a>{" "}
                 &mdash; securely processes donations.
               </li>
               <li>
                 <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" className={ext}>Cloudflare</a>{" "}
                 &mdash; hosting, security and content delivery (processes IP
-                addresses).
+                addresses), and sending the site&rsquo;s emails: contact‑form
+                and newsletter submissions to our inbox, and The Study&rsquo;s
+                welcome and password‑reset emails.
               </li>
               <li>
                 <strong className="text-white/85">Our email host</strong>{" "}
