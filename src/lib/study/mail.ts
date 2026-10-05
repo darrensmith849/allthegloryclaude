@@ -1,16 +1,19 @@
 // Emails from The Study to a member - password resets and the welcome note.
-// Sent through Brevo from the site's authenticated address (same as the
-// contact form), in the album flyer's style. Returns false if it couldn't
-// send; callers never fail a request over it.
+// Sent through Cloudflare from the site's own address (src/lib/email/send.ts,
+// same as the contact form), in the album flyer's style. Returns ok: false if
+// it couldn't send; callers never fail a request over it.
 
 import { getDb } from "@/lib/analytics/store";
+import { sendEmail } from "@/lib/email/send";
 
 const SENDER = { email: "notify@alltheglory.co.za", name: "All The Glory - The Study" };
 
 export interface EmailResult {
   ok: boolean;
-  status: number; // Brevo's HTTP status (0 = couldn't reach it / no key)
-  detail?: string; // Brevo's message when it refused
+  // "sent" or Cloudflare's refusal code. Results recorded before the move
+  // off Brevo (2026-10-05) hold Brevo's HTTP status, 0 for "no connection".
+  status: string | number;
+  detail?: string; // why it didn't send
 }
 
 // The last email's result, for the owner's Members page ("Email is working").
@@ -58,20 +61,7 @@ export async function sendStudyEmail(
   body: { html: string; text: string },
   what = subject,
 ): Promise<EmailResult> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return { ok: false, status: 0, detail: "No BREVO_API_KEY here" };
-  let result: EmailResult;
-  try {
-    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: { "api-key": apiKey, "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ sender: SENDER, to: [to], subject, htmlContent: body.html, textContent: body.text }),
-    });
-    result = { ok: r.ok, status: r.status, detail: r.ok ? undefined : await r.text().catch(() => "") };
-    if (!r.ok) console.error("Brevo send failed", r.status, result.detail);
-  } catch (e) {
-    result = { ok: false, status: 0, detail: e instanceof Error ? e.message : "network" };
-  }
+  const result = await sendEmail({ to, from: SENDER, subject, html: body.html, text: body.text });
   await noteEmail(what, result);
   return result;
 }

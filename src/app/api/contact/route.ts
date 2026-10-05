@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/analytics/store";
+import { sendEmail } from "@/lib/email/send";
 import { noteEmail } from "@/lib/study/mail";
 import { subscribeStmt } from "@/lib/study/members";
 
 /**
  * Contact-form + newsletter delivery — sends the submission to the site
- * owner's inbox as a transactional email through Brevo.
+ * owner's inbox as a transactional email, through Cloudflare Email Sending
+ * (src/lib/email/send.ts).
  *
- * This replaced Web3Forms (2026-07-07). Web3Forms sent from its own shared
- * `web3forms.com` servers, so Host-H's spam filter kept binning the
- * notifications. Brevo sends from our own authenticated domain
- * (alltheglory.co.za — SPF + DKIM + DMARC all pass), so mail lands in the
- * inbox instead of Junk.
+ * Web3Forms did this until 2026-07-07, then Brevo until 2026-10-05.
+ * Web3Forms sent from its own shared `web3forms.com` servers, so Host-H's
+ * spam filter kept binning the notifications. Sending from our own domain
+ * (alltheglory.co.za — SPF + DKIM + DMARC all pass) keeps mail in the inbox
+ * instead of Junk.
  *
  * Newsletter sign-ups are also kept on the owner's email list (D1
  * email_list), downloadable from /dashboard/members.
- *
- * Requires BREVO_API_KEY (a Cloudflare Worker secret in production;
- * .dev.vars locally). The key is used server-side only — it never reaches
- * the browser.
  */
 
-const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Where submissions land, and who they appear to come from. The sender must
-// be on the domain we authenticated in Brevo so DKIM/DMARC align.
+// be on the domain onboarded for sending so DKIM/DMARC align.
 const RECIPIENT = { email: "daniel@alltheglory.co.za", name: "All The Glory" };
 const SENDER = { email: "notify@alltheglory.co.za", name: "All The Glory Website" };
 
@@ -37,8 +34,6 @@ function esc(s: string) {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.BREVO_API_KEY;
-
   let body: unknown;
   try {
     body = await req.json();
@@ -72,10 +67,6 @@ export async function POST(req: Request) {
   if (kind === "newsletter") {
     const db = await getDb();
     if (db) saved = await subscribeStmt(db, email.toLowerCase(), name || null, "newsletter").run().then(() => true, () => false);
-  }
-  if (!apiKey) {
-    if (saved) return NextResponse.json({ success: true });
-    return NextResponse.json({ error: "Messaging isn't configured yet. Please email us directly." }, { status: 500 });
   }
   if (kind === "contact" && message.length < 10) {
     return NextResponse.json(
@@ -114,45 +105,28 @@ export async function POST(req: Request) {
     .map(([label, value]) => `${label}: ${value}`)
     .join("\n")}`;
 
-  try {
-    const res = await fetch(BREVO_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "content-type": "application/json",
-        accept: "application/json",
-      },
-      body: JSON.stringify({
-        sender: SENDER,
-        to: [RECIPIENT],
-        replyTo: { email, name: name || email },
-        subject,
-        htmlContent,
-        textContent,
-      }),
-    });
+  const result = await sendEmail({
+    to: RECIPIENT,
+    from: SENDER,
+    replyTo: { email, name: name || email },
+    subject,
+    html: htmlContent,
+    text: textContent,
+  });
+  await noteEmail(kind === "newsletter" ? "To you: new newsletter sign-up" : "To you: website message", result);
 
-    const detail = res.ok ? undefined : await res.text().catch(() => "");
-    await noteEmail(kind === "newsletter" ? "To you: new newsletter sign-up" : "To you: website message", {
-      ok: res.ok,
-      status: res.status,
-      detail,
-    });
-    if (!res.ok) {
-      console.error("Brevo send failed", res.status, detail);
-      if (saved) return NextResponse.json({ success: true });
-      return NextResponse.json(
-        { error: "We couldn't send your message right now. Please try again." },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch {
+  if (!result.ok) {
     if (saved) return NextResponse.json({ success: true });
+    const unconfigured = result.status === "not_configured";
     return NextResponse.json(
-      { error: "Network error. Please try again." },
-      { status: 502 },
+      {
+        error: unconfigured
+          ? "Messaging isn't configured yet. Please email us directly."
+          : "We couldn't send your message right now. Please try again.",
+      },
+      { status: unconfigured ? 500 : 502 },
     );
   }
+
+  return NextResponse.json({ success: true });
 }

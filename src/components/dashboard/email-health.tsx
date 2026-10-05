@@ -10,7 +10,7 @@ interface Last {
   at: number;
   what: string;
   ok: boolean;
-  status: number;
+  status: string | number;
   detail?: string;
 }
 
@@ -45,11 +45,11 @@ export function EmailHealth() {
     setBusy(true);
     setResult(null);
     const r = await fetch("/api/members/email-test", { method: "POST" }).catch(() => null);
-    const d = r ? ((await r.json().catch(() => ({}))) as { ok?: boolean; status?: number; detail?: string }) : null;
+    const d = r ? ((await r.json().catch(() => ({}))) as { ok?: boolean; status?: string | number; detail?: string }) : null;
     setResult(
       d?.ok
         ? `✓ Sent - check ${to || "your inbox"} (and Junk, the first time).`
-        : `✗ It didn't send${d?.status ? ` (Brevo said ${d.status})` : ""}${d?.detail ? `: ${d.detail.slice(0, 140)}` : ""}.`,
+        : `✗ It didn't send${d?.status ? ` (Cloudflare said ${d.status})` : ""}${d?.detail ? `: ${d.detail.slice(0, 140)}` : ""}.`,
     );
     setBusy(false);
     void load();
