@@ -3977,3 +3977,8 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-star-day-take { font-family: var(--font-read), Georgia, serif; font-style: italic; font-size: 14.5px; line-height: 1.5; color: var(--colour-ink-soft); }
 .dash-star-day-open:hover .dash-star-day-title { color: var(--colour-glow); }
 .dash-note-cal-day.is-selected .dash-cal-star { color: var(--on-gold); }
+
+/* Members page: is email working? */
+.dash-email-health { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); }
+.dash-email-health-title { font-size: 14px; font-weight: 600; color: var(--colour-ink-strong); }
+.dash-email-health-result { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--colour-glow); }

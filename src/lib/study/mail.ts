@@ -3,7 +3,30 @@
 // contact form), in the album flyer's style. Returns false if it couldn't
 // send; callers never fail a request over it.
 
+import { getDb } from "@/lib/analytics/store";
+
 const SENDER = { email: "notify@alltheglory.co.za", name: "All The Glory - The Study" };
+
+export interface EmailResult {
+  ok: boolean;
+  status: number; // Brevo's HTTP status (0 = couldn't reach it / no key)
+  detail?: string; // Brevo's message when it refused
+}
+
+// The last email's result, for the owner's Members page ("Email is working").
+export async function noteEmail(what: string, result: EmailResult): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const now = Date.now();
+  await db
+    .prepare(
+      "INSERT INTO study_settings (key, value, updated_at) VALUES ('last_email', ?1, ?2) " +
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+    )
+    .bind(JSON.stringify({ at: now, what, ok: result.ok, status: result.status, detail: result.detail?.slice(0, 200) }), now)
+    .run()
+    .catch(() => {});
+}
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -29,17 +52,26 @@ ${p}${button}
   return { html, text };
 }
 
-export async function sendStudyEmail(to: { email: string; name?: string }, subject: string, body: { html: string; text: string }): Promise<boolean> {
+export async function sendStudyEmail(
+  to: { email: string; name?: string },
+  subject: string,
+  body: { html: string; text: string },
+  what = subject,
+): Promise<EmailResult> {
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return false;
+  if (!apiKey) return { ok: false, status: 0, detail: "No BREVO_API_KEY here" };
+  let result: EmailResult;
   try {
     const r = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "api-key": apiKey, "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({ sender: SENDER, to: [to], subject, htmlContent: body.html, textContent: body.text }),
     });
-    return r.ok;
-  } catch {
-    return false;
+    result = { ok: r.ok, status: r.status, detail: r.ok ? undefined : await r.text().catch(() => "") };
+    if (!r.ok) console.error("Brevo send failed", r.status, result.detail);
+  } catch (e) {
+    result = { ok: false, status: 0, detail: e instanceof Error ? e.message : "network" };
   }
+  await noteEmail(what, result);
+  return result;
 }

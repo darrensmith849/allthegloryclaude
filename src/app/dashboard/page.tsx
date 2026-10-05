@@ -7,7 +7,9 @@ import { IDENTITY_STATEMENTS } from "@/lib/dashboard/identity";
 import { todayISO, formatHuman } from "@/lib/dashboard/dates";
 
 export default function WhoAmIPage() {
-  const today = todayISO();
+  // Today's date is filled in on the device (the page is built ahead of time).
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => setToday(todayISO()), []);
   const total = IDENTITY_STATEMENTS.length;
 
   const [index, setIndex] = useState(0);
@@ -73,7 +75,7 @@ export default function WhoAmIPage() {
 
       {/* Centerpiece - heading, counter, card, controls */}
       <div className="dash-welcome-stage">
-        <div className="dash-welcome-eyebrow eyebrow eyebrow-amber">{formatHuman(today)}</div>
+        <div className="dash-welcome-eyebrow eyebrow eyebrow-amber">{today ? formatHuman(today) : "\u00a0"}</div>
         <h1 className="dash-welcome-h1 font-display">Who am I?</h1>
         <p className="dash-welcome-sub">
           Twenty-five truths the Father has spoken over you. Read each one.

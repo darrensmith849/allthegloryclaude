@@ -8,6 +8,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { ShareLink } from "@/components/study/share-link";
 import type { ReadingMode, SignupMode, StudySettings } from "@/lib/study/members";
+import { EmailHealth } from "@/components/dashboard/email-health";
 
 interface Invite {
   code: string;
@@ -485,6 +486,7 @@ export default function MembersPage() {
                 : "Loading…"}{" "}
               Only send news to this list. The CSV imports straight into Brevo.
             </p>
+            <EmailHealth />
             {subscribers.length > 6 && (
               <input
                 type="search"

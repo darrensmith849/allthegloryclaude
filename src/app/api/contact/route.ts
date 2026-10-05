@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/analytics/store";
+import { noteEmail } from "@/lib/study/mail";
 import { subscribeStmt } from "@/lib/study/members";
 
 /**
@@ -37,12 +38,6 @@ function esc(s: string) {
 
 export async function POST(req: Request) {
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Messaging isn't configured yet. Please email us directly." },
-      { status: 500 },
-    );
-  }
 
   let body: unknown;
   try {
@@ -70,10 +65,17 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  // A newsletter sign-up is saved to the owner's email list first; that's
+  // what matters, so it succeeds even if the "new sign-up" note to the owner
+  // can't be sent.
+  let saved = false;
   if (kind === "newsletter") {
-    // Best effort - the notification email below still goes if this fails.
     const db = await getDb();
-    if (db) await subscribeStmt(db, email.toLowerCase(), name || null, "newsletter").run().catch(() => {});
+    if (db) saved = await subscribeStmt(db, email.toLowerCase(), name || null, "newsletter").run().then(() => true, () => false);
+  }
+  if (!apiKey) {
+    if (saved) return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Messaging isn't configured yet. Please email us directly." }, { status: 500 });
   }
   if (kind === "contact" && message.length < 10) {
     return NextResponse.json(
@@ -130,9 +132,15 @@ export async function POST(req: Request) {
       }),
     });
 
+    const detail = res.ok ? undefined : await res.text().catch(() => "");
+    await noteEmail(kind === "newsletter" ? "To you: new newsletter sign-up" : "To you: website message", {
+      ok: res.ok,
+      status: res.status,
+      detail,
+    });
     if (!res.ok) {
-      const detail = await res.text().catch(() => "");
       console.error("Brevo send failed", res.status, detail);
+      if (saved) return NextResponse.json({ success: true });
       return NextResponse.json(
         { error: "We couldn't send your message right now. Please try again." },
         { status: 502 },
@@ -141,6 +149,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch {
+    if (saved) return NextResponse.json({ success: true });
     return NextResponse.json(
       { error: "Network error. Please try again." },
       { status: 502 },
