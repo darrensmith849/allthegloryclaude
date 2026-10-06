@@ -3646,8 +3646,17 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   .dash-starter-go { flex: 1 1 100%; justify-content: center; }
 }
 
-/* Buttons waiting for something to be filled in stay readable, not faded */
-.dash-btn:disabled { opacity: 0.85; cursor: not-allowed; }
+/* A button that can't be used yet looks it - no gold fill, a dashed edge -
+   but its words stay readable (not faded). */
+.dash-btn:disabled { opacity: 1; cursor: not-allowed; box-shadow: none; }
+.dash-btn-primary:disabled,
+.dash-btn-primary:disabled:hover {
+  background: transparent;
+  border: 1px dashed rgb(var(--gold-rgb) / 0.6);
+  color: var(--colour-ink-quiet);
+}
+.dash-btn:not(.dash-btn-primary):disabled,
+.dash-btn:not(.dash-btn-primary):disabled:hover { border-style: dashed; color: var(--colour-ink-faint); }
 /* The sidebar's footer links: smaller, but full strength */
 .dash-nav-foot { font-size: 13px; font-weight: 600; color: var(--colour-ink-soft); }
 .dash-nav-foot:hover { color: var(--colour-ink-strong); }

@@ -12,6 +12,7 @@ import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, u
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
+import { HashScroll } from "./hash-scroll";
 
 export type MeMember = Member & { emailUpdates?: boolean };
 
@@ -189,6 +190,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </aside>
+      <HashScroll />
       <main className="dash-main study-main">
         {client ? <StudyClientProvider value={client}>{body}</StudyClientProvider> : body}
         <StudyFooter />

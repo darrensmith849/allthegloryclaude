@@ -714,3 +714,12 @@ video::-webkit-media-controls-overlay-play-button {
 .pw-eye:focus-visible { opacity: 1; }
 .pw-eye[aria-pressed="true"] { opacity: 0.9; }
 .pw-eye svg { width: 21px; height: 21px; }
+
+/* Fold-out sections show they can be tapped. */
+summary { cursor: pointer; }
+/* Tick boxes, their labels and drop-downs show they can be clicked too. */
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+select:not(:disabled),
+label:has(> input[type="checkbox"]:not(:disabled)),
+label:has(> input[type="radio"]:not(:disabled)) { cursor: pointer; }

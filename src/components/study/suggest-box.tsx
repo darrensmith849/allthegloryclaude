@@ -96,7 +96,7 @@ export function SuggestBox() {
         aria-label="Your suggestion"
       />
       <div className="flex gap-3 mt-2 flex-wrap items-center">
-        <button type="button" className="dash-btn dash-btn-primary" disabled={state.busy || text.trim().length < 5} onClick={send}>
+        <button type="button" className="dash-btn dash-btn-primary" disabled={state.busy || !text.trim()} onClick={send}>
           {state.busy ? "Sending…" : "Send privately"}
         </button>
         {state.sent && <span className="dash-word-saved">✓ Sent - thank you!</span>}

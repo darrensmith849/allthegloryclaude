@@ -131,7 +131,7 @@ function Community() {
   }
 
   async function sendQuestion() {
-    if (ask.text.trim().length < 5) return;
+    if (ask.text.trim().length < 5) return setAskState("Write a little more - a few words at least - then tap Ask privately.");
     setAskState("Sending…");
     const r = await fetch("/api/study/questions", {
       method: "POST",
@@ -371,7 +371,7 @@ function Community() {
                   value={ask.ref}
                   onChange={(e) => setAsk({ ...ask, ref: e.target.value })}
                 />
-                <button type="button" className="dash-btn dash-btn-primary" disabled={ask.text.trim().length < 5} onClick={sendQuestion}>
+                <button type="button" className="dash-btn dash-btn-primary" disabled={!ask.text.trim() || askState === "Sending…"} onClick={sendQuestion}>
                   Ask privately
                 </button>
               </div>
