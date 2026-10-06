@@ -3,8 +3,9 @@
 // Community - members only, and kept safe: this week's reflection from the
 // owner with a private check-in reply; questions asked privately and
 // answered only by the owner or the helpers they choose (members can't
-// comment on anything), with chosen answers shared as Q&A; and testimonies,
-// each approved by the owner first.
+// comment on anything), with chosen answers shared as Q&A; suggestions sent
+// privately to the owner and his team; and testimonies, each approved by the
+// owner first.
 
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
@@ -12,6 +13,7 @@ import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { MemberOnly, useMe } from "@/components/study/shell";
 import { ReflectionBody } from "@/components/study/reflection";
+import { SuggestBox } from "@/components/study/suggest-box";
 
 interface Post {
   id: string;
@@ -411,6 +413,10 @@ function Community() {
                 </div>
               )}
             </Panel>
+          </div>
+
+          <div className="mt-[18px] scroll-mt-6" id="suggest">
+            <SuggestBox />
           </div>
 
           {qa.length > 0 && (

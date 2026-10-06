@@ -10,24 +10,19 @@ export const STUDY_HEART =
   "Daniel has a heart to share how he's studying the Bible - the questions he asks himself as he reads, what God is saying to him, and his own study of the Word. It's here as an encouragement: we're all still learning.";
 
 // Everyone starts the plan together at Day 1 (Genesis 1) - 1 January 2027 on
-// the calendar. Daniel begins on Monday 12 October 2026 and his notes go onto
-// each day as he goes, so members can read along early. Until the start,
-// members' home page and journal point at Day 1 rather than today's date.
+// the calendar. Daniel's notes go onto each day as he goes, so members can
+// read along early. Until the start, members' home page and journal point at
+// Day 1 rather than today's date. (No start date is named to members - the
+// owner asked not to.)
 export const STUDY_START = "2027-01-01";
-export const STUDY_KICKOFF = "2026-10-12";
 export const beforeStart = (today: string) => today < STUDY_START;
-export const startMessage = (today: string) =>
-  today < STUDY_KICKOFF
-    ? "We begin on Monday 12 October - Daniel's notes appear on each day as he goes, so you can read along from then, or start fresh on 1 January."
-    : "We've begun - Daniel's notes appear on each day as he goes. Read along at your own pace, or start fresh on 1 January.";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const startMessage = (_today?: string) =>
+  "Daniel's notes appear on each day as he goes, so you can read along now, or start fresh on 1 January.";
 
 // One line for new visitors (The Study page), or "" once we've started.
 export const startBanner = (today: string) =>
-  today >= STUDY_START
-    ? ""
-    : today < STUDY_KICKOFF
-      ? "We start at Genesis 1 together on Monday 12 October - join in."
-      : "We've just started again at Genesis 1 - join in, it's not too late.";
+  today >= STUDY_START ? "" : "We're starting again at Genesis 1, together - join in.";
 
 export const START_WHY =
   "We've already been through the whole Bible once - and we want to start it again, from the very beginning, together.";

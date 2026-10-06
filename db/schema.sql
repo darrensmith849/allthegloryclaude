@@ -468,3 +468,21 @@ CREATE INDEX IF NOT EXISTS member_names_member ON member_names (member_id, day);
 --   ALTER TABLE study_names ADD COLUMN purged_at INTEGER;
 --   ALTER TABLE member_names ADD COLUMN purged_at INTEGER;
 --   ALTER TABLE member_prayers ADD COLUMN purged_at INTEGER;
+
+-- Members' suggestions (Community > Suggest something): private to the owner
+-- and his team, who mark them seen / done and can reply. Never erased by the
+-- owner; a member's own go with their account if they delete it.
+CREATE TABLE IF NOT EXISTS member_suggestions (
+  id          TEXT PRIMARY KEY,
+  member_id   TEXT NOT NULL,
+  member_name TEXT,
+  kind        TEXT,                -- 'dashboard' | 'study' | 'other'
+  text        TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  seen_at     INTEGER,
+  done_at     INTEGER,
+  reply       TEXT,
+  replied_by  TEXT,
+  deleted_at  INTEGER              -- taken back by the member
+);
+CREATE INDEX IF NOT EXISTS member_suggestions_member ON member_suggestions (member_id, created_at);

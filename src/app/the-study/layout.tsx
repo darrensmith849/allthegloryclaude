@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "The Study",
   description,
   alternates: { canonical: "/the-study" },
+  icons: {
+    icon: [{ url: "/study/favicon.png", sizes: "64x64", type: "image/png" }],
+    apple: "/study/apple-icon.png",
+  },
   openGraph: {
     title: "The Study - All The Glory",
     description,

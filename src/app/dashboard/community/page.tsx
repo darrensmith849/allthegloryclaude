@@ -5,6 +5,7 @@
 // (nothing appears until approved), see reported posts, post the weekly
 // reflection and read members' private check-in replies.
 
+import { SuggestionsPanel, type Suggestion } from "@/components/dashboard/suggestions-panel";
 import { useEffect, useMemo, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
@@ -125,6 +126,7 @@ export default function CommunityAdminPage() {
   const [weekly, setWeekly] = useState<Weekly[]>([]);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, { text: string; publish: boolean }>>({});
   const [showAnswered, setShowAnswered] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,9 +159,10 @@ export default function CommunityAdminPage() {
   const [showShared, setShowShared] = useState(false);
 
   function load() {
-    api<{ posts: Post[]; weekly: Weekly[]; replies: Reply[]; questions: Question[] }>("GET")
+    api<{ posts: Post[]; weekly: Weekly[]; replies: Reply[]; questions: Question[]; suggestions?: Suggestion[] }>("GET")
       .then((d) => {
         setQuestions(d.questions);
+        setSuggestions(d.suggestions ?? []);
         setPosts(d.posts);
         setWeekly(d.weekly);
         setReplies(d.replies);
@@ -362,6 +365,13 @@ export default function CommunityAdminPage() {
               </div>
             )}
           </Panel>
+
+          <div className="mt-[18px]">
+            <SuggestionsPanel
+              items={suggestions}
+              onChange={(x) => setSuggestions((list) => list.map((y) => (y.id === x.id ? x : y)))}
+            />
+          </div>
 
           <div className="mt-[18px]">
           <Panel eyebrow={`${pending.length} waiting`} title="Testimonies waiting for you">

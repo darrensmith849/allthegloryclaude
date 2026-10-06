@@ -10,6 +10,7 @@
  *   PATCH { reply: id | "all", read: true }             -> { ok }
  *   PATCH { question: id, answer?, publish? }           -> { ok }   answer a member's question / share it as a Q&A
  *   DELETE ?question=id                                  -> { ok }   remove a question
+ *   PATCH { suggestion: id, seen?, done?, reply? }       -> { ok }   members' private suggestions
  */
 import { getSettings } from "@/lib/study/members";
 import { getDb } from "@/lib/analytics/store";
@@ -30,20 +31,21 @@ export async function GET(req: Request) {
         "SELECT (SELECT COUNT(*) FROM community_posts WHERE status = 'pending') AS pending, " +
           "(SELECT COUNT(*) FROM checkin_replies WHERE read_at IS NULL) AS unread, " +
           "(SELECT COUNT(*) FROM community_questions WHERE status = 'open') AS questions, " +
+          "(SELECT COUNT(*) FROM member_suggestions WHERE seen_at IS NULL AND deleted_at IS NULL) AS suggestions, " +
           "(SELECT COUNT(DISTINCT post_id) FROM community_reports r JOIN community_posts p ON p.id = r.post_id WHERE p.status = 'approved') AS reported",
       )
-      .first<{ pending: number; unread: number; reported: number; questions: number }>()
+      .first<{ pending: number; unread: number; reported: number; questions: number; suggestions: number }>()
       .catch(() => null);
     return Response.json(
       {
         pending: Number(row?.pending ?? 0) + Number(row?.questions ?? 0),
-        unread: Number(row?.unread ?? 0),
+        unread: Number(row?.unread ?? 0) + Number(row?.suggestions ?? 0),
         reported: Number(row?.reported ?? 0),
       },
       { headers: noStore },
     );
   }
-  const [{ results: posts }, { results: reports }, { results: weekly }, { results: replies }, { results: questions }] = await Promise.all([
+  const [{ results: posts }, { results: reports }, { results: weekly }, { results: replies }, { results: questions }, { results: suggestions }] = await Promise.all([
     db
       .prepare(
         "SELECT p.*, m.name AS member_name, m.email AS member_email FROM community_posts p " +
@@ -71,6 +73,13 @@ export async function GET(req: Request) {
           "LEFT JOIN members m ON m.id = q.member_id ORDER BY (q.status = 'open') DESC, q.created_at DESC LIMIT 300",
       )
       .all<Record<string, unknown>>(),
+    db
+      .prepare(
+        "SELECT s.*, m.name AS current_name, m.email AS member_email FROM member_suggestions s " +
+          "LEFT JOIN members m ON m.id = s.member_id WHERE s.deleted_at IS NULL ORDER BY (s.done_at IS NULL) DESC, s.created_at DESC LIMIT 300",
+      )
+      .all<Record<string, unknown>>()
+      .catch(() => ({ results: [] as Record<string, unknown>[] })),
   ]);
   const reported = new Map(reports.map((r) => [r.post_id, r]));
   return Response.json(
@@ -113,6 +122,18 @@ export async function GET(req: Request) {
         email: q.member_email ?? "",
         createdAt: q.created_at,
       })),
+      suggestions: suggestions.map((x) => ({
+        id: x.id,
+        kind: x.kind ?? "other",
+        text: x.text,
+        createdAt: x.created_at,
+        seen: Boolean(x.seen_at),
+        done: Boolean(x.done_at),
+        reply: x.reply ?? null,
+        repliedBy: x.replied_by ?? null,
+        member: x.current_name ?? x.member_name ?? "(account deleted)",
+        email: x.member_email ?? "",
+      })),
       replies: replies.map((r) => ({
         id: r.id,
         reflectionId: r.reflection_id,
@@ -132,6 +153,22 @@ export async function PATCH(req: Request) {
   if (!db) return unavailable();
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const now = Date.now();
+  // A member's suggestion: seen, done (or not), and an optional reply they'll see.
+  if (typeof body.suggestion === "string") {
+    const who = await dashboardUser(req);
+    const by = who?.role === "team" ? firstName(who.member.name) : (await getSettings(db)).author;
+    const reply = typeof body.reply === "string" ? body.reply.trim().slice(0, 1000) : null;
+    await db
+      .prepare(
+        "UPDATE member_suggestions SET seen_at = COALESCE(seen_at, ?2), " +
+          "done_at = CASE WHEN ?3 = 1 THEN ?2 WHEN ?3 = 0 THEN NULL ELSE done_at END, " +
+          "reply = CASE WHEN ?4 IS NULL THEN reply ELSE NULLIF(?4, '') END, " +
+          "replied_by = CASE WHEN ?4 IS NULL THEN replied_by WHEN ?4 = '' THEN NULL ELSE ?5 END WHERE id = ?1",
+      )
+      .bind(body.suggestion, now, body.done === true ? 1 : body.done === false ? 0 : null, reply, by)
+      .run();
+    return Response.json({ ok: true });
+  }
   if (typeof body.post === "string" && (body.status === "approved" || body.status === "declined")) {
     await db.batch([
       db.prepare("UPDATE community_posts SET status = ?2, reviewed_at = ?3 WHERE id = ?1").bind(body.post, body.status, now),
