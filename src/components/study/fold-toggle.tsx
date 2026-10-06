@@ -28,11 +28,21 @@ export function useFolded(key: string, value = "1"): [boolean, () => void] {
   return [folded, toggle];
 }
 
-export function FoldToggle({ folded, onToggle, what }: { folded: boolean; onToggle: () => void; what: string }) {
+export function FoldToggle({
+  folded,
+  onToggle,
+  what,
+  inline = false,
+}: {
+  folded: boolean;
+  onToggle: () => void;
+  what: string;
+  inline?: boolean; // in a panel's header, rather than the card's corner
+}) {
   return (
     <button
       type="button"
-      className={`study-fold ${folded ? "is-folded" : ""}`}
+      className={`study-fold ${folded ? "is-folded" : ""} ${inline ? "is-inline" : ""}`}
       onClick={onToggle}
       aria-expanded={!folded}
       aria-label={folded ? `Open ${what}` : `Fold ${what} away`}

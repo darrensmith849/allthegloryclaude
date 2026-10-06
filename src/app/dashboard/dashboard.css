@@ -4178,7 +4178,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .why-niv-body p + p { margin-top: 6px; color: var(--colour-ink-quiet); }
 
 /* Journal search bar */
-.journal-search { margin: -6px 0 18px; }
+.journal-search { margin: 0 0 16px; }
 .journal-search-bar { position: relative; }
 .journal-search-bar .dash-input { padding-left: 38px; font-size: 15px; }
 .journal-search-icon {
@@ -4322,5 +4322,55 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .journal-start-text p { margin-top: 4px; font-size: 14.5px; line-height: 1.55; color: var(--colour-ink-soft); }
 .journal-start-text strong { color: var(--colour-ink-strong); font-weight: 600; }
 .journal-start-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.journal-start + .journal-search { margin-top: 0; }
 .study-start-text { margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
+
+/* Panels that fold down to their header (the journal guide) */
+.dash-panel.is-folded .dash-panel-body { display: none; }
+.dash-panel.is-folded .dash-panel-head { border-bottom-color: transparent; padding-bottom: 16px; }
+.study-fold.is-inline { position: static; }
+
+/* The memory verse, folded */
+.study-memory.is-folded { padding-top: 16px; padding-bottom: 16px; }
+.study-memory.study-foldable .study-memory-head { padding: 0 40px; }
+
+/* Why we start again in October */
+.study-start-why,
+.journal-start-why {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--colour-ink-soft);
+}
+.study-start-why strong,
+.journal-start-why strong { color: var(--colour-amber); font-weight: 600; }
+
+/* Study a word, Names of God and Look up a verse - side by side */
+.dash-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .dash-tools-row { order: 3; }
+}
+@media (max-width: 640px) {
+  .dash-tools { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The owner's session video box on each day */
+.session-video { margin: 4px 0 14px; }
+.session-video.is-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgb(var(--gold-rgb) / 0.45);
+}
+.session-video.is-empty .dash-input { flex: 1 1 220px; min-width: 0; }
+.session-video-label { font-size: 13px; font-weight: 600; color: var(--colour-amber); white-space: nowrap; }
+.session-video-tools { display: flex; gap: 14px; margin-top: 2px; font-size: 12.5px; }
+.session-video-error { flex-basis: 100%; margin-top: 0; }
+.session-video .day-video { margin: 0 0 4px; }

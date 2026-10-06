@@ -144,6 +144,7 @@ export async function GET(req: Request) {
         chapters: chapters.get(d) ?? [],
         passages: passages.get(d) ?? [],
         shared: info.get(d)?.shared !== 0,
+        ...(info.get(d)?.video ? { video: info.get(d)?.video } : {}),
       }));
 
     if (url.searchParams.get("only") === "contents") {

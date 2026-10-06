@@ -1,11 +1,13 @@
 "use client";
 
 // This week's memory verse on a member's home page: the words (BSB, public
-// domain), a link to read it in the NIV, and "I know it by heart".
+// domain), a link to read it in the NIV, and "I know it by heart". Folds
+// down to the reference; next week's verse opens again.
 
 import { useEffect, useState } from "react";
 import { parsePassage } from "@/lib/dashboard/notes";
 import { bibleAppVerse } from "@/lib/study/plan";
+import { FoldToggle, useFolded } from "./fold-toggle";
 
 // The passage's words inside our own quote marks (dropping any it opens or
 // closes with).
@@ -16,6 +18,7 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
   const [all, setAll] = useState(false);
   const [known, setKnown] = useState<{ ref: string; knownAt: number }[] | null>(null);
   const p = parsePassage(verse);
+  const [folded, toggleFold] = useFolded("atg:study:memoryFolded", verse);
 
   useEffect(() => {
     let live = true;
@@ -48,7 +51,8 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
   const learned = known?.length ?? 0;
 
   return (
-    <section className="study-memory">
+    <section className={`study-memory study-foldable ${folded ? "is-folded" : ""}`}>
+      <FoldToggle folded={folded} onToggle={toggleFold} what="the memory verse" />
       <div className="study-memory-head">
         <span className="eyebrow eyebrow-amber">Memory verse this week{author ? ` · from ${author}` : ""}</span>
         {learned > 0 && (
@@ -58,19 +62,21 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
         )}
       </div>
       <div className="study-memory-ref">{verse}</div>
-      {verses === null ? (
-        <p className="study-memory-text is-loading">…</p>
-      ) : verses.length ? (
+      {!folded && (
         <>
-          <p className="study-memory-text">
-            &ldquo;{quoteOf(all || verses.length <= 4 ? verses : verses.slice(0, 3))}
-            {all || verses.length <= 4 ? "”" : " …”"} <span className="study-memory-version">BSB</span>
-          </p>
-          {verses.length > 4 && (
-            <button type="button" className="dash-word-link study-memory-more" onClick={() => setAll((v) => !v)}>
-              {all ? "Show less" : `Show the whole passage · ${verses.length} verses`}
-            </button>
-          )}
+          {verses === null ? (
+            <p className="study-memory-text is-loading">…</p>
+          ) : verses.length ? (
+            <>
+              <p className="study-memory-text">
+                &ldquo;{quoteOf(all || verses.length <= 4 ? verses : verses.slice(0, 3))}
+                {all || verses.length <= 4 ? "”" : " …”"} <span className="study-memory-version">BSB</span>
+              </p>
+              {verses.length > 4 && (
+                <button type="button" className="dash-word-link study-memory-more" onClick={() => setAll((v) => !v)}>
+                  {all ? "Show less" : `Show the whole passage · ${verses.length} verses`}
+                </button>
+              )}
         </>
       ) : null}
       <div className="study-memory-actions">
@@ -84,6 +90,8 @@ export function MemoryVerse({ verse, reflectionId, author }: { verse: string; re
         )}
       </div>
       {!isKnown && <p className="study-memory-tip">Say it out loud each morning this week - by Sunday it&apos;s yours.</p>}
+        </>
+      )}
     </section>
   );
 }

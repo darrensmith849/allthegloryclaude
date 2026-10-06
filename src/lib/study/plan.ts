@@ -21,6 +21,9 @@ export const startMessage = (today: string) =>
     ? "We begin on Monday 12 October - Daniel's notes appear on each day as he goes, so you can read along from then, or start fresh on 1 January."
     : "We've begun - Daniel's notes appear on each day as he goes. Read along at your own pace, or start fresh on 1 January.";
 
+export const START_WHY =
+  "We've already been through the whole Bible once - and we want to start it again, from the very beginning, together.";
+
 export const PLAN = {
   name: "The One Year Chronological Bible",
   edition: "NIV · Tyndale",

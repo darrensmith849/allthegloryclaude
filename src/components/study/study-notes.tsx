@@ -20,11 +20,13 @@ import { NameLookup } from "@/components/study/name-lookup";
 import { WhyNiv } from "@/components/study/why-niv";
 import { DayVideo } from "@/components/study/day-video";
 import { DayJump } from "@/components/study/day-jump";
+import { SessionVideo } from "@/components/study/session-video";
+import { FoldToggle } from "@/components/study/fold-toggle";
 import { heldUntil, studyToday, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
-import { beforeStart, bibleAppDay, PLAN, startMessage, STUDY_START } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, PLAN, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
@@ -146,7 +148,7 @@ export function StudyNotes() {
   );
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
-  const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean; video: string } | null>(null);
+  const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
   // Owner: days kept out of the shared study until next year.
   const [hold, setHold] = useState<Hold | null>(null);
   // Members: the dates (MM-DD) the owner's study has notes for, with a label.
@@ -155,6 +157,8 @@ export function StudyNotes() {
   const [studyIndex, setStudyIndex] = useState<PlanIndex>(() => new Map());
   // Members: the owner's furthest day from Day 1 on, before the start.
   const [studyLatest, setStudyLatest] = useState<string | null>(null);
+  // Members: the owner's session video for each date (MM-DD), latest year.
+  const [studyVideo, setStudyVideo] = useState<Map<string, string>>(() => new Map());
   // Before everyone starts on Day 1 - set in the browser (the owner's page
   // is pre-rendered, so not at build time).
   const [early, setEarly] = useState(false);
@@ -286,14 +290,22 @@ export function StudyNotes() {
     setGuideStep(step);
   };
 
-  // Members: a short how-it-works guide until they've seen it.
+  // Members: a short how-it-works guide - open until they've seen it, then
+  // folded down to its title (tap to open it again).
   const [guide, setGuide] = useState(false);
+  const [guideFolded, setGuideFolded] = useState(false);
   useEffect(() => {
-    if (client.kind === "member") setGuide(readStore<boolean>(client.key("guide"), false) !== true);
+    if (client.kind !== "member") return;
+    setGuide(true);
+    setGuideFolded(readStore<boolean>(client.key("guide"), false) === true);
   }, [client]);
   const closeGuide = () => {
-    setGuide(false);
+    setGuideFolded(true);
     writeStore(client.key("guide"), true);
+  };
+  const toggleGuide = () => {
+    setGuideFolded((f) => !f);
+    writeStore(client.key("guide"), !guideFolded);
   };
 
   // Members: which dates the shared study covers, to link each day to it.
@@ -301,11 +313,12 @@ export function StudyNotes() {
     if (!client.studyUrl) return;
     fetch("/api/study/read?only=contents", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { contents?: { day: string; title: string; chapters: string[]; passages?: string[] }[] } | null) => {
+      .then((data: { contents?: { day: string; title: string; chapters: string[]; passages?: string[]; video?: string }[] } | null) => {
         if (!data?.contents) return;
         setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
         setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
         setStudyLatest(data.contents.map((c) => c.day).filter((d) => d >= STUDY_START).sort().pop() ?? null);
+        setStudyVideo(new Map(data.contents.filter((c) => c.video).map((c) => [c.day.slice(5), c.video as string])));
         const index: PlanIndex = new Map();
         for (const c of data.contents)
           for (const key of c.passages ?? [])
@@ -641,6 +654,28 @@ export function StudyNotes() {
     }
   }
 
+  // The owner's session video for the open day (a YouTube link, or "" to take it off).
+  async function saveVideo(url: string): Promise<boolean> {
+    if (!isDay(day)) return false;
+    const d = days[day];
+    try {
+      const r = await fetch(client.daysApi, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ day, title: d?.title ?? "", takeaway: d?.takeaway ?? "", shared: d?.shared ?? true, video: url }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; error?: string };
+      if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
+      const next = { ...days, [day]: data.day };
+      setDays(next);
+      writeStore(DAYS_KEY, next);
+      return true;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't save that.");
+      return false;
+    }
+  }
+
   // Tick a day's reading as done (or not). Saved per day, kept for good.
   async function toggleRead(d: string) {
     const was = days[d]?.readAt ?? null;
@@ -886,9 +921,14 @@ export function StudyNotes() {
           <div className="journal-start-text">
             <span className="eyebrow eyebrow-amber">Where we start</span>
             {client.kind === "member" ? (
-              <p>
-                <strong>Day 1 - Genesis 1 - is {dayLabel(STUDY_START)} on your calendar.</strong> {startMessage(todayDay())}
-              </p>
+              <>
+                <p>
+                  <strong>Day 1 - Genesis 1 - is {dayLabel(STUDY_START)} on your calendar.</strong> {startMessage(todayDay())}
+                </p>
+                <p className="journal-start-why">
+                  <strong>Why Genesis, in October?</strong> {START_WHY}
+                </p>
+              </>
             ) : (
               <p>
                 <strong>Genesis sessions go on next year&apos;s calendar - Day 1 is {dayLabel(STUDY_START)}.</strong> Members see
@@ -921,32 +961,6 @@ export function StudyNotes() {
         </div>
       )}
 
-      <JournalSearch
-        query={query}
-        setQuery={setQuery}
-        notes={results}
-        words={wordResults}
-        onOpenNote={openResult}
-        onOpenWord={(w) => openWordResult(w.id, w.day)}
-        studyName={client.studyUrl ? client.studyName : undefined}
-        onOpenStudyDay={(d) => {
-          // The same date in this year, where the study sits next to their own notes.
-          setQuery("");
-          openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
-          showStudy();
-        }}
-        onAddVerse={(ref) => {
-          const target = isDay(day) ? day : todayDay();
-          if (target !== day) openDay(target);
-          const current = drafts[target] ?? "";
-          setDraft(target, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
-          setQuery("");
-          window.setTimeout(() => {
-            writeBox.current?.focus();
-            writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 80);
-        }}
-      />
 
       <div className="dash-grid">
         {guide && (
@@ -954,72 +968,73 @@ export function StudyNotes() {
             <Panel
               eyebrow="Welcome"
               title="How your journal works"
-              action={
-                <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={closeGuide}>
-                  Got it
-                </button>
-              }
+              className={guideFolded ? "is-folded" : ""}
+              action={<FoldToggle folded={guideFolded} onToggle={toggleGuide} what="how your journal works" inline />}
             >
-              <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
-                <li>
-                  <strong>Open a day.</strong> Today is already open - each date is that day&apos;s reading in{" "}
-                  <em>{PLAN.name}</em>.
-                </li>
-                <li>
-                  <strong>Read the passages.</strong> Use the 📖 Bible App link (NIV), or your own copy of the book.
-                </li>
-                {client.studyUrl && (
-                  <li>
-                    <strong>Read {client.studyAuthor ? `${client.studyAuthor}'s` : "the study's"} notes.</strong> Gold
-                    dots on the calendar mark the days {client.studyAuthor ?? "the study"} wrote - open the card on that
-                    day to read them right there.
-                  </li>
-                )}
-                <li>
-                  <strong>Write your notes.</strong> Use the Page, Passage and Verse boxes under &ldquo;Start a note&rdquo;,
-                  then write. A line like <code>Vs 14 - …</code> becomes its own note under that verse.
-                </li>
-                <li>
-                  <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
-                  it in for the Hebrew or Greek, its meaning and the verses that use it.
-                </li>
-                <li>
-                  <strong>Tick &ldquo;Mark as read&rdquo;.</strong> It keeps your place and builds a streak. Everything
-                  is saved and private to you.
-                </li>
-              </ol>
-              {/* Phones: one step at a time - swipe, or Back / Next. */}
-              <div className="dash-guide-nav">
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-ghost dash-note-nav"
-                  onClick={() => goGuide(guideStep - 1)}
-                  disabled={guideStep === 0}
-                  aria-label="Previous step"
-                >
-                  ‹ Back
-                </button>
-                <span className="dash-guide-dots" aria-label={`Step ${guideStep + 1} of ${guideCount}`}>
-                  {Array.from({ length: guideCount }, (_, i) => (
+              {!guideFolded && (
+                <>
+                  <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
+                    <li>
+                      <strong>Open a day.</strong> Today is already open - each date is that day&apos;s reading in{" "}
+                      <em>{PLAN.name}</em>.
+                    </li>
+                    <li>
+                      <strong>Read the passages.</strong> Use the 📖 Bible App link (NIV), or your own copy of the book.
+                    </li>
+                    {client.studyUrl && (
+                      <li>
+                        <strong>Read {client.studyAuthor ? `${client.studyAuthor}'s` : "the study's"} notes.</strong> Gold
+                        dots on the calendar mark the days {client.studyAuthor ?? "the study"} wrote - open the card on that
+                        day to read them right there.
+                      </li>
+                    )}
+                    <li>
+                      <strong>Write your notes.</strong> Use the Page, Passage and Verse boxes under &ldquo;Start a note&rdquo;,
+                      then write. A line like <code>Vs 14 - …</code> becomes its own note under that verse.
+                    </li>
+                    <li>
+                      <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
+                      it in for the Hebrew or Greek, its meaning and the verses that use it.
+                    </li>
+                    <li>
+                      <strong>Tick &ldquo;Mark as read&rdquo;.</strong> It keeps your place and builds a streak. Everything
+                      is saved and private to you.
+                    </li>
+                  </ol>
+                  {/* Phones: one step at a time - swipe, or Back / Next. */}
+                  <div className="dash-guide-nav">
                     <button
-                      key={i}
                       type="button"
-                      className={i === guideStep ? "is-on" : ""}
-                      onClick={() => goGuide(i)}
-                      aria-label={`Step ${i + 1}`}
-                    />
-                  ))}
-                </span>
-                {guideStep < guideCount - 1 ? (
-                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => goGuide(guideStep + 1)}>
-                    Next ›
-                  </button>
-                ) : (
-                  <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={closeGuide}>
-                    Got it ✓
-                  </button>
-                )}
-              </div>
+                      className="dash-btn dash-btn-ghost dash-note-nav"
+                      onClick={() => goGuide(guideStep - 1)}
+                      disabled={guideStep === 0}
+                      aria-label="Previous step"
+                    >
+                      ‹ Back
+                    </button>
+                    <span className="dash-guide-dots" aria-label={`Step ${guideStep + 1} of ${guideCount}`}>
+                      {Array.from({ length: guideCount }, (_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className={i === guideStep ? "is-on" : ""}
+                          onClick={() => goGuide(i)}
+                          aria-label={`Step ${i + 1}`}
+                        />
+                      ))}
+                    </span>
+                    {guideStep < guideCount - 1 ? (
+                      <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => goGuide(guideStep + 1)}>
+                        Next ›
+                      </button>
+                    ) : (
+                      <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={closeGuide}>
+                        Got it ✓
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </Panel>
           </div>
         )}
@@ -1228,63 +1243,6 @@ export function StudyNotes() {
             <WhyNiv />
 
           </Panel>
-
-          {isDay(day) && (
-            <div className="mt-[18px]">
-              <Panel eyebrow={`Word study · ${dayLabel(day, { weekday: false })}`} title="Study a word">
-                <QuickWord
-                  day={day}
-                  verseHint={verseHint}
-                  onSaved={(w) => {
-                    setOpenWord(w.id);
-                    window.setTimeout(() => {
-                      document.getElementById(`word-${w.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 80);
-                  }}
-                />
-                <div className="dash-divider" />
-                <div className="eyebrow eyebrow-amber mb-1">Look up a name</div>
-                <p className="dash-word-hint mb-2">Who a person or place was, and what the name means.</p>
-                <NameLookup />
-              </Panel>
-            </div>
-          )}
-
-          {isDay(day) && (
-            <div className="mt-[18px]">
-              <Panel eyebrow={`Names of God · ${dayLabel(day, { weekday: false })}`} title="In this reading">
-                <NamesInReading
-                  chapters={starterChapters}
-                  namesUrl={client.kind === "member" ? "/study/names" : "/dashboard/names"}
-                />
-              </Panel>
-            </div>
-          )}
-
-          {!special && (
-            <div className="mt-[18px]">
-              <Panel eyebrow="The Bible" title="Look up a verse">
-                <BibleLookup
-                  plan={planIndex}
-                  planName={client.kind === "member" ? `${client.studyAuthor ?? "the study"}'s notes` : "your notes"}
-                  onOpenDay={(d) => {
-                    // Members open the same date in their own year, where the owner's notes sit too.
-                    const target = client.kind === "member" ? `${todayDay().slice(0, 4)}-${d.slice(5)}` : d;
-                    openDay(target);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  onAdd={(ref) => {
-                    const current = drafts[day] ?? "";
-                    setDraft(day, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
-                    window.setTimeout(() => {
-                      writeBox.current?.focus();
-                      writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 60);
-                  }}
-                />
-              </Panel>
-            </div>
-          )}
         </div>
 
         {/* ── The open day ────────────────────────────────────────── */}
@@ -1341,6 +1299,32 @@ export function StudyNotes() {
               ) : null
             }
           >
+            <JournalSearch
+              query={query}
+              setQuery={setQuery}
+              notes={results}
+              words={wordResults}
+              onOpenNote={openResult}
+              onOpenWord={(w) => openWordResult(w.id, w.day)}
+              studyName={client.studyUrl ? client.studyName : undefined}
+              onOpenStudyDay={(d) => {
+                // The same date in this year, where the study sits next to their own notes.
+                setQuery("");
+                openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
+                showStudy();
+              }}
+              onAddVerse={(ref) => {
+                const target = isDay(day) ? day : todayDay();
+                if (target !== day) openDay(target);
+                const current = drafts[target] ?? "";
+                setDraft(target, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
+                setQuery("");
+                window.setTimeout(() => {
+                  writeBox.current?.focus();
+                  writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 80);
+              }}
+            />
             {day === TRASH && (
               <div className="dash-note-list">
                 {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
@@ -1465,16 +1449,6 @@ export function StudyNotes() {
                     onChange={(e) => setDayEdit({ ...dayEdit, takeaway: e.target.value })}
                   />
                   {client.sharing && (
-                    <input
-                      className="dash-input"
-                      inputMode="url"
-                      placeholder="Session video - paste a YouTube link (optional)"
-                      value={dayEdit.video}
-                      onChange={(e) => setDayEdit({ ...dayEdit, video: e.target.value })}
-                      aria-label="YouTube link for this day's session"
-                    />
-                  )}
-                  {client.sharing && (
                     <label className="dash-day-share">
                       <input
                         type="checkbox"
@@ -1498,12 +1472,7 @@ export function StudyNotes() {
                   type="button"
                   className="dash-day-head"
                   onClick={() =>
-                    setDayEdit({
-                      title: days[day].title,
-                      takeaway: days[day].takeaway,
-                      shared: days[day].shared,
-                      video: days[day].video ?? "",
-                    })
+                    setDayEdit({ title: days[day].title, takeaway: days[day].takeaway, shared: days[day].shared })
                   }
                   title="Edit the title and takeaway"
                 >
@@ -1518,36 +1487,16 @@ export function StudyNotes() {
                   type="button"
                   className="dash-word-link mb-3"
                   onClick={() =>
-                    setDayEdit({
-                      title: days[day]?.title ?? "",
-                      takeaway: days[day]?.takeaway ?? "",
-                      shared: days[day]?.shared ?? true,
-                      video: days[day]?.video ?? "",
-                    })
+                    setDayEdit({ title: days[day]?.title ?? "", takeaway: days[day]?.takeaway ?? "", shared: days[day]?.shared ?? true })
                   }
                 >
-                  {client.sharing ? "+ Add a title, key takeaway or session video" : "+ Add a title and key takeaway for this day"}
+                  + Add a title and key takeaway for this day
                 </button>
               ))}
 
-            {isDay(day) && !dayEdit && client.sharing && days[day]?.video && (
-              <div className="dash-day-video">
-                <DayVideo url={days[day]?.video} />
-                <button
-                  type="button"
-                  className="dash-word-link"
-                  onClick={() =>
-                    setDayEdit({
-                      title: days[day]?.title ?? "",
-                      takeaway: days[day]?.takeaway ?? "",
-                      shared: days[day]?.shared ?? true,
-                      video: days[day]?.video ?? "",
-                    })
-                  }
-                >
-                  Change the video
-                </button>
-              </div>
+            {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} onSave={saveVideo} />}
+            {isDay(day) && client.kind === "member" && studyVideo.get(day.slice(5)) && (
+              <DayVideo url={studyVideo.get(day.slice(5))} label={`Watch ${client.studyAuthor ?? "Daniel"}'s session for this day`} />
             )}
             {isDay(day) && client.sharing && heldUntil(day, hold) && studyToday() < (heldUntil(day, hold) as string) && (
               <p className="dash-day-held">
@@ -1921,6 +1870,62 @@ export function StudyNotes() {
             </div>
             )}
           </Panel>
+        </div>
+
+        {/* ── Study tools, side by side ─────────────────────────── */}
+        <div className="dash-col-12 dash-tools-row">
+          <div className="dash-tools">
+            {isDay(day) && (
+              <Panel eyebrow={`Word study · ${dayLabel(day, { weekday: false })}`} title="Study a word">
+                <QuickWord
+                  day={day}
+                  verseHint={verseHint}
+                  onSaved={(w) => {
+                    setOpenWord(w.id);
+                    window.setTimeout(() => {
+                      document.getElementById(`word-${w.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 80);
+                  }}
+                />
+                <div className="dash-divider" />
+                <div className="eyebrow eyebrow-amber mb-1">Look up a name</div>
+                <p className="dash-word-hint mb-2">Who a person or place was, and what the name means.</p>
+                <NameLookup />
+              </Panel>
+            )}
+
+            {isDay(day) && (
+              <Panel eyebrow={`Names of God · ${dayLabel(day, { weekday: false })}`} title="In this reading">
+                <NamesInReading
+                  chapters={starterChapters}
+                  namesUrl={client.kind === "member" ? "/study/names" : "/dashboard/names"}
+                />
+              </Panel>
+            )}
+
+            {!special && (
+              <Panel eyebrow="The Bible" title="Look up a verse">
+                <BibleLookup
+                  plan={planIndex}
+                  planName={client.kind === "member" ? `${client.studyAuthor ?? "the study"}'s notes` : "your notes"}
+                  onOpenDay={(d) => {
+                    // Members open the same date in their own year, where the owner's notes sit too.
+                    const target = client.kind === "member" ? `${todayDay().slice(0, 4)}-${d.slice(5)}` : d;
+                    openDay(target);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onAdd={(ref) => {
+                    const current = drafts[day] ?? "";
+                    setDraft(day, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
+                    window.setTimeout(() => {
+                      writeBox.current?.focus();
+                      writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 60);
+                  }}
+                />
+              </Panel>
+            )}
+          </div>
         </div>
       </div>
     </>

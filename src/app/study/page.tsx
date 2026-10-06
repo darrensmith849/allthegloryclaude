@@ -11,7 +11,7 @@ import { canRead, studyName, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { beforeStart, bibleAppDay, PLAN, startMessage, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, PLAN, startMessage, START_WHY, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
@@ -194,70 +194,6 @@ export default function StudyHome() {
         {me.member && <p className="study-home-hello">Welcome back, {me.member.name.split(" ")[0]}.</p>}
       </header>
 
-      {me.member && !me.member.emailUpdates && !asked && (
-        <div className="study-ask">
-          <span>Would you like the occasional email when new studies, music or videos go up?</span>
-          <span className="flex gap-2">
-            <button type="button" className="dash-btn dash-btn-primary" onClick={() => answer(true)}>
-              Yes, email me
-            </button>
-            <button type="button" className="dash-btn dash-btn-ghost" onClick={() => answer(false)}>
-              No thanks
-            </button>
-          </span>
-        </div>
-      )}
-      {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
-
-      {answered > 0 && (
-        <Link href="/study/community#questions" className="study-weekly study-answered">
-          <span className="eyebrow eyebrow-amber">{answered === 1 ? "Your question" : "Your questions"}</span>
-          <span className="study-weekly-title">
-            {author ?? "The study"} answered {answered === 1 ? "your question" : `${answered} of your questions`}
-          </span>
-          <span className="study-weekly-go">Read the answer →</span>
-        </Link>
-      )}
-
-      {lastDay && lastDay !== today && (
-        <Link href={`/study/journal?day=${lastDay}`} className="study-resume">
-          <span>
-            Pick up where you left off · <strong>Day {planDay(lastDay).n}</strong>, {dayLabel(lastDay, { weekday: false })}
-          </span>
-          <span aria-hidden>→</span>
-        </Link>
-      )}
-
-      {me.member && !early && missed.length > 0 && (
-        <CatchUp
-          missed={missed}
-          hideKey={`atg:study:${me.member.id}:catchupHidden`}
-          onRead={(made) => setDays((list) => [...list.filter((x) => !made.some((m) => m.day === x.day)), ...made])}
-        />
-      )}
-
-      {weekly && (
-        <section className={`study-weekly study-foldable ${weeklyFolded ? "is-folded" : ""}`}>
-          <FoldToggle folded={weeklyFolded} onToggle={toggleWeekly} what="this week's reflection" />
-          <span className="eyebrow eyebrow-amber">This week from {weekly.author ?? author ?? "the study"}</span>
-          <Link href="/study/community" className="study-weekly-title">
-            {weekly.title}
-          </Link>
-          {!weeklyFolded && (
-            <>
-              <span className="study-weekly-text">
-                {weekly.body.replace(/\s+/g, " ").slice(0, 220)}
-                {weekly.body.length > 220 ? "…" : ""}
-              </span>
-              <Link href="/study/community" className="study-weekly-go">
-                {weekly.question ? "Read it and check in →" : "Read it →"}
-              </Link>
-            </>
-          )}
-        </section>
-      )}
-      {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
-
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">
         <div className="eyebrow eyebrow-amber">
@@ -265,9 +201,14 @@ export default function StudyHome() {
         </div>
         <h2 className="study-today-title">{early ? "We start at the beginning - Genesis 1" : "Today's reading"}</h2>
         {early && (
-          <p className="study-start-text">
-            We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage(today)}
-          </p>
+          <>
+            <p className="study-start-text">
+              We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage(today)}
+            </p>
+            <p className="study-start-why">
+              <strong>Why Genesis, in October?</strong> {START_WHY}
+            </p>
+          </>
         )}
         <div className="study-today-actions">
           <a className="study-today-step" href={bibleAppDay(n)} target="_blank" rel="noreferrer">
@@ -338,6 +279,71 @@ export default function StudyHome() {
           </div>
         )}
       </section>
+
+      {me.member && !me.member.emailUpdates && !asked && (
+        <div className="study-ask">
+          <span>Would you like the occasional email when new studies, music or videos go up?</span>
+          <span className="flex gap-2">
+            <button type="button" className="dash-btn dash-btn-primary" onClick={() => answer(true)}>
+              Yes, email me
+            </button>
+            <button type="button" className="dash-btn dash-btn-ghost" onClick={() => answer(false)}>
+              No thanks
+            </button>
+          </span>
+        </div>
+      )}
+      {thanks && <p className="dash-word-saved mt-4">✓ You&apos;re on the list - change it any time on your Account page.</p>}
+
+      {answered > 0 && (
+        <Link href="/study/community#questions" className="study-weekly study-answered">
+          <span className="eyebrow eyebrow-amber">{answered === 1 ? "Your question" : "Your questions"}</span>
+          <span className="study-weekly-title">
+            {author ?? "The study"} answered {answered === 1 ? "your question" : `${answered} of your questions`}
+          </span>
+          <span className="study-weekly-go">Read the answer →</span>
+        </Link>
+      )}
+
+      {lastDay && lastDay !== today && (
+        <Link href={`/study/journal?day=${lastDay}`} className="study-resume">
+          <span>
+            Pick up where you left off · <strong>Day {planDay(lastDay).n}</strong>, {dayLabel(lastDay, { weekday: false })}
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
+      )}
+
+      {me.member && !early && missed.length > 0 && (
+        <CatchUp
+          missed={missed}
+          hideKey={`atg:study:${me.member.id}:catchupHidden`}
+          onRead={(made) => setDays((list) => [...list.filter((x) => !made.some((m) => m.day === x.day)), ...made])}
+        />
+      )}
+
+      {weekly && (
+        <section className={`study-weekly study-foldable ${weeklyFolded ? "is-folded" : ""}`}>
+          <FoldToggle folded={weeklyFolded} onToggle={toggleWeekly} what="this week's reflection" />
+          <span className="eyebrow eyebrow-amber">This week from {weekly.author ?? author ?? "the study"}</span>
+          <Link href="/study/community" className="study-weekly-title">
+            {weekly.title}
+          </Link>
+          {!weeklyFolded && (
+            <>
+              <span className="study-weekly-text">
+                {weekly.body.replace(/\s+/g, " ").slice(0, 220)}
+                {weekly.body.length > 220 ? "…" : ""}
+              </span>
+              <Link href="/study/community" className="study-weekly-go">
+                {weekly.question ? "Read it and check in →" : "Read it →"}
+              </Link>
+            </>
+          )}
+        </section>
+      )}
+      {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
+
 
       {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
 
