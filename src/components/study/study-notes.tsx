@@ -407,6 +407,11 @@ export function StudyNotes() {
       window.setTimeout(() => document.getElementById("journal-day")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
     }
   }
+  // Open a day and scroll to it on every screen (buttons away from the calendar).
+  function goToDay(d: string) {
+    openDay(d);
+    window.setTimeout(() => document.getElementById("journal-day")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
 
   // ── The open day ──────────────────────────────────────────────
   const liveNotes = useMemo(() => notes.filter((n) => !n.deletedAt), [notes]);
@@ -937,7 +942,7 @@ export function StudyNotes() {
             )}
           </div>
           <div className="journal-start-actions">
-            <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => pickDay(STUDY_START)}>
+            <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => goToDay(STUDY_START)}>
               Open Day 1
             </button>
             {client.kind === "member" && studyLatest && studyLatest > STUDY_START && (
@@ -945,15 +950,15 @@ export function StudyNotes() {
                 type="button"
                 className="dash-btn dash-btn-ghost dash-note-nav"
                 onClick={() => {
-                  pickDay(studyLatest);
-                  showStudy();
+                  goToDay(studyLatest);
+                  showStudy(false);
                 }}
               >
                 {client.studyAuthor ?? "Daniel"}&apos;s latest · Day {planDay(studyLatest).n}
               </button>
             )}
             {client.kind === "owner" && startLatest && (
-              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(shiftDay(startLatest, 1))}>
+              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => goToDay(shiftDay(startLatest, 1))}>
                 Next · Day {planDay(shiftDay(startLatest, 1)).n}
               </button>
             )}
@@ -1073,803 +1078,809 @@ export function StudyNotes() {
           </div>
         )}
 
-        {/* ── Calendar + search ───────────────────────────────────── */}
-        <div className="dash-col-5 dash-note-side" ref={sideRef}>
-          <Panel
-            eyebrow="Reading plan"
-            title={calView === "year" ? month.slice(0, 4) : monthName}
-          >
-            <div className="dash-note-calbar">
-              <div className="dash-toggle" role="group" aria-label="Calendar view">
-                <button type="button" className={calView === "month" ? "is-on" : ""} onClick={() => setCalView("month")}>
-                  Month
-                </button>
-                <button type="button" className={calView === "year" ? "is-on" : ""} onClick={() => setCalView("year")}>
-                  Year
-                </button>
-              </div>
-              <div className="dash-note-calnav">
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-ghost dash-note-nav"
-                  onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? -12 : -1))}
-                  aria-label={calView === "year" ? "Previous year" : "Previous month"}
-                >
-                  ‹
-                </button>
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(today)}>
-                  Today
-                </button>
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-ghost dash-note-nav"
-                  onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? 12 : 1))}
-                  aria-label={calView === "year" ? "Next year" : "Next month"}
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-            <div className="dash-read-progress">
-              <span>
-                <strong>{readThisYear}</strong> of 365 days read in {progressYear}
-              </span>
-              {streak > 1 && <span className="dash-read-streak">{streak}-day streak</span>}
-              <span className="dash-read-bar" aria-hidden>
-                <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
-              </span>
-            </div>
-            {calView === "year" && (
-              <div className="dash-note-year">
-                {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
-                  <div key={m} className="dash-note-mini">
+        {/* ── The calendar and the open day ─────────────────────── */}
+        <div className="dash-col-12">
+          <div className="dash-grid dash-journal-row">
+            {/* ── Calendar + search ───────────────────────────────────── */}
+            <div className="dash-col-5 dash-note-side" ref={sideRef}>
+              <Panel
+                eyebrow="Reading plan"
+                title={calView === "year" ? month.slice(0, 4) : monthName}
+              >
+                <div className="dash-note-calbar">
+                  <div className="dash-toggle" role="group" aria-label="Calendar view">
+                    <button type="button" className={calView === "month" ? "is-on" : ""} onClick={() => setCalView("month")}>
+                      Month
+                    </button>
+                    <button type="button" className={calView === "year" ? "is-on" : ""} onClick={() => setCalView("year")}>
+                      Year
+                    </button>
+                  </div>
+                  <div className="dash-note-calnav">
                     <button
                       type="button"
-                      className="dash-note-mini-name"
-                      onClick={() => {
-                        setMonth(m);
-                        setCalView("month");
-                      }}
-                    >
-                      {MONTH_SHORT[Number(m.slice(5, 7)) - 1]}
-                    </button>
-                    <div className="dash-note-mini-grid">
-                      {monthGrid(m).map((d) =>
-                        isSameMonth(d, m) ? (
-                          <button
-                            key={d}
-                            type="button"
-                            onClick={() => pickDay(d)}
-                            title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
-                            className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${days[d]?.starredAt ? "is-starred" : ""} ${
-                              d === day ? "is-selected" : ""
-                            } ${d === today ? "is-today" : ""}`}
-                          />
-                        ) : (
-                          <span key={d} />
-                        ),
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {calView === "month" && (
-            <div className="dash-note-cal">
-              {WEEK.map((w) => (
-                <div key={w} className="dash-note-cal-head">
-                  {w}
-                </div>
-              ))}
-              {grid.map((d) => {
-                const count = counts.get(d) ?? 0;
-                const hasWords = wordDays.has(d);
-                const read = readDays.has(d);
-                const starredDay = Boolean(days[d]?.starredAt);
-                const reflected = reflections.byDay.has(d);
-                const study = studyOn.has(d.slice(5));
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => pickDay(d)}
-                    className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
-                      d === day ? "is-selected" : ""
-                    } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""} ${starredDay ? "is-starred" : ""}`}
-                    aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
-                  >
-                    <span>{Number(d.slice(8))}</span>
-                    {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
-                    {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
-                    {(count > 0 || hasWords || read || reflected) && (
-                      <em>
-                        {read ? "✓ " : ""}
-                        {count > 0 ? count : ""}
-                        {hasWords ? " α" : ""}
-                        {reflected ? " ❧" : ""}
-                      </em>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            )}
-            {reflections.byDay.size > 0 && (
-              <p className="dash-cal-key">
-                <span aria-hidden>❧</span> Weekly reflection - open the day to read it
-              </p>
-            )}
-            {client.studyUrl && studyOn.size > 0 && (
-              <p className="dash-cal-key">
-                <i className="dash-cal-study-dot" /> {client.studyAuthor ? `${client.studyAuthor} wrote on these days` : "The study has notes on these days"} -
-                open a day to read them
-              </p>
-            )}
-            {undatedCount > 0 && (
-              <button type="button" className="dash-word-link mt-3" onClick={() => openDay(UNDATED)}>
-                {undatedCount} {undatedCount === 1 ? "note" : "notes"} without a day →
-              </button>
-            )}
-            {starCount > 0 && (
-              <button type="button" className="dash-word-link mt-3 block" onClick={() => pickDay(STARRED)}>
-                ★ Starred days and notes · {starCount} →
-              </button>
-            )}
-            <DayJump onGo={pickDay} />
-            {trash.length > 0 && (
-              <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
-                Recently deleted · {trash.length} →
-              </button>
-            )}
-
-            <p className="dash-plan-foot">
-              Following <em>{PLAN.name}</em> ({PLAN.edition}) ·{" "}
-              <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
-                free in the Bible App
-              </a>{" "}
-              · the NIV book:{" "}
-              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
-                Takealot
-              </a>{" "}
-              ·{" "}
-              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
-                Amazon
-              </a>{" "}
-              ·{" "}
-              <a href={PLAN.kindle} target="_blank" rel="noreferrer">
-                Kindle eBook
-              </a>
-            </p>
-            <WhyNiv />
-
-          </Panel>
-        </div>
-
-        {/* ── The open day ────────────────────────────────────────── */}
-        <div className="dash-col-7 dash-note-main" id="journal-day">
-          <Panel
-            eyebrow={
-              day === TRASH
-                ? "Nothing is ever lost"
-                : day === STARRED
-                ? "Your highlights"
-                : day === UNDATED
-                ? "Notes without a day"
-                : [
-                    `Day ${planDay(day).n} of ${planDay(day).of}`,
-                    dayPages.length ? `Page ${dayPages.join(", ")}` : "",
-                    dayChapters.join(" · "),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-            }
-            title={
-              day === TRASH ? "Recently deleted" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
-            }
-            action={
-              isDay(day) ? (
-                <div className="flex gap-1">
-                  {client.readerUrl && (
-                    <a
                       className="dash-btn dash-btn-ghost dash-note-nav"
-                      href={`${client.readerUrl}?day=${day}`}
-                      title="See this day the way a reader would"
+                      onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? -12 : -1))}
+                      aria-label={calView === "year" ? "Previous year" : "Previous month"}
                     >
-                      Reader view
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    className="dash-btn dash-btn-ghost dash-note-nav dash-only-stacked"
-                    onClick={() =>
-                      document.querySelector(".dash-note-side > *")?.scrollIntoView({ behavior: "smooth", block: "start" })
-                    }
-                    aria-label="Calendar"
-                    title="Calendar"
-                  >
-                    📅
-                  </button>
-                  <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
-                    ‹
-                  </button>
-                  <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, 1))} aria-label="Next day">
-                    ›
-                  </button>
-                </div>
-              ) : null
-            }
-          >
-            <JournalSearch
-              query={query}
-              setQuery={setQuery}
-              notes={results}
-              words={wordResults}
-              onOpenNote={openResult}
-              onOpenWord={(w) => openWordResult(w.id, w.day)}
-              studyName={client.studyUrl ? client.studyName : undefined}
-              onOpenStudyDay={(d) => {
-                // The same date in this year, where the study sits next to their own notes.
-                setQuery("");
-                openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
-                showStudy();
-              }}
-              onAddVerse={(ref) => {
-                const target = isDay(day) ? day : todayDay();
-                if (target !== day) openDay(target);
-                const current = drafts[target] ?? "";
-                setDraft(target, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
-                setQuery("");
-                window.setTimeout(() => {
-                  writeBox.current?.focus();
-                  writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                }, 80);
-              }}
-            />
-            {day === TRASH && (
-              <div className="dash-note-list">
-                {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
-                {trash.map((n) => (
-                  <article key={n.id} className="dash-note-trash">
-                    <div className="dash-note-ref">
-                      <span className="text-[12px] text-[var(--colour-amber-soft)]">
-                        {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
-                        {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
-                      </span>
-                    </div>
-                    <div className="dash-note-body">
-                      <NoteText text={n.text} />
-                    </div>
-                    <div className="dash-note-actions" style={{ opacity: 1 }}>
-                      <button type="button" className="dash-word-link" onClick={() => restore(n)}>
-                        Restore
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {day === STARRED && starredDays.length > 0 && (
-              <div className="dash-star-days">
-                <div className="dash-note-section-label">Starred days · {starredDays.length}</div>
-                {starredDays.map((d) => (
-                  <div key={d.day} className="dash-star-day">
-                    <button type="button" className="dash-star-day-open" onClick={() => pickDay(d.day)}>
-                      <span className="dash-star-day-when">
-                        ★ Day {planDay(d.day).n} · {dayLabel(d.day)}
-                      </span>
-                      <span className="dash-star-day-title">
-                        {d.title ||
-                          dayChaptersOf(d.day) ||
-                          (studyChapters.get(d.day.slice(5)) ?? []).join(" · ") ||
-                          `Day ${planDay(d.day).n}'s reading`}
-                      </span>
-                      {d.takeaway && <span className="dash-star-day-take">{d.takeaway}</span>}
+                      ‹
                     </button>
-                    <button type="button" className="dash-word-link" onClick={() => toggleStarDay(d.day)} aria-label="Take the star off this day">
-                      Remove star
+                    <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(today)}>
+                      Today
                     </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {day === STARRED && (
-              <div className="dash-note-list">
-                {starred.length > 0 && <div className="dash-note-section-label">Starred notes · {starred.length}</div>}
-                {starCount === 0 && (
-                  <div className="dash-word-hint">
-                    Nothing starred yet. Tap ☆ Star this day on a day you love - or ☆ Star on a single note - and it&apos;s kept
-                    here, on every device.
-                  </div>
-                )}
-                {starred.map((n) => (
-                  <article key={n.id} className="dash-note-trash dash-note-starred">
-                    <div className="dash-note-ref">
-                      <span className="text-[12px] text-[var(--colour-amber-soft)]">
-                        {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
-                        {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
-                        {n.page != null ? ` · Page ${n.page}` : ""}
-                      </span>
-                    </div>
-                    <div className="dash-note-body">
-                      <NoteText text={n.text} />
-                    </div>
-                    <div className="dash-note-actions" style={{ opacity: 1 }}>
-                      <button type="button" className="dash-word-link" onClick={() => openResult(n)}>
-                        Open this day →
-                      </button>
-                      <span className="flex-1" />
-                      <button type="button" className="dash-word-link" onClick={() => toggleStar(n)}>
-                        Remove star
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {isDay(day) && (
-              <div className="dash-day-tools">
-                <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-                  📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
-                </a>
-                <button
-                  type="button"
-                  className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${readDays.has(day) ? "is-read" : ""}`}
-                  onClick={() => toggleRead(day)}
-                  title={readDays.has(day) ? "Read - tap to undo" : "Tick when you've read this day's passages"}
-                >
-                  {readDays.has(day) ? "✓ Read" : "Mark as read"}
-                </button>
-                <button
-                  type="button"
-                  className={`dash-btn dash-btn-ghost dash-note-nav dash-star-btn ${days[day]?.starredAt ? "is-starred" : ""}`}
-                  onClick={() => toggleStarDay(day)}
-                  title={days[day]?.starredAt ? "Starred - tap to take the star off" : "Keep this day in your starred days"}
-                >
-                  {days[day]?.starredAt ? "★ Starred day" : "☆ Star this day"}
-                </button>
-              </div>
-            )}
-
-            {isDay(day) &&
-              (dayEdit ? (
-                <div className="dash-day-edit">
-                  <input
-                    className="dash-input dash-day-title-input"
-                    placeholder="A title for this day, e.g. Jesus and the woman at the well"
-                    value={dayEdit.title}
-                    onChange={(e) => setDayEdit({ ...dayEdit, title: e.target.value })}
-                    autoFocus
-                  />
-                  <GrowingTextarea
-                    className="dash-textarea dash-word-field"
-                    placeholder="Key takeaway - the one thing to remember from today's reading."
-                    value={dayEdit.takeaway}
-                    onChange={(e) => setDayEdit({ ...dayEdit, takeaway: e.target.value })}
-                  />
-                  {client.sharing && (
-                    <label className="dash-day-share">
-                      <input
-                        type="checkbox"
-                        checked={dayEdit.shared}
-                        onChange={(e) => setDayEdit({ ...dayEdit, shared: e.target.checked })}
-                      />
-                      Include this day when I share my study
-                    </label>
-                  )}
-                  <div className="flex gap-2">
-                    <button type="button" className="dash-btn dash-btn-primary" onClick={saveDayDetails}>
-                      Save
-                    </button>
-                    <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setDayEdit(null)}>
-                      Cancel
+                    <button
+                      type="button"
+                      className="dash-btn dash-btn-ghost dash-note-nav"
+                      onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? 12 : 1))}
+                      aria-label={calView === "year" ? "Next year" : "Next month"}
+                    >
+                      ›
                     </button>
                   </div>
                 </div>
-              ) : days[day]?.title || days[day]?.takeaway ? (
-                <button
-                  type="button"
-                  className="dash-day-head"
-                  onClick={() =>
-                    setDayEdit({ title: days[day].title, takeaway: days[day].takeaway, shared: days[day].shared })
-                  }
-                  title="Edit the title and takeaway"
-                >
-                  {days[day].title && <span className="dash-day-title">{days[day].title}</span>}
-                  {days[day].takeaway && <span className="dash-day-takeaway">{days[day].takeaway}</span>}
-                  {client.sharing && !days[day].shared && (
-                    <span className="dash-day-private">🔒 Not included when shared</span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="dash-word-link mb-3"
-                  onClick={() =>
-                    setDayEdit({ title: days[day]?.title ?? "", takeaway: days[day]?.takeaway ?? "", shared: days[day]?.shared ?? true })
-                  }
-                >
-                  + Add a title and key takeaway for this day
-                </button>
-              ))}
-
-            {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} onSave={saveVideo} />}
-            {isDay(day) && client.kind === "member" && studyVideo.get(day.slice(5)) && (
-              <DayVideo url={studyVideo.get(day.slice(5))} label={`Watch ${client.studyAuthor ?? "Daniel"}'s session for this day`} />
-            )}
-            {isDay(day) && client.sharing && heldUntil(day, hold) && studyToday() < (heldUntil(day, hold) as string) && (
-              <p className="dash-day-held">
-                🔒 Kept private until{" "}
-                {new Date(`${heldUntil(day, hold)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}{" "}
-                - members see this day from then. You can change this on Members.
-              </p>
-            )}
-
-            {client.studyUrl && isDay(day) && studyOn.size > 0 && (
-              <div className={`dash-daniel ${studyOpen ? "is-open" : ""}`} id="daniel-study">
-                <button
-                  type="button"
-                  className="dash-daniel-head"
-                  onClick={() => toggleSection("study")}
-                  aria-expanded={studyOpen}
-                >
-                  <span className="dash-daniel-label">
-                    <span className="eyebrow eyebrow-amber">{client.studyName}</span>
-                    <span className="dash-daniel-sub">
-                      {studyOn.has(day.slice(5))
-                        ? studyOn.get(day.slice(5)) || `For ${dayLabel(day, { weekday: false })}`
-                        : `Nothing for ${dayLabel(day, { weekday: false })} yet - see the latest`}
-                    </span>
+                <div className="dash-read-progress">
+                  <span>
+                    <strong>{readThisYear}</strong> of 365 days read in {progressYear}
                   </span>
-                  <span className="dash-daniel-toggle">{studyOpen ? "Minimise ▴" : "Open ▾"}</span>
-                </button>
-                {studyOpen && (
-                  <StudyPeek
-                    key={day}
-                    on={studyOn.has(day.slice(5)) ? day.slice(5) : undefined}
-                    studyUrl={client.studyUrl}
-                    author={client.studyAuthor}
-                  />
+                  {streak > 1 && <span className="dash-read-streak">{streak}-day streak</span>}
+                  <span className="dash-read-bar" aria-hidden>
+                    <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
+                  </span>
+                </div>
+                {calView === "year" && (
+                  <div className="dash-note-year">
+                    {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
+                      <div key={m} className="dash-note-mini">
+                        <button
+                          type="button"
+                          className="dash-note-mini-name"
+                          onClick={() => {
+                            setMonth(m);
+                            setCalView("month");
+                          }}
+                        >
+                          {MONTH_SHORT[Number(m.slice(5, 7)) - 1]}
+                        </button>
+                        <div className="dash-note-mini-grid">
+                          {monthGrid(m).map((d) =>
+                            isSameMonth(d, m) ? (
+                              <button
+                                key={d}
+                                type="button"
+                                onClick={() => pickDay(d)}
+                                title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
+                                className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${days[d]?.starredAt ? "is-starred" : ""} ${
+                                  d === day ? "is-selected" : ""
+                                } ${d === today ? "is-today" : ""}`}
+                              />
+                            ) : (
+                              <span key={d} />
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </div>
-            )}
-
-            {isDay(day) && reflections.byDay.get(day) && (() => {
-              const r = reflections.byDay.get(day) as Reflection;
-              const writer = r.author ?? client.studyAuthor ?? reflections.author ?? "Daniel";
-              const current = r.id === reflections.latest;
-              return (
-                <div className={`dash-daniel dash-weekly-panel ${weeklyOpen ? "is-open" : ""}`}>
-                  <button type="button" className="dash-daniel-head" onClick={() => toggleSection("weekly")} aria-expanded={weeklyOpen}>
-                    <span className="dash-daniel-label">
-                      <span className="eyebrow eyebrow-amber">❧ Weekly reflection · from {writer}</span>
-                      <span className="dash-daniel-sub">{r.title}</span>
-                    </span>
-                    <span className="dash-daniel-toggle">{weeklyOpen ? "Minimise ▴" : "Open ▾"}</span>
+                {calView === "month" && (
+                <div className="dash-note-cal">
+                  {WEEK.map((w) => (
+                    <div key={w} className="dash-note-cal-head">
+                      {w}
+                    </div>
+                  ))}
+                  {grid.map((d) => {
+                    const count = counts.get(d) ?? 0;
+                    const hasWords = wordDays.has(d);
+                    const read = readDays.has(d);
+                    const starredDay = Boolean(days[d]?.starredAt);
+                    const reflected = reflections.byDay.has(d);
+                    const study = studyOn.has(d.slice(5));
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => pickDay(d)}
+                        className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
+                          d === day ? "is-selected" : ""
+                        } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""} ${starredDay ? "is-starred" : ""}`}
+                        aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
+                      >
+                        <span>{Number(d.slice(8))}</span>
+                        {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
+                        {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
+                        {(count > 0 || hasWords || read || reflected) && (
+                          <em>
+                            {read ? "✓ " : ""}
+                            {count > 0 ? count : ""}
+                            {hasWords ? " α" : ""}
+                            {reflected ? " ❧" : ""}
+                          </em>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                )}
+                {reflections.byDay.size > 0 && (
+                  <p className="dash-cal-key">
+                    <span aria-hidden>❧</span> Weekly reflection - open the day to read it
+                  </p>
+                )}
+                {client.studyUrl && studyOn.size > 0 && (
+                  <p className="dash-cal-key">
+                    <i className="dash-cal-study-dot" /> {client.studyAuthor ? `${client.studyAuthor} wrote on these days` : "The study has notes on these days"} -
+                    open a day to read them
+                  </p>
+                )}
+                {undatedCount > 0 && (
+                  <button type="button" className="dash-word-link mt-3" onClick={() => openDay(UNDATED)}>
+                    {undatedCount} {undatedCount === 1 ? "note" : "notes"} without a day →
                   </button>
-                  {weeklyOpen && (
-                    <div className="dash-daniel-body">
-                      <ReflectionBody r={r} author={writer} current={current} />
-                      {current && r.question && (
-                        <a href="/study/community" className="dash-word-link dash-daniel-all">
-                          Check in with {writer} →
+                )}
+                {starCount > 0 && (
+                  <button type="button" className="dash-word-link mt-3 block" onClick={() => pickDay(STARRED)}>
+                    ★ Starred days and notes · {starCount} →
+                  </button>
+                )}
+                <DayJump onGo={goToDay} />
+                {trash.length > 0 && (
+                  <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
+                    Recently deleted · {trash.length} →
+                  </button>
+                )}
+
+                <p className="dash-plan-foot">
+                  Following <em>{PLAN.name}</em> ({PLAN.edition}) ·{" "}
+                  <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+                    free in the Bible App
+                  </a>{" "}
+                  · the NIV book:{" "}
+                  <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                    Takealot
+                  </a>{" "}
+                  ·{" "}
+                  <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                    Amazon
+                  </a>{" "}
+                  ·{" "}
+                  <a href={PLAN.kindle} target="_blank" rel="noreferrer">
+                    Kindle eBook
+                  </a>
+                </p>
+                <WhyNiv />
+
+              </Panel>
+            </div>
+
+            {/* ── The open day ────────────────────────────────────────── */}
+            <div className="dash-col-7 dash-note-main" id="journal-day">
+              <Panel
+                eyebrow={
+                  day === TRASH
+                    ? "Nothing is ever lost"
+                    : day === STARRED
+                    ? "Your highlights"
+                    : day === UNDATED
+                    ? "Notes without a day"
+                    : [
+                        `Day ${planDay(day).n} of ${planDay(day).of}`,
+                        dayPages.length ? `Page ${dayPages.join(", ")}` : "",
+                        dayChapters.join(" · "),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                }
+                title={
+                  day === TRASH ? "Recently deleted" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
+                }
+                action={
+                  isDay(day) ? (
+                    <div className="flex gap-1">
+                      {client.readerUrl && (
+                        <a
+                          className="dash-btn dash-btn-ghost dash-note-nav"
+                          href={`${client.readerUrl}?day=${day}`}
+                          title="See this day the way a reader would"
+                        >
+                          Reader view
                         </a>
                       )}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {otherYears.length > 0 && (
-              <div className="dash-note-years">
-                <span className="eyebrow">This day in other years</span>
-                {otherYears.map(([d, c]) => (
-                  <button key={d} type="button" className="dash-word-alt" onClick={() => openDay(d)}>
-                    {d.slice(0, 4)} · {c.notes ? `${c.notes} ${c.notes === 1 ? "note" : "notes"}` : ""}
-                    {c.notes && c.words ? ", " : ""}
-                    {c.words ? `${c.words} ${c.words === 1 ? "word" : "words"}` : ""}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {!special && loaded && dayNotes.length === 0 && (
-              <div className="dash-word-hint mb-4">No notes on this day yet - write them below.</div>
-            )}
-
-            {!special && dayNotes.length > 0 && (
-              <div className="dash-note-section-row">
-                <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
-                  <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
-                  <span className="dash-note-section-chev" aria-hidden>
-                    {sections.notes ? "▾" : "▸"}
-                  </span>
-                </button>
-                {sections.notes && (
-                  <button
-                    type="button"
-                    className="dash-word-link"
-                    onClick={() =>
-                      setOpenNotes(
-                        dayNotes.every((n) => openNotes.has(n.id)) ? new Set() : new Set(dayNotes.map((n) => n.id)),
-                      )
-                    }
-                  >
-                    {dayNotes.every((n) => openNotes.has(n.id)) ? "Close all" : "Open all"}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {!special && sections.notes && (
-            <div className="dash-note-list">
-              {dayNotes.map((n, i) => {
-                const p = passageOf(n);
-                const v = verses[n.id];
-                const isEditing = editing?.id === n.id;
-                const open = isEditing || openNotes.has(n.id);
-                const showPage = n.page != null && n.page !== dayNotes[i - 1]?.page;
-                const preview = n.text
-                  .replace(/^\s*(?:[•●▪◦*]|-(?=\s))\s*/gm, "")
-                  .replace(/\s+/g, " ")
-                  .trim();
-                return (
-                  <div key={n.id}>
-                    {showPage && <div className="dash-note-pagebreak">Page {n.page}</div>}
-                    <article
-                      id={`note-${n.id}`}
-                      className={`dash-note ${open ? "is-open" : ""} ${flash === n.id ? "is-new" : ""}`}
-                    >
                       <button
                         type="button"
-                        className="dash-note-head"
-                        onClick={() => !isEditing && toggleNote(n.id)}
-                        aria-expanded={open}
+                        className="dash-btn dash-btn-ghost dash-note-nav dash-only-stacked"
+                        onClick={() =>
+                          document.querySelector(".dash-note-side > *")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }
+                        aria-label="Calendar"
+                        title="Calendar"
                       >
-                        <span className="dash-note-head-ref">
-                          {p ? formatPassage(p) : "Note"}
-                          {n.starredAt ? <span className="dash-note-star" aria-label="Starred"> ★</span> : null}
-                          {client.sharing && n.private ? " 🔒" : ""}
-                        </span>
-                        <span className="dash-note-head-text">{open ? "" : preview}</span>
-                        <span className="dash-note-chev" aria-hidden>
-                          ›
-                        </span>
+                        📅
                       </button>
+                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
+                        ‹
+                      </button>
+                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, 1))} aria-label="Next day">
+                        ›
+                      </button>
+                    </div>
+                  ) : null
+                }
+              >
+                <JournalSearch
+                  query={query}
+                  setQuery={setQuery}
+                  notes={results}
+                  words={wordResults}
+                  onOpenNote={openResult}
+                  onOpenWord={(w) => openWordResult(w.id, w.day)}
+                  studyName={client.studyUrl ? client.studyName : undefined}
+                  onOpenStudyDay={(d) => {
+                    // The same date in this year, where the study sits next to their own notes.
+                    setQuery("");
+                    openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
+                    showStudy();
+                  }}
+                  onAddVerse={(ref) => {
+                    const target = isDay(day) ? day : todayDay();
+                    if (target !== day) openDay(target);
+                    const current = drafts[target] ?? "";
+                    setDraft(target, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
+                    setQuery("");
+                    window.setTimeout(() => {
+                      writeBox.current?.focus();
+                      writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 80);
+                  }}
+                />
+                {day === TRASH && (
+                  <div className="dash-note-list">
+                    {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
+                    {trash.map((n) => (
+                      <article key={n.id} className="dash-note-trash">
+                        <div className="dash-note-ref">
+                          <span className="text-[12px] text-[var(--colour-amber-soft)]">
+                            {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
+                            {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
+                          </span>
+                        </div>
+                        <div className="dash-note-body">
+                          <NoteText text={n.text} />
+                        </div>
+                        <div className="dash-note-actions" style={{ opacity: 1 }}>
+                          <button type="button" className="dash-word-link" onClick={() => restore(n)}>
+                            Restore
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
 
-                      {open && (
-                        <div className="dash-note-open">
-                          {isEditing ? (
-                            <div className="flex flex-col gap-2">
-                              <div className="dash-note-edit-row">
-                                <input
-                                  type="date"
-                                  className="dash-input"
-                                  aria-label="Day"
-                                  value={editing.day}
-                                  onChange={(e) => setEditing({ ...editing, day: e.target.value })}
-                                />
-                                <input
-                                  className="dash-input"
-                                  inputMode="numeric"
-                                  aria-label="Page"
-                                  placeholder="Page"
-                                  value={editing.page}
-                                  onChange={(e) => setEditing({ ...editing, page: e.target.value.replace(/[^\d]/g, "") })}
-                                />
-                                <input
-                                  className="dash-input"
-                                  aria-label="Passage"
-                                  placeholder="Passage, e.g. Matt 4 vs 1"
-                                  value={editing.passage}
-                                  onChange={(e) => setEditing({ ...editing, passage: e.target.value })}
-                                />
-                              </div>
-                              <GrowingTextarea
-                                className="dash-textarea dash-word-field"
-                                value={editing.text}
-                                onChange={(e) => setEditing({ ...editing, text: e.target.value })}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
-                                  if (e.key === "Escape") setEditing(null);
-                                }}
-                                autoFocus
-                              />
-                              <div className="flex gap-2 flex-wrap">
-                                <button type="button" className="dash-btn dash-btn-primary" onClick={saveEdit}>
-                                  Save
-                                </button>
-                                <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setEditing(null)}>
-                                  Cancel
-                                </button>
-                                <button type="button" className="dash-btn dash-btn-danger ml-auto" onClick={() => remove(n)}>
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <NoteText text={n.text} />
-                          )}
+                {day === STARRED && starredDays.length > 0 && (
+                  <div className="dash-star-days">
+                    <div className="dash-note-section-label">Starred days · {starredDays.length}</div>
+                    {starredDays.map((d) => (
+                      <div key={d.day} className="dash-star-day">
+                        <button type="button" className="dash-star-day-open" onClick={() => pickDay(d.day)}>
+                          <span className="dash-star-day-when">
+                            ★ Day {planDay(d.day).n} · {dayLabel(d.day)}
+                          </span>
+                          <span className="dash-star-day-title">
+                            {d.title ||
+                              dayChaptersOf(d.day) ||
+                              (studyChapters.get(d.day.slice(5)) ?? []).join(" · ") ||
+                              `Day ${planDay(d.day).n}'s reading`}
+                          </span>
+                          {d.takeaway && <span className="dash-star-day-take">{d.takeaway}</span>}
+                        </button>
+                        <button type="button" className="dash-word-link" onClick={() => toggleStarDay(d.day)} aria-label="Take the star off this day">
+                          Remove star
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {day === STARRED && (
+                  <div className="dash-note-list">
+                    {starred.length > 0 && <div className="dash-note-section-label">Starred notes · {starred.length}</div>}
+                    {starCount === 0 && (
+                      <div className="dash-word-hint">
+                        Nothing starred yet. Tap ☆ Star this day on a day you love - or ☆ Star on a single note - and it&apos;s kept
+                        here, on every device.
+                      </div>
+                    )}
+                    {starred.map((n) => (
+                      <article key={n.id} className="dash-note-trash dash-note-starred">
+                        <div className="dash-note-ref">
+                          <span className="text-[12px] text-[var(--colour-amber-soft)]">
+                            {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
+                            {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
+                            {n.page != null ? ` · Page ${n.page}` : ""}
+                          </span>
+                        </div>
+                        <div className="dash-note-body">
+                          <NoteText text={n.text} />
+                        </div>
+                        <div className="dash-note-actions" style={{ opacity: 1 }}>
+                          <button type="button" className="dash-word-link" onClick={() => openResult(n)}>
+                            Open this day →
+                          </button>
+                          <span className="flex-1" />
+                          <button type="button" className="dash-word-link" onClick={() => toggleStar(n)}>
+                            Remove star
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
 
-                          {v && (
-                            <div className="dash-word-verse">
-                              {v.loading && <span className="dash-word-hint">Opening the passage…</span>}
-                              {v.error && <span className="text-[12.5px] text-[#f1a07d]">{v.error}</span>}
-                              {v.verses && (
-                                <>
-                                  <div className="eyebrow eyebrow-amber mb-1.5">{v.label}</div>
-                                  <div className="dash-verse">
-                                    {v.verses.map((x) => (
-                                      <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
-                                        <span className="dash-verse-num">{x.verse}</span>
-                                        {x.text}
-                                      </p>
-                                    ))}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          )}
+                {isDay(day) && (
+                  <div className="dash-day-tools">
+                    <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
+                      📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
+                    </a>
+                    <button
+                      type="button"
+                      className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${readDays.has(day) ? "is-read" : ""}`}
+                      onClick={() => toggleRead(day)}
+                      title={readDays.has(day) ? "Read - tap to undo" : "Tick when you've read this day's passages"}
+                    >
+                      {readDays.has(day) ? "✓ Read" : "Mark as read"}
+                    </button>
+                    <button
+                      type="button"
+                      className={`dash-btn dash-btn-ghost dash-note-nav dash-star-btn ${days[day]?.starredAt ? "is-starred" : ""}`}
+                      onClick={() => toggleStarDay(day)}
+                      title={days[day]?.starredAt ? "Starred - tap to take the star off" : "Keep this day in your starred days"}
+                    >
+                      {days[day]?.starredAt ? "★ Starred day" : "☆ Star this day"}
+                    </button>
+                  </div>
+                )}
 
-                          {!isEditing && (
-                            <div className="dash-note-actions">
-                              {p && (
-                                <button type="button" className="dash-word-link" onClick={() => toggleVerse(n)}>
-                                  {v ? "Hide verse" : "Read verse"}
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className={`dash-word-link ${n.starredAt ? "is-starred" : ""}`}
-                                onClick={() => toggleStar(n)}
-                                title={n.starredAt ? "Take the star off" : "Keep this note in your starred notes"}
-                              >
-                                {n.starredAt ? "★ Starred" : "☆ Star"}
-                              </button>
-                              {client.sharing && (
-                                <button
-                                  type="button"
-                                  className="dash-word-link"
-                                  onClick={() => togglePrivate(n)}
-                                  title={
-                                    n.private
-                                      ? "Include this note when you share your study"
-                                      : "Never include this note when you share your study"
-                                  }
-                                >
-                                  {n.private ? "🔒 Private" : "Make private"}
-                                </button>
-                              )}
-                              <span className="flex-1" />
-                              <button
-                                type="button"
-                                className="dash-note-move"
-                                onClick={() => move(n, -1)}
-                                disabled={i === 0}
-                                aria-label="Move up"
-                                title="Move up"
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                className="dash-note-move"
-                                onClick={() => move(n, 1)}
-                                disabled={i === dayNotes.length - 1}
-                                aria-label="Move down"
-                                title="Move down"
-                              >
-                                ↓
-                              </button>
-                              <button
-                                type="button"
-                                className="dash-word-link"
-                                onClick={() =>
-                                  setEditing({
-                                    id: n.id,
-                                    day: n.day ?? "",
-                                    page: n.page != null ? String(n.page) : "",
-                                    passage: formatPassage(p),
-                                    text: n.text,
-                                  })
-                                }
-                              >
-                                Edit
-                              </button>
-                            </div>
+                {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} onSave={saveVideo} />}
+                {isDay(day) && client.kind === "member" && studyVideo.get(day.slice(5)) && (
+                  <DayVideo url={studyVideo.get(day.slice(5))} label={`Watch ${client.studyAuthor ?? "Daniel"}'s session for this day`} />
+                )}
+
+                {isDay(day) &&
+                  (dayEdit ? (
+                    <div className="dash-day-edit">
+                      <input
+                        className="dash-input dash-day-title-input"
+                        placeholder="A title for this day, e.g. Jesus and the woman at the well"
+                        value={dayEdit.title}
+                        onChange={(e) => setDayEdit({ ...dayEdit, title: e.target.value })}
+                        autoFocus
+                      />
+                      <GrowingTextarea
+                        className="dash-textarea dash-word-field"
+                        placeholder="Key takeaway - the one thing to remember from today's reading."
+                        value={dayEdit.takeaway}
+                        onChange={(e) => setDayEdit({ ...dayEdit, takeaway: e.target.value })}
+                      />
+                      {client.sharing && (
+                        <label className="dash-day-share">
+                          <input
+                            type="checkbox"
+                            checked={dayEdit.shared}
+                            onChange={(e) => setDayEdit({ ...dayEdit, shared: e.target.checked })}
+                          />
+                          Include this day when I share my study
+                        </label>
+                      )}
+                      <div className="flex gap-2">
+                        <button type="button" className="dash-btn dash-btn-primary" onClick={saveDayDetails}>
+                          Save
+                        </button>
+                        <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setDayEdit(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : days[day]?.title || days[day]?.takeaway ? (
+                    <button
+                      type="button"
+                      className="dash-day-head"
+                      onClick={() =>
+                        setDayEdit({ title: days[day].title, takeaway: days[day].takeaway, shared: days[day].shared })
+                      }
+                      title="Edit the title and takeaway"
+                    >
+                      {days[day].title && <span className="dash-day-title">{days[day].title}</span>}
+                      {days[day].takeaway && <span className="dash-day-takeaway">{days[day].takeaway}</span>}
+                      {client.sharing && !days[day].shared && (
+                        <span className="dash-day-private">🔒 Not included when shared</span>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="dash-word-link mb-3"
+                      onClick={() =>
+                        setDayEdit({ title: days[day]?.title ?? "", takeaway: days[day]?.takeaway ?? "", shared: days[day]?.shared ?? true })
+                      }
+                    >
+                      + Add a title and key takeaway for this day
+                    </button>
+                  ))}
+
+                {isDay(day) && client.sharing && heldUntil(day, hold) && studyToday() < (heldUntil(day, hold) as string) && (
+                  <p className="dash-day-held">
+                    🔒 Kept private until{" "}
+                    {new Date(`${heldUntil(day, hold)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}{" "}
+                    - members see this day from then. You can change this on Members.
+                  </p>
+                )}
+
+                {client.studyUrl && isDay(day) && studyOn.size > 0 && (
+                  <div className={`dash-daniel ${studyOpen ? "is-open" : ""}`} id="daniel-study">
+                    <button
+                      type="button"
+                      className="dash-daniel-head"
+                      onClick={() => toggleSection("study")}
+                      aria-expanded={studyOpen}
+                    >
+                      <span className="dash-daniel-label">
+                        <span className="eyebrow eyebrow-amber">{client.studyName}</span>
+                        <span className="dash-daniel-sub">
+                          {studyOn.has(day.slice(5))
+                            ? studyOn.get(day.slice(5)) || `For ${dayLabel(day, { weekday: false })}`
+                            : `Nothing for ${dayLabel(day, { weekday: false })} yet - see the latest`}
+                        </span>
+                      </span>
+                      <span className="dash-daniel-toggle">{studyOpen ? "Minimise ▴" : "Open ▾"}</span>
+                    </button>
+                    {studyOpen && (
+                      <StudyPeek
+                        key={day}
+                        on={studyOn.has(day.slice(5)) ? day.slice(5) : undefined}
+                        studyUrl={client.studyUrl}
+                        author={client.studyAuthor}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {isDay(day) && reflections.byDay.get(day) && (() => {
+                  const r = reflections.byDay.get(day) as Reflection;
+                  const writer = r.author ?? client.studyAuthor ?? reflections.author ?? "Daniel";
+                  const current = r.id === reflections.latest;
+                  return (
+                    <div className={`dash-daniel dash-weekly-panel ${weeklyOpen ? "is-open" : ""}`}>
+                      <button type="button" className="dash-daniel-head" onClick={() => toggleSection("weekly")} aria-expanded={weeklyOpen}>
+                        <span className="dash-daniel-label">
+                          <span className="eyebrow eyebrow-amber">❧ Weekly reflection · from {writer}</span>
+                          <span className="dash-daniel-sub">{r.title}</span>
+                        </span>
+                        <span className="dash-daniel-toggle">{weeklyOpen ? "Minimise ▴" : "Open ▾"}</span>
+                      </button>
+                      {weeklyOpen && (
+                        <div className="dash-daniel-body">
+                          <ReflectionBody r={r} author={writer} current={current} />
+                          {current && r.question && (
+                            <a href="/study/community" className="dash-word-link dash-daniel-all">
+                              Check in with {writer} →
+                            </a>
                           )}
                         </div>
                       )}
-                    </article>
-                  </div>
-                );
-              })}
-            </div>
-            )}
-
-            {dayWords.length > 0 && (
-              <div className="dash-note-words">
-                <button type="button" className="dash-note-section" onClick={() => toggleSection("words")} aria-expanded={sections.words}>
-                  <span className="eyebrow eyebrow-amber">Words studied · {dayWords.length}</span>
-                  <span className="dash-note-section-chev" aria-hidden>
-                    {sections.words ? "▾" : "▸"}
-                  </span>
-                </button>
-                {sections.words && dayWords.map((w) => (
-                  <WordRow
-                    key={w.id}
-                    w={w}
-                    open={openWord === w.id}
-                    onToggle={() => setOpenWord((id) => (id === w.id ? null : w.id))}
-                    onEdit={() => window.location.assign(`${client.wordsUrl}?edit=${encodeURIComponent(w.id)}`)}
-                    onDelete={() => removeWord(w.id, w.word)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* ── Write for this day ─────────────────────────────── */}
-            {!special && (
-            <div className="dash-note-write">
-              <NoteStarter
-                key={`${day}:${loaded ? 1 : 0}`}
-                dayText={day === UNDATED ? "No day set" : `Day ${planDay(day).n} · ${dayLabel(day)}`}
-                chapters={starterChapters}
-                page={context.page}
-                passage={dayChapters[dayChapters.length - 1] ?? ""}
-                prev={[...dayNotes].reverse().map(passageOf).find(Boolean) ?? context.prev}
-                onStart={startLine}
-              />
-              <label className="dash-label" htmlFor="sn-write">
-                {day === UNDATED ? "Write notes" : `Write for ${dayLabel(day, { weekday: false })}`}
-              </label>
-              <GrowingTextarea
-                id="sn-write"
-                ref={writeBox}
-                className="dash-textarea dash-word-field"
-                minRows={5}
-                placeholder={
-                  context.prev
-                    ? `Write the way you do in your doc:\nVs 14 - …  (carries on in ${chapterLabel(context.prev)})\nLuke 2 vs 41 - …\n* a question or point`
-                    : "Write the way you do in your doc:\n1257 - Matt 2 vs 7 - …\nVs 12 - …\n* a question or point"
-                }
-                value={draft}
-                onChange={(e) => {
-                  setDraft(day, e.target.value);
-                  if (error) setError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveWriting();
-                }}
-              />
-              {preview.length > 0 && (
-                <div className="dash-note-preview">
-                  <span className="eyebrow">Will save as {preview.length} {preview.length === 1 ? "note" : "notes"}</span>
-                  {preview.map((n, k) => (
-                    <div key={k} className="dash-note-preview-row">
-                      <span>{formatPassage(passageOf(n)) || "·"}</span>
-                      <span>{n.text.replace(/\n/g, " ").slice(0, 90)}</span>
                     </div>
-                  ))}
+                  );
+                })()}
+
+                {otherYears.length > 0 && (
+                  <div className="dash-note-years">
+                    <span className="eyebrow">This day in other years</span>
+                    {otherYears.map(([d, c]) => (
+                      <button key={d} type="button" className="dash-word-alt" onClick={() => openDay(d)}>
+                        {d.slice(0, 4)} · {c.notes ? `${c.notes} ${c.notes === 1 ? "note" : "notes"}` : ""}
+                        {c.notes && c.words ? ", " : ""}
+                        {c.words ? `${c.words} ${c.words === 1 ? "word" : "words"}` : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {!special && loaded && dayNotes.length === 0 && (
+                  <div className="dash-word-hint mb-4">No notes on this day yet - write them below.</div>
+                )}
+
+                {!special && dayNotes.length > 0 && (
+                  <div className="dash-note-section-row">
+                    <button type="button" className="dash-note-section" onClick={() => toggleSection("notes")} aria-expanded={sections.notes}>
+                      <span className="eyebrow eyebrow-amber">Notes · {dayNotes.length}</span>
+                      <span className="dash-note-section-chev" aria-hidden>
+                        {sections.notes ? "▾" : "▸"}
+                      </span>
+                    </button>
+                    {sections.notes && (
+                      <button
+                        type="button"
+                        className="dash-word-link"
+                        onClick={() =>
+                          setOpenNotes(
+                            dayNotes.every((n) => openNotes.has(n.id)) ? new Set() : new Set(dayNotes.map((n) => n.id)),
+                          )
+                        }
+                      >
+                        {dayNotes.every((n) => openNotes.has(n.id)) ? "Close all" : "Open all"}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {!special && sections.notes && (
+                <div className="dash-note-list">
+                  {dayNotes.map((n, i) => {
+                    const p = passageOf(n);
+                    const v = verses[n.id];
+                    const isEditing = editing?.id === n.id;
+                    const open = isEditing || openNotes.has(n.id);
+                    const showPage = n.page != null && n.page !== dayNotes[i - 1]?.page;
+                    const preview = n.text
+                      .replace(/^\s*(?:[•●▪◦*]|-(?=\s))\s*/gm, "")
+                      .replace(/\s+/g, " ")
+                      .trim();
+                    return (
+                      <div key={n.id}>
+                        {showPage && <div className="dash-note-pagebreak">Page {n.page}</div>}
+                        <article
+                          id={`note-${n.id}`}
+                          className={`dash-note ${open ? "is-open" : ""} ${flash === n.id ? "is-new" : ""}`}
+                        >
+                          <button
+                            type="button"
+                            className="dash-note-head"
+                            onClick={() => !isEditing && toggleNote(n.id)}
+                            aria-expanded={open}
+                          >
+                            <span className="dash-note-head-ref">
+                              {p ? formatPassage(p) : "Note"}
+                              {n.starredAt ? <span className="dash-note-star" aria-label="Starred"> ★</span> : null}
+                              {client.sharing && n.private ? " 🔒" : ""}
+                            </span>
+                            <span className="dash-note-head-text">{open ? "" : preview}</span>
+                            <span className="dash-note-chev" aria-hidden>
+                              ›
+                            </span>
+                          </button>
+
+                          {open && (
+                            <div className="dash-note-open">
+                              {isEditing ? (
+                                <div className="flex flex-col gap-2">
+                                  <div className="dash-note-edit-row">
+                                    <input
+                                      type="date"
+                                      className="dash-input"
+                                      aria-label="Day"
+                                      value={editing.day}
+                                      onChange={(e) => setEditing({ ...editing, day: e.target.value })}
+                                    />
+                                    <input
+                                      className="dash-input"
+                                      inputMode="numeric"
+                                      aria-label="Page"
+                                      placeholder="Page"
+                                      value={editing.page}
+                                      onChange={(e) => setEditing({ ...editing, page: e.target.value.replace(/[^\d]/g, "") })}
+                                    />
+                                    <input
+                                      className="dash-input"
+                                      aria-label="Passage"
+                                      placeholder="Passage, e.g. Matt 4 vs 1"
+                                      value={editing.passage}
+                                      onChange={(e) => setEditing({ ...editing, passage: e.target.value })}
+                                    />
+                                  </div>
+                                  <GrowingTextarea
+                                    className="dash-textarea dash-word-field"
+                                    value={editing.text}
+                                    onChange={(e) => setEditing({ ...editing, text: e.target.value })}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
+                                      if (e.key === "Escape") setEditing(null);
+                                    }}
+                                    autoFocus
+                                  />
+                                  <div className="flex gap-2 flex-wrap">
+                                    <button type="button" className="dash-btn dash-btn-primary" onClick={saveEdit}>
+                                      Save
+                                    </button>
+                                    <button type="button" className="dash-btn dash-btn-ghost" onClick={() => setEditing(null)}>
+                                      Cancel
+                                    </button>
+                                    <button type="button" className="dash-btn dash-btn-danger ml-auto" onClick={() => remove(n)}>
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <NoteText text={n.text} />
+                              )}
+
+                              {v && (
+                                <div className="dash-word-verse">
+                                  {v.loading && <span className="dash-word-hint">Opening the passage…</span>}
+                                  {v.error && <span className="text-[12.5px] text-[#f1a07d]">{v.error}</span>}
+                                  {v.verses && (
+                                    <>
+                                      <div className="eyebrow eyebrow-amber mb-1.5">{v.label}</div>
+                                      <div className="dash-verse">
+                                        {v.verses.map((x) => (
+                                          <p key={`${x.chapter}-${x.verse}`} className="mb-1.5">
+                                            <span className="dash-verse-num">{x.verse}</span>
+                                            {x.text}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {!isEditing && (
+                                <div className="dash-note-actions">
+                                  {p && (
+                                    <button type="button" className="dash-word-link" onClick={() => toggleVerse(n)}>
+                                      {v ? "Hide verse" : "Read verse"}
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className={`dash-word-link ${n.starredAt ? "is-starred" : ""}`}
+                                    onClick={() => toggleStar(n)}
+                                    title={n.starredAt ? "Take the star off" : "Keep this note in your starred notes"}
+                                  >
+                                    {n.starredAt ? "★ Starred" : "☆ Star"}
+                                  </button>
+                                  {client.sharing && (
+                                    <button
+                                      type="button"
+                                      className="dash-word-link"
+                                      onClick={() => togglePrivate(n)}
+                                      title={
+                                        n.private
+                                          ? "Include this note when you share your study"
+                                          : "Never include this note when you share your study"
+                                      }
+                                    >
+                                      {n.private ? "🔒 Private" : "Make private"}
+                                    </button>
+                                  )}
+                                  <span className="flex-1" />
+                                  <button
+                                    type="button"
+                                    className="dash-note-move"
+                                    onClick={() => move(n, -1)}
+                                    disabled={i === 0}
+                                    aria-label="Move up"
+                                    title="Move up"
+                                  >
+                                    ↑
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dash-note-move"
+                                    onClick={() => move(n, 1)}
+                                    disabled={i === dayNotes.length - 1}
+                                    aria-label="Move down"
+                                    title="Move down"
+                                  >
+                                    ↓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dash-word-link"
+                                    onClick={() =>
+                                      setEditing({
+                                        id: n.id,
+                                        day: n.day ?? "",
+                                        page: n.page != null ? String(n.page) : "",
+                                        passage: formatPassage(p),
+                                        text: n.text,
+                                      })
+                                    }
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </article>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-              <div className="flex items-center gap-3 flex-wrap mt-3">
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-primary"
-                  onClick={saveWriting}
-                  disabled={saving}
-                >
-                  {saving ? "Saving…" : preview.length > 1 ? `Save ${preview.length} notes` : "Save note"}
-                </button>
-                <span className="text-[11.5px] text-[var(--colour-ink-faint)]"><span className="hide-touch">⌘ / Ctrl + Enter to save · </span>Drafts are kept on this device</span>
-                {error && <span className="text-[12.5px] text-[#f1a07d]">{error}</span>}
-              </div>
+                )}
+
+                {dayWords.length > 0 && (
+                  <div className="dash-note-words">
+                    <button type="button" className="dash-note-section" onClick={() => toggleSection("words")} aria-expanded={sections.words}>
+                      <span className="eyebrow eyebrow-amber">Words studied · {dayWords.length}</span>
+                      <span className="dash-note-section-chev" aria-hidden>
+                        {sections.words ? "▾" : "▸"}
+                      </span>
+                    </button>
+                    {sections.words && dayWords.map((w) => (
+                      <WordRow
+                        key={w.id}
+                        w={w}
+                        open={openWord === w.id}
+                        onToggle={() => setOpenWord((id) => (id === w.id ? null : w.id))}
+                        onEdit={() => window.location.assign(`${client.wordsUrl}?edit=${encodeURIComponent(w.id)}`)}
+                        onDelete={() => removeWord(w.id, w.word)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Write for this day ─────────────────────────────── */}
+                {!special && (
+                <div className="dash-note-write">
+                  <NoteStarter
+                    key={`${day}:${loaded ? 1 : 0}`}
+                    dayText={day === UNDATED ? "No day set" : `Day ${planDay(day).n} · ${dayLabel(day)}`}
+                    chapters={starterChapters}
+                    page={context.page}
+                    passage={dayChapters[dayChapters.length - 1] ?? ""}
+                    prev={[...dayNotes].reverse().map(passageOf).find(Boolean) ?? context.prev}
+                    onStart={startLine}
+                  />
+                  <label className="dash-label" htmlFor="sn-write">
+                    {day === UNDATED ? "Write notes" : `Write for ${dayLabel(day, { weekday: false })}`}
+                  </label>
+                  <GrowingTextarea
+                    id="sn-write"
+                    ref={writeBox}
+                    className="dash-textarea dash-word-field"
+                    minRows={5}
+                    placeholder={
+                      context.prev
+                        ? `Write the way you do in your doc:\nVs 14 - …  (carries on in ${chapterLabel(context.prev)})\nLuke 2 vs 41 - …\n* a question or point`
+                        : "Write the way you do in your doc:\n1257 - Matt 2 vs 7 - …\nVs 12 - …\n* a question or point"
+                    }
+                    value={draft}
+                    onChange={(e) => {
+                      setDraft(day, e.target.value);
+                      if (error) setError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveWriting();
+                    }}
+                  />
+                  {preview.length > 0 && (
+                    <div className="dash-note-preview">
+                      <span className="eyebrow">Will save as {preview.length} {preview.length === 1 ? "note" : "notes"}</span>
+                      {preview.map((n, k) => (
+                        <div key={k} className="dash-note-preview-row">
+                          <span>{formatPassage(passageOf(n)) || "·"}</span>
+                          <span>{n.text.replace(/\n/g, " ").slice(0, 90)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 flex-wrap mt-3">
+                    <button
+                      type="button"
+                      className="dash-btn dash-btn-primary"
+                      onClick={saveWriting}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving…" : preview.length > 1 ? `Save ${preview.length} notes` : "Save note"}
+                    </button>
+                    <span className="text-[11.5px] text-[var(--colour-ink-faint)]"><span className="hide-touch">⌘ / Ctrl + Enter to save · </span>Drafts are kept on this device</span>
+                    {error && <span className="text-[12.5px] text-[#f1a07d]">{error}</span>}
+                  </div>
+                </div>
+                )}
+              </Panel>
             </div>
-            )}
-          </Panel>
+          </div>
         </div>
 
         {/* ── Study tools, side by side ─────────────────────────── */}

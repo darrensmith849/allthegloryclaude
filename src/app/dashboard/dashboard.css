@@ -4374,3 +4374,4 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .session-video-tools { display: flex; gap: 14px; margin-top: 2px; font-size: 12.5px; }
 .session-video-error { flex-basis: 100%; margin-top: 0; }
 .session-video .day-video { margin: 0 0 4px; }
+.session-video-hint { flex-basis: 100%; font-size: 12px; color: var(--colour-ink-quiet); }

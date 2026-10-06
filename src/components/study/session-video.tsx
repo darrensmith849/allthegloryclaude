@@ -57,11 +57,11 @@ export function SessionVideo({ url, onSave }: { url: string | null | undefined; 
 
   return (
     <div className="session-video is-empty">
-      <span className="session-video-label">▶ Session video</span>
+      <span className="session-video-label">▶ YouTube video for this day</span>
       <input
         className="dash-input"
         inputMode="url"
-        placeholder="Paste this day's YouTube link"
+        placeholder="Paste the YouTube link here"
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -83,7 +83,11 @@ export function SessionVideo({ url, onSave }: { url: string | null | undefined; 
           Cancel
         </button>
       )}
-      {error && <p className="dash-starter-error session-video-error">{error}</p>}
+      {error ? (
+        <p className="dash-starter-error session-video-error">{error}</p>
+      ) : (
+        <p className="session-video-hint">Members see the video on this day in their journal.</p>
+      )}
     </div>
   );
 }
