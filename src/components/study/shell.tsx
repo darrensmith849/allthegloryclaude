@@ -109,6 +109,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
 
   // The left menu: only the study - like the owner's dashboard menu.
   const nav = [
+    { href: "/study/names", label: "Names of God", glyph: "א" },
     { href: "/study", label: me.member ? "Today" : "Home", glyph: "✦" },
     ...(readable ? [{ href: me.member ? "/study/journal?daniel=1" : "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
     ...(me.member
@@ -204,6 +205,7 @@ const PAGE: Record<string, { name: string; parent: string }> = {
   "/study/account": { name: "Account", parent: "/study" },
   "/study/community": { name: "Community", parent: "/study" },
   "/study/words": { name: "All words", parent: "/study/journal" },
+  "/study/names": { name: "Names of God", parent: "/study" },
 };
 
 function BackBar() {

@@ -3342,7 +3342,7 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
   border-left: 3px solid var(--colour-amber);
   background: var(--paper);
 }
-.study-weekly:hover { border-color: var(--colour-amber); }
+a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-weekly-title { font-family: var(--font-read), Georgia, serif; font-size: 22px; color: var(--colour-ink-strong); }
 .study-weekly-text { font-family: var(--font-read), Georgia, serif; font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
 .study-weekly-go { font-size: 13px; font-weight: 600; color: var(--colour-glow); }
@@ -3994,3 +3994,251 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 .dash-weekly-panel .dash-community-body { font-size: 16px; }
 .dash-login-team { display: block; margin-top: 18px; text-align: center; font-size: 13.5px; font-weight: 600; color: var(--colour-glow); }
 .dash-team-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: rgb(var(--gold-rgb) / 0.18); color: var(--colour-glow); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; vertical-align: 2px; }
+
+/* ── Names of God, pronunciation, dictionary, journal search ──────── */
+
+/* 🔊 speaker */
+.say-it {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.35);
+  background: var(--field);
+  color: var(--colour-amber);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.say-it svg { width: 18px; height: 18px; }
+.say-it:hover { border-color: rgb(var(--gold-rgb) / 0.75); }
+.say-it.is-on { background: var(--colour-amber); border-color: var(--colour-amber); color: var(--on-gold); }
+.say-it.is-small { width: 28px; height: 28px; margin-left: 6px; }
+.say-it.is-small svg { width: 15px; height: 15px; }
+.dash-word-row-line .say-it { width: 30px; height: 30px; margin-left: 2px; }
+.dash-word-say { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--colour-ink-quiet); }
+
+/* Everyday dictionary meaning, next to the Hebrew / Greek */
+.dash-word-dict .dash-word-link { margin-top: 6px; font-size: 12.5px; }
+.dash-word-dict-more { margin: 8px 0 0 18px; list-style: decimal; font-size: 13.5px; line-height: 1.5; color: var(--colour-ink-soft); }
+.dash-word-dict-more li + li { margin-top: 4px; }
+.dash-word-dict-more em { color: var(--colour-ink-quiet); font-style: normal; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Names of God page */
+.names-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgb(var(--tint-rgb) / calc(0.05 * var(--tint-k)));
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.names-tabs::-webkit-scrollbar { display: none; }
+.names-tab {
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--colour-ink-soft);
+  white-space: nowrap;
+}
+.names-tab.is-on { background: var(--colour-amber); color: var(--on-gold); }
+.names-filter { margin-bottom: 14px; }
+.names-list { display: flex; flex-direction: column; gap: 10px; }
+.names-card {
+  border-radius: 14px;
+  background: var(--panel, rgb(var(--tint-rgb) / calc(0.03 * var(--tint-k))));
+  box-shadow: inset 0 0 0 1px rgb(var(--tint-rgb) / calc(0.14 * var(--tint-k)));
+  scroll-margin-top: 90px;
+}
+.names-card.is-open { box-shadow: inset 0 0 0 1px rgb(var(--gold-rgb) / 0.45); }
+.names-card-top { display: flex; align-items: flex-start; gap: 8px; padding: 14px 14px 14px 0; }
+.names-card-head {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding-left: 16px;
+  text-align: left;
+}
+.names-card-titles { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.names-card-name { font-family: var(--font-display), serif; font-size: 21px; line-height: 1.2; color: var(--colour-ink-strong); }
+.names-card-english { font-size: 13.5px; color: var(--colour-amber); font-weight: 600; }
+.names-card-orig {
+  font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif;
+  font-size: 18px;
+  color: var(--colour-glow);
+  white-space: nowrap;
+}
+.names-card-head .dash-word-row-chev { grid-column: 3; grid-row: 1; transition: transform 160ms ease; }
+.names-card.is-open .dash-word-row-chev { transform: rotate(90deg); }
+.names-card-meaning { grid-column: 1 / -1; font-size: 14.5px; line-height: 1.5; color: var(--colour-ink-soft); }
+.names-card-body { padding: 0 16px 16px; }
+.names-card-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 18px;
+  margin: 2px 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(var(--tint-rgb) / calc(0.04 * var(--tint-k)));
+}
+.names-card-facts dt { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--colour-ink-quiet); }
+.names-card-facts dd { font-size: 14px; color: var(--colour-ink-strong); margin-top: 2px; }
+.names-card-about { font-family: var(--font-read), Georgia, serif; font-size: 16px; line-height: 1.7; color: var(--colour-ink-soft); }
+.names-card-about + .names-card-about { margin-top: 10px; }
+.names-card-first {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 10px 0 2px 14px;
+  border-left: 2px solid var(--colour-amber);
+  font-size: 14.5px;
+  color: var(--colour-ink-soft);
+}
+.names-verses { display: flex; flex-direction: column; gap: 6px; }
+.names-verse { display: flex; flex-direction: column; gap: 4px; }
+.names-verse-ref {
+  width: fit-content;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.35);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--colour-ink-strong);
+}
+.names-verse.is-open .names-verse-ref { background: var(--colour-amber); border-color: var(--colour-amber); color: var(--on-gold); }
+.names-verse-text { font-family: var(--font-read), Georgia, serif; font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); padding: 0 4px 4px; }
+.names-side { align-self: start; position: sticky; top: 18px; }
+
+/* People & places */
+.name-lookup-list { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.name-lookup-pick {
+  padding: 8px 10px;
+  border-radius: 9px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--colour-ink-soft);
+}
+.name-lookup-pick strong { color: var(--colour-ink-strong); }
+.name-lookup-pick:hover { background: rgb(var(--tint-rgb) / calc(0.05 * var(--tint-k))); }
+.name-card {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgb(var(--gold-rgb) / 0.4);
+}
+.name-card-head { display: flex; align-items: center; gap: 10px; }
+.name-card-name { font-family: var(--font-display), serif; font-size: 24px; color: var(--colour-ink-strong); }
+.name-card-means { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin-top: 6px; font-size: 15px; color: var(--colour-amber); font-weight: 600; }
+.name-card-means .dash-reader-label { font-weight: 400; }
+.name-card-about { margin-top: 10px; font-family: var(--font-read), Georgia, serif; font-size: 15.5px; line-height: 1.7; color: var(--colour-ink-soft); }
+.name-card-about p + p { margin-top: 8px; }
+.name-card .dash-word-source { margin-top: 10px; }
+
+/* Names of God in this reading */
+.names-reading { display: flex; flex-direction: column; gap: 14px; }
+.names-reading-chhead { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--colour-ink-quiet); margin-bottom: 6px; }
+.names-reading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgb(var(--tint-rgb) / calc(0.1 * var(--tint-k)));
+}
+.names-reading-row:last-child { border-bottom: 0; }
+.names-reading-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.names-reading-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.names-reading-reads { font-size: 14px; color: var(--colour-ink-soft); }
+.names-reading-arrow { color: var(--colour-ink-quiet); }
+.names-reading-name { font-family: var(--font-display), serif; font-size: 18px; font-weight: 400; color: var(--colour-amber); }
+.names-reading-orig { font-family: var(--font-display), "SBL Hebrew", "SBL Greek", serif; font-size: 15px; color: var(--colour-glow); }
+.names-reading-meaning { font-size: 14px; line-height: 1.5; color: var(--colour-ink-soft); }
+.names-reading-where { font-size: 12px; color: var(--colour-ink-quiet); }
+.names-reading-more { flex-basis: 100%; font-family: var(--font-read), Georgia, serif; font-size: 15px; line-height: 1.65; color: var(--colour-ink-soft); }
+.names-reading-more .dash-word-link { display: inline-block; margin-top: 6px; font-family: inherit; }
+
+/* Why the NIV */
+.why-niv { margin-top: 10px; }
+.why-niv-toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 600; color: var(--colour-amber); }
+.why-niv-toggle span { width: 14px; text-align: center; }
+.why-niv-body { margin-top: 6px; font-size: 13.5px; line-height: 1.6; color: var(--colour-ink-soft); }
+.why-niv-body p + p { margin-top: 6px; color: var(--colour-ink-quiet); }
+
+/* Journal search bar */
+.journal-search { margin: -6px 0 18px; }
+.journal-search-bar { position: relative; }
+.journal-search-bar .dash-input { padding-left: 38px; font-size: 15px; }
+.journal-search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 19px;
+  color: var(--colour-ink-quiet);
+  pointer-events: none;
+}
+.journal-search-results {
+  margin-top: 8px;
+  padding: 6px 8px 10px;
+  border-radius: 14px;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  box-shadow: inset 0 0 0 1px rgb(var(--tint-rgb) / calc(0.16 * var(--tint-k)));
+  background: rgb(var(--tint-rgb) / calc(0.02 * var(--tint-k)));
+}
+.journal-search-results .dash-note-result-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dash-note-result.is-bible .dash-note-result-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.journal-search-add { font-size: 12.5px; }
+.journal-search-more { margin: 4px 10px; font-size: 13px; }
+
+@media (max-width: 1100px) {
+  .names-side { position: static; }
+}
+@media (max-width: 640px) {
+  .names-card-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .names-card-orig { grid-column: 1 / -1; grid-row: 2; white-space: normal; }
+  .names-card-head .dash-word-row-chev { grid-column: 2; }
+  .names-card-name { font-size: 19px; }
+  .names-tabs { width: 100%; }
+  .names-tab { flex: 1 0 auto; padding: 8px 12px; font-size: 13.5px; }
+  .journal-search-bar .dash-input { font-size: 16px; }
+}
+
+/* Home cards that fold down to their title */
+.study-foldable { position: relative; }
+.study-foldable > .eyebrow,
+.study-foldable > .study-catchup-title,
+.study-foldable > .study-weekly-title { padding-right: 44px; }
+.study-foldable.is-folded { padding-top: 16px; padding-bottom: 16px; }
+.study-fold {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: var(--colour-ink-quiet);
+  transition: background 160ms ease, color 160ms ease;
+}
+.study-fold svg { width: 18px; height: 18px; transition: transform 200ms ease; }
+.study-fold:hover { background: rgb(var(--tint-rgb) / calc(0.06 * var(--tint-k))); color: var(--colour-ink-strong); }
+.study-fold.is-folded svg { transform: rotate(180deg); }
+.study-weekly .study-weekly-title { width: fit-content; }
+.study-weekly .study-weekly-title:hover { color: var(--colour-amber); }
+.study-weekly .study-weekly-go { align-self: flex-start; }

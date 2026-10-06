@@ -15,6 +15,8 @@ import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
+import { WhyNiv } from "@/components/study/why-niv";
+import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
 
 export default function StudyHome() {
   const me = useMe();
@@ -47,6 +49,7 @@ export default function StudyHome() {
   // This week's reflection from the owner (members).
   type Weekly = { id: string; title: string; body: string; question: string | null; memoryVerse?: string | null; author?: string | null };
   const [weekly, setWeekly] = useState<Weekly | null>(null);
+  const [weeklyFolded, toggleWeekly] = useFolded(`atg:study:${memberId ?? "guest"}:weeklyFolded`, weekly?.id ?? "-");
   useEffect(() => {
     if (!memberId) return;
     fetch("/api/study/weekly", { cache: "no-store" })
@@ -231,12 +234,24 @@ export default function StudyHome() {
       )}
 
       {weekly && (
-        <Link href="/study/community" className="study-weekly">
+        <section className={`study-weekly study-foldable ${weeklyFolded ? "is-folded" : ""}`}>
+          <FoldToggle folded={weeklyFolded} onToggle={toggleWeekly} what="this week's reflection" />
           <span className="eyebrow eyebrow-amber">This week from {weekly.author ?? author ?? "the study"}</span>
-          <span className="study-weekly-title">{weekly.title}</span>
-          <span className="study-weekly-text">{weekly.body.replace(/\s+/g, " ").slice(0, 220)}{weekly.body.length > 220 ? "…" : ""}</span>
-          <span className="study-weekly-go">{weekly.question ? "Read it and check in →" : "Read it →"}</span>
-        </Link>
+          <Link href="/study/community" className="study-weekly-title">
+            {weekly.title}
+          </Link>
+          {!weeklyFolded && (
+            <>
+              <span className="study-weekly-text">
+                {weekly.body.replace(/\s+/g, " ").slice(0, 220)}
+                {weekly.body.length > 220 ? "…" : ""}
+              </span>
+              <Link href="/study/community" className="study-weekly-go">
+                {weekly.question ? "Read it and check in →" : "Read it →"}
+              </Link>
+            </>
+          )}
+        </section>
       )}
       {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
 
@@ -315,6 +330,14 @@ export default function StudyHome() {
       {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
 
       <div className="study-cards">
+        <Link href="/study/names" className="study-card">
+          <span className="eyebrow eyebrow-amber">Who He is</span>
+          <span className="study-card-title">Names of God</span>
+          <span className="study-card-text">
+            El Shaddai, Yahweh Yireh, Immanuel - what each name of God and of Jesus means, where it first appears, and how
+            to say it. Look up any Bible name too.
+          </span>
+        </Link>
         {readable && (
           <Link href={me.member ? "/study/journal?daniel=1" : "/study/read"} className="study-card">
             <span className="eyebrow eyebrow-amber">Follow along</span>
@@ -373,6 +396,7 @@ export default function StudyHome() {
           <span className="study-card-hint">
             In the Bible App, if you see another translation, tap its name at the top and choose NIV - it remembers.
           </span>
+          <WhyNiv className="mt-3" />
         </div>
       </div>
 

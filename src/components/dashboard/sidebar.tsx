@@ -7,6 +7,7 @@ import { ThemeSwitch } from "@/components/study/theme-toggle";
 import { TEAM_NAV, useDashUser } from "@/lib/dashboard/who";
 
 const NAV = [
+  { href: "/dashboard/names", label: "Names of God", glyph: "א" },
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },

@@ -34,7 +34,7 @@ const label = "block text-sm font-medium text-colour-fg/70 mb-2";
 const FEATURES = [
   {
     title: "Read it in the order it happened",
-    text: `${PLAN.name} (NIV) takes you through the whole Bible in 365 daily readings - books, chapters and even verses in the order events happened. Read free in the Bible App, or in the book.`,
+    text: `${PLAN.name} (NIV) takes you through the whole Bible in 365 daily readings - books, chapters and even verses in the order events happened. Read free in the Bible App, or in the book. Why the NIV? Most chronological Bibles don't break the reading into daily portions in order - this is the only one we've found so far that does, and we keep looking.`,
   },
   {
     title: "Keep your own journal",
@@ -43,6 +43,10 @@ const FEATURES = [
   {
     title: "Go deeper into the words",
     text: "Look up any word from the day's reading and see the Hebrew or Greek behind it, what it means, and the verses that use it.",
+  },
+  {
+    title: "Learn the names of God",
+    text: "El Shaddai, Yahweh Yireh, Immanuel - what each name of God and of Jesus means, where it first appears and how to say it, and which name is behind “God” in the day's reading.",
   },
   {
     title: "Ask, and learn together",

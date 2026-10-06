@@ -8,6 +8,8 @@ import { formatShort } from "@/lib/dashboard/dates";
 import { dayLabel } from "@/lib/dashboard/notes";
 import type { BibleWord, KeyVerse } from "@/lib/dashboard/types";
 import { languageLabel, wordDate } from "@/lib/dashboard/words";
+import { DictionaryMeaning } from "@/components/study/dictionary-meaning";
+import { SayIt } from "@/components/study/say-it";
 
 interface Verse {
   chapter: number;
@@ -108,25 +110,30 @@ export function WordRow({
 
       {open && (
         <div className="dash-word-row-body">
-          {(w.originalMeaning || w.englishMeaning) && (
-            <dl className="dash-word-defs">
-              {w.originalMeaning && (
-                <div>
-                  <dt>
-                    {languageLabel(w)} meaning{w.strongs ? ` · ${w.strongs}` : ""}
-                  </dt>
-                  <dd>{w.originalMeaning}</dd>
-                  {w.meaningSource && <div className="dash-word-source">{w.meaningSource}</div>}
-                </div>
-              )}
-              {w.englishMeaning && (
-                <div>
-                  <dt>English meaning</dt>
-                  <dd>{w.englishMeaning}</dd>
-                </div>
-              )}
-            </dl>
+          {w.translit && (
+            <div className="dash-word-say">
+              <SayIt text={w.translit.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[ʼʽ'’]/g, "")} label={`Say ${w.translit}`} />
+              <span>Hear “{w.translit}”</span>
+            </div>
           )}
+          <dl className="dash-word-defs">
+            {w.originalMeaning && (
+              <div>
+                <dt>
+                  {languageLabel(w)} meaning{w.strongs ? ` · ${w.strongs}` : ""}
+                </dt>
+                <dd>{w.originalMeaning}</dd>
+                {w.meaningSource && <div className="dash-word-source">{w.meaningSource}</div>}
+              </div>
+            )}
+            <DictionaryMeaning word={w.word} />
+            {w.englishMeaning && (
+              <div>
+                <dt>English meaning</dt>
+                <dd>{w.englishMeaning}</dd>
+              </div>
+            )}
+          </dl>
 
           {w.keyVerses && w.keyVerses.length > 0 && (
             <div className="mt-4">

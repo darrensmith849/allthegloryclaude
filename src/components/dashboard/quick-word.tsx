@@ -8,12 +8,17 @@
 import { useEffect, useState } from "react";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses } from "@/components/dashboard/word-entry";
+import { DictionaryMeaning } from "@/components/study/dictionary-meaning";
+import { SayIt } from "@/components/study/say-it";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient } from "@/lib/study/client";
 import type { BibleWord, WordLanguage } from "@/lib/dashboard/types";
 import type { LanguageFill, WordFill } from "@/lib/dashboard/words";
 
 const LANG_NAME: Record<WordLanguage, string> = { hebrew: "Hebrew", greek: "Greek" };
+
+// "chêsêd" -> "chesed", for the speaker.
+const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[ʼʽ'’]/g, "");
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -173,6 +178,7 @@ export function QuickWord({
                   {f.entry.original}
                 </span>
                 <span className="dash-word-translit">{f.entry.translit}</span>
+                {f.entry.translit && <SayIt text={plain(f.entry.translit)} label={`Say ${f.entry.translit}`} />}
               </div>
               <div className="dash-word-source">{f.entry.number}</div>
             </div>
@@ -203,6 +209,7 @@ export function QuickWord({
               <dd>{f.meaning}</dd>
               <div className="dash-word-source">{f.meaningSource}</div>
             </div>
+            <DictionaryMeaning word={word} />
             {data.englishMeaning && (
               <div>
                 <dt>English meaning</dt>

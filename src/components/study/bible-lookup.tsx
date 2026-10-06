@@ -27,7 +27,7 @@ interface Result {
 }
 
 // Render the search's <mark>…</mark> highlights without injecting HTML.
-function Marked({ text }: { text: string }) {
+export function Marked({ text }: { text: string }) {
   const parts = text.split(/(<mark>.*?<\/mark>)/g);
   return (
     <>

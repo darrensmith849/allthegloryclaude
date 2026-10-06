@@ -4,6 +4,7 @@
  *   GET [?day=YYYY-MM-DD | ?on=MM-DD] [&preview=1]
  *     -> { study, contents, day, info, notes, words, hidden? }
  *   GET ?only=contents -> { study, contents }
+ *   GET ?search=grace | ?search=Matt 4 -> { study, results } (shared notes that match)
  *
  * Who may read is the owner's switch (study_settings.reading): nobody yet
  * (the default), members, or everyone. The owner (admin session) can always
@@ -15,7 +16,7 @@
  */
 import { getDb } from "@/lib/analytics/store";
 import { isSignedIn } from "@/lib/admin-auth";
-import { chapterLabel, isDay, passageOf } from "@/lib/dashboard/notes";
+import { chapterLabel, isDay, matchesNote, passageOf } from "@/lib/dashboard/notes";
 import type { BibleWord } from "@/lib/dashboard/types";
 import { getMember, getSettings } from "@/lib/study/members";
 import type { ReaderWord } from "@/lib/study/types";
@@ -57,6 +58,46 @@ export async function GET(req: Request) {
   const preview = owner && url.searchParams.get("preview") === "1";
 
   try {
+    // Search the shared study: words, a passage ("Matt 4"), a date ("27 sep").
+    const search = (url.searchParams.get("search") ?? "").trim().slice(0, 80);
+    if (search) {
+      if (search.length < 2) return Response.json({ error: "Type a little more." }, { status: 400 });
+      const [{ results: rows }, { results: unshared }] = await Promise.all([
+        db
+          .prepare(
+            "SELECT id, day, page, book, chapter, verse, verse_end, text, private, position, seq FROM study_notes " +
+              "WHERE deleted_at IS NULL AND private = 0 AND day IS NOT NULL ORDER BY day DESC, position, seq",
+          )
+          .all<NoteRow>(),
+        db.prepare("SELECT day FROM study_days WHERE shared = 0").all<{ day: string }>(),
+      ]);
+      const hidden = new Set(preview ? [] : unshared.map((d) => d.day));
+      const results = [];
+      for (const r of rows) {
+        if (hidden.has(r.day)) continue;
+        const note = {
+          id: r.id,
+          day: r.day,
+          page: r.page,
+          seq: r.seq,
+          position: r.position ?? 0,
+          deletedAt: null,
+          private: false,
+          book: r.book,
+          chapter: r.chapter,
+          verse: r.verse,
+          verseEnd: r.verse_end,
+          text: r.text,
+          createdAt: 0,
+          updatedAt: 0,
+        };
+        if (!matchesNote(note, search)) continue;
+        results.push({ id: r.id, day: r.day, page: r.page, book: r.book, chapter: r.chapter, verse: r.verse, verseEnd: r.verse_end, text: r.text.slice(0, 600) });
+        if (results.length >= 40) break;
+      }
+      return Response.json({ study, search, results }, { headers: noStore });
+    }
+
     const [{ results: dayRows }, { results: refRows }, { results: wordDays }] = await Promise.all([
       db.prepare("SELECT day, title, takeaway, shared FROM study_days").all<{
         day: string;

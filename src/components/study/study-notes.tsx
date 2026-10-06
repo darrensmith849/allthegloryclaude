@@ -14,6 +14,10 @@ import { NoteStarter } from "@/components/study/note-starter";
 import { ReflectionBody, reflectionDay, type Reflection } from "@/components/study/reflection";
 import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
+import { JournalSearch } from "@/components/study/journal-search";
+import { NamesInReading } from "@/components/study/names-in-reading";
+import { NameLookup } from "@/components/study/name-lookup";
+import { WhyNiv } from "@/components/study/why-niv";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
@@ -846,6 +850,33 @@ export function StudyNotes() {
 
       {offline && <div className="dash-word-note mb-4">{offline}</div>}
 
+      <JournalSearch
+        query={query}
+        setQuery={setQuery}
+        notes={results}
+        words={wordResults}
+        onOpenNote={openResult}
+        onOpenWord={(w) => openWordResult(w.id, w.day)}
+        studyName={client.studyUrl ? client.studyName : undefined}
+        onOpenStudyDay={(d) => {
+          // The same date in this year, where the study sits next to their own notes.
+          setQuery("");
+          openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
+          showStudy();
+        }}
+        onAddVerse={(ref) => {
+          const target = isDay(day) ? day : todayDay();
+          if (target !== day) openDay(target);
+          const current = drafts[target] ?? "";
+          setDraft(target, `${current ? `${current.replace(/\s*$/, "")}\n` : ""}${ref} - `);
+          setQuery("");
+          window.setTimeout(() => {
+            writeBox.current?.focus();
+            writeBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 80);
+        }}
+      />
+
       <div className="dash-grid">
         {guide && (
           <div className="dash-col-12">
@@ -1122,45 +1153,8 @@ export function StudyNotes() {
                 Kindle eBook
               </a>
             </p>
+            <WhyNiv />
 
-            <div className="dash-divider" />
-            <input
-              type="search"
-              className="dash-input"
-              placeholder="Search notes and words - “grace”, “Matt 4”, “27 sep”"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search your notes"
-            />
-            {query.trim() && (
-              <div className="dash-note-results">
-                {results.length === 0 && wordResults.length === 0 && (
-                  <div className="dash-word-hint">Nothing matches “{query.trim()}”.</div>
-                )}
-                {wordResults.length > 0 && <div className="dash-note-results-head">Words</div>}
-                {wordResults.slice(0, 20).map((w) => (
-                  <button key={w.id} type="button" className="dash-note-result" onClick={() => openWordResult(w.id, w.day)}>
-                    <span className="dash-note-result-meta">
-                      {w.day ? dayLabel(w.day, { weekday: false }) : "Word Journal"} · {w.original ?? ""} {w.translit ?? ""}
-                    </span>
-                    <span className="dash-note-result-text">
-                      <strong>{w.word}</strong> - {w.originalMeaning || w.englishMeaning}
-                    </span>
-                  </button>
-                ))}
-                {wordResults.length > 0 && results.length > 0 && <div className="dash-note-results-head">Notes</div>}
-                {results.slice(0, 60).map((n) => (
-                  <button key={n.id} type="button" className="dash-note-result" onClick={() => openResult(n)}>
-                    <span className="dash-note-result-meta">
-                      {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
-                      {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
-                    </span>
-                    <span className="dash-note-result-text">{n.text.replace(/\n/g, " ")}</span>
-                  </button>
-                ))}
-                {results.length > 60 && <div className="dash-word-hint">{results.length - 60} more - narrow the search.</div>}
-              </div>
-            )}
           </Panel>
 
           {isDay(day) && (
@@ -1175,6 +1169,21 @@ export function StudyNotes() {
                       document.getElementById(`word-${w.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
                     }, 80);
                   }}
+                />
+                <div className="dash-divider" />
+                <div className="eyebrow eyebrow-amber mb-1">Look up a name</div>
+                <p className="dash-word-hint mb-2">Who a person or place was, and what the name means.</p>
+                <NameLookup />
+              </Panel>
+            </div>
+          )}
+
+          {isDay(day) && (
+            <div className="mt-[18px]">
+              <Panel eyebrow={`Names of God · ${dayLabel(day, { weekday: false })}`} title="In this reading">
+                <NamesInReading
+                  chapters={starterChapters}
+                  namesUrl={client.kind === "member" ? "/study/names" : "/dashboard/names"}
                 />
               </Panel>
             </div>
