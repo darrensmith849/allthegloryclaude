@@ -1,13 +1,16 @@
 "use client";
 
-// "Put your dashboard on your phone", at the top of Study Notes - only on a
-// phone or tablet, and not once it's opened from the Home Screen. The app is
-// public/dashboard-manifest.webmanifest (the dark dove; members' The Study is
-// the light one). A Home Screen app keeps its own sign-in, so the steps say
-// to log in once there.
+// "Put your dashboard on your phone", at the top of every dashboard page -
+// for Daniel and his team - only on a phone or tablet, and not once it's
+// opened from the Home Screen. "Add to Home Screen" in the menu brings it
+// back (openDashAppCard). The app is public/dashboard-manifest.webmanifest
+// (the dark dove; members' The Study is the light one). A Home Screen app
+// keeps its own sign-in, so the steps say to log in once there - team
+// members with their Study email, on the same login page.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IosInstallGuide } from "@/components/study/ios-install-guide";
+import { useDashUser } from "@/lib/dashboard/who";
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
@@ -15,20 +18,40 @@ interface InstallPrompt extends Event {
 }
 
 const HIDE_KEY = "atg:dash:appCardHidden";
+const OPEN_EVENT = "atg:dash-app-card";
+
+// From the menu: show the card with the steps open, even if hidden before.
+export function openDashAppCard() {
+  try {
+    window.localStorage.removeItem(HIDE_KEY);
+  } catch {
+    // private window
+  }
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
+// On a phone or tablet, and not already opened from the Home Screen.
+export function canAddToHomeScreen(): boolean {
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const phone =
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return phone && !standalone;
+}
 
 export function DashAppCard() {
+  const user = useDashUser();
+  const team = user?.role === "team";
   const [show, setShow] = useState(false);
   const [ios, setIos] = useState(false);
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [steps, setSteps] = useState(false);
+  const card = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
     const isIos =
       /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const phone = isIos || /Android/i.test(navigator.userAgent);
     let hidden = false;
     try {
       hidden = Number(window.localStorage.getItem(HIDE_KEY) ?? 0) > Date.now();
@@ -36,21 +59,28 @@ export function DashAppCard() {
       // private window
     }
     setIos(isIos);
-    setShow(phone && !standalone && !hidden);
+    setShow(canAddToHomeScreen() && !hidden);
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setPrompt(e as InstallPrompt);
     };
     const onInstalled = () => setShow(false);
+    const onOpen = () => {
+      setShow(true);
+      setSteps(true);
+      requestAnimationFrame(() => card.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener(OPEN_EVENT, onOpen);
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener(OPEN_EVENT, onOpen);
     };
   }, []);
 
-  if (!show) return null;
+  if (!show || user === undefined) return null;
 
   function notNow() {
     try {
@@ -62,7 +92,7 @@ export function DashAppCard() {
   }
 
   return (
-    <section className="study-app-card dash-app-card">
+    <section ref={card} className="study-app-card dash-app-card">
       <div className="study-app-head">
         <img src="/dashboard-app/icon-192.png" alt="" width={44} height={44} className="study-app-icon" />
         <div className="min-w-0">
@@ -97,8 +127,15 @@ export function DashAppCard() {
             link="https://alltheglory.co.za/dashboard"
             last={
               <>
-                Open <strong>ATG Dashboard</strong> from your Home Screen (the dark dove) and log in once - the Home Screen
-                app keeps its own sign-in.
+                Open <strong>ATG Dashboard</strong> from your Home Screen (the dark dove) and log in once
+                {team ? (
+                  <>
+                    {" "}
+                    - tap <strong>Team members log in here</strong> and use your Study email and password.
+                  </>
+                ) : (
+                  " - the Home Screen app keeps its own sign-in."
+                )}
               </>
             }
           />

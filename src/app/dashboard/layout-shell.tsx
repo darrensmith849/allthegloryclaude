@@ -7,6 +7,7 @@
 import { usePathname } from "next/navigation";
 import DashboardSidebar from "@/components/dashboard/sidebar";
 import CommandPalette from "@/components/dashboard/command-palette";
+import { DashAppCard } from "@/components/dashboard/app-card";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,7 +28,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   return (
     <div className="dash-root">
       <DashboardSidebar />
-      <main className="dash-main">{children}</main>
+      <main className="dash-main">
+        <DashAppCard />
+        {children}
+      </main>
       <CommandPalette />
     </div>
   );

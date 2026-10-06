@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 import { TEAM_NAV, useDashUser } from "@/lib/dashboard/who";
+import { canAddToHomeScreen, openDashAppCard } from "@/components/dashboard/app-card";
 
 const NAV = [
   { href: "/dashboard/names", label: "Names of God", glyph: "א" },
@@ -44,6 +45,9 @@ export default function DashboardSidebar() {
   // the top of the screen; it closes again once you pick a page.
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
+  // Phones not yet using the Home Screen app: a way back to the steps.
+  const [addable, setAddable] = useState(false);
+  useEffect(() => setAddable(canAddToHomeScreen()), []);
   const here = nav.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
   return (
     <aside className="dash-sidebar">
@@ -76,6 +80,18 @@ export default function DashboardSidebar() {
         </Suspense>
       </nav>
       <div className="mt-auto pt-8 flex flex-col gap-1">
+        {addable && (
+          <button
+            type="button"
+            className="dash-nav-link dash-nav-foot dash-nav-add text-left"
+            onClick={() => {
+              setOpen(false);
+              openDashAppCard();
+            }}
+          >
+            ＋ Add to my Home Screen
+          </button>
+        )}
         <Link href="/study" className="dash-nav-link dash-nav-foot">
           The Study (members) ↗
         </Link>
@@ -87,8 +103,10 @@ export default function DashboardSidebar() {
           className="dash-nav-link dash-nav-foot text-left"
           onClick={async () => {
             if (team) {
+              // Back to the dashboard login (which has the team login), so a
+              // Home Screen app stays inside the app.
               await fetch("/api/study/logout", { method: "POST" }).catch(() => {});
-              window.location.assign("/the-study");
+              window.location.assign("/dashboard/login?team=1");
               return;
             }
             await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
