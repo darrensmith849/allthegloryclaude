@@ -1147,7 +1147,7 @@ export function StudyNotes() {
                 <>
                   <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
                     <li>
-                      <strong>Open a day.</strong> Today is already open - each date is that day&apos;s reading in{" "}
+                      <strong>Open a day.</strong> {early ? "Day 1 is already open - that's where we start together." : "Today is already open."} Each date is that day&apos;s reading in{" "}
                       <em>{PLAN.name}</em>.
                     </li>
                     <li>

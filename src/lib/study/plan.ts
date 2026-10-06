@@ -21,6 +21,14 @@ export const startMessage = (today: string) =>
     ? "We begin on Monday 12 October - Daniel's notes appear on each day as he goes, so you can read along from then, or start fresh on 1 January."
     : "We've begun - Daniel's notes appear on each day as he goes. Read along at your own pace, or start fresh on 1 January.";
 
+// One line for new visitors (The Study page), or "" once we've started.
+export const startBanner = (today: string) =>
+  today >= STUDY_START
+    ? ""
+    : today < STUDY_KICKOFF
+      ? "We start at Genesis 1 together on Monday 12 October - join in."
+      : "We've just started again at Genesis 1 - join in, it's not too late.";
+
 export const START_WHY =
   "We've already been through the whole Bible once - and we want to start it again, from the very beginning, together.";
 

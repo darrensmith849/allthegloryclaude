@@ -7,7 +7,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { PLAN, STUDY_HEART } from "@/lib/study/plan";
+import { PLAN, startBanner, STUDY_HEART } from "@/lib/study/plan";
+import { todayDay } from "@/lib/dashboard/notes";
 
 interface Me {
   member: { name: string } | null;
@@ -97,6 +98,9 @@ export default function TheStudyPage() {
 
   const author = me?.study.author && me.study.author !== "All The Glory" ? me.study.author : "Daniel";
   const heart = me?.study.intro || STUDY_HEART;
+  // When we start (set in the browser - the page is pre-rendered).
+  const [banner, setBanner] = useState("");
+  useEffect(() => setBanner(startBanner(todayDay())), []);
   const canJoin = me?.study.signup === "open" || (me?.study.signup === "invite" && Boolean(invite));
 
   function open(which: "join" | "login") {
@@ -211,6 +215,7 @@ export default function TheStudyPage() {
             A free daily Bible study from All The Glory - one day at a time, with a journal of your own, the Hebrew and
             Greek behind the words, and {author}&apos;s notes to read alongside.
           </p>
+          {banner && <p className="mt-5 inline-block rounded-full border border-colour-accent/40 bg-colour-accent/10 px-4 py-2 text-sm font-semibold text-colour-accent">{banner}</p>}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {me?.member ? (
               <a

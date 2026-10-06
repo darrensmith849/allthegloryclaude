@@ -1,6 +1,9 @@
 // The Study's service worker - only for the daily reading reminder. It
 // caches nothing and never touches page loads. A reminder push carries no
-// message; this works out which day of the plan it is and says so.
+// message; this works out which day of the plan it is and says so - or,
+// until everyone starts together at Day 1 on 1 January 2027 (STUDY_START in
+// src/lib/study/plan.ts), just that it's time to read, opening the journal.
+const STUDY_START = Date.UTC(2027, 0, 1);
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -16,15 +19,18 @@ self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim(
 
 self.addEventListener("push", (event) => {
   const now = new Date();
+  const early = now.getTime() < STUDY_START;
   const day = planDay(now);
   event.waitUntil(
-    self.registration.showNotification(`Day ${day} is ready`, {
-      body: `Today's reading - ${now.getDate()} ${MONTHS[now.getMonth()]}. Open it, read, and write what God shows you.`,
+    self.registration.showNotification(early ? "Time for today's reading" : `Day ${day} is ready`, {
+      body: early
+        ? "We're reading the Bible from the beginning - open your journal and carry on where you are."
+        : `Today's reading - ${now.getDate()} ${MONTHS[now.getMonth()]}. Open it, read, and write what God shows you.`,
       icon: "/study/icon-192.png",
       badge: "/study/favicon.png",
       tag: "the-study-daily",
       renotify: true,
-      data: { url: "/study" },
+      data: { url: early ? "/study/journal" : "/study" },
     }),
   );
 });
