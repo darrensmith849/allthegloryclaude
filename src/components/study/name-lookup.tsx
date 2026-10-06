@@ -4,6 +4,7 @@
 // means, with the name said aloud. From Easton's Bible Dictionary and
 // Hitchcock's Bible Names (public domain), built into /study/dict/<letter>.json
 // by scripts/build-bible-dict.mjs; a letter's file loads only when needed.
+// In the journal a name can be saved to the open day (onSave).
 
 import { useEffect, useMemo, useState } from "react";
 import { SayIt } from "./say-it";
@@ -35,7 +36,24 @@ const fold = (s: string) =>
 
 const SHORT = 520;
 
-export function NameLookup({ autoFocus = false, start = "" }: { autoFocus?: boolean; start?: string }) {
+export interface NameToSave {
+  name: string;
+  meaning: string;
+  about: string;
+}
+
+export function NameLookup({
+  autoFocus = false,
+  start = "",
+  onSave,
+  saved = [],
+}: {
+  autoFocus?: boolean;
+  start?: string;
+  onSave?: (n: NameToSave) => Promise<boolean>; // save to the open day
+  saved?: string[]; // names already saved to that day
+}) {
+  const [saving, setSaving] = useState(false);
   const [q, setQ] = useState(start);
   const [list, setList] = useState<Entry[] | null>(null);
   const [picked, setPicked] = useState<Entry | null>(null);
@@ -138,6 +156,23 @@ export function NameLookup({ autoFocus = false, start = "" }: { autoFocus?: bool
           <div className="dash-word-source">
             {[show[1] && "Hitchcock's Bible Names (1869)", background && "Easton's Bible Dictionary (1897)"].filter(Boolean).join(" · ")}
           </div>
+          {onSave &&
+            (saved.includes(show[0]) ? (
+              <p className="dash-word-saved name-card-saved">✓ Saved to this day - it&apos;s under &ldquo;Names studied&rdquo;</p>
+            ) : (
+              <button
+                type="button"
+                className="dash-btn dash-btn-primary dash-note-nav name-card-save"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  await onSave({ name: show[0], meaning: show[1], about: background.slice(0, 1200) });
+                  setSaving(false);
+                }}
+              >
+                {saving ? "Saving…" : "+ Save to this day"}
+              </button>
+            ))}
         </article>
       )}
     </div>

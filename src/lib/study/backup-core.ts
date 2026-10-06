@@ -47,6 +47,8 @@ export const BACKUP_TABLES = [
   "member_day_versions",
   "member_prayers",
   "member_memory",
+  "study_names",
+  "member_names",
   "study_settings",
   "email_list",
   "community_posts",

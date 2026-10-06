@@ -16,7 +16,9 @@ import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
 import { JournalSearch } from "@/components/study/journal-search";
 import { NamesInReading } from "@/components/study/names-in-reading";
-import { NameLookup } from "@/components/study/name-lookup";
+import { NameLookup, type NameToSave } from "@/components/study/name-lookup";
+import { NameRow } from "@/components/study/name-row";
+import type { SavedName } from "@/lib/study/names-api";
 import { WhyNiv } from "@/components/study/why-niv";
 import { DayVideo } from "@/components/study/day-video";
 import { DayJump } from "@/components/study/day-jump";
@@ -135,7 +137,7 @@ export function StudyNotes() {
   });
   const [month, setMonth] = useState<string>(() => startOfMonth(isDay(day) ? day : todayDay()));
   const [calView, setCalView] = useState<"month" | "year">("month");
-  const [sections, setSections] = useState<{ notes: boolean; words: boolean; study?: boolean; weekly?: boolean }>({
+  const [sections, setSections] = useState<{ notes: boolean; words: boolean; names?: boolean; study?: boolean; weekly?: boolean }>({
     notes: true,
     words: true,
     study: true,
@@ -159,6 +161,40 @@ export function StudyNotes() {
   const [studyLatest, setStudyLatest] = useState<string | null>(null);
   // Members: the owner's session video for each date (MM-DD), latest year.
   const [studyVideo, setStudyVideo] = useState<Map<string, string>>(() => new Map());
+  // Bible names saved to days from "Look up a name".
+  const [savedNames, setSavedNames] = useState<SavedName[]>([]);
+  const [openName, setOpenName] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(client.namesApi, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { names?: SavedName[] } | null) => d?.names && setSavedNames(d.names))
+      .catch(() => {});
+  }, [client.namesApi]);
+  async function saveName(n: NameToSave): Promise<boolean> {
+    if (!isDay(day)) return false;
+    try {
+      const r = await fetch(client.namesApi, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ day, ...n }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { name?: SavedName; error?: string };
+      if (!r.ok || !data.name) throw new Error(data.error ?? "Couldn't save that name.");
+      const saved = data.name;
+      setSavedNames((list) => [...list.filter((x) => x.id !== saved.id), saved]);
+      setSections((x) => ({ ...x, names: true }));
+      return true;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't save that name.");
+      return false;
+    }
+  }
+  async function removeName(n: SavedName) {
+    if (!confirm(`Take “${n.name}” off this day?`)) return;
+    const r = await fetch(`${client.namesApi}?id=${encodeURIComponent(n.id)}`, { method: "DELETE" }).catch(() => null);
+    if (r?.ok) setSavedNames((list) => list.filter((x) => x.id !== n.id));
+    else alert("Couldn't remove it - check your connection.");
+  }
   // Before everyone starts on Day 1 - set in the browser (the owner's page
   // is pre-rendered, so not at build time).
   const [early, setEarly] = useState(false);
@@ -408,9 +444,9 @@ export function StudyNotes() {
     });
   };
 
-  function toggleSection(key: "notes" | "words" | "study" | "weekly") {
+  function toggleSection(key: "notes" | "words" | "names" | "study" | "weekly") {
     setSections((s) => {
-      const next = { ...s, [key]: key === "study" || key === "weekly" ? s[key] === false : !s[key] };
+      const next = { ...s, [key]: key === "study" || key === "weekly" || key === "names" ? s[key] === false : !s[key] };
       writeStore(SECTIONS_KEY, next);
       return next;
     });
@@ -491,6 +527,7 @@ export function StudyNotes() {
     [allWords, day],
   );
   const wordDays = useMemo(() => new Set(allWords.map((w) => w.day).filter(Boolean)), [allWords]);
+  const dayNames = useMemo(() => savedNames.filter((n) => n.day === day), [savedNames, day]);
   const undatedCount = liveNotes.length - [...counts.values()].reduce((a, b) => a + b, 0);
 
   // The same calendar day in other years - the One Year Bible comes round
@@ -1844,6 +1881,32 @@ export function StudyNotes() {
                   </div>
                 )}
 
+                {dayNames.length > 0 && (
+                  <div className="dash-note-words">
+                    <button
+                      type="button"
+                      className="dash-note-section"
+                      onClick={() => toggleSection("names")}
+                      aria-expanded={sections.names !== false}
+                    >
+                      <span className="eyebrow eyebrow-amber">Names studied · {dayNames.length}</span>
+                      <span className="dash-note-section-chev" aria-hidden>
+                        {sections.names !== false ? "▾" : "▸"}
+                      </span>
+                    </button>
+                    {sections.names !== false &&
+                      dayNames.map((n) => (
+                        <NameRow
+                          key={n.id}
+                          n={n}
+                          open={openName === n.id}
+                          onToggle={() => setOpenName((id) => (id === n.id ? null : n.id))}
+                          onRemove={() => void removeName(n)}
+                        />
+                      ))}
+                  </div>
+                )}
+
                 {/* ── Write for this day ─────────────────────────────── */}
                 {!special && (
                 <div className="dash-note-write">
@@ -1926,7 +1989,7 @@ export function StudyNotes() {
                 <div className="dash-divider" />
                 <div className="eyebrow eyebrow-amber mb-1">Look up a name</div>
                 <p className="dash-word-hint mb-2">Who a person or place was, and what the name means.</p>
-                <NameLookup />
+                <NameLookup onSave={saveName} saved={dayNames.map((n) => n.name)} />
               </Panel>
             )}
 

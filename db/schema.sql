@@ -433,3 +433,27 @@ CREATE TABLE IF NOT EXISTS member_reminders (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_member_reminders_member ON member_reminders(member_id);
+
+-- Bible names saved to a reading day from "Look up a name" (the owner's,
+-- and each member's own). Removing one sets deleted_at - never erased.
+CREATE TABLE IF NOT EXISTS study_names (
+  id         TEXT PRIMARY KEY,
+  day        TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  meaning    TEXT,
+  about      TEXT,
+  created_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS study_names_day ON study_names (day);
+CREATE TABLE IF NOT EXISTS member_names (
+  id         TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  day        TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  meaning    TEXT,
+  about      TEXT,
+  created_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS member_names_member ON member_names (member_id, day);

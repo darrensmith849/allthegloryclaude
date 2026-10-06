@@ -4375,3 +4375,15 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .session-video-error { flex-basis: 100%; margin-top: 0; }
 .session-video .day-video { margin: 0 0 4px; }
 .session-video-hint { flex-basis: 100%; font-size: 12px; color: var(--colour-ink-quiet); }
+
+/* Bible names saved to a day ("Names studied") */
+.name-row-top { display: flex; align-items: center; gap: 8px; }
+.name-row-top .dash-word-row-head { flex: 1; min-width: 0; }
+.name-row-top .say-it { margin-right: 6px; }
+.dash-word-lang.is-name { background: transparent; }
+.name-row-means { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; font-size: 15px; font-weight: 600; color: var(--colour-amber); }
+.name-row-means .dash-reader-label { font-weight: 400; }
+.name-row .name-card-about { margin-top: 8px; }
+.name-row-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+.name-card-save { margin-top: 12px; }
+.name-card-saved { margin-top: 12px; }

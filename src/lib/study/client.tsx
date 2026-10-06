@@ -24,6 +24,7 @@ export interface StudyClient {
   notesApi: string;
   daysApi: string;
   wordsApi: string;
+  namesApi: string; // Bible names saved to a day
   fillApi: string;
   loginUrl: string;
   notesUrl: string;
@@ -57,6 +58,7 @@ export const OWNER_CLIENT: StudyClient = {
   notesApi: "/api/study-notes",
   daysApi: "/api/study-days",
   wordsApi: "/api/words",
+  namesApi: "/api/study-names",
   fillApi: "/api/word-fill",
   loginUrl: "/dashboard/login",
   notesUrl: "/dashboard/notes",
@@ -76,6 +78,7 @@ export function memberClient(
     kind: "member",
     notesApi: "/api/study/notes",
     daysApi: "/api/study/days",
+    namesApi: "/api/study/day-names",
     wordsApi: "/api/study/words",
     fillApi: "/api/study/word-fill",
     loginUrl: "/study/login",

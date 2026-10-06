@@ -2,7 +2,7 @@
 //
 // The owner's study lives in the study_* tables (private dashboard); each
 // member's journal lives in the member_* tables, every row tagged with
-// member_id. The notes / words / days APIs are written once against a
+// member_id. The notes / words / days / names APIs are written once against a
 // Scope, so a member request can only ever touch member_* rows with its own
 // member_id - never the owner's tables.
 
@@ -13,6 +13,7 @@ export interface Scope {
   wordVersions: "study_word_versions" | "member_word_versions";
   days: "study_days" | "member_days";
   dayVersions: "study_day_versions" | "member_day_versions";
+  names: "study_names" | "member_names"; // Bible names saved to a day
   member: string | null; // null = the owner
 }
 
@@ -23,6 +24,7 @@ export const OWNER_SCOPE: Scope = {
   wordVersions: "study_word_versions",
   days: "study_days",
   dayVersions: "study_day_versions",
+  names: "study_names",
   member: null,
 };
 
@@ -33,6 +35,7 @@ export const memberScope = (id: string): Scope => ({
   wordVersions: "member_word_versions",
   days: "member_days",
   dayVersions: "member_day_versions",
+  names: "member_names",
   member: id,
 });
 

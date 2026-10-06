@@ -49,6 +49,7 @@ export const config = {
     "/api/study-notes",
     "/api/words",
     "/api/study-days",
+    "/api/study-names",
     "/api/word-fill",
     "/api/analytics",
     "/api/members",
