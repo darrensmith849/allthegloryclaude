@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { forgetMe, useMe } from "@/components/study/shell";
+import { PasswordInput } from "@/components/ui/password-input";
 
 // Only same-site paths inside /study are followed after logging in.
 function safeNext(raw: string | null): string {
@@ -63,9 +64,8 @@ export default function StudyLoginPage() {
         <label className="dash-label mt-4" htmlFor="st-password">
           Password
         </label>
-        <input
+        <PasswordInput
           id="st-password"
-          type="password"
           autoComplete="current-password"
           className="dash-input dash-word-input"
           value={password}

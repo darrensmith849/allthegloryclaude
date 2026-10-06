@@ -9,6 +9,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { CALLS_NOTE, PLAN, startBanner, STUDY_HEART } from "@/lib/study/plan";
 import { todayDay } from "@/lib/dashboard/notes";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface Me {
   member: { name: string } | null;
@@ -391,10 +392,9 @@ export default function TheStudyPage() {
                     <label htmlFor="ts-password" className={label}>
                       {tab === "reset" ? "New password" : "Password"}
                     </label>
-                    <input
+                    <PasswordInput
                       id="ts-password"
                       name="password"
-                      type="password"
                       autoComplete={tab === "login" ? "current-password" : "new-password"}
                       minLength={tab === "login" ? undefined : 8}
                       required

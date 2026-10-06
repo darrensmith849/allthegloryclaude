@@ -87,6 +87,38 @@ export async function checkPassword(input: string, rec: AdminRecord): Promise<bo
   return diff === 0;
 }
 
+// Phones change a typed password in small ways without asking: a space
+// before or after it (autofill, the space bar), "smart" quotes, dashes and
+// "…" (when it's shown as plain text), a capital first letter, and accented
+// letters stored differently by Apple and other devices. New passwords are
+// saved tidied, and a login is checked as typed first, then tidied - so the
+// same password works on every phone, tablet and computer.
+export function tidyPassword(p: string): string {
+  return p
+    .normalize("NFC")
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+    .replace(/\u2014/g, "--")
+    .replace(/\u2013/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ")
+    .trim();
+}
+
+const flipFirst = (p: string) => {
+  const c = p.charAt(0);
+  const f = c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase();
+  return f === c ? p : f + p.slice(1);
+};
+
+export async function checkPasswordAnyDevice(input: string, rec: AdminRecord): Promise<boolean> {
+  if (await checkPassword(input, rec)) return true;
+  const tidy = tidyPassword(input);
+  const tries = [tidy, flipFirst(tidy)].filter((p, i, all) => p && p !== input && all.indexOf(p) === i);
+  for (const p of tries) if (await checkPassword(p, rec)) return true;
+  return false;
+}
+
 // Saves a new password hash, replacing any old one.
 export async function saveAdminRecord(rec: AdminRecord): Promise<void> {
   const db = await getDb();

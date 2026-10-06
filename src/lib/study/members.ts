@@ -8,7 +8,7 @@
 
 import { parseHold, type Hold } from "./hold";
 import { getDb, type D1Db } from "@/lib/analytics/store";
-import { checkPassword, hashPassword } from "@/lib/admin-auth";
+import { checkPasswordAnyDevice, hashPassword, tidyPassword } from "@/lib/admin-auth";
 import { memberScope, type Scope } from "./scope";
 
 export const MEMBER_COOKIE = "__Host-atg-study";
@@ -121,7 +121,8 @@ interface MemberRow {
   disabled_at: number | null;
 }
 
-export const hashMemberPassword = hashPassword;
+// Saved tidied (see tidyPassword), so it works the same on every device.
+export const hashMemberPassword = (password: string) => hashPassword(tidyPassword(password));
 
 export async function memberByEmail(db: D1Db, email: string): Promise<MemberRow | null> {
   return db.prepare("SELECT * FROM members WHERE email = ?1").bind(email).first<MemberRow>();
@@ -139,12 +140,12 @@ export async function verifyLogin(
     await hashPassword(password || "x");
     return { member: null, ok: false };
   }
-  return { member, ok: await checkPassword(password, member) };
+  return { member, ok: await checkPasswordAnyDevice(password, member) };
 }
 
 export async function checkMemberPassword(db: D1Db, id: string, password: string): Promise<boolean> {
   const row = await db.prepare("SELECT * FROM members WHERE id = ?1").bind(id).first<MemberRow>();
-  return Boolean(row && (await checkPassword(password, row)));
+  return Boolean(row && (await checkPasswordAnyDevice(password, row)));
 }
 
 // ── Sessions ─────────────────────────────────────────────────────

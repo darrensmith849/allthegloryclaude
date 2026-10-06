@@ -6,7 +6,7 @@
  * More than MAX_FAILURES wrong passwords from one address within
  * LOCKOUT_MS locks that address out until the window passes.
  */
-import { checkPassword, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
+import { checkPasswordAnyDevice, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
 import { getDb } from "@/lib/analytics/store";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!attempt || !(await checkPassword(attempt, rec))) {
+  if (!attempt || !(await checkPasswordAnyDevice(attempt, rec))) {
     if (db) {
       await db
         .batch([

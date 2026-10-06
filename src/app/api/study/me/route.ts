@@ -27,6 +27,7 @@ import {
   subscribeStmt,
   unsubscribeStmt,
 } from "@/lib/study/members";
+import { tidyPassword } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,7 @@ export async function PATCH(req: Request) {
   }
 
   if (typeof body.password === "string") {
-    const password = body.password;
+    const password = tidyPassword(body.password);
     if (!(await checkMemberPassword(db, member.id, String(body.current ?? "")))) {
       await slowDown();
       return Response.json({ error: "Your current password isn't right." }, { status: 401 });

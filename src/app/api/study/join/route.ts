@@ -28,6 +28,7 @@ import {
   usableInvite,
   validEmail,
 } from "@/lib/study/members";
+import { tidyPassword } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const name = cleanName(body.name);
   const email = normEmail(body.email);
-  const password = String(body.password ?? "");
+  const password = tidyPassword(String(body.password ?? ""));
   const code = String(body.invite ?? "").trim();
   // Hidden field real people never see - bots fill it in.
   if (String(body.website ?? "").trim()) {

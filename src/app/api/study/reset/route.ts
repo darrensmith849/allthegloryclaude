@@ -20,6 +20,7 @@ import {
   slowDown,
   tooMany,
 } from "@/lib/study/members";
+import { tidyPassword } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   if (!db) return Response.json({ error: "Accounts aren't available right now." }, { status: 503 });
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const token = String(body.token ?? "").slice(0, 100);
-  const password = String(body.password ?? "");
+  const password = tidyPassword(String(body.password ?? ""));
   const key = `reset:${clientIp(req)}`;
   if (await tooMany(db, key, 10, 3_600_000)) {
     return Response.json({ error: "Too many tries - wait an hour." }, { status: 429 });

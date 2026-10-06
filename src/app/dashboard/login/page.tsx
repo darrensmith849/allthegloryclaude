@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const MIN_PASSWORD = 10;
 
@@ -176,9 +177,8 @@ export default function AdminLoginPage() {
             <label className="dash-label mt-4" htmlFor="team-password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="team-password"
-              type="password"
               name="password"
               autoComplete="current-password"
               className="dash-input dash-word-input"
@@ -208,10 +208,9 @@ export default function AdminLoginPage() {
             <label className="dash-label mt-6" htmlFor="admin-password">
               {setup ? "New password" : "Password"}
             </label>
-            <input
+            <PasswordInput
               id="admin-password"
               ref={input}
-              type="password"
               name="password"
               autoComplete={setup ? "new-password" : "current-password"}
               className="dash-input dash-word-input"
@@ -224,9 +223,8 @@ export default function AdminLoginPage() {
                 <label className="dash-label mt-4" htmlFor="admin-confirm">
                   Type it again
                 </label>
-                <input
+                <PasswordInput
                   id="admin-confirm"
-                  type="password"
                   name="confirm"
                   autoComplete="new-password"
                   className="dash-input dash-word-input"

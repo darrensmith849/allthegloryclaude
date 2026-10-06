@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { forgetMe } from "@/components/study/shell";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const MIN_PASSWORD = 8;
 
@@ -52,9 +53,8 @@ export default function StudyResetPage() {
         <label className="dash-label mt-6" htmlFor="sr-password">
           New password
         </label>
-        <input
+        <PasswordInput
           id="sr-password"
-          type="password"
           autoComplete="new-password"
           className="dash-input dash-word-input"
           value={password}

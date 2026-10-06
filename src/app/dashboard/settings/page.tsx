@@ -13,6 +13,7 @@ import {
   GuitarWeekRow,
   TaskTag,
 } from "@/lib/dashboard/types";
+import { PasswordInput } from "@/components/ui/password-input";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -463,9 +464,8 @@ export default function SettingsPage() {
               <input type="text" name="username" autoComplete="username" value="admin" readOnly hidden />
               <div>
                 <label className="dash-label" htmlFor="pw-current">Current password</label>
-                <input
+                <PasswordInput
                   id="pw-current"
-                  type="password"
                   autoComplete="current-password"
                   className="dash-input"
                   value={pw.current}
@@ -475,9 +475,8 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="dash-label" htmlFor="pw-next">New password</label>
-                <input
+                <PasswordInput
                   id="pw-next"
-                  type="password"
                   autoComplete="new-password"
                   className="dash-input"
                   value={pw.next}
@@ -487,9 +486,8 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="dash-label" htmlFor="pw-confirm">New password again</label>
-                <input
+                <PasswordInput
                   id="pw-confirm"
-                  type="password"
                   autoComplete="new-password"
                   className="dash-input"
                   value={pw.confirm}

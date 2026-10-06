@@ -6,6 +6,7 @@ import { forgetMe, MemberOnly, useMe } from "@/components/study/shell";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 import { InstallCard } from "@/components/study/install-card";
 import { Reminders } from "@/components/study/reminders";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const MIN_PASSWORD = 8;
 
@@ -166,8 +167,7 @@ function Account() {
           <div className="mt-[18px]">
             <Panel eyebrow="Security" title="Change password">
               <form onSubmit={changePassword} className="flex flex-col gap-2">
-                <input
-                  type="password"
+                <PasswordInput
                   className="dash-input"
                   placeholder="Current password"
                   autoComplete="current-password"
@@ -175,8 +175,7 @@ function Account() {
                   onChange={(e) => setCurrent(e.target.value)}
                   required
                 />
-                <input
-                  type="password"
+                <PasswordInput
                   className="dash-input"
                   placeholder={`New password (at least ${MIN_PASSWORD} characters)`}
                   autoComplete="new-password"
@@ -262,8 +261,7 @@ function Account() {
                 <p className="dash-word-hint">
                   Removes your account and everything in your journal for good. Download it first if you want to keep it.
                 </p>
-                <input
-                  type="password"
+                <PasswordInput
                   className="dash-input"
                   placeholder="Your password"
                   autoComplete="current-password"

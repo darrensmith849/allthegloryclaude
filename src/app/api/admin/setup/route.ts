@@ -7,6 +7,7 @@ import {
   hashPassword,
   MIN_PASSWORD,
   sessionCookie,
+  tidyPassword,
 } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "A password is already set. Log in instead." }, { status: 409 });
   }
   const body = (await req.json().catch(() => ({}))) as { password?: unknown };
-  const password = String(body.password ?? "");
+  const password = tidyPassword(String(body.password ?? ""));
   if (password.length < MIN_PASSWORD || password.length > 200) {
     return Response.json(
       { error: `Use at least ${MIN_PASSWORD} characters.` },

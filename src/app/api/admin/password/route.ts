@@ -1,7 +1,7 @@
 // Changes the admin password (Settings). Needs the current password; the
 // new one signs this device in and logs every other device out.
 import {
-  checkPassword,
+  checkPasswordAnyDevice,
   createSession,
   getAdminRecord,
   hashPassword,
@@ -9,6 +9,7 @@ import {
   MIN_PASSWORD,
   saveAdminRecord,
   sessionCookie,
+  tidyPassword,
 } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,8 @@ export async function POST(req: Request) {
   const rec = await getAdminRecord(true);
   const body = (await req.json().catch(() => ({}))) as { current?: unknown; next?: unknown };
   const current = String(body.current ?? "");
-  const next = String(body.next ?? "");
-  if (!rec || !(await checkPassword(current, rec))) {
+  const next = tidyPassword(String(body.next ?? ""));
+  if (!rec || !(await checkPasswordAnyDevice(current, rec))) {
     await new Promise((r) => setTimeout(r, 600));
     return Response.json({ error: "Your current password isn't right." }, { status: 401 });
   }

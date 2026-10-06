@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { forgetMe, useMe } from "@/components/study/shell";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const MIN_PASSWORD = 8;
 
@@ -103,9 +104,8 @@ export default function StudyJoinPage() {
             <label className="dash-label mt-4" htmlFor="sj-password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="sj-password"
-              type="password"
               autoComplete="new-password"
               className="dash-input dash-word-input"
               value={password}
