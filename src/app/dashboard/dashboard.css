@@ -3829,11 +3829,15 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   .dash-word-link,
   .dash-plan-link,
   .study-remind-link,
+  .why-niv-toggle,
+  .dash-carousel-dot,
   .dash-community-memory { position: relative; }
   .dash-word-link::after,
   .dash-plan-link::after,
   .study-remind-link::after,
+  .why-niv-toggle::after,
   .dash-community-memory::after { content: ""; position: absolute; inset: -9px -6px; }
+  .dash-carousel-dot::after { content: ""; position: absolute; inset: -12px -3px; }
   .dash-word-link { font-size: 13.5px; }
   .hide-touch { display: none; }
 }

@@ -8,10 +8,13 @@ import { usePathname } from "next/navigation";
 import DashboardSidebar from "@/components/dashboard/sidebar";
 import CommandPalette from "@/components/dashboard/command-palette";
 import { DashAppCard } from "@/components/dashboard/app-card";
+import { useDashUser } from "@/lib/dashboard/who";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isWelcome = pathname === "/dashboard";
+  // The ⌘K palette loads Daniel's own data - not for his team.
+  const owner = useDashUser()?.role === "owner";
 
   // The login page stands alone - no sidebar, and no command palette (it
   // loads dashboard data, which needs a session).
@@ -32,7 +35,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         <DashAppCard />
         {children}
       </main>
-      <CommandPalette />
+      {owner && <CommandPalette />}
     </div>
   );
 }

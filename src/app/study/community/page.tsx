@@ -295,7 +295,7 @@ function Community() {
                     ))}
                     <GrowingTextarea
                       className="dash-textarea dash-word-field"
-                      placeholder={`Reply to ${author} - only ${author} sees this.`}
+                      placeholder={`Reply to ${author} - only ${author} and the team see this.`}
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
                     />
@@ -355,7 +355,7 @@ function Community() {
               <p className="dash-word-hint mb-3">
                 Ask about a passage, a word, or something you&apos;re working through. Your question goes privately to{" "}
                 {author}
-                {" "}or one of the trusted helpers, and the answer comes back here. Answers are shared so everyone
+                {" "}and the team, or one of the trusted helpers, and the answer comes back here. Answers are shared so everyone
                 can learn - your name is never shown.
               </p>
               <GrowingTextarea
@@ -627,13 +627,13 @@ function Community() {
               <ul className="dash-community-rules">
                 <li>Your journal is private. Notes are never shared - only testimonies you choose to send.</li>
                 <li>
-                  Questions go privately to {author}. Only {author} and trusted helpers answer them - members
+                  Questions go privately to {author} and the team. Only they and trusted helpers answer them - members
                   can&apos;t comment on anything, so what&apos;s taught here stays true to the Word.
                 </li>
                 <li>Answers are shared as Q&amp;A so everyone can learn - the person who asked is never named.</li>
                 <li>{author} reads every testimony first. Nothing appears until it&apos;s approved, and you choose your first name or anonymous.</li>
                 <li>Only signed-in members see any of this - never the public website or search engines.</li>
-                <li>Check-in replies are private to {author}. See something that isn&apos;t right? Tap Report.</li>
+                <li>Check-in replies are private to {author} and the team. See something that isn&apos;t right? Tap Report.</li>
               </ul>
             </Panel>
           </div>

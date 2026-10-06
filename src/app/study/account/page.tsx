@@ -201,7 +201,7 @@ function Account() {
           <div id="reminder">
             <Panel eyebrow="Each day" title="Daily reminder">
               <p className="dash-word-hint mb-3">
-                A gentle nudge on this phone or computer when it&apos;s time for the day&apos;s reading - &ldquo;Day 277 is
+                A gentle nudge on this phone or computer when it&apos;s time for the day&apos;s reading - like &ldquo;Day 1 is
                 ready&rdquo;. Skipped on days you&apos;ve already marked as read. Turn it on on each device you use.
               </p>
               <Reminders />
