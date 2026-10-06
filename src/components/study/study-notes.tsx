@@ -27,12 +27,13 @@ import { WhyNiv } from "@/components/study/why-niv";
 import { DayVideo } from "@/components/study/day-video";
 import { DayJump } from "@/components/study/day-jump";
 import { SessionVideo } from "@/components/study/session-video";
+import { ReadHere } from "@/components/study/read-here";
 import { FoldToggle } from "@/components/study/fold-toggle";
 import { heldUntil, studyToday, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
-import { beforeStart, bibleAppDay, PLAN, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
@@ -1087,6 +1088,9 @@ export function StudyNotes() {
                 <p className="journal-start-why">
                   <strong>Why Genesis, in October?</strong> {START_WHY}
                 </p>
+                <p className="journal-start-why">
+                  <strong>Weekly calls.</strong> {CALLS_NOTE}
+                </p>
               </>
             ) : (
               <p>
@@ -1568,10 +1572,10 @@ export function StudyNotes() {
                 )}
 
                 {isDay(day) && (
+                  <ReadHere chapters={starterChapters} bibleAppUrl={bibleAppDay(planDay(day).n)} dayN={planDay(day).n} onVerse={startLine} />
+                )}
+                {isDay(day) && (
                   <div className="dash-day-tools">
-                    <a className="dash-plan-link" href={bibleAppDay(planDay(day).n)} target="_blank" rel="noreferrer">
-                      📖 Day {planDay(day).n}&apos;s reading in the Bible App (NIV) ↗
-                    </a>
                     <button
                       type="button"
                       className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${readDays.has(day) ? "is-read" : ""}`}

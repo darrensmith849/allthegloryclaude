@@ -4463,3 +4463,48 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .suggest-status.is-done { background: var(--colour-amber); border-color: var(--colour-amber); color: var(--on-gold); }
 .suggest-card.is-new { box-shadow: inset 3px 0 0 var(--colour-amber); }
 .suggest-new { padding: 1px 8px; border-radius: 999px; background: var(--colour-amber); color: var(--on-gold); font-size: 11px; font-weight: 600; }
+
+/* Read here - the day's chapters inside the journal */
+.read-here { margin-bottom: 12px; }
+.read-here-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.read-here-toggle { font-weight: 600; }
+.read-here-panel {
+  margin-top: 12px;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.4);
+  background: var(--paper);
+}
+.read-here-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.read-here-find { display: flex; gap: 6px; flex: 1 1 220px; min-width: 0; }
+.read-here-find .dash-input { flex: 1; min-width: 0; }
+.read-here-text {
+  margin-top: 12px;
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  padding-right: 6px;
+  font-family: var(--font-read), Georgia, serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--colour-ink-strong);
+}
+.read-here-text section + section { margin-top: 18px; }
+.read-here-title { font-family: var(--font-read), Georgia, serif; font-size: 20px; font-weight: 400; color: var(--colour-amber); margin-bottom: 6px; }
+.read-here-num {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 3px;
+  border-radius: 6px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  vertical-align: 0.35em;
+  color: var(--colour-amber);
+  cursor: pointer;
+}
+.read-here-num:hover { background: rgb(var(--gold-rgb) / 0.18); }
+.read-here-source { margin-top: 10px; font-size: 12px; color: var(--colour-ink-quiet); }
+@media (max-width: 640px) {
+  .read-here-text { font-size: 17.5px; max-height: 70vh; }
+}

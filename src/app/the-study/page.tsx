@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { PLAN, startBanner, STUDY_HEART } from "@/lib/study/plan";
+import { CALLS_NOTE, PLAN, startBanner, STUDY_HEART } from "@/lib/study/plan";
 import { todayDay } from "@/lib/dashboard/notes";
 
 interface Me {
@@ -216,6 +216,7 @@ export default function TheStudyPage() {
             Greek behind the words, and {author}&apos;s notes to read alongside.
           </p>
           {banner && <p className="mt-5 inline-block rounded-full border border-colour-accent/40 bg-colour-accent/10 px-4 py-2 text-sm font-semibold text-colour-accent">{banner}</p>}
+          <p className="mt-4 text-sm text-white/60 max-w-xl mx-auto leading-relaxed">{CALLS_NOTE}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {me?.member ? (
               <a

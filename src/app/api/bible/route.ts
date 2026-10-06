@@ -1,7 +1,7 @@
 /**
  * Look up the Bible from The Study and the dashboard.
  *
- *   GET ?q=John 3:16   -> that passage (a whole chapter is capped)
+ *   GET ?q=John 3:16   -> that passage (a verse range is capped at 60; a whole chapter comes in full)
  *   GET ?q=living water -> verses that use those words
  *   -> { kind: "passage" | "words", label, total, results: [{ ref, book, chapter, verse, text }] }
  *
@@ -12,7 +12,7 @@
 import { BOOKS } from "@/lib/dashboard/bible-books";
 import { parsePassage } from "@/lib/dashboard/notes";
 
-const MAX_PASSAGE = 60;
+const MAX_PASSAGE = 60; // a verse range; a whole chapter comes back in full
 
 interface Hit {
   ref: string;
@@ -47,10 +47,10 @@ export async function GET(req: Request) {
       if (!r.ok) throw new Error(`bolls ${r.status}`);
       const verses = (await r.json()) as { verse: number; text: string }[];
       const from = p.verse ?? 1;
-      const to = p.verse ? (p.verseEnd ?? p.verse) : Math.min(verses.length, MAX_PASSAGE);
+      const to = p.verse ? (p.verseEnd ?? p.verse) : verses.length;
       const results: Hit[] = verses
         .filter((v) => v.verse >= from && v.verse <= to)
-        .slice(0, MAX_PASSAGE)
+        .slice(0, p.verse ? MAX_PASSAGE : 200)
         .map((v) => ({ ref: label(p.book, p.chapter, v.verse), book: p.book, chapter: p.chapter, verse: v.verse, text: clean(v.text) }));
       if (!results.length) return Response.json({ error: `Couldn't find ${q}.` }, { status: 404 });
       const range = p.verse ? `${label(p.book, p.chapter, from)}${to > from ? `-${to}` : ""}` : label(p.book, p.chapter);

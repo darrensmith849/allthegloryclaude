@@ -11,7 +11,7 @@ import { canRead, studyName, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { beforeStart, bibleAppDay, PLAN, startMessage, START_WHY, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
@@ -207,6 +207,9 @@ export default function StudyHome() {
             </p>
             <p className="study-start-why">
               <strong>Why Genesis, in October?</strong> {START_WHY}
+            </p>
+            <p className="study-start-why">
+              <strong>Weekly calls.</strong> {CALLS_NOTE}
             </p>
           </>
         )}
