@@ -118,6 +118,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
           { href: "/study/words", label: "All words", glyph: "α" },
           { href: "/study/prayers", label: "Prayer list", glyph: "♡" },
           { href: "/study/community", label: "Community", glyph: "❧" },
+          { href: "/study/journal?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
           { href: "/study/account", label: "Account", glyph: "⚙" },
           { href: "/study#invite", label: "Invite a friend", glyph: "✉" },
         ]
@@ -282,11 +283,11 @@ interface NavProps {
 }
 
 function NavLinksLive(props: NavProps) {
-  const daniel = useSearchParams().get("daniel") === "1";
-  return <NavLinks {...props} daniel={daniel} />;
+  const params = useSearchParams();
+  return <NavLinks {...props} daniel={params.get("daniel") === "1"} bin={params.get("day") === "deleted"} />;
 }
 
-function NavLinks({ nav, pathname, daniel, navRef, onMoved }: NavProps & { daniel: boolean }) {
+function NavLinks({ nav, pathname, daniel, bin = false, navRef, onMoved }: NavProps & { daniel: boolean; bin?: boolean }) {
   useEffect(() => {
     const el = navRef.current;
     const active = el?.querySelector<HTMLElement>(".is-active");
@@ -294,7 +295,7 @@ function NavLinks({ nav, pathname, daniel, navRef, onMoved }: NavProps & { danie
       el.scrollLeft = Math.max(0, active.offsetLeft - el.clientWidth / 2 + active.offsetWidth / 2);
     }
     onMoved();
-  }, [pathname, daniel, nav.length, navRef, onMoved]);
+  }, [pathname, daniel, bin, nav.length, navRef, onMoved]);
 
   return (
     <>
@@ -304,8 +305,10 @@ function NavLinks({ nav, pathname, daniel, navRef, onMoved }: NavProps & { danie
             ? pathname === "/study"
             : n.href.includes("daniel=1")
               ? pathname?.startsWith("/study/read") || (pathname === "/study/journal" && daniel)
+              : n.href.includes("day=deleted")
+                ? pathname === "/study/journal" && bin
               : n.href === "/study/journal"
-                ? pathname?.startsWith("/study/journal") && !daniel
+                ? pathname?.startsWith("/study/journal") && !daniel && !bin
                 : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
         return (
           <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>

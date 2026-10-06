@@ -5,7 +5,8 @@
 // study (/dashboard/notes) and each member's journal (/study/journal) -
 // which one comes from useStudyClient().
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Panel } from "@/components/dashboard/panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
@@ -132,7 +133,7 @@ export function StudyNotes() {
   const [day, setDay] = useState<string>(() => {
     if (client.kind === "member" && typeof window !== "undefined") {
       const asked = new URLSearchParams(window.location.search).get("day");
-      if (isDay(asked) || asked === STARRED) return asked;
+      if (isDay(asked) || asked === STARRED || asked === TRASH) return asked;
       // Until everyone starts together, members open on Day 1.
       if (beforeStart(todayDay())) return STUDY_START;
     }
@@ -250,7 +251,7 @@ export function StudyNotes() {
   useEffect(() => {
     const asked = new URLSearchParams(window.location.search).get("day");
     const open = (list: StudyNote[]) => {
-      const d = isDay(asked) || asked === STARRED ? asked : latestNote(list)?.day;
+      const d = isDay(asked) || asked === STARRED || asked === TRASH ? asked : latestNote(list)?.day;
       if (d) {
         setDay(d);
         if (isDay(d)) setMonth(startOfMonth(d));
@@ -1022,44 +1023,51 @@ export function StudyNotes() {
               : "Pick the day you're reading and write your notes the way you always do."}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        {/* The journal's tools - easy to spot, each with its sign. */}
+        <div className="journal-tools">
+          {client.studyUrl && (
+            <button type="button" className="dash-btn dash-btn-primary journal-tool-main" onClick={() => showStudy()}>
+              {client.studyName} ▾
+            </button>
+          )}
           <button
             type="button"
-            className={`dash-btn dash-btn-ghost ${day === STARRED ? "is-on" : ""}`}
-            onClick={() => pickDay(STARRED)}
+            className={`journal-tool ${day === STARRED ? "is-on" : ""}`}
+            onClick={() => goToDay(STARRED)}
             title="Your starred days and notes"
           >
-            ★ Starred{starCount ? ` · ${starCount}` : ""}
+            <span className="journal-tool-icon" aria-hidden>★</span>
+            Starred{starCount ? <span className="journal-tool-count">{starCount}</span> : null}
           </button>
           <button
             type="button"
-            className={`dash-btn dash-btn-ghost ${day === TRASH ? "is-on" : ""}`}
+            className={`journal-tool ${day === TRASH ? "is-on" : ""}`}
             onClick={() => goToDay(TRASH)}
             title="Deleted notes, words and names - restore them for 30 days"
           >
-            🗑 Bin{binItems.length ? ` · ${binItems.length}` : ""}
+            <span className="journal-tool-icon" aria-hidden>🗑&#xFE0E;</span>
+            Recycle bin{binItems.length ? <span className="journal-tool-count">{binItems.length}</span> : null}
           </button>
+          <a className="journal-tool" href={client.wordsUrl} title="Every word you've studied">
+            <span className="journal-tool-icon" aria-hidden>α</span>
+            All words
+          </a>
           <a
-            className="dash-btn dash-btn-ghost"
+            className="journal-tool"
             href={`${client.printUrl}?month=${(isDay(day) ? day : todayDay()).slice(0, 7)}`}
             title="Lay out a month or a year of your journal to print or save as PDF"
           >
+            <span className="journal-tool-icon" aria-hidden>⎙</span>
             Print
           </a>
-          <button type="button" className="dash-btn dash-btn-ghost dash-hide-phone" onClick={() => setImportOpen((v) => !v)}>
+          <button type="button" className={`journal-tool dash-hide-phone ${importOpen ? "is-on" : ""}`} onClick={() => setImportOpen((v) => !v)}>
+            <span className="journal-tool-icon" aria-hidden>⧉</span>
             {importOpen ? "Close" : "Paste many days"}
           </button>
           {liveNotes.length > 0 && (
-            <button type="button" className="dash-btn dash-btn-ghost dash-hide-phone" onClick={download}>
+            <button type="button" className="journal-tool dash-hide-phone" onClick={download}>
+              <span className="journal-tool-icon" aria-hidden>⤓</span>
               Download
-            </button>
-          )}
-          <a className="dash-btn dash-btn-ghost" href={client.wordsUrl}>
-            All words
-          </a>
-          {client.studyUrl && (
-            <button type="button" className="dash-btn dash-btn-primary" onClick={() => showStudy()}>
-              {client.studyName} ▾
             </button>
           )}
         </div>
@@ -1112,6 +1120,19 @@ export function StudyNotes() {
         </div>
       )}
 
+
+      <Suspense fallback={null}>
+        <LinkParams
+          onDay={(d) => goToDay(d)}
+          onPlain={() => {
+            // "My journal" from the bin or starred: back to the reading day.
+            if (day === TRASH || day === STARRED) openDay(client.kind === "member" && beforeStart(todayDay()) ? STUDY_START : todayDay());
+          }}
+          onDaniel={() => {
+            if (client.studyUrl) showStudy(!window.matchMedia("(max-width: 1100px)").matches);
+          }}
+        />
+      </Suspense>
 
       <div className="dash-grid">
         {guide && (
@@ -2098,4 +2119,25 @@ export function StudyNotes() {
       </div>
     </>
   );
+}
+
+// The menu's links into the journal (?day=deleted for the Recycle bin,
+// ?daniel=1 for the study) when the journal is already open: the page stays
+// put, so follow the link's change here. The first load is handled above.
+function LinkParams({ onDay, onDaniel, onPlain }: { onDay: (day: string) => void; onDaniel: () => void; onPlain: () => void }) {
+  const params = useSearchParams();
+  const first = useRef(true);
+  const day = params.get("day");
+  const daniel = params.get("daniel");
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (day && (isDay(day) || day === STARRED || day === TRASH)) onDay(day);
+    else if (daniel) onDaniel();
+    else onPlain();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day, daniel]);
+  return null;
 }

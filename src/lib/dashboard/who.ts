@@ -39,4 +39,4 @@ export function useDashUser(): DashUser | undefined {
   return user;
 }
 
-export const TEAM_NAV = ["/dashboard/names", "/dashboard/notes", "/dashboard/members", "/dashboard/community"];
+export const TEAM_NAV = ["/dashboard/names", "/dashboard/notes", "/dashboard/notes?day=deleted", "/dashboard/members", "/dashboard/community"];

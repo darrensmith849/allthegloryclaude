@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { ThemeSwitch } from "@/components/study/theme-toggle";
 import { TEAM_NAV, useDashUser } from "@/lib/dashboard/who";
 
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/dashboard", label: "Who am I?", glyph: "✶" },
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
+  { href: "/dashboard/notes?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
   { href: "/dashboard/members", label: "Members", glyph: "☍" },
   { href: "/dashboard/community", label: "Community", glyph: "❧" },
   { href: "/dashboard/today", label: "Today", glyph: "✦" },
@@ -70,23 +71,9 @@ export default function DashboardSidebar() {
       </div>
       <div id="dash-side-menu" className={`dash-side-menu ${open ? "is-open" : ""}`}>
       <nav className="mt-7 flex flex-col gap-1">
-        {nav.map((item) => {
-          const active =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname?.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`dash-nav-link ${active ? "is-active" : ""}`}
-            >
-              <span className="dash-nav-glyph">{item.glyph}</span>
-              <span>{item.label}</span>
-              {item.href === "/dashboard/community" && waiting > 0 && <span className="dash-nav-badge">{waiting}</span>}
-            </Link>
-          );
-        })}
+        <Suspense fallback={<NavItems nav={nav} pathname={pathname} waiting={waiting} bin={false} />}>
+          <NavItemsLive nav={nav} pathname={pathname} waiting={waiting} />
+        </Suspense>
       </nav>
       <div className="mt-auto pt-8 flex flex-col gap-1">
         <Link href="/study" className="dash-nav-link dash-nav-foot">
@@ -113,5 +100,40 @@ export default function DashboardSidebar() {
       </div>
       </div>
     </aside>
+  );
+}
+
+type NavItem = (typeof NAV)[number];
+interface NavItemsProps {
+  nav: NavItem[];
+  pathname: string | null;
+  waiting: number;
+}
+
+function NavItemsLive(props: NavItemsProps) {
+  return <NavItems {...props} bin={useSearchParams().get("day") === "deleted"} />;
+}
+
+function NavItems({ nav, pathname, waiting, bin }: NavItemsProps & { bin: boolean }) {
+  return (
+    <>
+      {nav.map((item) => {
+        const active =
+          item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : item.href.includes("day=deleted")
+              ? pathname === "/dashboard/notes" && bin
+              : item.href === "/dashboard/notes"
+                ? pathname?.startsWith(item.href) && !bin
+                : pathname?.startsWith(item.href);
+        return (
+          <Link key={item.href} href={item.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
+            <span className="dash-nav-glyph">{item.glyph}</span>
+            <span>{item.label}</span>
+            {item.href === "/dashboard/community" && waiting > 0 && <span className="dash-nav-badge">{waiting}</span>}
+          </Link>
+        );
+      })}
+    </>
   );
 }
