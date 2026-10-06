@@ -108,6 +108,8 @@ function CopyLink({ url }: { url: string }) {
 
 export default function MembersPage() {
   const [settings, setSettings] = useState<StudySettings | null>(null);
+  const [holdFrom, setHoldFrom] = useState("");
+  const [holdTo, setHoldTo] = useState("");
   const [invites, setInvites] = useState<Invite[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   // Team members can use this page too; only Daniel gives out roles.
@@ -170,6 +172,10 @@ export default function MembersPage() {
     load();
     loadBackups();
   }, []);
+
+  const longDate = (d: string) =>
+    new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const nextYear = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`;
 
   async function saveSettings(patch: Partial<StudySettings>) {
     try {
@@ -373,6 +379,46 @@ export default function MembersPage() {
               {READING.find((o) => o.value === settings?.reading)?.hint} Private notes (🔒) and days you keep back are
               never shown.
             </p>
+
+            <div className="dash-divider" />
+            <div className="eyebrow mb-2">Kept private until next year</div>
+            {settings?.hold ? (
+              <>
+                <p className="dash-word-hint">
+                  Your notes from <strong>{longDate(settings.hold.from)}</strong> to <strong>{longDate(settings.hold.to)}</strong>{" "}
+                  are kept from members for now. Each day shows again on its own date next year - from{" "}
+                  {longDate(nextYear(settings.hold.from))}. You still see and write on them as normal.
+                </p>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost mt-3"
+                  onClick={() => {
+                    if (confirm("Share these days with members again now?")) void saveSettings({ hold: null });
+                  }}
+                >
+                  Share them now instead
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="dash-word-hint mb-2">
+                  Keep a stretch of days to yourself for now - each comes back on its own date next year.
+                </p>
+                <div className="flex gap-2 flex-wrap items-center">
+                  <input type="date" className="dash-input dash-hold-date" value={holdFrom} onChange={(e) => setHoldFrom(e.target.value)} aria-label="From" />
+                  <span className="dash-word-hint">to</span>
+                  <input type="date" className="dash-input dash-hold-date" value={holdTo} onChange={(e) => setHoldTo(e.target.value)} aria-label="To" />
+                  <button
+                    type="button"
+                    className="dash-btn dash-btn-primary"
+                    disabled={!holdFrom || !holdTo || holdFrom > holdTo}
+                    onClick={() => void saveSettings({ hold: { from: holdFrom, to: holdTo } })}
+                  >
+                    Keep private
+                  </button>
+                </div>
+              </>
+            )}
 
             <div className="dash-divider" />
             <label className="dash-label" htmlFor="m-author">

@@ -377,6 +377,7 @@ export interface StudyDay {
   updatedAt: number;
   readAt?: number | null; // ticked as read
   starredAt?: number | null; // starred as a favourite day
+  video?: string | null; // owner: the session's YouTube link
 }
 
 // Day of the reading plan: 1 January is day 1, 31 December day 365. The
@@ -387,6 +388,14 @@ export function planDay(iso: string): { n: number; of: number } {
   const n = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
   const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
   return { n: leap && n >= 60 ? n - 1 : n, of: 365 };
+}
+
+// The date of plan day n in a year - the reverse of planDay (in a leap
+// year, day 60 onwards is a day later).
+export function planDate(n: number, year: number): string {
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const offset = n - 1 + (leap && n >= 60 ? 1 : 0);
+  return new Date(Date.UTC(year, 0, 1) + offset * 86_400_000).toISOString().slice(0, 10);
 }
 
 // Merge a set of changed notes into a cached list (by id).

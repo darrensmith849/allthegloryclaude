@@ -88,7 +88,8 @@ CREATE TABLE IF NOT EXISTS study_days (
   shared     INTEGER NOT NULL DEFAULT 1,
   updated_at INTEGER NOT NULL,    -- epoch ms
   read_at    INTEGER,             -- ticked "read" (ALTER TABLE study_days ADD COLUMN read_at INTEGER)
-  starred_at INTEGER              -- starred as a favourite day (ALTER TABLE study_days ADD COLUMN starred_at INTEGER)
+  starred_at INTEGER,             -- starred as a favourite day (ALTER TABLE study_days ADD COLUMN starred_at INTEGER)
+  video      TEXT                 -- the session's YouTube link (ALTER TABLE study_days ADD COLUMN video TEXT)
 );
 CREATE TABLE IF NOT EXISTS study_day_versions (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,6 +97,7 @@ CREATE TABLE IF NOT EXISTS study_day_versions (
   title    TEXT,
   takeaway TEXT,
   shared   INTEGER,
+  video    TEXT,                   -- (ALTER TABLE study_day_versions ADD COLUMN video TEXT)
   saved_at INTEGER NOT NULL
 );
 
@@ -209,7 +211,8 @@ CREATE TABLE IF NOT EXISTS member_resets (
 );
 
 -- Owner's switches for the study: signup ('invite' | 'open' | 'closed'),
--- reading ('off' | 'members' | 'public'), author, intro.
+-- reading ('off' | 'members' | 'public'), author, intro, and hold
+-- ({"from","to"}: days kept from readers until their date next year).
 CREATE TABLE IF NOT EXISTS study_settings (
   key        TEXT PRIMARY KEY,
   value      TEXT NOT NULL,

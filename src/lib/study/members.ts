@@ -6,6 +6,7 @@
 // SHA-256 (member_sessions), so a session can be ended from the server
 // and a database leak exposes no usable tokens.
 
+import { parseHold, type Hold } from "./hold";
 import { getDb, type D1Db } from "@/lib/analytics/store";
 import { checkPassword, hashPassword } from "@/lib/admin-auth";
 import { memberScope, type Scope } from "./scope";
@@ -31,6 +32,7 @@ export interface StudySettings {
   reading: ReadingMode; // who can read the owner's study
   author: string; // name shown on the owner's study
   intro: string; // a welcome line on /study
+  hold: Hold | null; // days kept out of the shared study until next year
 }
 
 export const DEFAULT_SETTINGS: StudySettings = {
@@ -38,6 +40,7 @@ export const DEFAULT_SETTINGS: StudySettings = {
   reading: "off",
   author: "All The Glory",
   intro: "",
+  hold: null,
 };
 
 const enc = new TextEncoder();
@@ -77,6 +80,7 @@ export async function getSettings(db: D1Db): Promise<StudySettings> {
     reading: (["off", "members", "public"] as const).find((m) => m === raw.reading) ?? DEFAULT_SETTINGS.reading,
     author: raw.author?.trim() || DEFAULT_SETTINGS.author,
     intro: raw.intro ?? DEFAULT_SETTINGS.intro,
+    hold: parseHold(raw.hold),
   };
 }
 
@@ -87,6 +91,8 @@ export async function saveSettings(db: D1Db, patch: Partial<StudySettings>): Pro
   if (patch.reading && ["off", "members", "public"].includes(patch.reading)) entries.push(["reading", patch.reading]);
   if (typeof patch.author === "string") entries.push(["author", patch.author.trim().slice(0, 80)]);
   if (typeof patch.intro === "string") entries.push(["intro", patch.intro.trim().slice(0, 1000)]);
+  if (patch.hold === null) entries.push(["hold", ""]);
+  else if (patch.hold && parseHold(patch.hold)) entries.push(["hold", JSON.stringify(parseHold(patch.hold))]);
   if (entries.length) {
     await db.batch(
       entries.map(([k, v]) =>

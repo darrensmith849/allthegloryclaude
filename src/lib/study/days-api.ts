@@ -4,16 +4,19 @@
  * owner (study_days) or a member (member_days), see ./scope.ts.
  *
  *   GET                                   -> { days }
- *   PUT  { day, title, takeaway, shared } -> { day }
+ *   PUT  { day, title, takeaway, shared, video? } -> { day }   (video: owner only, a YouTube link)
  *   PATCH { day, read: boolean }          -> { day }   tick the day's reading done (or not)
  *   PATCH { day, star: boolean }          -> { day }   star the day as a favourite (or not)
  *
  * Nothing is ever lost: each change first copies the old row into the
- * versions table.
+ * versions table. The owner's GET also says which days are held back from
+ * the shared study until next year (study_settings "hold").
  */
 import { getDb } from "@/lib/analytics/store";
 import { isDay, type StudyDay } from "@/lib/dashboard/notes";
+import { getSettings } from "./members";
 import { andMine, mine, mineArgs, pre, preQ, type ScopeOf } from "./scope";
+import { parseYouTube } from "./youtube";
 
 interface Row {
   day: string;
@@ -23,6 +26,7 @@ interface Row {
   updated_at: number;
   read_at: number | null;
   starred_at?: number | null;
+  video?: string | null; // owner only
 }
 
 const toDay = (r: Row): StudyDay => ({
@@ -33,6 +37,7 @@ const toDay = (r: Row): StudyDay => ({
   updatedAt: r.updated_at,
   readAt: r.read_at ?? null,
   starredAt: r.starred_at ?? null,
+  video: r.video ?? null,
 });
 
 const unavailable = () => Response.json({ error: "Storage isn't available here." }, { status: 503 });
@@ -48,7 +53,8 @@ export function daysApi(scopeOf: ScopeOf) {
         .prepare(`SELECT * FROM ${s.days} WHERE ${mine(s)} ORDER BY day`)
         .bind(...mineArgs(s))
         .all<Row>();
-      return Response.json({ days: results.map(toDay) }, { headers: { "cache-control": "no-store" } });
+      const hold = s.member ? undefined : (await getSettings(db)).hold;
+      return Response.json({ days: results.map(toDay), ...(s.member ? {} : { hold }) }, { headers: { "cache-control": "no-store" } });
     } catch (e) {
       console.error("days GET:", e);
       return Response.json({ error: "Couldn't load the days." }, { status: 500 });
@@ -65,22 +71,31 @@ export function daysApi(scopeOf: ScopeOf) {
     const title = String(body.title ?? "").trim().slice(0, 200);
     const takeaway = String(body.takeaway ?? "").trim().slice(0, 4000);
     const shared = body.shared === false ? 0 : 1;
+    // The owner's session video: kept as it is unless sent.
+    const setVideo = !s.member && "video" in body;
+    const videoText = String(body.video ?? "").trim().slice(0, 300);
+    if (setVideo && videoText && !parseYouTube(videoText)) {
+      return Response.json({ error: "That doesn't look like a YouTube link - copy it from YouTube's Share button." }, { status: 400 });
+    }
+    const video = videoText || null;
+    const vcol = s.member ? "" : ", video";
     const now = Date.now();
     try {
       await db.batch([
         db
           .prepare(
-            `INSERT INTO ${s.dayVersions} (${pre(s)}day, title, takeaway, shared, saved_at) ` +
-              `SELECT ${pre(s)}day, title, takeaway, shared, ? FROM ${s.days} WHERE day = ?${andMine(s)}`,
+            `INSERT INTO ${s.dayVersions} (${pre(s)}day, title, takeaway, shared${vcol}, saved_at) ` +
+              `SELECT ${pre(s)}day, title, takeaway, shared${vcol}, ? FROM ${s.days} WHERE day = ?${andMine(s)}`,
           )
           .bind(now, body.day, ...mineArgs(s)),
         db
           .prepare(
-            `INSERT INTO ${s.days} (${pre(s)}day, title, takeaway, shared, updated_at) VALUES (${preQ(s)}?, ?, ?, ?, ?) ` +
+            `INSERT INTO ${s.days} (${pre(s)}day, title, takeaway, shared, updated_at${setVideo ? ", video" : ""}) ` +
+              `VALUES (${preQ(s)}?, ?, ?, ?, ?${setVideo ? ", ?" : ""}) ` +
               `ON CONFLICT(${s.member ? "member_id, day" : "day"}) DO UPDATE SET title = excluded.title, ` +
-              "takeaway = excluded.takeaway, shared = excluded.shared, updated_at = excluded.updated_at",
+              `takeaway = excluded.takeaway, shared = excluded.shared, updated_at = excluded.updated_at${setVideo ? ", video = excluded.video" : ""}`,
           )
-          .bind(...mineArgs(s), body.day, title, takeaway, shared, now),
+          .bind(...mineArgs(s), body.day, title, takeaway, shared, now, ...(setVideo ? [video] : [])),
       ]);
       const row = await db
         .prepare(`SELECT * FROM ${s.days} WHERE day = ?${andMine(s)}`)

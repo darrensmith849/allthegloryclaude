@@ -48,7 +48,7 @@ export interface ReaderData {
   preview: boolean;
   contents: ContentsDay[];
   day: string | null;
-  info?: { title: string; takeaway: string; shared: boolean };
+  info?: { title: string; takeaway: string; shared: boolean; video?: string | null; heldUntil?: string };
   notes: ReaderNote[];
   words: ReaderWord[];
   hidden?: number;

@@ -12,6 +12,7 @@ import { FoldNotes, FoldWords } from "@/components/study/fold-notes";
 import { ShareDay } from "@/components/study/share-day";
 import { dayLabel, planDay } from "@/lib/dashboard/notes";
 import { bibleAppDay } from "@/lib/study/plan";
+import { DayVideo } from "./day-video";
 import type { ReaderData } from "@/lib/study/types";
 
 const cache = new Map<string, ReaderData>();
@@ -123,6 +124,7 @@ export function StudyPeek({ on, studyUrl, author }: { on?: string; studyUrl: str
         )}
       </div>
       {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
+      <DayVideo url={data.info?.video} label={author ? `Watch ${author}'s session` : "Watch the session"} />
       <FoldNotes notes={data.notes} />
       <FoldWords words={data.words} title={author ? `Words ${author} studied` : "Words studied"} />
       <div className="dash-daniel-steps">

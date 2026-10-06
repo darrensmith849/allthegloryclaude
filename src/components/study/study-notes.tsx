@@ -18,6 +18,9 @@ import { JournalSearch } from "@/components/study/journal-search";
 import { NamesInReading } from "@/components/study/names-in-reading";
 import { NameLookup } from "@/components/study/name-lookup";
 import { WhyNiv } from "@/components/study/why-niv";
+import { DayVideo } from "@/components/study/day-video";
+import { DayJump } from "@/components/study/day-jump";
+import { heldUntil, studyToday, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
@@ -141,7 +144,9 @@ export function StudyNotes() {
   );
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
-  const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
+  const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean; video: string } | null>(null);
+  // Owner: days kept out of the shared study until next year.
+  const [hold, setHold] = useState<Hold | null>(null);
   // Members: the dates (MM-DD) the owner's study has notes for, with a label.
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
   const [studyChapters, setStudyChapters] = useState<Map<string, string[]>>(() => new Map());
@@ -224,8 +229,9 @@ export function StudyNotes() {
     setDays(cachedDays);
     fetch(client.daysApi, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { days?: StudyDay[] } | null) => {
+      .then((data: { days?: StudyDay[]; hold?: Hold | null } | null) => {
         if (!data?.days) return;
+        setHold(data.hold ?? null);
         const map = Object.fromEntries(data.days.map((d) => [d.day, d]));
         setDays(map);
         writeStore(DAYS_KEY, map);
@@ -1129,6 +1135,7 @@ export function StudyNotes() {
                 ★ Starred days and notes · {starCount} →
               </button>
             )}
+            <DayJump onGo={pickDay} />
             {trash.length > 0 && (
               <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
                 Recently deleted · {trash.length} →
@@ -1393,6 +1400,16 @@ export function StudyNotes() {
                     onChange={(e) => setDayEdit({ ...dayEdit, takeaway: e.target.value })}
                   />
                   {client.sharing && (
+                    <input
+                      className="dash-input"
+                      inputMode="url"
+                      placeholder="Session video - paste a YouTube link (optional)"
+                      value={dayEdit.video}
+                      onChange={(e) => setDayEdit({ ...dayEdit, video: e.target.value })}
+                      aria-label="YouTube link for this day's session"
+                    />
+                  )}
+                  {client.sharing && (
                     <label className="dash-day-share">
                       <input
                         type="checkbox"
@@ -1416,7 +1433,12 @@ export function StudyNotes() {
                   type="button"
                   className="dash-day-head"
                   onClick={() =>
-                    setDayEdit({ title: days[day].title, takeaway: days[day].takeaway, shared: days[day].shared })
+                    setDayEdit({
+                      title: days[day].title,
+                      takeaway: days[day].takeaway,
+                      shared: days[day].shared,
+                      video: days[day].video ?? "",
+                    })
                   }
                   title="Edit the title and takeaway"
                 >
@@ -1430,11 +1452,45 @@ export function StudyNotes() {
                 <button
                   type="button"
                   className="dash-word-link mb-3"
-                  onClick={() => setDayEdit({ title: "", takeaway: "", shared: true })}
+                  onClick={() =>
+                    setDayEdit({
+                      title: days[day]?.title ?? "",
+                      takeaway: days[day]?.takeaway ?? "",
+                      shared: days[day]?.shared ?? true,
+                      video: days[day]?.video ?? "",
+                    })
+                  }
                 >
-                  + Add a title and key takeaway for this day
+                  {client.sharing ? "+ Add a title, key takeaway or session video" : "+ Add a title and key takeaway for this day"}
                 </button>
               ))}
+
+            {isDay(day) && !dayEdit && client.sharing && days[day]?.video && (
+              <div className="dash-day-video">
+                <DayVideo url={days[day]?.video} />
+                <button
+                  type="button"
+                  className="dash-word-link"
+                  onClick={() =>
+                    setDayEdit({
+                      title: days[day]?.title ?? "",
+                      takeaway: days[day]?.takeaway ?? "",
+                      shared: days[day]?.shared ?? true,
+                      video: days[day]?.video ?? "",
+                    })
+                  }
+                >
+                  Change the video
+                </button>
+              </div>
+            )}
+            {isDay(day) && client.sharing && heldUntil(day, hold) && studyToday() < (heldUntil(day, hold) as string) && (
+              <p className="dash-day-held">
+                🔒 Kept private until{" "}
+                {new Date(`${heldUntil(day, hold)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}{" "}
+                - members see this day from then. You can change this on Members.
+              </p>
+            )}
 
             {client.studyUrl && isDay(day) && studyOn.size > 0 && (
               <div className={`dash-daniel ${studyOpen ? "is-open" : ""}`} id="daniel-study">

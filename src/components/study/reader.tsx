@@ -14,6 +14,7 @@ import { ShareDay } from "@/components/study/share-day";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import { dayLabel, formatPassage, passageOf, planDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { bibleAppDay, STUDY_HEART } from "@/lib/study/plan";
+import { DayVideo } from "./day-video";
 import type { ReaderData } from "@/lib/study/types";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
@@ -371,6 +372,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
                 )}
               </div>
               {data.info?.takeaway && <blockquote className="dash-reader-takeaway">{data.info.takeaway}</blockquote>}
+              <DayVideo url={data.info?.video} label={`Watch ${data.study.author}'s session`} />
 
               <FoldNotes notes={data.notes} />
               {!data.notes.length && (

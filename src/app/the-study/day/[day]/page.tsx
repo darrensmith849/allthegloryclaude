@@ -1,7 +1,8 @@
 // A public preview of one of the owner's days, for "Share this day" links:
 // the day, its title, the chapters and the takeaway - never the notes or
-// words themselves, which stay for members. Only days the owner shares,
-// and only while the study is open to readers (members or everyone).
+// words themselves, which stay for members. Only days the owner shares (and
+// isn't holding back until next year), and only while the study is open to
+// readers (members or everyone).
 
 import { cache } from "react";
 import type { Metadata } from "next";
@@ -9,6 +10,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/analytics/store";
 import { chapterLabel, dayLabel, isDay, passageOf, planDay } from "@/lib/dashboard/notes";
+import { isHeld } from "@/lib/study/hold";
 import { getSettings } from "@/lib/study/members";
 import { bibleAppDay, STUDY_HEART } from "@/lib/study/plan";
 
@@ -43,8 +45,9 @@ const load = cache(async (day: string): Promise<DayPreview | null> => {
       .all<{ book: number | null; chapter: number | null }>(),
     db.prepare("SELECT 1 AS n FROM study_words WHERE day = ?1 AND deleted_at IS NULL LIMIT 1").bind(day).first(),
   ]);
-  // Same rule as the reader: a day shows only with shared notes or words.
-  if (info?.shared === 0) return null;
+  // Same rule as the reader: a day shows only with shared notes or words,
+  // and not while it's held back until next year.
+  if (info?.shared === 0 || isHeld(day, settings.hold)) return null;
   if (!refs.length && !words) return null;
   const chapters: string[] = [];
   for (const r of refs) {

@@ -12,12 +12,14 @@
  * study and how many private notes are hidden.
  *
  * Never sent to readers: private notes, deleted notes, days marked not
- * shared, and the owner's personal comments on words.
+ * shared, days held back until next year (study_settings "hold", see
+ * src/lib/study/hold.ts), and the owner's personal comments on words.
  */
 import { getDb } from "@/lib/analytics/store";
 import { isSignedIn } from "@/lib/admin-auth";
 import { chapterLabel, isDay, matchesNote, passageOf } from "@/lib/dashboard/notes";
 import type { BibleWord } from "@/lib/dashboard/types";
+import { heldUntil, isHeld } from "@/lib/study/hold";
 import { getMember, getSettings } from "@/lib/study/members";
 import type { ReaderWord } from "@/lib/study/types";
 
@@ -74,7 +76,7 @@ export async function GET(req: Request) {
       const hidden = new Set(preview ? [] : unshared.map((d) => d.day));
       const results = [];
       for (const r of rows) {
-        if (hidden.has(r.day)) continue;
+        if (hidden.has(r.day) || (!preview && isHeld(r.day, settings.hold))) continue;
         const note = {
           id: r.id,
           day: r.day,
@@ -99,11 +101,12 @@ export async function GET(req: Request) {
     }
 
     const [{ results: dayRows }, { results: refRows }, { results: wordDays }] = await Promise.all([
-      db.prepare("SELECT day, title, takeaway, shared FROM study_days").all<{
+      db.prepare("SELECT day, title, takeaway, shared, video FROM study_days").all<{
         day: string;
         title: string | null;
         takeaway: string | null;
         shared: number;
+        video: string | null;
       }>(),
       db
         .prepare(
@@ -117,7 +120,7 @@ export async function GET(req: Request) {
     ]);
 
     const info = new Map(dayRows.map((d) => [d.day, d]));
-    const visible = (d: string) => preview || info.get(d)?.shared !== 0;
+    const visible = (d: string) => preview || (info.get(d)?.shared !== 0 && !isHeld(d, settings.hold));
 
     // Contents: every day with something to read, oldest first.
     const chapters = new Map<string, string[]>();
@@ -217,7 +220,13 @@ export async function GET(req: Request) {
         preview,
         contents,
         day,
-        info: { title: d?.title ?? "", takeaway: d?.takeaway ?? "", shared: d?.shared !== 0 },
+        info: {
+          title: d?.title ?? "",
+          takeaway: d?.takeaway ?? "",
+          shared: d?.shared !== 0,
+          video: d?.video ?? null,
+          ...(preview && isHeld(day, settings.hold) ? { heldUntil: heldUntil(day, settings.hold) } : {}),
+        },
         notes,
         words,
         ...(preview ? { hidden: noteRows.length - notes.length } : {}),
