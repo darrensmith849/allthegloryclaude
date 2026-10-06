@@ -8,11 +8,16 @@ export const metadata: Metadata = {
   title: "Dashboard",
   description: "Private dashboard.",
   robots: { index: false, follow: false },
+  // Its own Home Screen app (the dark dove) - members' The Study is the light one.
   manifest: "/dashboard-manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/dashboard-app/favicon.png", sizes: "64x64", type: "image/png" }],
+    apple: "/dashboard-app/apple-icon.png",
+  },
   appleWebApp: {
     capable: true,
     title: "ATG Dashboard",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 

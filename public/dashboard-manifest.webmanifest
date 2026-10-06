@@ -1,19 +1,16 @@
 {
-  "name": "All The Glory — Dashboard",
+  "name": "All The Glory - Dashboard",
   "short_name": "ATG Dashboard",
-  "description": "Private dashboard and Bible word journal.",
+  "description": "Daniel's private dashboard and Bible study.",
+  "id": "/dashboard",
   "start_url": "/dashboard",
   "scope": "/dashboard",
   "display": "standalone",
   "background_color": "#f3ecdf",
   "theme_color": "#f6f1e7",
-  "orientation": "portrait",
   "icons": [
-    {
-      "src": "/atg-welcome/jesus.jpg",
-      "sizes": "563x751",
-      "type": "image/jpeg",
-      "purpose": "any"
-    }
+    { "src": "/dashboard-app/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/dashboard-app/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/dashboard-app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -1,8 +1,9 @@
 "use client";
 
-// iPhone / iPad: how to put The Study on the Home Screen. Apple only lets a
-// website send reminders once it's been added there, and no website can add
-// itself - so this shows the exact taps, for the browser they're in.
+// iPhone / iPad: how to put The Study (or Daniel's dashboard) on the Home
+// Screen. Apple only lets a website send reminders once it's been added
+// there, and no website can add itself - so this shows the exact taps, for
+// the browser they're in.
 
 import { useEffect, useState } from "react";
 
@@ -21,7 +22,18 @@ const AddIcon = () => (
   </svg>
 );
 
-export function IosInstallGuide({ forReminders = false }: { forReminders?: boolean }) {
+export function IosInstallGuide({
+  forReminders = false,
+  app = "The Study",
+  link = "https://alltheglory.co.za/study",
+  last,
+}: {
+  forReminders?: boolean;
+  app?: string;
+  link?: string;
+  /** Step 3, in place of "Open The Study from your Home Screen (the dove)". */
+  last?: React.ReactNode;
+}) {
   const [where, setWhere] = useState<Where>("safari");
   const [ipad, setIpad] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -34,12 +46,10 @@ export function IosInstallGuide({ forReminders = false }: { forReminders?: boole
     else setWhere("safari");
   }, []);
 
-  const link = "https://alltheglory.co.za/study";
-
   if (where === "inapp") {
     return (
       <div className="ios-guide">
-        <p className="ios-guide-lead">You&apos;re in another app&apos;s browser - open The Study in <strong>Safari</strong> first.</p>
+        <p className="ios-guide-lead">You&apos;re in another app&apos;s browser - open {app} in <strong>Safari</strong> first.</p>
         <ol className="ios-guide-steps">
           <li>
             <span className="ios-guide-num">1</span>
@@ -95,8 +105,12 @@ export function IosInstallGuide({ forReminders = false }: { forReminders?: boole
         <li>
           <span className="ios-guide-num">3</span>
           <span>
-            Open The Study from your Home Screen (the dove)
-            {forReminders ? <> and tap <strong>Turn on reminders</strong> on its home page.</> : "."}
+            {last ?? (
+              <>
+                Open The Study from your Home Screen (the dove)
+                {forReminders ? <> and tap <strong>Turn on reminders</strong> on its home page.</> : "."}
+              </>
+            )}
           </span>
         </li>
       </ol>

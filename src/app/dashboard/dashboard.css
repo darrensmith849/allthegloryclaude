@@ -3935,6 +3935,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-app-title { margin-top: 2px; font-family: var(--font-read), Georgia, serif; font-size: 21px; font-weight: 400; line-height: 1.2; color: var(--colour-ink-strong); }
 .study-app-text { margin: 10px 0 14px; font-size: 14.5px; line-height: 1.55; color: var(--colour-ink-soft); }
 .study-app-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+/* The dashboard's own "put it on your Home Screen" card, above Study Notes. */
+.dash-app-card { margin: 0 0 18px; }
 @media (max-width: 640px) {
   .study-app-card { padding: 18px 16px; }
   .study-app-actions .dash-btn-primary { flex: 1 1 100%; justify-content: center; }

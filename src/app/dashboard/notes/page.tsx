@@ -1,6 +1,7 @@
 "use client";
 
 import { StudyNotes } from "@/components/study/study-notes";
+import { DashAppCard } from "@/components/dashboard/app-card";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { useDashUser } from "@/lib/dashboard/who";
 
@@ -13,9 +14,15 @@ export default function StudyNotesPage() {
   if (user?.role === "team") {
     return (
       <StudyClientProvider value={memberClient(user.memberId, { canReadStudy: true, author: "Daniel" })}>
+        <DashAppCard />
         <StudyNotes />
       </StudyClientProvider>
     );
   }
-  return <StudyNotes />;
+  return (
+    <>
+      <DashAppCard />
+      <StudyNotes />
+    </>
+  );
 }
