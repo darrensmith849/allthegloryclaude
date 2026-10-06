@@ -44,7 +44,7 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
   const params = useSearchParams();
   const router = useRouter();
   const [data, setData] = useState<ReaderData | null>(null);
-  const [error, setError] = useState<{ message: string; login?: boolean } | null>(null);
+  const [error, setError] = useState<{ message: string; login?: boolean; author?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const query = params.toString();
@@ -55,10 +55,10 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
     if (preview) qs.set("preview", "1");
     fetch(`/api/study/read?${qs}`, { cache: "no-store" })
       .then(async (r) => {
-        const body = (await r.json().catch(() => ({}))) as ReaderData & { error?: string; login?: boolean };
+        const body = (await r.json().catch(() => ({}))) as ReaderData & { error?: string; login?: boolean; study?: { author?: string } };
         if (!live) return;
         if (!r.ok) {
-          setError({ message: body.error ?? "Couldn't open the study.", login: body.login });
+          setError({ message: body.error ?? "Couldn't open the study.", login: body.login, author: body.study?.author });
           return;
         }
         setError(null);
@@ -217,11 +217,24 @@ function ReaderInner({ basePath, preview, back, badge, member }: Props) {
       <div className="dash-reader">
         {bar}
         <div className="dash-reader-page">
-          <p className="dash-reader-empty">{error.message}</p>
-          {error.login && (
-            <a className="dash-btn dash-btn-primary mt-4 inline-flex" href={`/the-study?login=1&next=${encodeURIComponent(basePath)}`}>
-              Log in
-            </a>
+          {error.login ? (
+            // Members only: joining is how they get in (and how Daniel gets to know who's reading).
+            <div className="reader-join">
+              <p className="reader-join-lead">
+                {error.author && error.author !== "All The Glory" ? `${error.author}'s study` : "The study"} is for members.
+              </p>
+              <p className="dash-word-hint">Joining is free and takes 30 seconds - then every day&apos;s notes and word studies are yours to read.</p>
+              <div className="reader-join-actions">
+                <a className="dash-btn dash-btn-primary" href={`/the-study?next=${encodeURIComponent(basePath)}#join`}>
+                  Join free
+                </a>
+                <a className="dash-btn dash-btn-ghost" href={`/the-study?login=1&next=${encodeURIComponent(basePath)}`}>
+                  Log in
+                </a>
+              </div>
+            </div>
+          ) : (
+            <p className="dash-reader-empty">{error.message}</p>
           )}
         </div>
       </div>

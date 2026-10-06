@@ -4447,3 +4447,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 @media (max-width: 900px) {
   .journal-tools { justify-content: flex-start; max-width: none; }
 }
+
+/* The study's members-only door */
+.reader-join { max-width: 460px; margin: 40px auto; text-align: center; }
+.reader-join-lead { font-family: var(--font-read), Georgia, serif; font-size: 24px; color: var(--colour-ink-strong); margin-bottom: 8px; }
+.reader-join-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
