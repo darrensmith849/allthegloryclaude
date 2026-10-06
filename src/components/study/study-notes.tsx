@@ -34,6 +34,7 @@ import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
 import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
+import { ReadAlong } from "./read-along";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
@@ -1091,6 +1092,7 @@ export function StudyNotes() {
                 <p className="journal-start-why">
                   <strong>Weekly calls.</strong> {CALLS_NOTE}
                 </p>
+                <ReadAlong className="journal-start-why" />
               </>
             ) : (
               <p>

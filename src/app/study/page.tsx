@@ -12,6 +12,7 @@ import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
 import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
+import { ReadAlong } from "@/components/study/read-along";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
@@ -211,6 +212,7 @@ export default function StudyHome() {
             <p className="study-start-why">
               <strong>Weekly calls.</strong> {CALLS_NOTE}
             </p>
+            <ReadAlong className="study-start-why" />
           </>
         )}
         <div className="study-today-actions">

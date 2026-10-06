@@ -29,7 +29,7 @@ export const CALLS_NOTE =
   "Daniel and Reggie meet on a call every Monday and go through as much of the reading as they can - so the videos come weekly, not daily.";
 
 export const START_WHY =
-  "We've already been through the whole Bible once - and we want to start it again, from the very beginning, together.";
+  "We've already been through the whole Bible - and we want to start it again, from the very beginning, together.";
 
 export const PLAN = {
   name: "The One Year Chronological Bible",

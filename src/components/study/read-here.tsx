@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { parsePassage } from "@/lib/dashboard/notes";
+import { ReadAlong } from "./read-along";
 
 interface Verse {
   chapter: number;
@@ -115,6 +116,7 @@ export function ReadHere({
 
       {open && (
         <div className="read-here-panel">
+          <ReadAlong className="read-here-along" />
           <div className="read-here-picks">
             {chapters.map((c) => (
               <button
