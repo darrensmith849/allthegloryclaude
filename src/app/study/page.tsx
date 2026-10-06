@@ -11,7 +11,7 @@ import { canRead, studyName, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, PLAN, STUDY_HEART } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, PLAN, startMessage, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
 import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
@@ -27,7 +27,10 @@ export default function StudyHome() {
   }, [me.loaded, me.member, router]);
   const readable = canRead(me);
   const today = todayDay();
-  const n = planDay(today).n;
+  // Until everyone starts together on Day 1, the home page points there.
+  const early = beforeStart(today);
+  const focus = early ? STUDY_START : today;
+  const n = planDay(focus).n;
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : null;
   // Effects below key on the id, not the member object (which is replaced
   // when the live check confirms the cached one) - so each loads once.
@@ -40,11 +43,11 @@ export default function StudyHome() {
     fetch("/api/study/read?only=contents", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { contents?: { day: string; title: string; chapters: string[] }[] } | null) => {
-        const hit = [...(d?.contents ?? [])].reverse().find((c) => c.day.slice(5) === today.slice(5));
+        const hit = [...(d?.contents ?? [])].reverse().find((c) => c.day.slice(5) === focus.slice(5));
         setStudyToday(hit ? { title: hit.title || hit.chapters.join(" · ") } : null);
       })
       .catch(() => setStudyToday(null));
-  }, [readable, today]);
+  }, [readable, focus]);
 
   // This week's reflection from the owner (members).
   type Weekly = { id: string; title: string; body: string; question: string | null; memoryVerse?: string | null; author?: string | null };
@@ -121,7 +124,7 @@ export default function StudyHome() {
       .catch(() => {});
   }, [memberId]);
   const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
-  const readThisYear = [...read].filter((d) => d.startsWith(today.slice(0, 4))).length;
+  const readThisYear = [...read].filter((d) => d.startsWith(focus.slice(0, 4))).length;
   // Days missed lately (not read and nothing written), since they joined.
   const joined = me.member ? new Date(me.member.createdAt).toLocaleDateString("en-CA") : today;
   const missed = useMemo(
@@ -225,7 +228,7 @@ export default function StudyHome() {
         </Link>
       )}
 
-      {me.member && missed.length > 0 && (
+      {me.member && !early && missed.length > 0 && (
         <CatchUp
           missed={missed}
           hideKey={`atg:study:${me.member.id}:catchupHidden`}
@@ -258,9 +261,14 @@ export default function StudyHome() {
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">
         <div className="eyebrow eyebrow-amber">
-          Today · Day {n} of 365 · {dayLabel(today)}
+          {early ? `Where we start · Day 1 · ${dayLabel(STUDY_START)}` : `Today · Day ${n} of 365 · ${dayLabel(today)}`}
         </div>
-        <h2 className="study-today-title">Today&apos;s reading</h2>
+        <h2 className="study-today-title">{early ? "We start at the beginning - Genesis 1" : "Today's reading"}</h2>
+        {early && (
+          <p className="study-start-text">
+            We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage(today)}
+          </p>
+        )}
         <div className="study-today-actions">
           <a className="study-today-step" href={bibleAppDay(n)} target="_blank" rel="noreferrer">
             <span className="study-today-num">1</span>
@@ -270,7 +278,7 @@ export default function StudyHome() {
             </span>
           </a>
           {readable && (
-            <Link className="study-today-step" href={me.member ? `/study/journal?day=${today}&daniel=1` : "/study/read"}>
+            <Link className="study-today-step" href={me.member ? `/study/journal?day=${focus}&daniel=1` : "/study/read"}>
               <span className="study-today-num">2</span>
               <span>
                 <strong>{author ? `Read ${author}'s notes` : "Read the study notes"}</strong>
@@ -278,18 +286,20 @@ export default function StudyHome() {
                   {studyToday === undefined
                     ? "…"
                     : studyToday
-                      ? studyToday.title || "For today's reading"
-                      : "Not written for today yet - see the latest"}
+                      ? studyToday.title || (early ? "For Day 1" : "For today's reading")
+                      : early
+                        ? "Day 1 - written as we go"
+                        : "Not written for today yet - see the latest"}
                 </em>
               </span>
             </Link>
           )}
           {me.member ? (
-            <Link className="study-today-step" href={`/study/journal?day=${today}`}>
+            <Link className="study-today-step" href={`/study/journal?day=${focus}`}>
               <span className="study-today-num">{readable ? 3 : 2}</span>
               <span>
                 <strong>Write your own notes</strong>
-                <em>And study a word from today</em>
+                <em>{early ? "On Day 1 in your journal" : "And study a word from today"}</em>
               </span>
             </Link>
           ) : (
@@ -309,16 +319,18 @@ export default function StudyHome() {
           <div className="study-progress">
             <div className="study-progress-row">
               <span>
-                <strong>{readThisYear}</strong> of 365 days read in {today.slice(0, 4)}
+                <strong>{readThisYear}</strong> of 365 days read{early ? " so far" : ` in ${today.slice(0, 4)}`}
                 {streak > 1 && <span className="dash-read-streak ml-2">{streak}-day streak</span>}
               </span>
-              <button
-                type="button"
-                className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${read.has(today) ? "is-read" : ""}`}
-                onClick={toggleToday}
-              >
-                {read.has(today) ? "✓ Read today" : "Mark today as read"}
-              </button>
+              {!early && (
+                <button
+                  type="button"
+                  className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${read.has(today) ? "is-read" : ""}`}
+                  onClick={toggleToday}
+                >
+                  {read.has(today) ? "✓ Read today" : "Mark today as read"}
+                </button>
+              )}
             </div>
             <span className="dash-read-bar" aria-hidden>
               <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />

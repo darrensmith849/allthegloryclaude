@@ -9,6 +9,18 @@
 export const STUDY_HEART =
   "Daniel has a heart to share how he's studying the Bible - the questions he asks himself as he reads, what God is saying to him, and his own study of the Word. It's here as an encouragement: we're all still learning.";
 
+// Everyone starts the plan together at Day 1 (Genesis 1) - 1 January 2027 on
+// the calendar. Daniel begins on Monday 12 October 2026 and his notes go onto
+// each day as he goes, so members can read along early. Until the start,
+// members' home page and journal point at Day 1 rather than today's date.
+export const STUDY_START = "2027-01-01";
+export const STUDY_KICKOFF = "2026-10-12";
+export const beforeStart = (today: string) => today < STUDY_START;
+export const startMessage = (today: string) =>
+  today < STUDY_KICKOFF
+    ? "We begin on Monday 12 October - Daniel's notes appear on each day as he goes, so you can read along from then, or start fresh on 1 January."
+    : "We've begun - Daniel's notes appear on each day as he goes. Read along at your own pace, or start fresh on 1 January.";
+
 export const PLAN = {
   name: "The One Year Chronological Bible",
   edition: "NIV · Tyndale",

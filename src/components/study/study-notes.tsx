@@ -24,7 +24,7 @@ import { heldUntil, studyToday, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
-import { bibleAppDay, PLAN } from "@/lib/study/plan";
+import { beforeStart, bibleAppDay, PLAN, startMessage, STUDY_START } from "@/lib/study/plan";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
@@ -126,6 +126,8 @@ export function StudyNotes() {
     if (client.kind === "member" && typeof window !== "undefined") {
       const asked = new URLSearchParams(window.location.search).get("day");
       if (isDay(asked) || asked === STARRED) return asked;
+      // Until everyone starts together, members open on Day 1.
+      if (beforeStart(todayDay())) return STUDY_START;
     }
     return todayDay();
   });
@@ -151,6 +153,12 @@ export function StudyNotes() {
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
   const [studyChapters, setStudyChapters] = useState<Map<string, string[]>>(() => new Map());
   const [studyIndex, setStudyIndex] = useState<PlanIndex>(() => new Map());
+  // Members: the owner's furthest day from Day 1 on, before the start.
+  const [studyLatest, setStudyLatest] = useState<string | null>(null);
+  // Before everyone starts on Day 1 - set in the browser (the owner's page
+  // is pre-rendered, so not at build time).
+  const [early, setEarly] = useState(false);
+  useEffect(() => setEarly(beforeStart(todayDay())), []);
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
       const next = new Set(s);
@@ -297,6 +305,7 @@ export function StudyNotes() {
         if (!data?.contents) return;
         setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
         setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
+        setStudyLatest(data.contents.map((c) => c.day).filter((d) => d >= STUDY_START).sort().pop() ?? null);
         const index: PlanIndex = new Map();
         for (const c of data.contents)
           for (const key of c.passages ?? [])
@@ -393,6 +402,22 @@ export function StudyNotes() {
     [notes],
   );
   const ordered = useMemo(() => readingOrder(liveNotes), [liveNotes]);
+
+  // Before the start: the furthest day written from Day 1 on - members open
+  // there (once, unless a day was asked for); the owner gets "next day".
+  const startLatest = useMemo(
+    () => liveNotes.map((n) => n.day).filter((d): d is string => Boolean(d && d >= STUDY_START)).sort().pop() ?? null,
+    [liveNotes],
+  );
+  const autoDay = useRef(
+    client.kind === "member" && typeof window !== "undefined" && !new URLSearchParams(window.location.search).get("day"),
+  );
+  useEffect(() => {
+    if (!loaded || !autoDay.current) return;
+    autoDay.current = false;
+    if (beforeStart(todayDay()) && startLatest && day === STUDY_START) openDay(startLatest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
   const starred = useMemo(
     () => liveNotes.filter((n) => n.starredAt).sort((a, b) => (b.starredAt ?? 0) - (a.starredAt ?? 0)),
     [liveNotes],
@@ -855,6 +880,46 @@ export function StudyNotes() {
       </div>
 
       {offline && <div className="dash-word-note mb-4">{offline}</div>}
+
+      {early && (
+        <div className="journal-start">
+          <div className="journal-start-text">
+            <span className="eyebrow eyebrow-amber">Where we start</span>
+            {client.kind === "member" ? (
+              <p>
+                <strong>Day 1 - Genesis 1 - is {dayLabel(STUDY_START)} on your calendar.</strong> {startMessage(todayDay())}
+              </p>
+            ) : (
+              <p>
+                <strong>Genesis sessions go on next year&apos;s calendar - Day 1 is {dayLabel(STUDY_START)}.</strong> Members see
+                each day as it&apos;s written. Your New Testament stays on this year&apos;s dates.
+              </p>
+            )}
+          </div>
+          <div className="journal-start-actions">
+            <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => pickDay(STUDY_START)}>
+              Open Day 1
+            </button>
+            {client.kind === "member" && studyLatest && studyLatest > STUDY_START && (
+              <button
+                type="button"
+                className="dash-btn dash-btn-ghost dash-note-nav"
+                onClick={() => {
+                  pickDay(studyLatest);
+                  showStudy();
+                }}
+              >
+                {client.studyAuthor ?? "Daniel"}&apos;s latest · Day {planDay(studyLatest).n}
+              </button>
+            )}
+            {client.kind === "owner" && startLatest && (
+              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(shiftDay(startLatest, 1))}>
+                Next · Day {planDay(shiftDay(startLatest, 1)).n}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <JournalSearch
         query={query}
