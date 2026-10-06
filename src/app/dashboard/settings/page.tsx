@@ -515,8 +515,8 @@ export default function SettingsPage() {
         <div className="dash-col-12" id="backup">
           <Panel eyebrow="Backup &amp; restore" title="Save your data">
             <p className="text-[13px] text-[var(--colour-ink-soft)] mb-3">
-              Everything is saved on the server and never removed - deleted notes and words
-              go to Recently deleted, edits keep their earlier versions, and a copy of the
+              Everything is saved on the server and never removed - deleted notes, words and names
+              go to the Recycle bin (and on your side are never erased), edits keep their earlier versions, and a copy of the
               dashboard is kept for every day. Export gives you your own complete copy
               (words and study notes included) to keep in iCloud / Drive as well.
             </p>

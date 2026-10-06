@@ -46,6 +46,13 @@ export function QuickWord({
   const [note, setNote] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
+  // "✓ Saved …" shows for a moment, then goes.
+  useEffect(() => {
+    if (!saved) return;
+    const t = window.setTimeout(() => setSaved(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [saved]);
+
   // Follow the open day's passage until the verse is typed by hand.
   useEffect(() => {
     if (!verseTouched) setVerse(verseHint);
@@ -138,6 +145,7 @@ export function QuickWord({
           onChange={(e) => {
             setWord(e.target.value);
             setData(null);
+            setSaved(null);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {

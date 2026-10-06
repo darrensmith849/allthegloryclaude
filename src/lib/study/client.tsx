@@ -25,6 +25,7 @@ export interface StudyClient {
   daysApi: string;
   wordsApi: string;
   namesApi: string; // Bible names saved to a day
+  binApi: string; // the Recycle bin: restore / empty
   fillApi: string;
   loginUrl: string;
   notesUrl: string;
@@ -59,6 +60,7 @@ export const OWNER_CLIENT: StudyClient = {
   daysApi: "/api/study-days",
   wordsApi: "/api/words",
   namesApi: "/api/study-names",
+  binApi: "/api/study-bin",
   fillApi: "/api/word-fill",
   loginUrl: "/dashboard/login",
   notesUrl: "/dashboard/notes",
@@ -79,6 +81,7 @@ export function memberClient(
     notesApi: "/api/study/notes",
     daysApi: "/api/study/days",
     namesApi: "/api/study/day-names",
+    binApi: "/api/study/bin",
     wordsApi: "/api/study/words",
     fillApi: "/api/study/word-fill",
     loginUrl: "/study/login",

@@ -22,6 +22,7 @@ const MAX_MEMBER_WORDS = 20_000;
 interface Row {
   json: string;
   deleted_at: number | null;
+  purged_at?: number | null;
 }
 
 const unavailable = () => Response.json({ error: "Word storage isn't available here." }, { status: 503 });
@@ -29,7 +30,11 @@ const unavailable = () => Response.json({ error: "Word storage isn't available h
 function toWord(r: Row): BibleWord | null {
   try {
     const w = JSON.parse(r.json) as BibleWord;
-    return { ...w, deletedAt: r.deleted_at ? new Date(r.deleted_at).toISOString() : undefined };
+    return {
+      ...w,
+      deletedAt: r.deleted_at ? new Date(r.deleted_at).toISOString() : undefined,
+      purgedAt: r.purged_at ? new Date(r.purged_at).toISOString() : undefined,
+    };
   } catch {
     return null;
   }
@@ -100,11 +105,11 @@ export function wordsApi(scopeOf: ScopeOf) {
       const since = Number(new URL(req.url).searchParams.get("since")) || 0;
       const { results } = since
         ? await db
-            .prepare(`SELECT json, deleted_at FROM ${s.words} WHERE ${mine(s)} AND updated_at > ? ORDER BY created_at DESC`)
+            .prepare(`SELECT json, deleted_at, purged_at FROM ${s.words} WHERE ${mine(s)} AND updated_at > ? ORDER BY created_at DESC`)
             .bind(...mineArgs(s), since)
             .all<Row>()
         : await db
-            .prepare(`SELECT json, deleted_at FROM ${s.words} WHERE ${mine(s)} ORDER BY created_at DESC`)
+            .prepare(`SELECT json, deleted_at, purged_at FROM ${s.words} WHERE ${mine(s)} ORDER BY created_at DESC`)
             .bind(...mineArgs(s))
             .all<Row>();
       const words = results.map(toWord).filter((w): w is BibleWord => Boolean(w));
@@ -164,7 +169,7 @@ export function wordsApi(scopeOf: ScopeOf) {
         .bind(Date.now(), body.id, ...mineArgs(s))
         .run();
       const row = await db
-        .prepare(`SELECT json, deleted_at FROM ${s.words} WHERE id = ?${andMine(s)}`)
+        .prepare(`SELECT json, deleted_at, purged_at FROM ${s.words} WHERE id = ?${andMine(s)}`)
         .bind(body.id, ...mineArgs(s))
         .first<Row>();
       const word = row ? toWord(row) : null;

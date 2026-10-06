@@ -24,6 +24,7 @@ interface Row {
   answered_at: number | null;
   answer: string | null;
   deleted_at: number | null;
+  purged_at?: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -36,6 +37,7 @@ const toPrayer = (r: Row): Prayer => ({
   answeredAt: r.answered_at,
   answer: r.answer,
   deletedAt: r.deleted_at,
+  purgedAt: r.purged_at ?? null,
   createdAt: r.created_at,
 });
 

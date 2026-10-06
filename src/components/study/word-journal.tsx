@@ -362,7 +362,7 @@ function Journal() {
   }
 
   function remove(w: BibleWord) {
-    if (!confirm(`Move “${w.word}” to Recently deleted? You can restore it any time.`)) return;
+    if (!confirm(`Move “${w.word}” to the Recycle bin? You can restore it for 30 days.`)) return;
     removeWord(w.id);
     if (editingId === w.id) resetForm();
   }
@@ -798,7 +798,7 @@ function Journal() {
             {deleted.length > 0 && (
               <div className="dash-trash">
                 <button type="button" className="dash-word-link" onClick={() => setShowDeleted((v) => !v)}>
-                  {showDeleted ? "Hide" : "Show"} recently deleted · {deleted.length}
+                  {showDeleted ? "Hide" : "Show"} the Recycle bin · {deleted.length}
                 </button>
                 {showDeleted &&
                   deleted.map((w) => (

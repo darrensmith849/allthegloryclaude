@@ -62,5 +62,6 @@ export interface Prayer {
   answeredAt: number | null;
   answer: string | null; // how it was answered
   deletedAt: number | null;
+  purgedAt?: number | null; // emptied from the Recycle bin
   createdAt: number;
 }

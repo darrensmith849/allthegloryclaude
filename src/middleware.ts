@@ -50,6 +50,7 @@ export const config = {
     "/api/words",
     "/api/study-days",
     "/api/study-names",
+    "/api/study-bin",
     "/api/word-fill",
     "/api/analytics",
     "/api/members",

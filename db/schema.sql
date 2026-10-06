@@ -457,3 +457,14 @@ CREATE TABLE IF NOT EXISTS member_names (
   deleted_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS member_names_member ON member_names (member_id, day);
+
+-- The Recycle bin: deleted notes / words / names / prayers can be restored
+-- for 30 days. Emptying one sets purged_at; members' emptied (or 30-day-old)
+-- items are erased nightly (src/lib/study/bin-erase.ts), the owner's never.
+--   ALTER TABLE study_notes ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_notes ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE study_words ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_words ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE study_names ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_names ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_prayers ADD COLUMN purged_at INTEGER;

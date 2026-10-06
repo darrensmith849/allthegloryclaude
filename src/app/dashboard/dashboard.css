@@ -4387,3 +4387,25 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .name-row-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
 .name-card-save { margin-top: 12px; }
 .name-card-saved { margin-top: 12px; }
+
+/* The Recycle bin */
+.recycle-bin-lead { font-size: 14px; line-height: 1.55; color: var(--colour-ink-soft); }
+.recycle-bin-all { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.recycle-bin-empty { color: rgb(var(--bad-rgb) / 0.95); }
+.recycle-bin-list { display: flex; flex-direction: column; margin-top: 10px; }
+.recycle-bin-item { padding: 12px 2px; border-bottom: 1px solid var(--line-soft); }
+.recycle-bin-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12.5px; color: var(--colour-ink-quiet); }
+.recycle-bin-meta .dash-word-link { font-size: 12.5px; }
+.recycle-bin-kind {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.32);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colour-glow);
+}
+.recycle-bin-left { margin-left: auto; }
+.recycle-bin-title { margin-top: 6px; font-family: var(--font-read), Georgia, serif; font-size: 16px; color: var(--colour-ink-strong); }
+.recycle-bin-text { margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--colour-ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.recycle-bin-actions { display: flex; gap: 16px; margin-top: 6px; font-size: 13px; }

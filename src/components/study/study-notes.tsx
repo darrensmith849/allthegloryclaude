@@ -18,6 +18,9 @@ import { JournalSearch } from "@/components/study/journal-search";
 import { NamesInReading } from "@/components/study/names-in-reading";
 import { NameLookup, type NameToSave } from "@/components/study/name-lookup";
 import { NameRow } from "@/components/study/name-row";
+import { RecycleBin, type BinItem, type BinKind } from "@/components/study/recycle-bin";
+import { BIN_DAYS } from "@/lib/study/bin-erase";
+import type { Prayer } from "@/lib/study/types";
 import type { SavedName } from "@/lib/study/names-api";
 import { WhyNiv } from "@/components/study/why-niv";
 import { DayVideo } from "@/components/study/day-video";
@@ -55,7 +58,7 @@ import {
 
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNDATED = "undated";
-const TRASH = "deleted"; // the Recently deleted view
+const TRASH = "deleted"; // the Recycle bin view
 const STARRED = "starred"; // starred days and notes, newest star first
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -118,7 +121,7 @@ export function StudyNotes() {
   const DRAFT_KEY = client.key("drafts"); // unsaved writing, per day
   const SECTIONS_KEY = client.key("sections"); // which day sections are open
   const send = <T,>(method: string, body?: unknown, query = "") => request<T>(client, method, body, query);
-  const { words: allWords, remove: removeWordById } = useWords();
+  const { words: allWords, remove: removeWordById, deleted: deletedWords, restore: restoreWord } = useWords();
   const [openWord, setOpenWord] = useState<string | null>(null);
   const [notes, setNotes] = useState<StudyNote[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -190,9 +193,9 @@ export function StudyNotes() {
     }
   }
   async function removeName(n: SavedName) {
-    if (!confirm(`Take “${n.name}” off this day?`)) return;
+    if (!confirm(`Move “${n.name}” to the Recycle bin? You can restore it for 30 days.`)) return;
     const r = await fetch(`${client.namesApi}?id=${encodeURIComponent(n.id)}`, { method: "DELETE" }).catch(() => null);
-    if (r?.ok) setSavedNames((list) => list.filter((x) => x.id !== n.id));
+    if (r?.ok) setSavedNames((list) => list.map((x) => (x.id === n.id ? { ...x, deletedAt: Date.now() } : x)));
     else alert("Couldn't remove it - check your connection.");
   }
   // Before everyone starts on Day 1 - set in the browser (the owner's page
@@ -475,10 +478,84 @@ export function StudyNotes() {
 
   // ── The open day ──────────────────────────────────────────────
   const liveNotes = useMemo(() => notes.filter((n) => !n.deletedAt), [notes]);
-  const trash = useMemo(
-    () => notes.filter((n) => n.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
-    [notes],
-  );
+  // ── The Recycle bin: everything deleted in the last 30 days ──
+  const [prayers, setPrayers] = useState<Prayer[]>([]);
+  const [purgedWords, setPurgedWords] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (client.kind !== "member") return;
+    fetch("/api/study/prayers", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { prayers?: Prayer[] } | null) => d?.prayers && setPrayers(d.prayers))
+      .catch(() => {});
+  }, [client.kind, day === TRASH]);
+  const binItems = useMemo<BinItem[]>(() => {
+    const since = Date.now() - BIN_DAYS * 86_400_000;
+    const out: BinItem[] = [];
+    for (const n of notes) {
+      if (!n.deletedAt || n.purgedAt || n.deletedAt < since) continue;
+      const p = passageOf(n);
+      out.push({ kind: "note", id: n.id, day: n.day, title: p ? formatPassage(p) : "Note", text: n.text.replace(/\s+/g, " ").slice(0, 240), deletedAt: n.deletedAt });
+    }
+    for (const w of deletedWords) {
+      const at = w.deletedAt ? Date.parse(w.deletedAt) : 0;
+      if (!at || at < since || purgedWords.has(w.id)) continue;
+      out.push({ kind: "word", id: w.id, day: w.day ?? null, title: w.word, text: w.originalMeaning || w.englishMeaning || "", deletedAt: at });
+    }
+    for (const n of savedNames) {
+      if (!n.deletedAt || n.deletedAt < since) continue;
+      out.push({ kind: "name", id: n.id, day: n.day, title: n.name, text: n.meaning ? `Means: ${n.meaning}` : "", deletedAt: n.deletedAt });
+    }
+    for (const p of prayers) {
+      if (!p.deletedAt || p.purgedAt || p.deletedAt < since) continue;
+      out.push({ kind: "prayer", id: p.id, day: null, title: p.ref || "Prayer", text: p.text.replace(/\s+/g, " ").slice(0, 240), deletedAt: p.deletedAt });
+    }
+    return out.sort((a, b) => b.deletedAt - a.deletedAt);
+  }, [notes, deletedWords, purgedWords, savedNames, prayers]);
+
+  async function binCall(action: "restore" | "purge", items: BinItem[]): Promise<boolean> {
+    if (!items.length) return true;
+    const r = await fetch(client.binApi, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, items: items.map(({ kind, id }) => ({ kind, id })) }),
+    }).catch(() => null);
+    if (!r?.ok) {
+      const err = (await r?.json().catch(() => null)) as { error?: string } | null;
+      alert(err?.error ?? "Couldn't do that - check your connection and try again.");
+      return false;
+    }
+    return true;
+  }
+  // Back on their day, in their place.
+  async function restoreItems(items: BinItem[]): Promise<boolean> {
+    const words = items.filter((i) => i.kind === "word");
+    const rest = items.filter((i) => i.kind !== "word");
+    if (!(await binCall("restore", rest))) return false;
+    for (const w of words) restoreWord(w.id); // the word store keeps itself in step
+    const ids = (k: BinKind) => new Set(rest.filter((i) => i.kind === k).map((i) => i.id));
+    const noteIds = ids("note");
+    const nameIds = ids("name");
+    const prayerIds = ids("prayer");
+    if (noteIds.size) commit(notes.map((n) => (noteIds.has(n.id) ? { ...n, deletedAt: null } : n)));
+    if (nameIds.size) setSavedNames((list) => list.map((n) => (nameIds.has(n.id) ? { ...n, deletedAt: null } : n)));
+    if (prayerIds.size) setPrayers((list) => list.map((p) => (prayerIds.has(p.id) ? { ...p, deletedAt: null } : p)));
+    return true;
+  }
+  // Emptied from the bin (members' are erased overnight; the owner's kept).
+  async function purgeItems(items: BinItem[]): Promise<boolean> {
+    if (!(await binCall("purge", items))) return false;
+    const now = Date.now();
+    const ids = (k: BinKind) => new Set(items.filter((i) => i.kind === k).map((i) => i.id));
+    const noteIds = ids("note");
+    const nameIds = ids("name");
+    const prayerIds = ids("prayer");
+    const wordIds = ids("word");
+    if (noteIds.size) commit(notes.map((n) => (noteIds.has(n.id) ? { ...n, purgedAt: now } : n)));
+    if (nameIds.size) setSavedNames((list) => list.filter((n) => !nameIds.has(n.id)));
+    if (prayerIds.size) setPrayers((list) => list.map((p) => (prayerIds.has(p.id) ? { ...p, purgedAt: now } : p)));
+    if (wordIds.size) setPurgedWords((set) => new Set([...set, ...wordIds]));
+    return true;
+  }
   const ordered = useMemo(() => readingOrder(liveNotes), [liveNotes]);
 
   // Before the start: the furthest day written from Day 1 on - members open
@@ -527,7 +604,7 @@ export function StudyNotes() {
     [allWords, day],
   );
   const wordDays = useMemo(() => new Set(allWords.map((w) => w.day).filter(Boolean)), [allWords]);
-  const dayNames = useMemo(() => savedNames.filter((n) => n.day === day), [savedNames, day]);
+  const dayNames = useMemo(() => savedNames.filter((n) => n.day === day && !n.deletedAt), [savedNames, day]);
   const undatedCount = liveNotes.length - [...counts.values()].reduce((a, b) => a + b, 0);
 
   // The same calendar day in other years - the One Year Bible comes round
@@ -570,7 +647,7 @@ export function StudyNotes() {
   }, [dayNotes, context]);
 
   function removeWord(id: string, name: string) {
-    if (!confirm(`Move “${name}” to Recently deleted? You can restore it from the Word Journal.`)) return;
+    if (!confirm(`Move “${name}” to the Recycle bin? You can restore it for 30 days.`)) return;
     removeWordById(id);
   }
 
@@ -670,7 +747,7 @@ export function StudyNotes() {
   }
 
   async function remove(n: StudyNote) {
-    if (!confirm("Move this note to Recently deleted? You can restore it any time.")) return;
+    if (!confirm("Move this note to the Recycle bin? You can restore it for 30 days.")) return;
     try {
       await send("DELETE", undefined, `?id=${encodeURIComponent(n.id)}`);
       commit(notes.map((x) => (x.id === n.id ? { ...x, deletedAt: Date.now() } : x)));
@@ -953,6 +1030,14 @@ export function StudyNotes() {
             title="Your starred days and notes"
           >
             ★ Starred{starCount ? ` · ${starCount}` : ""}
+          </button>
+          <button
+            type="button"
+            className={`dash-btn dash-btn-ghost ${day === TRASH ? "is-on" : ""}`}
+            onClick={() => goToDay(TRASH)}
+            title="Deleted notes, words and names - restore them for 30 days"
+          >
+            🗑 Bin{binItems.length ? ` · ${binItems.length}` : ""}
           </button>
           <a
             className="dash-btn dash-btn-ghost"
@@ -1285,11 +1370,9 @@ export function StudyNotes() {
                   </button>
                 )}
                 <DayJump onGo={goToDay} />
-                {trash.length > 0 && (
-                  <button type="button" className="dash-word-link mt-3 block" onClick={() => openDay(TRASH)}>
-                    Recently deleted · {trash.length} →
-                  </button>
-                )}
+                <button type="button" className="dash-word-link mt-3 block" onClick={() => goToDay(TRASH)}>
+                  🗑 Recycle bin{binItems.length ? ` · ${binItems.length}` : ""} →
+                </button>
 
                 <p className="dash-plan-foot">
                   Following <em>{PLAN.name}</em> ({PLAN.edition}) ·{" "}
@@ -1319,7 +1402,7 @@ export function StudyNotes() {
               <Panel
                 eyebrow={
                   day === TRASH
-                    ? "Nothing is ever lost"
+                    ? `Kept for ${BIN_DAYS} days`
                     : day === STARRED
                     ? "Your highlights"
                     : day === UNDATED
@@ -1333,7 +1416,7 @@ export function StudyNotes() {
                         .join(" · ")
                 }
                 title={
-                  day === TRASH ? "Recently deleted" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
+                  day === TRASH ? "Recycle bin" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
                 }
                 action={
                   isDay(day) ? (
@@ -1395,27 +1478,13 @@ export function StudyNotes() {
                   }}
                 />
                 {day === TRASH && (
-                  <div className="dash-note-list">
-                    {trash.length === 0 && <div className="dash-word-hint">Nothing here.</div>}
-                    {trash.map((n) => (
-                      <article key={n.id} className="dash-note-trash">
-                        <div className="dash-note-ref">
-                          <span className="text-[12px] text-[var(--colour-amber-soft)]">
-                            {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
-                            {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
-                          </span>
-                        </div>
-                        <div className="dash-note-body">
-                          <NoteText text={n.text} />
-                        </div>
-                        <div className="dash-note-actions" style={{ opacity: 1 }}>
-                          <button type="button" className="dash-word-link" onClick={() => restore(n)}>
-                            Restore
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                  <RecycleBin
+                    items={binItems}
+                    owner={client.kind === "owner"}
+                    onRestore={restoreItems}
+                    onPurge={purgeItems}
+                    onOpenDay={goToDay}
+                  />
                 )}
 
                 {day === STARRED && starredDays.length > 0 && (

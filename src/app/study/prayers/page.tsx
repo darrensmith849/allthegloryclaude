@@ -1,13 +1,15 @@
 "use client";
 
 // A member's private prayer list: what they're praying for, with an
-// optional verse. Removing one keeps it under "Removed" so it can come back.
+// optional verse. Removing one puts it in the Recycle bin for 30 days (here
+// under "Removed", and in the journal's bin) so it can come back.
 
 import { useEffect, useMemo, useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { NoteText } from "@/components/dashboard/note-text";
 import { MemberOnly } from "@/components/study/shell";
 import type { Prayer } from "@/lib/study/types";
+import { BIN_DAYS } from "@/lib/study/bin-erase";
 
 const when = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -39,7 +41,8 @@ function PrayerList() {
 
   const live = useMemo(() => (prayers ?? []).filter((p) => !p.deletedAt), [prayers]);
   const praying = live;
-  const removed = (prayers ?? []).filter((p) => p.deletedAt);
+  const binSince = Date.now() - BIN_DAYS * 86_400_000;
+  const removed = (prayers ?? []).filter((p) => p.deletedAt && !p.purgedAt && p.deletedAt >= binSince);
 
   const put = (p: Prayer) => setPrayers((list) => [p, ...(list ?? []).filter((x) => x.id !== p.id)]);
 
@@ -72,7 +75,7 @@ function PrayerList() {
   }
 
   async function remove(p: Prayer) {
-    if (!confirm("Take this off your prayer list? You can bring it back from Removed.")) return;
+    if (!confirm("Take this off your prayer list? It goes to the Recycle bin in your journal - you can bring it back for 30 days.")) return;
     try {
       await call("DELETE", undefined, `?id=${encodeURIComponent(p.id)}`);
       put({ ...p, deletedAt: Date.now() });
@@ -197,7 +200,7 @@ function PrayerList() {
 
           {removed.length > 0 && (
             <div className="mt-[18px]">
-              <Panel eyebrow="Nothing is lost" title={`Removed · ${removed.length}`}>
+              <Panel eyebrow={`In the Recycle bin for ${BIN_DAYS} days`} title={`Removed · ${removed.length}`}>
                 <button type="button" className="dash-word-link" onClick={() => setShowRemoved((v) => !v)}>
                   {showRemoved ? "Hide" : "Show"} removed prayers
                 </button>

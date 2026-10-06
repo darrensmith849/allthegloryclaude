@@ -3,7 +3,7 @@
  * and what the name means - shown under "Words studied" on that day. For
  * the owner (study_names) or a member (member_names), see ./scope.ts.
  *
- *   GET                                   -> { names }   (not removed)
+ *   GET                                   -> { names }   (incl. removed - the Recycle bin - not emptied)
  *   POST { day, name, meaning?, about? }  -> { name }
  *   DELETE ?id=...                        -> { ok }      removed, never erased (deleted_at)
  */
@@ -18,6 +18,7 @@ export interface SavedName {
   meaning: string;
   about: string;
   createdAt: number;
+  deletedAt: number | null; // in the Recycle bin since
 }
 
 interface Row {
@@ -27,6 +28,7 @@ interface Row {
   meaning: string | null;
   about: string | null;
   created_at: number;
+  deleted_at?: number | null;
 }
 
 const MAX_NAMES = 5_000;
@@ -40,6 +42,7 @@ const toName = (r: Row): SavedName => ({
   meaning: r.meaning ?? "",
   about: r.about ?? "",
   createdAt: r.created_at,
+  deletedAt: r.deleted_at ?? null,
 });
 
 export function namesApi(scopeOf: ScopeOf) {
@@ -50,7 +53,9 @@ export function namesApi(scopeOf: ScopeOf) {
     if (!db) return unavailable();
     try {
       const { results } = await db
-        .prepare(`SELECT id, day, name, meaning, about, created_at FROM ${s.names} WHERE ${mine(s)} AND deleted_at IS NULL ORDER BY day, created_at`)
+        .prepare(
+          `SELECT id, day, name, meaning, about, created_at, deleted_at FROM ${s.names} WHERE ${mine(s)} AND purged_at IS NULL ORDER BY day, created_at`,
+        )
         .bind(...mineArgs(s))
         .all<Row>();
       return Response.json({ names: results.map(toName) }, { headers: noStore });
@@ -85,7 +90,7 @@ export function namesApi(scopeOf: ScopeOf) {
       const id = existing?.id ?? crypto.randomUUID();
       if (existing) {
         await db
-          .prepare(`UPDATE ${s.names} SET deleted_at = NULL, meaning = ?, about = ? WHERE id = ?${andMine(s)}`)
+          .prepare(`UPDATE ${s.names} SET deleted_at = NULL, purged_at = NULL, meaning = ?, about = ? WHERE id = ?${andMine(s)}`)
           .bind(meaning, about, id, ...mineArgs(s))
           .run();
       } else {
@@ -95,7 +100,7 @@ export function namesApi(scopeOf: ScopeOf) {
           .run();
       }
       const row = await db
-        .prepare(`SELECT id, day, name, meaning, about, created_at FROM ${s.names} WHERE id = ?${andMine(s)}`)
+        .prepare(`SELECT id, day, name, meaning, about, created_at, deleted_at FROM ${s.names} WHERE id = ?${andMine(s)}`)
         .bind(id, ...mineArgs(s))
         .first<Row>();
       return Response.json({ name: row ? toName(row) : null });

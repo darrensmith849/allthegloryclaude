@@ -33,6 +33,7 @@ interface Row {
   seq: number;
   position: number | null;
   deleted_at: number | null;
+  purged_at?: number | null;
   private: number | null;
   starred_at?: number | null;
   book: number | null;
@@ -51,6 +52,7 @@ const toNote = (r: Row): StudyNote => ({
   seq: r.seq,
   position: r.position ?? r.seq,
   deletedAt: r.deleted_at ?? null,
+  purgedAt: r.purged_at ?? null,
   private: Boolean(r.private),
   starredAt: r.starred_at ?? null,
   book: r.book,

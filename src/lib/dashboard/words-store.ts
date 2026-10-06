@@ -195,7 +195,7 @@ export function useWords() {
   const all = mounted ? store.words : [];
   const live = useMemo(() => all.filter((w) => !w.deletedAt), [all]);
   const deleted = useMemo(
-    () => all.filter((w) => w.deletedAt).sort((a, b) => (b.deletedAt ?? "").localeCompare(a.deletedAt ?? "")),
+    () => all.filter((w) => w.deletedAt && !w.purgedAt).sort((a, b) => (b.deletedAt ?? "").localeCompare(a.deletedAt ?? "")),
     [all],
   );
 

@@ -18,7 +18,8 @@ export interface StudyNote {
   page: number | null; // chronological Bible page
   seq: number; // order written
   position: number; // order within its day / page - movable
-  deletedAt: number | null; // in Recently deleted since (epoch ms); never removed
+  deletedAt: number | null; // in the Recycle bin since (epoch ms)
+  purgedAt?: number | null; // emptied from the bin (members' notes are then erased overnight)
   private: boolean; // never included when the study is shared
   starredAt?: number | null; // starred as a highlight since (epoch ms)
   book: number | null; // 1-66
