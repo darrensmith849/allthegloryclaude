@@ -3,7 +3,9 @@
  *
  *   GET [?day=YYYY-MM-DD | ?on=MM-DD] [&preview=1]
  *     -> { study, contents, day, info, notes, words, hidden? }
- *   GET ?only=contents -> { study, contents }
+ *   GET ?only=contents -> { study, contents, videos }
+ *     videos: every shared day's session video (YouTube) - shown on its date
+ *     even with no notes yet, and even while the day's notes are held back
  *   GET ?search=grace | ?search=Matt 4 -> { study, results } (shared notes that match)
  *
  * Who may read is the owner's switch (study_settings.reading): nobody yet
@@ -144,11 +146,17 @@ export async function GET(req: Request) {
         chapters: chapters.get(d) ?? [],
         passages: passages.get(d) ?? [],
         shared: info.get(d)?.shared !== 0,
-        ...(info.get(d)?.video ? { video: info.get(d)?.video } : {}),
       }));
 
+    // Session videos: published by the owner on purpose, so each shows on its
+    // date whatever else is on the day - except days he keeps out entirely.
+    const videos = dayRows
+      .filter((r) => r.video && r.shared !== 0)
+      .map((r) => ({ day: r.day, video: r.video as string }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+
     if (url.searchParams.get("only") === "contents") {
-      return Response.json({ study, preview, contents }, { headers: noStore });
+      return Response.json({ study, preview, contents, videos }, { headers: noStore });
     }
 
     // Which day: as asked (?day, or ?on = a date in any year - the plan

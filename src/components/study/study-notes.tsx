@@ -308,24 +308,48 @@ export function StudyNotes() {
     writeStore(client.key("guide"), !guideFolded);
   };
 
-  // Members: which dates the shared study covers, to link each day to it.
+  // Members: which dates the shared study covers (to link each day to it),
+  // and the owner's session videos. Loaded again whenever they come back to
+  // the page, so a new day or video shows up without reloading.
   useEffect(() => {
     if (!client.studyUrl) return;
-    fetch("/api/study/read?only=contents", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { contents?: { day: string; title: string; chapters: string[]; passages?: string[]; video?: string }[] } | null) => {
-        if (!data?.contents) return;
-        setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
-        setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
-        setStudyLatest(data.contents.map((c) => c.day).filter((d) => d >= STUDY_START).sort().pop() ?? null);
-        setStudyVideo(new Map(data.contents.filter((c) => c.video).map((c) => [c.day.slice(5), c.video as string])));
-        const index: PlanIndex = new Map();
-        for (const c of data.contents)
-          for (const key of c.passages ?? [])
-            index.set(key, [...(index.get(key) ?? []), { day: c.day, label: c.title || c.chapters.join(" · ") }]);
-        setStudyIndex(index);
-      })
-      .catch(() => {});
+    let last = 0;
+    const load = () => {
+      if (Date.now() - last < 15_000) return;
+      last = Date.now();
+      fetch("/api/study/read?only=contents", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(
+          (
+            data: {
+              contents?: { day: string; title: string; chapters: string[]; passages?: string[] }[];
+              videos?: { day: string; video: string }[];
+            } | null,
+          ) => {
+            if (!data?.contents) return;
+            setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
+            setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
+            setStudyLatest(data.contents.map((c) => c.day).filter((d) => d >= STUDY_START).sort().pop() ?? null);
+            setStudyVideo(new Map((data.videos ?? []).map((v) => [v.day.slice(5), v.video])));
+            const index: PlanIndex = new Map();
+            for (const c of data.contents)
+              for (const key of c.passages ?? [])
+                index.set(key, [...(index.get(key) ?? []), { day: c.day, label: c.title || c.chapters.join(" · ") }]);
+            setStudyIndex(index);
+          },
+        )
+        .catch(() => {});
+    };
+    load();
+    const onBack = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onBack);
+    window.addEventListener("focus", onBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onBack);
+      window.removeEventListener("focus", onBack);
+    };
   }, [client.studyUrl]);
 
   useEffect(() => {
@@ -1511,7 +1535,8 @@ export function StudyNotes() {
                   <p className="dash-day-held">
                     🔒 Kept private until{" "}
                     {new Date(`${heldUntil(day, hold)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}{" "}
-                    - members see this day from then. You can change this on Members.
+                    - members see your notes on this day from then{days[day]?.video ? " (the video shows to them now)" : ""}. You can
+                    change this on Members.
                   </p>
                 )}
 
