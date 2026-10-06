@@ -13,6 +13,9 @@ function safeNext(next: string | null): string {
 
 type Mode = "loading" | "setup" | "login";
 
+// Which login this device used last - so the team's phones open on theirs.
+const WHO_KEY = "atg:dash:loginAs";
+
 export default function AdminLoginPage() {
   const [mode, setMode] = useState<Mode>("loading");
   // Daniel's team log in here with their Study email and password - so the
@@ -29,8 +32,26 @@ export default function AdminLoginPage() {
     // A full page load, so the new session cookie goes with it.
     window.location.assign(safeNext(new URLSearchParams(window.location.search).get("next")));
 
+  // Daniel's password, or a team member's Study email and password.
+  function chooseTeam(on: boolean) {
+    setTeam(on);
+    setError(null);
+    setPassword("");
+    try {
+      window.localStorage.setItem(WHO_KEY, on ? "team" : "daniel");
+    } catch {
+      // private window
+    }
+  }
+
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("team")) setTeam(true);
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(WHO_KEY);
+    } catch {
+      // private window
+    }
+    if (new URLSearchParams(window.location.search).get("team") || saved === "team") setTeam(true);
     fetch("/api/admin/status", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: { configured?: boolean; signedIn?: boolean; role?: string | null }) => {
@@ -93,7 +114,11 @@ export default function AdminLoginPage() {
       if (r.ok) return goIn();
       const data = (await r.json().catch(() => ({}))) as { error?: string; setup?: boolean };
       if (r.status === 409) setMode(data.setup ? "setup" : "login");
-      setError(data.error ?? "Couldn't log in. Try again.");
+      setError(
+        r.status === 401 && mode === "login"
+          ? "That isn't Daniel's password. On Daniel's team? Tap “Team member” above and log in with your Study email and password."
+          : (data.error ?? "Couldn't log in. Try again."),
+      );
       setPassword("");
       setConfirm("");
       input.current?.focus();
@@ -111,14 +136,24 @@ export default function AdminLoginPage() {
       <form className="dash-login-card" onSubmit={submit}>
         <div className="eyebrow eyebrow-amber">All The Glory</div>
         <h1 className="dash-title mt-1">{team ? "Team login" : setup ? "Create your password" : "Admin login"}</h1>
+        {mode === "login" && (
+          <div className="dash-toggle dash-login-who" role="group" aria-label="Who is logging in">
+            <button type="button" className={!team ? "is-on" : ""} onClick={() => chooseTeam(false)}>
+              Daniel
+            </button>
+            <button type="button" className={team ? "is-on" : ""} onClick={() => chooseTeam(true)}>
+              Team member
+            </button>
+          </div>
+        )}
         <p className="dash-subtitle">
           {mode === "loading"
             ? "One moment…"
             : team
-              ? "For Daniel's team - log in with your Study email and password."
+              ? "For Daniel's team - your Study email and password (the same as on The Study)."
               : setup
                 ? "Choose the password that will protect your private dashboard. You'll use it to log in on any device."
-                : "Your private dashboard."}
+                : "Daniel's password only."}
         </p>
 
         {mode !== "loading" && team && (
@@ -162,17 +197,6 @@ export default function AdminLoginPage() {
             <a href="/the-study?login=1" className="dash-login-team">
               Forgotten your password? Reset it on The Study →
             </a>
-            <button
-              type="button"
-              className="dash-login-team dash-login-switch"
-              onClick={() => {
-                setTeam(false);
-                setError(null);
-                setPassword("");
-              }}
-            >
-              ← Daniel&apos;s login
-            </button>
           </>
         )}
 
@@ -226,19 +250,6 @@ export default function AdminLoginPage() {
               {busy ? (setup ? "Saving…" : "Logging in…") : setup ? "Create password & log in" : "Log in"}
             </button>
           </>
-        )}
-        {mode === "login" && !team && (
-          <button
-            type="button"
-            className="dash-login-team dash-login-switch"
-            onClick={() => {
-              setTeam(true);
-              setError(null);
-              setPassword("");
-            }}
-          >
-            Not Daniel? Team members log in here →
-          </button>
         )}
         <a href="/" className="dash-login-back">
           ← Back to the public site

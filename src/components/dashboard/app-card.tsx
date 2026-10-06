@@ -131,7 +131,7 @@ export function DashAppCard() {
                 {team ? (
                   <>
                     {" "}
-                    - tap <strong>Team members log in here</strong> and use your Study email and password.
+                    - tap <strong>Team member</strong> and use your Study email and password.
                   </>
                 ) : (
                   " - the Home Screen app keeps its own sign-in."
