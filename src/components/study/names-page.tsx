@@ -40,12 +40,14 @@ function KeyVerse({ refText }: { refText: string }) {
     if (v) return setV(null);
     setV({ loading: true });
     try {
-      const r = await fetch(`/api/verse?ref=${encodeURIComponent(refText)}`);
-      const d = (await r.json()) as { error?: string; verses?: { verse: number; text: string }[] };
+      // The Berean Standard Bible - the same text the names' stories quote.
+      const r = await fetch(`/api/bible?q=${encodeURIComponent(refText)}`);
+      const d = (await r.json()) as { error?: string; results?: { verse: number; text: string }[] };
+      const verses = (d.results ?? []).map((x) => ({ ...x, text: x.text.replace(/<\/?mark>/g, "") }));
       setV(
-        d.error || !d.verses?.length
+        d.error || !verses.length
           ? { loading: false, error: d.error ?? "Couldn't find that verse." }
-          : { loading: false, text: d.verses.map((x) => (d.verses!.length > 1 ? `${x.verse} ${x.text}` : x.text)).join(" ") },
+          : { loading: false, text: verses.map((x) => (verses.length > 1 ? `${x.verse} ${x.text}` : x.text)).join(" ") },
       );
     } catch {
       setV({ loading: false, error: "Couldn't load that verse." });
