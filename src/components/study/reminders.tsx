@@ -218,6 +218,7 @@ export function Reminders({
     ) : (
       <>
         {installGuide ?? <IosInstallGuide forReminders />}
+        <CalendarReminder hour={hour} dashboard={target === DASHBOARD} />
         {status && <p className="dash-reminder-status">This device: {status}</p>}
       </>
     );
@@ -276,7 +277,20 @@ export function Reminders({
       </div>
       {on && !message && <p className="dash-word-hint mt-2">On for this device · skipped on days you&apos;ve already marked as read.</p>}
       {message && <p className="dash-word-hint mt-2">{message}</p>}
+      {!compact && <CalendarReminder hour={hour} dashboard={target === DASHBOARD} />}
       {!compact && status && <p className="dash-reminder-status">This device: {status}</p>}
     </div>
+  );
+}
+
+// The other way: a repeating daily event in the phone's own calendar - works
+// on any iPhone, whatever the notification settings.
+function CalendarReminder({ hour, dashboard }: { hour: number; dashboard: boolean }) {
+  return (
+    <p className="dash-reminder-calendar">
+      <a href={`/reminder.ics?hour=${hour}&for=${dashboard ? "dashboard" : "study"}`}>
+        📅 Or add it to your phone&apos;s calendar instead - every day at {hourLabel(hour)} →
+      </a>
+    </p>
   );
 }

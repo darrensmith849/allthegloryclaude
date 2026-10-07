@@ -4639,3 +4639,5 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 }
 /* Small line under the reminder switch: what this device reports (for sorting out problems). */
 .dash-reminder-status { margin-top: 8px; font-size: 11.5px; color: var(--colour-ink-faint); }
+.dash-reminder-calendar { margin-top: 10px; font-size: 13.5px; }
+.dash-reminder-calendar a { color: var(--colour-amber); font-weight: 600; }
