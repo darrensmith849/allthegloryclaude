@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { IosInstallGuide } from "./ios-install-guide";
+import { VAPID_PUBLIC_KEY } from "@/lib/study/push";
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00`;
@@ -73,12 +74,26 @@ export function Reminders({
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [publicKey, setPublicKey] = useState("");
+  // The public half of the push key is fixed - no need to wait for it.
+  const [publicKey, setPublicKey] = useState(VAPID_PUBLIC_KEY);
+  // What this phone reports (shown small under the switch, to help sort out a problem).
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
+    const iosVersion = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+    setStatus(
+      [
+        standalone ? "opened as an app" : "opened in the browser",
+        "Notification" in window ? `notifications: ${Notification.permission}` : "notifications: not available here",
+        "PushManager" in window ? "push: yes" : "push: no",
+        iosVersion ? `iOS ${iosVersion[1]}.${iosVersion[2]}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    );
     if (!ok) {
       setSupport(ios ? (standalone ? "old-ios" : "install") : "no");
       return;
@@ -88,7 +103,7 @@ export function Reminders({
       const data = (await fetch(target.api, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) as { reminders?: { endpoint: string; hour: number }[]; publicKey?: string } | null;
-      setPublicKey(data?.publicKey ?? "");
+      if (data?.publicKey) setPublicKey(data.publicKey);
       // Turned down before: the phone won't ask again - say how to allow it.
       if (Notification.permission === "denied") setMessage(blockedHelp());
       const reg = await navigator.serviceWorker.getRegistration(target.scope);
@@ -201,13 +216,17 @@ export function Reminders({
         🔔 Get a daily reminder on your phone →
       </Link>
     ) : (
-      (installGuide ?? <IosInstallGuide forReminders />)
+      <>
+        {installGuide ?? <IosInstallGuide forReminders />}
+        {status && <p className="dash-reminder-status">This device: {status}</p>}
+      </>
     );
   }
   if (support === "old-ios") {
     return (
       <p className="dash-word-hint">
         Reminders need iOS 16.4 or newer - update your iPhone in Settings → General → Software Update, then come back here.
+        {status && <span className="dash-reminder-status block">This device: {status}</span>}
       </p>
     );
   }
@@ -257,6 +276,7 @@ export function Reminders({
       </div>
       {on && !message && <p className="dash-word-hint mt-2">On for this device · skipped on days you&apos;ve already marked as read.</p>}
       {message && <p className="dash-word-hint mt-2">{message}</p>}
+      {!compact && status && <p className="dash-reminder-status">This device: {status}</p>}
     </div>
   );
 }
