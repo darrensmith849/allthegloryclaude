@@ -1945,7 +1945,7 @@ function CampaignsPanel({ rows }: { rows: AnalyticsPayload["campaigns"] }) {
 }
 
 function CampaignUrlBuilder() {
-  const [destination, setDestination] = useState("https://www.alltheglory.co.za/album/from-darkness-to-light");
+  const [destination, setDestination] = useState("https://alltheglory.co.za/album/from-darkness-to-light");
   const [source, setSource] = useState("instagram");
   const [medium, setMedium] = useState("bio");
   const [campaign, setCampaign] = useState("from-darkness-to-light");

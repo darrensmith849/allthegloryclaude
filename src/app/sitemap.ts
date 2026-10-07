@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://www.alltheglory.co.za";
+  const base = "https://alltheglory.co.za";
   // Only real, useful destination pages.
   const routes = [
     "/",

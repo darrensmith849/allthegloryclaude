@@ -38,7 +38,9 @@ const structuredData = {
       "@id": `${site.url}#artist`,
       name: site.name,
       url: site.url,
-      sameAs: Object.values(site.socials),
+      sameAs: Object.values(site.socials).filter(Boolean),
+      genre: ["Christian", "Worship"],
+      description: site.description,
       image: `${site.url}/og-dove.jpg`,
     },
     {
@@ -62,7 +64,9 @@ const structuredData = {
       "@id": `${site.url}#website`,
       url: site.url,
       name: site.name,
+      alternateName: "AllTheGlory",
       description: site.description,
+      inLanguage: "en",
       publisher: { "@id": `${site.url}#artist` },
     },
   ],
@@ -70,7 +74,7 @@ const structuredData = {
 
 export const metadata: Metadata = {
   title: {
-    default: site.name,
+    default: `${site.name} - Worship music and a chronological Bible study`,
     template: `%s - ${site.name}`,
   },
   description: site.description,

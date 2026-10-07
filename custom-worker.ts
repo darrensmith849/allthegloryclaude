@@ -21,6 +21,12 @@ export default {
       url.protocol = "https:";
       return Response.redirect(url.toString(), 301);
     }
+    // One address for search engines: www goes to alltheglory.co.za (pages
+    // only - API calls such as payment webhooks are never redirected).
+    if (url.hostname === "www.alltheglory.co.za" && (req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/api/")) {
+      url.hostname = "alltheglory.co.za";
+      return Response.redirect(url.toString(), 301);
+    }
     return handler.fetch(req, env, ctx);
   },
   async scheduled(

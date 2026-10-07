@@ -1,7 +1,9 @@
 export const site = {
   name: "All The Glory",
-  url: "https://www.alltheglory.co.za",
-  description: "From Darkness To Light - a testimony of truth and freedom in Jesus.",
+  // The one address: everything shared uses it (www redirects here - custom-worker.ts).
+  url: "https://alltheglory.co.za",
+  description:
+    "Worship music woven through Scripture - the album From Darkness To Light - and The Study, a free Bible study reading the Bible in the order it happened.",
   socials: {
     instagram: "https://www.instagram.com/allthe_glory",
     youtube: "https://www.youtube.com/@Allthe_glory",
