@@ -79,6 +79,8 @@ export const metadata: Metadata = {
   },
   description: site.description,
   metadataBase: new URL(site.url),
+  // Google Search Console - proves the site is ours (a public code, not a secret).
+  verification: { google: "A02WyKWqJ-rELfX-bUWRiqhxXENqAvHvDsIGniA8IFQ" },
   icons: { icon: "/favicon.png", apple: "/favicon.png" },
   alternates: {
     canonical: "/",
