@@ -10,6 +10,7 @@
 // it from the Home Screen, the card offers his daily reading reminder
 // instead (until it's on; the full switch is on Reminders).
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { IosInstallGuide } from "@/components/study/ios-install-guide";
 import { DASHBOARD, Reminders } from "@/components/study/reminders";
@@ -45,6 +46,7 @@ export function canAddToHomeScreen(): boolean {
 
 export function DashAppCard() {
   const user = useDashUser();
+  const pathname = usePathname();
   const team = user?.role === "team";
   const [show, setShow] = useState(false);
   const [ios, setIos] = useState(false);
@@ -89,6 +91,8 @@ export function DashAppCard() {
 
   // On the Home Screen: Daniel's daily reminder (hidden once it's on).
   if (installed && user?.role === "owner") {
+    // (The Reminders page has the full switch - don't show two.)
+    if (pathname === "/dashboard/reminders") return null;
     return (
       <section className="study-app-card dash-app-card">
         <Reminders compact target={DASHBOARD} hideWhenOn />

@@ -115,9 +115,22 @@ export function Reminders({
 
   async function turnOn() {
     setBusy(true);
-    setMessage(null);
+    // The question comes from the phone / browser, not the page - say so,
+    // or the button just seems stuck on "Turning on…".
+    setMessage(
+      Notification.permission === "granted"
+        ? null
+        : "Your phone or browser should now ask to allow notifications - tap Allow. (In Chrome on a computer it pops up at the top left, or as a bell in the address bar.)",
+    );
     try {
-      const permission = await Notification.requestPermission();
+      const permission = await Promise.race([
+        Notification.requestPermission(),
+        new Promise<NotificationPermission | "timeout">((r) => window.setTimeout(() => r("timeout"), 60_000)),
+      ]);
+      if (permission === "timeout") {
+        setMessage("No answer to the notification question - tap Turn on reminders again, and choose Allow.");
+        return;
+      }
       if (permission !== "granted") {
         setMessage(
           /iPhone|iPad|iPod/.test(navigator.userAgent)
