@@ -2034,6 +2034,14 @@ html:has(.dash-welcome-root),
   line-height: 1;
   opacity: 0.8;
 }
+/* Members' plan: the day number, with the book's page (date) underneath. */
+.dash-note-cal.is-plan .dash-note-cal-day { height: 56px; gap: 1px; }
+.dash-cal-book { font-size: 10.5px; line-height: 1.1; color: var(--colour-ink-quiet); white-space: nowrap; }
+.dash-note-cal-day.is-selected .dash-cal-book { color: var(--on-gold); opacity: 0.85; }
+@media (max-width: 360px) {
+  .dash-note-cal.is-plan { gap: 2px; }
+  .dash-cal-book { font-size: 9.5px; letter-spacing: -0.02em; }
+}
 
 /* Search results */
 .dash-note-results { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; max-height: 420px; overflow-y: auto; }

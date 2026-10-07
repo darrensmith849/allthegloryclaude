@@ -1360,8 +1360,9 @@ export function StudyNotes() {
                   </div>
                 )}
                 {calView === "month" && (
-                <div className="dash-note-cal">
-                  {/* Members: the plan's days in order (no weekdays - it's not a date). */}
+                <div className={`dash-note-cal ${planMode ? "is-plan" : ""}`}>
+                  {/* Members: the plan's days in order (no weekdays - it's not a date),
+                      each with its page in the book underneath. */}
                   {!planMode &&
                     WEEK.map((w) => (
                       <div key={w} className="dash-note-cal-head">
@@ -1387,6 +1388,11 @@ export function StudyNotes() {
                         title={planMode ? `In the book: ${bookDate(d)}` : undefined}
                       >
                         <span>{planMode ? planDay(d).n : Number(d.slice(8))}</span>
+                        {planMode && (
+                          <small className="dash-cal-book">
+                            {Number(d.slice(8))} {MONTH_SHORT[Number(d.slice(5, 7)) - 1]}
+                          </small>
+                        )}
                         {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
                         {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
                         {(count > 0 || hasWords || read || reflected) && (
@@ -1403,7 +1409,10 @@ export function StudyNotes() {
                 </div>
                 )}
                 {planMode && (
-                  <p className="dash-cal-key">Each square is a day of the plan - Day 1 is Genesis 1. The gold square is where you&apos;re up to.</p>
+                  <p className="dash-cal-key">
+                    Each square is a day of the plan, with its page in the book underneath - Day 1 is Genesis 1. The gold square is
+                    where you&apos;re up to.
+                  </p>
                 )}
                 {!planMode && reflections.byDay.size > 0 && (
                   <p className="dash-cal-key">
