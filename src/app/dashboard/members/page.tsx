@@ -10,6 +10,7 @@ import { ShareLink } from "@/components/study/share-link";
 import type { ReadingMode, SignupMode, StudySettings } from "@/lib/study/members";
 import { EmailHealth } from "@/components/dashboard/email-health";
 import { useDashUser } from "@/lib/dashboard/who";
+import { planDay } from "@/lib/dashboard/notes";
 
 interface Invite {
   code: string;
@@ -175,7 +176,6 @@ export default function MembersPage() {
 
   const longDate = (d: string) =>
     new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-  const nextYear = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`;
 
   async function saveSettings(patch: Partial<StudySettings>) {
     try {
@@ -381,14 +381,39 @@ export default function MembersPage() {
             </p>
 
             <div className="dash-divider" />
-            <div className="eyebrow mb-2">Kept private until next year</div>
+            <div className="eyebrow mb-2">Kept for members until they get there</div>
             {settings?.hold ? (
               <>
                 <p className="dash-word-hint">
                   Your notes from <strong>{longDate(settings.hold.from)}</strong> to <strong>{longDate(settings.hold.to)}</strong>{" "}
-                  are kept from members for now. Each day shows again on its own date next year - from{" "}
-                  {longDate(nextYear(settings.hold.from))}. You still see and write on them as normal.
+                  (Day {planDay(settings.hold.from).n} on) are kept from members until their own reading reaches each day. You
+                  still see and write on them as normal.
                 </p>
+                <div className="dash-label mt-3">Can read them now</div>
+                <div className="flex gap-2 flex-wrap mt-1">
+                  {members
+                    .filter((m) => !m.disabled)
+                    .map((m) => {
+                      const hold = settings.hold!;
+                      const allow = hold.allow ?? [];
+                      const on = allow.includes(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={`dash-starter-chip ${on ? "is-on" : ""}`}
+                          aria-pressed={on}
+                          onClick={() =>
+                            void saveSettings({ hold: { ...hold, allow: on ? allow.filter((x) => x !== m.id) : [...allow, m.id] } })
+                          }
+                        >
+                          {on ? "✓ " : ""}
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                </div>
+                <p className="dash-word-hint mt-1">Tap a name to let them read these days now - tap again to stop.</p>
                 <button
                   type="button"
                   className="dash-btn dash-btn-ghost mt-3"
@@ -402,7 +427,7 @@ export default function MembersPage() {
             ) : (
               <>
                 <p className="dash-word-hint mb-2">
-                  Keep a stretch of days to yourself for now - each comes back on its own date next year.
+                  Keep a stretch of days from members until their own reading reaches them.
                 </p>
                 <div className="flex gap-2 flex-wrap items-center">
                   <input type="date" className="dash-input dash-hold-date" value={holdFrom} onChange={(e) => setHoldFrom(e.target.value)} aria-label="From" />

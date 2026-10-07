@@ -29,11 +29,11 @@ import { DayJump } from "@/components/study/day-jump";
 import { SessionVideo } from "@/components/study/session-video";
 import { ReadHere } from "@/components/study/read-here";
 import { FoldToggle } from "@/components/study/fold-toggle";
-import { heldUntil, studyToday, type Hold } from "@/lib/study/hold";
+import { inHold, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
-import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, PLAN_END, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
 import { ReadAlong } from "./read-along";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
@@ -136,8 +136,9 @@ export function StudyNotes() {
     if (client.kind === "member" && typeof window !== "undefined") {
       const asked = new URLSearchParams(window.location.search).get("day");
       if (isDay(asked) || asked === STARRED || asked === TRASH) return asked;
-      // Until everyone starts together, members open on Day 1.
-      if (beforeStart(todayDay())) return STUDY_START;
+      // Members go at their own pace: open where they're up to (from this
+      // device's last copy; checked again once their days load).
+      return nextPage(Object.values(readStore<Record<string, StudyDay>>(DAYS_KEY, {})).filter((d) => d.readAt).map((d) => d.day));
     }
     return todayDay();
   });
@@ -156,9 +157,20 @@ export function StudyNotes() {
   );
   const [openNotes, setOpenNotes] = useState<Set<string>>(() => new Set());
   const [days, setDays] = useState<Record<string, StudyDay>>({});
+  const [daysLoaded, setDaysLoaded] = useState(false);
+  // Members go at their own pace through the plan's pages (Day 1-365): their
+  // place is the day after the furthest one they've marked as read. The
+  // owner's journal stays on real dates (his own reading this year).
+  const planMode = client.kind === "member";
+  const nextDay = useMemo(() => nextPage(Object.values(days).filter((d) => d.readAt).map((d) => d.day)), [days]);
+  const started = useMemo(() => Object.values(days).some((d) => d.readAt && inPlan(d.day)), [days]);
+  // "Day 5" on a member's plan page; the date elsewhere.
+  const label = (d: string, o?: { weekday?: boolean }) => (planMode && isDay(d) && inPlan(d) ? `Day ${planDay(d).n}` : dayLabel(d, o));
+  const dayWithDate = (d: string) => (planMode && inPlan(d) ? `Day ${planDay(d).n} · ${bookDate(d)}` : `Day ${planDay(d).n} · ${dayLabel(d)}`);
   const [dayEdit, setDayEdit] = useState<{ title: string; takeaway: string; shared: boolean } | null>(null);
-  // Owner: days kept out of the shared study until next year.
+  // Owner: his 2026 New Testament days, kept for members until they reach them.
   const [hold, setHold] = useState<Hold | null>(null);
+  const [holdReaders, setHoldReaders] = useState<string[]>([]);
   // Members: the dates (MM-DD) the owner's study has notes for, with a label.
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
   const [studyChapters, setStudyChapters] = useState<Map<string, string[]>>(() => new Map());
@@ -201,10 +213,9 @@ export function StudyNotes() {
     if (r?.ok) setSavedNames((list) => list.map((x) => (x.id === n.id ? { ...x, deletedAt: Date.now() } : x)));
     else alert("Couldn't remove it - check your connection.");
   }
-  // Before everyone starts on Day 1 - set in the browser (the owner's page
-  // is pre-rendered, so not at build time).
-  const [early, setEarly] = useState(false);
-  useEffect(() => setEarly(beforeStart(todayDay())), []);
+  // "Where we start": members until they've read their first day; the
+  // owner always (it's his way into the group's Genesis days).
+  const showStart = planMode ? daysLoaded && !started : true;
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
       const next = new Set(s);
@@ -283,19 +294,21 @@ export function StudyNotes() {
     setDays(cachedDays);
     fetch(client.daysApi, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { days?: StudyDay[]; hold?: Hold | null } | null) => {
+      .then((data: { days?: StudyDay[]; hold?: Hold | null; holdReaders?: string[] } | null) => {
         if (!data?.days) return;
         setHold(data.hold ?? null);
+        setHoldReaders(data.holdReaders ?? []);
         const map = Object.fromEntries(data.days.map((d) => [d.day, d]));
         setDays(map);
         writeStore(DAYS_KEY, map);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setDaysLoaded(true));
   }, []);
 
   // Open the owner's study in this day and bring it into view.
   function showStudy(scroll = true) {
-    if (!isDay(day)) openDay(todayDay());
+    if (!isDay(day)) openDay(planMode ? nextDay : todayDay());
     setSections((s) => {
       const next = { ...s, study: true };
       writeStore(SECTIONS_KEY, next);
@@ -371,7 +384,7 @@ export function StudyNotes() {
             if (!data?.contents) return;
             setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
             setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
-            setStudyLatest(data.contents.map((c) => c.day).filter((d) => d >= STUDY_START).sort().pop() ?? null);
+            setStudyLatest(data.contents.map((c) => c.day).filter(inPlan).sort().pop() ?? null);
             setStudyVideo(new Map((data.videos ?? []).map((v) => [v.day.slice(5), v.video])));
             const index: PlanIndex = new Map();
             for (const c of data.contents)
@@ -561,21 +574,22 @@ export function StudyNotes() {
   }
   const ordered = useMemo(() => readingOrder(liveNotes), [liveNotes]);
 
-  // Before the start: the furthest day written from Day 1 on - members open
-  // there (once, unless a day was asked for); the owner gets "next day".
+  // The owner: the furthest group day he's written (Genesis on, before his
+  // held New Testament days) - for "Next · Day N".
   const startLatest = useMemo(
-    () => liveNotes.map((n) => n.day).filter((d): d is string => Boolean(d && d >= STUDY_START)).sort().pop() ?? null,
-    [liveNotes],
+    () => liveNotes.map((n) => n.day).filter((d): d is string => Boolean(d && inPlan(d) && !inHold(d, hold))).sort().pop() ?? null,
+    [liveNotes, hold],
   );
+  // Members open on where they're up to (once, unless a day was asked for).
   const autoDay = useRef(
     client.kind === "member" && typeof window !== "undefined" && !new URLSearchParams(window.location.search).get("day"),
   );
   useEffect(() => {
-    if (!loaded || !autoDay.current) return;
+    if (!loaded || !daysLoaded || !autoDay.current) return;
     autoDay.current = false;
-    if (beforeStart(todayDay()) && startLatest && day === STUDY_START) openDay(startLatest);
+    if (nextDay !== day) openDay(nextDay);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
+  }, [loaded, daysLoaded]);
   const starred = useMemo(
     () => liveNotes.filter((n) => n.starredAt).sort((a, b) => (b.starredAt ?? 0) - (a.starredAt ?? 0)),
     [liveNotes],
@@ -801,18 +815,20 @@ export function StudyNotes() {
   }
 
   // The owner's session video for the open day (a YouTube link, or "" to take it off).
-  async function saveVideo(url: string): Promise<boolean> {
+  async function saveVideo(url: string, toDay?: number): Promise<boolean> {
     if (!isDay(day)) return false;
     const d = days[day];
+    // The call covered up to Day toDay: the same video on each of those days.
+    const videoTo = toDay ? shiftDay(day, toDay - planDay(day).n) : undefined;
     try {
       const r = await fetch(client.daysApi, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ day, title: d?.title ?? "", takeaway: d?.takeaway ?? "", shared: d?.shared ?? true, video: url }),
+        body: JSON.stringify({ day, title: d?.title ?? "", takeaway: d?.takeaway ?? "", shared: d?.shared ?? true, video: url, videoTo }),
       });
-      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; error?: string };
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; also?: StudyDay[]; error?: string };
       if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
-      const next = { ...days, [day]: data.day };
+      const next = { ...days, [day]: data.day, ...Object.fromEntries((data.also ?? []).map((x) => [x.day, x])) };
       setDays(next);
       writeStore(DAYS_KEY, next);
       return true;
@@ -989,7 +1005,10 @@ export function StudyNotes() {
   }
 
   const grid = useMemo(() => monthGrid(month), [month]);
-  const today = todayDay();
+  // Members: "today" is their next reading.
+  const today = planMode ? nextDay : todayDay();
+  // Members' calendar stays on the plan's pages.
+  const keepInPlan = (m: string) => (!planMode ? m : m < STUDY_START ? STUDY_START : m > startOfMonth(PLAN_END) ? startOfMonth(PLAN_END) : m);
 
   // Reading progress: days ticked as read this year, and the run of days
   // read up to today (or yesterday, so it isn't lost before today's reading).
@@ -999,8 +1018,8 @@ export function StudyNotes() {
   );
   const progressYear = month.slice(0, 4);
   const readThisYear = useMemo(
-    () => [...readDays].filter((d) => d.startsWith(progressYear)).length,
-    [readDays, progressYear],
+    () => [...readDays].filter((d) => (planMode ? inPlan(d) : d.startsWith(progressYear))).length,
+    [readDays, progressYear, planMode],
   );
   const streak = useMemo(() => {
     let d = readDays.has(today) ? today : shiftDay(today, -1);
@@ -1011,7 +1030,9 @@ export function StudyNotes() {
     }
     return n;
   }, [readDays, today]);
-  const monthName = new Date(`${month}T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const monthName = planMode
+    ? `${new Date(`${month}T00:00:00`).toLocaleDateString("en-GB", { month: "long" })} · Days ${planDay(month).n}-${planDay(shiftDay(shiftMonth(month, 1), -1)).n}`
+    : new Date(`${month}T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
   return (
     <>
@@ -1077,14 +1098,14 @@ export function StudyNotes() {
 
       {offline && <div className="dash-word-note mb-4">{offline}</div>}
 
-      {early && (
+      {showStart && (
         <div className="journal-start">
           <div className="journal-start-text">
             <span className="eyebrow eyebrow-amber">Where we start</span>
             {client.kind === "member" ? (
               <>
                 <p>
-                  <strong>Day 1 - Genesis 1 - is {dayLabel(STUDY_START)} on your calendar.</strong> {startMessage(todayDay())}
+                  <strong>Day 1 is Genesis 1 - the book&apos;s 1 January reading.</strong> {startMessage()}
                 </p>
                 <p className="journal-start-why">
                   <strong>Why Genesis, in October?</strong> {START_WHY}
@@ -1096,8 +1117,9 @@ export function StudyNotes() {
               </>
             ) : (
               <p>
-                <strong>Genesis sessions go on next year&apos;s calendar - Day 1 is {dayLabel(STUDY_START)}.</strong> Members see
-                each day as it&apos;s written. Your New Testament stays on this year&apos;s dates.
+                <strong>Genesis with the group goes on Day 1 onwards - the 1 January page.</strong> Members go at their own pace
+                and see each day as it&apos;s written. Your New Testament stays on its own dates, kept for members until their
+                reading reaches those days.
               </p>
             )}
           </div>
@@ -1132,7 +1154,7 @@ export function StudyNotes() {
           onDay={(d) => goToDay(d)}
           onPlain={() => {
             // "My journal" from the bin or starred: back to the reading day.
-            if (day === TRASH || day === STARRED) openDay(client.kind === "member" && beforeStart(todayDay()) ? STUDY_START : todayDay());
+            if (day === TRASH || day === STARRED) openDay(planMode ? nextDay : todayDay());
           }}
           onDaniel={() => {
             if (client.studyUrl) showStudy(!window.matchMedia("(max-width: 1100px)").matches);
@@ -1153,8 +1175,10 @@ export function StudyNotes() {
                 <>
                   <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
                     <li>
-                      <strong>Open a day.</strong> {early ? "Day 1 is already open - that's where we start together." : "Today is already open."} Each date is that day&apos;s reading in{" "}
-                      <em>{PLAN.name}</em>.
+                      <strong>Open a day.</strong> {planMode
+                        ? "The day you're up to is already open - start at Day 1 and go at your own pace."
+                        : "Today is already open."}{" "}
+                      Each day is that day&apos;s reading in <em>{PLAN.name}</em>.
                     </li>
                     <li>
                       <strong>Read the passages.</strong> Use the 📖 Bible App link (NIV), or your own copy of the book.
@@ -1258,7 +1282,7 @@ export function StudyNotes() {
             <div className="dash-col-5 dash-note-side" ref={sideRef}>
               <Panel
                 eyebrow="Reading plan"
-                title={calView === "year" ? month.slice(0, 4) : monthName}
+                title={calView === "year" ? (planMode ? "The whole plan" : month.slice(0, 4)) : monthName}
               >
                 <div className="dash-note-calbar">
                   <div className="dash-toggle" role="group" aria-label="Calendar view">
@@ -1273,18 +1297,18 @@ export function StudyNotes() {
                     <button
                       type="button"
                       className="dash-btn dash-btn-ghost dash-note-nav"
-                      onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? -12 : -1))}
+                      onClick={() => setMonth((m) => keepInPlan(shiftMonth(m, calView === "year" ? -12 : -1)))}
                       aria-label={calView === "year" ? "Previous year" : "Previous month"}
                     >
                       ‹
                     </button>
                     <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(today)}>
-                      Today
+                      {planMode ? "My next day" : "Today"}
                     </button>
                     <button
                       type="button"
                       className="dash-btn dash-btn-ghost dash-note-nav"
-                      onClick={() => setMonth((m) => shiftMonth(m, calView === "year" ? 12 : 1))}
+                      onClick={() => setMonth((m) => keepInPlan(shiftMonth(m, calView === "year" ? 12 : 1)))}
                       aria-label={calView === "year" ? "Next year" : "Next month"}
                     >
                       ›
@@ -1293,9 +1317,9 @@ export function StudyNotes() {
                 </div>
                 <div className="dash-read-progress">
                   <span>
-                    <strong>{readThisYear}</strong> of 365 days read in {progressYear}
+                    <strong>{readThisYear}</strong> of 365 days read{planMode ? " · at your own pace" : ` in ${progressYear}`}
                   </span>
-                  {streak > 1 && <span className="dash-read-streak">{streak}-day streak</span>}
+                  {!planMode && streak > 1 && <span className="dash-read-streak">{streak}-day streak</span>}
                   <span className="dash-read-bar" aria-hidden>
                     <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
                   </span>
@@ -1321,7 +1345,7 @@ export function StudyNotes() {
                                 key={d}
                                 type="button"
                                 onClick={() => pickDay(d)}
-                                title={`${dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
+                                title={`${planMode ? dayWithDate(d) : dayLabel(d)}${counts.get(d) ? ` · ${counts.get(d)} notes` : ""}`}
                                 className={`${counts.has(d) || wordDays.has(d) ? "has-notes" : ""} ${readDays.has(d) ? "is-read" : ""} ${days[d]?.starredAt ? "is-starred" : ""} ${
                                   d === day ? "is-selected" : ""
                                 } ${d === today ? "is-today" : ""}`}
@@ -1337,17 +1361,19 @@ export function StudyNotes() {
                 )}
                 {calView === "month" && (
                 <div className="dash-note-cal">
-                  {WEEK.map((w) => (
-                    <div key={w} className="dash-note-cal-head">
-                      {w}
-                    </div>
-                  ))}
-                  {grid.map((d) => {
+                  {/* Members: the plan's days in order (no weekdays - it's not a date). */}
+                  {!planMode &&
+                    WEEK.map((w) => (
+                      <div key={w} className="dash-note-cal-head">
+                        {w}
+                      </div>
+                    ))}
+                  {(planMode ? grid.filter((d) => isSameMonth(d, month)) : grid).map((d) => {
                     const count = counts.get(d) ?? 0;
                     const hasWords = wordDays.has(d);
                     const read = readDays.has(d);
                     const starredDay = Boolean(days[d]?.starredAt);
-                    const reflected = reflections.byDay.has(d);
+                    const reflected = !planMode && reflections.byDay.has(d);
                     const study = studyOn.has(d.slice(5));
                     return (
                       <button
@@ -1357,9 +1383,10 @@ export function StudyNotes() {
                         className={`dash-note-cal-day ${isSameMonth(d, month) ? "" : "is-other"} ${d === today ? "is-today" : ""} ${
                           d === day ? "is-selected" : ""
                         } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""} ${starredDay ? "is-starred" : ""}`}
-                        aria-label={`${dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
+                        aria-label={`${planMode ? dayWithDate(d) : dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
+                        title={planMode ? `In the book: ${bookDate(d)}` : undefined}
                       >
-                        <span>{Number(d.slice(8))}</span>
+                        <span>{planMode ? planDay(d).n : Number(d.slice(8))}</span>
                         {starredDay && <b className="dash-cal-star" aria-label="Starred">★</b>}
                         {study && <i className="dash-cal-study-dot" title={`${client.studyName}: ${studyOn.get(d.slice(5))}`} />}
                         {(count > 0 || hasWords || read || reflected) && (
@@ -1375,7 +1402,10 @@ export function StudyNotes() {
                   })}
                 </div>
                 )}
-                {reflections.byDay.size > 0 && (
+                {planMode && (
+                  <p className="dash-cal-key">Each square is a day of the plan - Day 1 is Genesis 1. The gold square is where you&apos;re up to.</p>
+                )}
+                {!planMode && reflections.byDay.size > 0 && (
                   <p className="dash-cal-key">
                     <span aria-hidden>❧</span> Weekly reflection - open the day to read it
                   </p>
@@ -1435,7 +1465,7 @@ export function StudyNotes() {
                     : day === UNDATED
                     ? "Notes without a day"
                     : [
-                        `Day ${planDay(day).n} of ${planDay(day).of}`,
+                        planMode && inPlan(day) ? `In the book: ${bookDate(day)}` : `Day ${planDay(day).n} of ${planDay(day).of}`,
                         dayPages.length ? `Page ${dayPages.join(", ")}` : "",
                         dayChapters.join(" · "),
                       ]
@@ -1443,7 +1473,15 @@ export function StudyNotes() {
                         .join(" · ")
                 }
                 title={
-                  day === TRASH ? "Recycle bin" : day === STARRED ? "Starred" : day === UNDATED ? "No day set" : dayLabel(day)
+                  day === TRASH
+                    ? "Recycle bin"
+                    : day === STARRED
+                      ? "Starred"
+                      : day === UNDATED
+                        ? "No day set"
+                        : planMode && inPlan(day)
+                          ? `Day ${planDay(day).n} of 365`
+                          : dayLabel(day)
                 }
                 action={
                   isDay(day) ? (
@@ -1468,10 +1506,22 @@ export function StudyNotes() {
                       >
                         📅
                       </button>
-                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, -1))} aria-label="Previous day">
+                      <button
+                        type="button"
+                        className="dash-btn dash-btn-ghost dash-note-nav"
+                        onClick={() => openDay(shiftDay(day, -1))}
+                        disabled={planMode && day <= STUDY_START}
+                        aria-label="Previous day"
+                      >
                         ‹
                       </button>
-                      <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => openDay(shiftDay(day, 1))} aria-label="Next day">
+                      <button
+                        type="button"
+                        className="dash-btn dash-btn-ghost dash-note-nav"
+                        onClick={() => openDay(shiftDay(day, 1))}
+                        disabled={planMode && day >= PLAN_END}
+                        aria-label="Next day"
+                      >
                         ›
                       </button>
                     </div>
@@ -1487,9 +1537,9 @@ export function StudyNotes() {
                   onOpenWord={(w) => openWordResult(w.id, w.day)}
                   studyName={client.studyUrl ? client.studyName : undefined}
                   onOpenStudyDay={(d) => {
-                    // The same date in this year, where the study sits next to their own notes.
+                    // The same page in the plan (members) or this year, where the study sits next to their own notes.
                     setQuery("");
-                    openDay(`${todayDay().slice(0, 4)}-${d.slice(5)}`);
+                    openDay(`${(planMode ? STUDY_START : todayDay()).slice(0, 4)}-${d.slice(5)}`);
                     showStudy();
                   }}
                   onAddVerse={(ref) => {
@@ -1521,7 +1571,7 @@ export function StudyNotes() {
                       <div key={d.day} className="dash-star-day">
                         <button type="button" className="dash-star-day-open" onClick={() => pickDay(d.day)}>
                           <span className="dash-star-day-when">
-                            ★ Day {planDay(d.day).n} · {dayLabel(d.day)}
+                            ★ {dayWithDate(d.day)}
                           </span>
                           <span className="dash-star-day-title">
                             {d.title ||
@@ -1551,7 +1601,7 @@ export function StudyNotes() {
                       <article key={n.id} className="dash-note-trash dash-note-starred">
                         <div className="dash-note-ref">
                           <span className="text-[12px] text-[var(--colour-amber-soft)]">
-                            {n.day ? dayLabel(n.day, { weekday: false }) : "No day"}
+                            {n.day ? label(n.day, { weekday: false }) : "No day"}
                             {passageOf(n) ? ` · ${formatPassage(passageOf(n))}` : ""}
                             {n.page != null ? ` · Page ${n.page}` : ""}
                           </span>
@@ -1597,7 +1647,7 @@ export function StudyNotes() {
                   </div>
                 )}
 
-                {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} onSave={saveVideo} />}
+                {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} dayN={planDay(day).n} onSave={saveVideo} />}
                 {isDay(day) && client.kind === "member" && studyVideo.get(day.slice(5)) && (
                   <DayVideo url={studyVideo.get(day.slice(5))} label={`Watch ${client.studyAuthor ?? "Daniel"}'s session for this day`} />
                 )}
@@ -1664,12 +1714,11 @@ export function StudyNotes() {
                     </button>
                   ))}
 
-                {isDay(day) && client.sharing && heldUntil(day, hold) && studyToday() < (heldUntil(day, hold) as string) && (
+                {isDay(day) && client.sharing && inHold(day, hold) && (
                   <p className="dash-day-held">
-                    🔒 Kept private until{" "}
-                    {new Date(`${heldUntil(day, hold)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}{" "}
-                    - members see your notes on this day from then{days[day]?.video ? " (the video shows to them now)" : ""}. You can
-                    change this on Members.
+                    🔒 Members see your notes on this day when their own reading reaches Day {planDay(day).n}
+                    {holdReaders.length ? ` - ${holdReaders.join(", ")} can read them now` : ""}
+                    {days[day]?.video ? " (the video shows to everyone now)" : ""}. You can change this on Members.
                   </p>
                 )}
 
@@ -1685,8 +1734,8 @@ export function StudyNotes() {
                         <span className="eyebrow eyebrow-amber">{client.studyName}</span>
                         <span className="dash-daniel-sub">
                           {studyOn.has(day.slice(5))
-                            ? studyOn.get(day.slice(5)) || `For ${dayLabel(day, { weekday: false })}`
-                            : `Nothing for ${dayLabel(day, { weekday: false })} yet - see the latest`}
+                            ? studyOn.get(day.slice(5)) || `For ${label(day, { weekday: false })}`
+                            : `Nothing for ${label(day, { weekday: false })} yet - see the latest`}
                         </span>
                       </span>
                       <span className="dash-daniel-toggle">{studyOpen ? "Minimise ▴" : "Open ▾"}</span>
@@ -2008,7 +2057,7 @@ export function StudyNotes() {
                 <div className="dash-note-write">
                   <NoteStarter
                     key={`${day}:${loaded ? 1 : 0}`}
-                    dayText={day === UNDATED ? "No day set" : `Day ${planDay(day).n} · ${dayLabel(day)}`}
+                    dayText={day === UNDATED ? "No day set" : dayWithDate(day)}
                     chapters={starterChapters}
                     page={context.page}
                     passage={dayChapters[dayChapters.length - 1] ?? ""}
@@ -2016,7 +2065,7 @@ export function StudyNotes() {
                     onStart={startLine}
                   />
                   <label className="dash-label" htmlFor="sn-write">
-                    {day === UNDATED ? "Write notes" : `Write for ${dayLabel(day, { weekday: false })}`}
+                    {day === UNDATED ? "Write notes" : `Write for ${label(day, { weekday: false })}`}
                   </label>
                   <GrowingTextarea
                     id="sn-write"
@@ -2071,7 +2120,7 @@ export function StudyNotes() {
         <div className="dash-col-12 dash-tools-row">
           <div className="dash-tools">
             {isDay(day) && (
-              <Panel eyebrow={`Word study · ${dayLabel(day, { weekday: false })}`} title="Study a word">
+              <Panel eyebrow={`Word study · ${label(day, { weekday: false })}`} title="Study a word">
                 <QuickWord
                   day={day}
                   verseHint={verseHint}
@@ -2090,7 +2139,7 @@ export function StudyNotes() {
             )}
 
             {isDay(day) && (
-              <Panel eyebrow={`Names of God · ${dayLabel(day, { weekday: false })}`} title="In this reading">
+              <Panel eyebrow={`Names of God · ${label(day, { weekday: false })}`} title="In this reading">
                 <NamesInReading
                   chapters={starterChapters}
                   namesUrl={client.kind === "member" ? "/study/names" : "/dashboard/names"}

@@ -4,7 +4,10 @@
  * owner (study_days) or a member (member_days), see ./scope.ts.
  *
  *   GET                                   -> { days }
- *   PUT  { day, title, takeaway, shared, video? } -> { day }   (video: owner only, a YouTube link)
+ *   PUT  { day, title, takeaway, shared, video?, videoTo? } -> { day, also? }
+ *        video: owner only, a YouTube link; videoTo: the last day the same
+ *        call covered (up to 30 days on) - it goes on each of those days.
+ *        A new video tells members (their bell, and their phones).
  *   PATCH { day, read: boolean }          -> { day }   tick the day's reading done (or not)
  *   PATCH { day, star: boolean }          -> { day }   star the day as a favourite (or not)
  *
@@ -14,7 +17,9 @@
  */
 import { getDb } from "@/lib/analytics/store";
 import { isDay, type StudyDay } from "@/lib/dashboard/notes";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getSettings } from "./members";
+import { addVideoNotice, pushToMembers } from "./notices";
 import { andMine, mine, mineArgs, pre, preQ, type ScopeOf } from "./scope";
 import { parseYouTube } from "./youtube";
 
@@ -40,6 +45,8 @@ const toDay = (r: Row): StudyDay => ({
   video: r.video ?? null,
 });
 
+const nextDayOf = (d: string) => new Date(Date.parse(`${d}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
 const unavailable = () => Response.json({ error: "Storage isn't available here." }, { status: 503 });
 
 export function daysApi(scopeOf: ScopeOf) {
@@ -54,7 +61,20 @@ export function daysApi(scopeOf: ScopeOf) {
         .bind(...mineArgs(s))
         .all<Row>();
       const hold = s.member ? undefined : (await getSettings(db)).hold;
-      return Response.json({ days: results.map(toDay), ...(s.member ? {} : { hold }) }, { headers: { "cache-control": "no-store" } });
+      // Owner: who may read his held days now (by name, for the day's note).
+      const allow = hold?.allow ?? [];
+      const holdReaders = allow.length
+        ? (
+            await db
+              .prepare(`SELECT name FROM members WHERE id IN (${allow.map(() => "?").join(", ")}) ORDER BY name`)
+              .bind(...allow)
+              .all<{ name: string }>()
+          ).results.map((r) => r.name.split(" ")[0])
+        : [];
+      return Response.json(
+        { days: results.map(toDay), ...(s.member ? {} : { hold, holdReaders }) },
+        { headers: { "cache-control": "no-store" } },
+      );
     } catch (e) {
       console.error("days GET:", e);
       return Response.json({ error: "Couldn't load the days." }, { status: 500 });
@@ -80,7 +100,17 @@ export function daysApi(scopeOf: ScopeOf) {
     const video = videoText || null;
     const vcol = s.member ? "" : ", video";
     const now = Date.now();
+    // One call can cover several days: the same video on each, up to 30 on.
+    const videoTo =
+      setVideo && video && isDay((body as { videoTo?: unknown }).videoTo) ? String((body as { videoTo?: unknown }).videoTo) : null;
+    const rangeDays: string[] = [];
+    if (videoTo && videoTo > body.day) {
+      for (let d = nextDayOf(body.day); d <= videoTo && rangeDays.length < 30; d = nextDayOf(d)) rangeDays.push(d);
+    }
     try {
+      const before = setVideo
+        ? await db.prepare("SELECT video FROM study_days WHERE day = ?1").bind(body.day).first<{ video: string | null }>()
+        : null;
       await db.batch([
         db
           .prepare(
@@ -97,12 +127,52 @@ export function daysApi(scopeOf: ScopeOf) {
           )
           .bind(...mineArgs(s), body.day, title, takeaway, shared, now, ...(setVideo ? [video] : [])),
       ]);
+      // The rest of the call's days: just the video (their own titles kept).
+      for (const d of rangeDays) {
+        await db.batch([
+          db
+            .prepare(
+              "INSERT INTO study_day_versions (day, title, takeaway, shared, video, saved_at) " +
+                "SELECT day, title, takeaway, shared, video, ? FROM study_days WHERE day = ?",
+            )
+            .bind(now, d),
+          db
+            .prepare(
+              "INSERT INTO study_days (day, title, takeaway, shared, updated_at, video) VALUES (?, '', '', 1, ?, ?) " +
+                "ON CONFLICT(day) DO UPDATE SET video = excluded.video, updated_at = excluded.updated_at",
+            )
+            .bind(d, now, video),
+        ]);
+      }
       const row = await db
         .prepare(`SELECT * FROM ${s.days} WHERE day = ?${andMine(s)}`)
         .bind(body.day, ...mineArgs(s))
         .first<Row>();
+      const also = rangeDays.length
+        ? (
+            await db
+              .prepare(`SELECT * FROM study_days WHERE day IN (${rangeDays.map(() => "?").join(", ")})`)
+              .bind(...rangeDays)
+              .all<Row>()
+          ).results.map(toDay)
+        : [];
+      // A new video on a shared day: tell members (bell now; phones in the
+      // background) - not when an existing link is just corrected.
+      if (setVideo && video && shared && (!before?.video || rangeDays.length)) {
+        await addVideoNotice(db, { day: body.day, dayTo: rangeDays.length ? rangeDays[rangeDays.length - 1] : null, video }).catch(
+          (e) => console.error("notice:", e),
+        );
+        const job = pushToMembers(db, process.env.VAPID_PRIVATE_JWK).catch((e) => console.error("video push:", e));
+        try {
+          const { ctx } = await getCloudflareContext({ async: true });
+          ctx.waitUntil(job);
+        } catch {
+          await job;
+        }
+      }
       return Response.json({
         day: row ? toDay(row) : { day: body.day, title, takeaway, shared: Boolean(shared), updatedAt: now },
+        ...(also.length ? { also } : {}),
       });
     } catch (e) {
       console.error("days PUT:", e);

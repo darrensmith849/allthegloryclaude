@@ -1980,6 +1980,8 @@ html:has(.dash-welcome-root),
 /* Month / Year on the left, ‹ Today › together on the right - one row. */
 .dash-note-calbar {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 8px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -3397,6 +3399,58 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 }
 .study-app .study-main { margin: 0; max-width: 1280px; }
 .study-side-brand { display: flex; align-items: center; gap: 10px; }
+/* The bell: what's new (videos from the calls), beside "The Study". */
+.study-side-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.study-bell { position: relative; }
+.study-bell-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.3);
+  background: var(--field);
+  color: var(--colour-ink-soft);
+}
+.study-bell-btn:hover { color: var(--colour-ink-strong); border-color: rgb(var(--gold-rgb) / 0.6); }
+.study-bell-btn.has-new { color: var(--colour-amber); border-color: var(--colour-amber); }
+.study-bell-btn svg { width: 21px; height: 21px; }
+.study-bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--colour-amber);
+  color: var(--on-gold);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 19px;
+  text-align: center;
+}
+.study-bell-panel {
+  position: fixed;
+  z-index: 80;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgb(var(--gold-rgb) / 0.35);
+  background: var(--paper);
+  box-shadow: 0 14px 34px rgba(40, 28, 10, 0.18);
+}
+.study-bell-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.study-bell-item { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--field); border: 1px solid rgb(var(--gold-rgb) / 0.2); }
+.study-bell-item:hover { border-color: rgb(var(--gold-rgb) / 0.6); }
+.study-bell-item strong { font-size: 14px; color: var(--colour-ink-strong); }
+.study-bell-item span { font-size: 12.5px; color: var(--colour-ink-soft); }
+.study-bell-item em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--colour-amber); }
+.study-bell-empty { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--colour-ink-soft); }
+.study-bell-foot { margin-top: 10px; font-size: 12.5px; color: var(--colour-ink-quiet); }
+.study-bell-foot a { color: var(--colour-amber); font-weight: 600; }
+
 .study-side-title { display: block; margin-top: 2px; font-family: var(--font-read), Georgia, serif; font-size: 21px; color: var(--colour-ink-strong); }
 .study-sidebar .dash-theme-switch { display: flex; width: 100%; }
 .study-sidebar .dash-theme-switch button { flex: 1; padding: 5px 6px; }
@@ -4341,6 +4395,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .journal-start-text strong { color: var(--colour-ink-strong); font-weight: 600; }
 .journal-start-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .study-start-text { margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
+/* Your next reading: where it is in the book and the Bible App */
+.study-next-where { margin-top: 4px; font-size: 14px; color: var(--colour-ink-soft); }
 
 /* Panels that fold down to their header (the journal guide) */
 .dash-panel.is-folded .dash-panel-body { display: none; }
@@ -4393,6 +4449,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .session-video-error { flex-basis: 100%; margin-top: 0; }
 .session-video .day-video { margin: 0 0 4px; }
 .session-video-hint { flex-basis: 100%; font-size: 12px; color: var(--colour-ink-quiet); }
+.session-video-upto { display: flex; align-items: center; gap: 8px; flex-basis: 100%; font-size: 13px; color: var(--colour-ink-soft); }
+.session-video .session-video-upto .dash-input { width: 84px; flex: none; }
 
 /* Bible names saved to a day ("Names studied") */
 .name-row-top { display: flex; align-items: center; gap: 8px; }

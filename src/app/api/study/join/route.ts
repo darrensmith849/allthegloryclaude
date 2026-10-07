@@ -9,7 +9,7 @@
  * Who can join is the owner's choice (study_settings.signup): only with an
  * invite link (the default), anyone, or nobody for now.
  */
-import { beforeStart, startMessage } from "@/lib/study/plan";
+import { startMessage } from "@/lib/study/plan";
 import { getDb } from "@/lib/analytics/store";
 import { sendStudyEmail, studyEmail } from "@/lib/study/mail";
 import {
@@ -98,9 +98,7 @@ export async function POST(req: Request) {
       heading: "Welcome to The Study",
       paragraphs: [
         "Your Bible study journal is ready. Each day, open that day's reading, write your notes the way you like, and look up the Hebrew and Greek behind the words.",
-        ...(beforeStart(new Date().toISOString().slice(0, 10))
-          ? [`We start at the very beginning - Day 1, Genesis 1 (1 January 2027 on your calendar). ${startMessage(new Date().toISOString().slice(0, 10))}`]
-          : []),
+        `We start at the very beginning - Day 1, Genesis 1. ${startMessage()}`,
         "Your journal is private to you and kept for good. You can download a copy or delete it any time from your Account page.",
       ],
       button: { label: "Open my journal", url: `${origin}/study` },

@@ -1,7 +1,8 @@
 "use client";
 
-// The Study's front door, in the album flyer's style: today's reading,
-// the owner's notes for today, the member's progress, the reading plan and
+// The Study's front door, in the album flyer's style: the member's next
+// reading (they go at their own pace), the owner's notes for it, their
+// progress, the reading plan and
 // the album.
 
 import Image from "next/image";
@@ -9,11 +10,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { canRead, studyName, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
-import { dayLabel, planDay, shiftDay, todayDay, type StudyDay } from "@/lib/dashboard/notes";
+import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { beforeStart, bibleAppDay, CALLS_NOTE, PLAN, startMessage, START_WHY, STUDY_HEART, STUDY_START } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, startMessage, START_WHY, STUDY_HEART } from "@/lib/study/plan";
 import { ReadAlong } from "@/components/study/read-along";
-import { CatchUp, missedDays } from "@/components/study/catch-up";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { WhyNiv } from "@/components/study/why-niv";
@@ -27,17 +27,23 @@ export default function StudyHome() {
     if (me.loaded && !me.member) router.replace("/the-study");
   }, [me.loaded, me.member, router]);
   const readable = canRead(me);
-  const today = todayDay();
-  // Until everyone starts together on Day 1, the home page points there.
-  const early = beforeStart(today);
-  const focus = early ? STUDY_START : today;
-  const n = planDay(focus).n;
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : null;
   // Effects below key on the id, not the member object (which is replaced
   // when the live check confirms the cached one) - so each loads once.
   const memberId = me.member?.id;
 
-  // The owner's study: is there a day for today's date (any year)?
+  // The member's reading progress: their next reading is the day after the
+  // furthest one they've marked as read (everyone goes at their own pace).
+  const [days, setDays] = useState<StudyDay[]>([]);
+  const [daysLoaded, setDaysLoaded] = useState(false);
+  const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
+  const readCount = useMemo(() => [...read].filter(inPlan).length, [read]);
+  const started = readCount > 0;
+  const focus = nextPage(read);
+  const n = planDay(focus).n;
+  const [justRead, setJustRead] = useState<number | null>(null);
+
+  // The owner's study: is there a day for the member's next reading?
   const [studyToday, setStudyToday] = useState<{ title: string } | null | undefined>(undefined);
   useEffect(() => {
     if (!readable) return;
@@ -92,7 +98,6 @@ export default function StudyHome() {
 
   // Where they left off: the latest day they wrote in or ticked as read.
   const [lastDay, setLastDay] = useState<string | null>(null);
-  const [noteDays, setNoteDays] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     if (!memberId) return;
     try {
@@ -101,7 +106,6 @@ export default function StudyHome() {
         deletedAt: number | null;
       }[];
       const written = notes.filter((n) => n.day && !n.deletedAt).map((n) => n.day as string);
-      setNoteDays(new Set(written));
       const latest = written.sort().pop();
       if (latest) setLastDay((d) => (d && d > latest ? d : latest));
     } catch {
@@ -109,9 +113,6 @@ export default function StudyHome() {
     }
   }, [memberId]);
 
-  // The member's reading progress.
-  const [days, setDays] = useState<StudyDay[]>([]);
-  const [daysLoaded, setDaysLoaded] = useState(false);
   useEffect(() => {
     if (!memberId) return;
     fetch("/api/study/days", { cache: "no-store" })
@@ -124,31 +125,19 @@ export default function StudyHome() {
       })
       .catch(() => {});
   }, [memberId]);
-  const read = useMemo(() => new Set(days.filter((d) => d.readAt).map((d) => d.day)), [days]);
-  const readThisYear = [...read].filter((d) => d.startsWith(focus.slice(0, 4))).length;
-  // Days missed lately (not read and nothing written), since they joined.
-  const joined = me.member ? new Date(me.member.createdAt).toLocaleDateString("en-CA") : today;
-  const missed = useMemo(
-    () => (memberId && daysLoaded ? missedDays(today, joined, new Set([...read, ...noteDays])) : []),
-    [memberId, daysLoaded, today, joined, read, noteDays],
-  );
-  const streak = useMemo(() => {
-    let d = read.has(today) ? today : shiftDay(today, -1);
-    let count = 0;
-    while (read.has(d)) {
-      count++;
-      d = shiftDay(d, -1);
-    }
-    return count;
-  }, [read, today]);
-  async function toggleToday() {
+  // Done with the next reading: tick it, and the next day comes up.
+  async function markRead() {
+    const day = focus;
     const r = await fetch("/api/study/days", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ day: today, read: !read.has(today) }),
+      body: JSON.stringify({ day, read: true }),
     }).catch(() => null);
     const data = r?.ok ? ((await r.json()) as { day?: StudyDay }) : null;
-    if (data?.day) setDays((list) => [...list.filter((x) => x.day !== today), data.day!]);
+    if (data?.day) {
+      setDays((list) => [...list.filter((x) => x.day !== day), data.day!]);
+      setJustRead(planDay(day).n);
+    }
   }
 
   // Ask members once (per device) if they'd like email updates.
@@ -197,14 +186,17 @@ export default function StudyHome() {
 
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">
-        <div className="eyebrow eyebrow-amber">
-          {early ? `Where we start · Day 1 · ${dayLabel(STUDY_START)}` : `Today · Day ${n} of 365 · ${dayLabel(today)}`}
-        </div>
-        <h2 className="study-today-title">{early ? "We start at the beginning - Genesis 1" : "Today's reading"}</h2>
-        {early && (
+        <div className="eyebrow eyebrow-amber">{started ? `Your next reading · Day ${n} of 365` : "Where we start · Day 1"}</div>
+        <h2 className="study-today-title">{started ? `Day ${n}` : "We start at the beginning - Genesis 1"}</h2>
+        {started && (
+          <p className="study-next-where">
+            In the book: {bookDate(focus)} · In the Bible App: Day {n}
+          </p>
+        )}
+        {!started && daysLoaded && (
           <>
             <p className="study-start-text">
-              We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage(today)}
+              We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage()}
             </p>
             <p className="study-start-why">
               <strong>Why Genesis, in October?</strong> {START_WHY}
@@ -232,10 +224,8 @@ export default function StudyHome() {
                   {studyToday === undefined
                     ? "…"
                     : studyToday
-                      ? studyToday.title || (early ? "For Day 1" : "For today's reading")
-                      : early
-                        ? "Day 1 - written as we go"
-                        : "Not written for today yet - see the latest"}
+                      ? studyToday.title || `For Day ${n}`
+                      : `Day ${n} - written as we go`}
                 </em>
               </span>
             </Link>
@@ -245,7 +235,7 @@ export default function StudyHome() {
               <span className="study-today-num">{readable ? 3 : 2}</span>
               <span>
                 <strong>Write your own notes</strong>
-                <em>{early ? "On Day 1 in your journal" : "And study a word from today"}</em>
+                <em>On Day {n} in your journal</em>
               </span>
             </Link>
           ) : (
@@ -265,21 +255,17 @@ export default function StudyHome() {
           <div className="study-progress">
             <div className="study-progress-row">
               <span>
-                <strong>{readThisYear}</strong> of 365 days read{early ? " so far" : ` in ${today.slice(0, 4)}`}
-                {streak > 1 && <span className="dash-read-streak ml-2">{streak}-day streak</span>}
+                <strong>{readCount}</strong> of 365 days read · at your own pace
               </span>
-              {!early && (
-                <button
-                  type="button"
-                  className={`dash-btn dash-btn-ghost dash-note-nav dash-read-btn ${read.has(today) ? "is-read" : ""}`}
-                  onClick={toggleToday}
-                >
-                  {read.has(today) ? "✓ Read today" : "Mark today as read"}
+              {daysLoaded && !read.has(focus) && (
+                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav dash-read-btn" onClick={markRead}>
+                  Mark Day {n} as read
                 </button>
               )}
             </div>
+            {justRead && <p className="dash-word-saved mt-2">✓ Day {justRead} done - Day {n} is next.</p>}
             <span className="dash-read-bar" aria-hidden>
-              <span style={{ width: `${Math.min(100, (readThisYear / 365) * 100)}%` }} />
+              <span style={{ width: `${Math.min(100, (readCount / 365) * 100)}%` }} />
             </span>
           </div>
         )}
@@ -310,22 +296,15 @@ export default function StudyHome() {
         </Link>
       )}
 
-      {lastDay && lastDay !== today && (
+      {lastDay && inPlan(lastDay) && lastDay > focus && (
         <Link href={`/study/journal?day=${lastDay}`} className="study-resume">
           <span>
-            Pick up where you left off · <strong>Day {planDay(lastDay).n}</strong>, {dayLabel(lastDay, { weekday: false })}
+            Pick up where you left off · <strong>Day {planDay(lastDay).n}</strong> · {bookDate(lastDay)}
           </span>
           <span aria-hidden>→</span>
         </Link>
       )}
 
-      {me.member && !early && missed.length > 0 && (
-        <CatchUp
-          missed={missed}
-          hideKey={`atg:study:${me.member.id}:catchupHidden`}
-          onRead={(made) => setDays((list) => [...list.filter((x) => !made.some((m) => m.day === x.day)), ...made])}
-        />
-      )}
 
       {weekly && (
         <section className={`study-weekly study-foldable ${weeklyFolded ? "is-folded" : ""}`}>

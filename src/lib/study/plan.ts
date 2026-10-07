@@ -1,3 +1,5 @@
+import { planDate, planDay } from "@/lib/dashboard/notes";
+
 // The reading plan the study follows: Tyndale's One Year Chronological
 // Bible (NIV). Tyndale's own plan is free in the Bible App (YouVersion) with
 // the same 365 daily readings as the book, and on the web its passages open
@@ -9,20 +11,38 @@
 export const STUDY_HEART =
   "Daniel has a heart to share how he's studying the Bible - the questions he asks himself as he reads, what God is saying to him, and his own study of the Word. It's here as an encouragement: we're all still learning.";
 
-// Everyone starts the plan together at Day 1 (Genesis 1) - 1 January 2027 on
-// the calendar. Daniel's notes go onto each day as he goes, so members can
-// read along early. Until the start, members' home page and journal point at
-// Day 1 rather than today's date. (No start date is named to members - the
+// The plan's pages: Day 1-365 are the 2026 pages, 1 January to 31 December
+// (the book's own dated readings) - whatever today's date is. Everyone goes
+// at their own pace: a member's next reading is the day after the furthest
+// one they've marked as read. Daniel and Reggie's weekly calls go onto the
+// same Day pages, and so do Daniel's 2026 notes - so they carry over to
+// whoever reaches those days. (No start date is named to members - the
 // owner asked not to.)
-export const STUDY_START = "2027-01-01";
-export const beforeStart = (today: string) => today < STUDY_START;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const startMessage = (_today?: string) =>
-  "Daniel's notes appear on each day as he goes, so you can read along now, or start fresh on 1 January.";
+export const STUDY_START = "2026-01-01";
+export const PLAN_END = "2026-12-31";
+export const inPlan = (day: string) => day >= STUDY_START && day <= PLAN_END;
 
-// One line for new visitors (The Study page), or "" once we've started.
-export const startBanner = (today: string) =>
-  today >= STUDY_START ? "" : "We're starting again at Genesis 1, together - join in.";
+// The page for plan day n (1-365).
+export const planPage = (n: number) => planDate(Math.min(365, Math.max(1, Math.round(n))), Number(STUDY_START.slice(0, 4)));
+
+// Where a member is up to: the page after the furthest one marked as read
+// (Day 1 if none yet; stays on Day 365 at the end).
+export function nextPage(readDays: Iterable<string>): string {
+  let furthest = "";
+  for (const d of readDays) if (inPlan(d) && d > furthest) furthest = d;
+  return furthest ? planPage(planDay(furthest).n + 1) : STUDY_START;
+}
+
+// "5 January" - the reading's page in the book.
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+export const bookDate = (day: string) => `${Number(day.slice(8, 10))} ${MONTH_NAMES[Number(day.slice(5, 7)) - 1]}`;
+
+export const startMessage = () =>
+  "Go at your own pace - mark a day as read and your journal moves you on to the next. Daniel's notes appear on each day as he goes.";
+
+// One line for new visitors (The Study page).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const startBanner = (_today?: string) => "We're starting again at Genesis 1, together - join in and go at your own pace.";
 
 // How the videos come: one call a week, as far through the reading as they get.
 export const CALLS_NOTE =

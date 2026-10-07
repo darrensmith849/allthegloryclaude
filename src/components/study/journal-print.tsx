@@ -10,6 +10,7 @@ import { NoteText } from "@/components/dashboard/note-text";
 import type { BibleWord } from "@/lib/dashboard/types";
 import { dayLabel, formatPassage, passageOf, planDay, readingOrder, todayDay, type StudyDay, type StudyNote } from "@/lib/dashboard/notes";
 import { useStudyClient } from "@/lib/study/client";
+import { bookDate, inPlan } from "@/lib/study/plan";
 
 type Range = "month" | "year";
 
@@ -82,7 +83,7 @@ export function JournalPrint({ name }: { name?: string }) {
   const rangeLabel = !prefix
     ? ""
     : range === "month"
-      ? new Date(`${month}-01T12:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+      ? new Date(`${month}-01T12:00:00`).toLocaleDateString("en-GB", client.kind === "member" ? { month: "long" } : { month: "long", year: "numeric" })
       : year;
   const noteCount = book.reduce((a, d) => a + d.notes.length, 0);
 
@@ -157,7 +158,7 @@ export function JournalPrint({ name }: { name?: string }) {
           return (
             <section key={day} className="dash-print-day">
               <div className="dash-print-dayhead">
-                {info?.starredAt ? "★ " : ""}Day {planDay(day).n} · {dayLabel(day)}
+                {info?.starredAt ? "★ " : ""}Day {planDay(day).n} · {client.kind === "member" && inPlan(day) ? bookDate(day) : dayLabel(day)}
               </div>
               {info?.title && <h2>{info.title}</h2>}
               {info?.takeaway && <blockquote>{info.takeaway}</blockquote>}

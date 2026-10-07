@@ -1,5 +1,6 @@
-// Daily reading reminders by Web Push. The push carries no message - the
-// service worker (public/study/sw.js) shows "Day N is ready" itself - so
+// Daily reading reminders (and new-video alerts, ./notices.ts) by Web Push.
+// The push carries no message - the service worker (public/study/sw.js)
+// asks the site what it's for and says so - so
 // nothing personal passes through Google / Apple / Mozilla, and no payload
 // encryption is needed: only the VAPID signature (RFC 8292) proving the
 // push comes from this site. No Next.js imports: the hourly Cron Trigger in
@@ -86,7 +87,7 @@ export function localNow(tz: string, at = new Date()): { hour: number; day: stri
   }
 }
 
-/** Hourly: remind everyone whose chosen hour it is (once a day, and not if they've already read today). */
+/** Hourly: remind everyone whose chosen hour it is (once a day, and not if they've marked a day read today). */
 export async function runReminders(db: D1Like, privateJwk: string | undefined): Promise<{ sent: number; gone: number }> {
   if (!privateJwk) return { sent: 0, gone: 0 };
   const { results } = await db
@@ -100,9 +101,11 @@ export async function runReminders(db: D1Like, privateJwk: string | undefined): 
   for (const r of results) {
     const now = localNow(r.tz);
     if (now.hour !== r.hour || r.last_sent === now.day) continue;
+    // Already marked a day as read today (everyone goes at their own pace)?
+    const sinceMidnight = Date.now() - (now.hour * 60 + new Date().getUTCMinutes()) * 60_000;
     const read = await db
-      .prepare("SELECT 1 AS ok FROM member_days WHERE member_id = ?1 AND day = ?2 AND read_at IS NOT NULL")
-      .bind(r.member_id, now.day)
+      .prepare("SELECT 1 AS ok FROM member_days WHERE member_id = ?1 AND read_at >= ?2 LIMIT 1")
+      .bind(r.member_id, sinceMidnight)
       .first();
     if (read) continue;
     const status = await sendPush(r.endpoint, privateJwk).catch(() => 0);

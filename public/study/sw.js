@@ -1,37 +1,56 @@
-// The Study's service worker - only for the daily reading reminder. It
-// caches nothing and never touches page loads. A reminder push carries no
-// message; this works out which day of the plan it is and says so - or,
-// until everyone starts together at Day 1 on 1 January 2027 (STUDY_START in
-// src/lib/study/plan.ts), just that it's time to read, opening the journal.
-const STUDY_START = Date.UTC(2027, 0, 1);
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-function planDay(d) {
-  const y = d.getFullYear();
-  const n = Math.round((Date.UTC(y, d.getMonth(), d.getDate()) - Date.UTC(y, 0, 1)) / 86400000) + 1;
-  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  return leap && n >= 60 ? n - 1 : n;
-}
+// The Study's service worker - only for notifications. It never caches
+// pages or touches page loads. A push carries no message; this asks the
+// site what it's for: a new video from Daniel and Reggie's call (posted in
+// the last few hours and not shown yet), else the daily reminder - with
+// the day the member is up to (everyone goes at their own pace).
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
+// Which video alerts this device has already shown.
+async function shownBefore(id) {
+  try {
+    const cache = await caches.open("atg-notices");
+    const key = new Request(`/__notice/${encodeURIComponent(id)}`);
+    if (await cache.match(key)) return true;
+    await cache.put(key, new Response("1"));
+  } catch {
+    // no cache - may show twice, which is fine
+  }
+  return false;
+}
+
 self.addEventListener("push", (event) => {
-  const now = new Date();
-  const early = now.getTime() < STUDY_START;
-  const day = planDay(now);
   event.waitUntil(
-    self.registration.showNotification(early ? "Time for today's reading" : `Day ${day} is ready`, {
-      body: early
-        ? "We're reading the Bible from the beginning - open your journal and carry on where you are."
-        : `Today's reading - ${now.getDate()} ${MONTHS[now.getMonth()]}. Open it, read, and write what God shows you.`,
-      icon: "/study/icon-192.png",
-      badge: "/study/favicon.png",
-      tag: "the-study-daily",
-      renotify: true,
-      data: { url: early ? "/study/journal" : "/study" },
-    }),
+    (async () => {
+      let info = null;
+      try {
+        const r = await fetch("/api/study/notices?latest=1", { credentials: "same-origin", cache: "no-store" });
+        if (r.ok) info = await r.json();
+      } catch {
+        // offline - a plain reminder below
+      }
+      const n = info && info.notice;
+      if (n && !(await shownBefore(n.id))) {
+        const days = n.to ? `Days ${n.from}-${n.to}` : `Day ${n.from}`;
+        return self.registration.showNotification(`New video · ${days}`, {
+          body: `Daniel and Reggie's call is up${n.title ? ` - ${n.title}` : ""}. Tap to watch it in your journal.`,
+          icon: "/study/icon-192.png",
+          badge: "/study/favicon.png",
+          tag: `the-study-video-${n.id}`,
+          data: { url: `/study/journal?day=${n.day}` },
+        });
+      }
+      const next = info && info.next;
+      return self.registration.showNotification(next ? `Day ${next} is waiting for you` : "Time for your next reading", {
+        body: "Open your journal - read, and write what God shows you. Go at your own pace.",
+        icon: "/study/icon-192.png",
+        badge: "/study/favicon.png",
+        tag: "the-study-daily",
+        renotify: true,
+        data: { url: "/study/journal" },
+      });
+    })(),
   );
 });
 
@@ -67,8 +86,11 @@ self.addEventListener("notificationclick", (event) => {
   const url = (event.notification.data && event.notification.data.url) || "/study";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      // An open Study window: take it to the day, then bring it forward.
       for (const c of list) {
-        if (c.url.includes("/study") && "focus" in c) return c.focus();
+        if (c.url.includes("/study") && "focus" in c) {
+          return ("navigate" in c ? c.navigate(url).catch(() => c) : Promise.resolve(c)).then((w) => (w || c).focus());
+        }
       }
       return self.clients.openWindow(url);
     }),

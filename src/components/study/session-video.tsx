@@ -2,27 +2,43 @@
 
 // The owner's session video on a journal day: always there on each date -
 // paste the YouTube link and it plays right in the day (and for members on
-// the same day); change or remove it any time.
+// the same day); change or remove it any time. One call usually covers
+// several days: "up to Day N" puts the same video on each of them, and
+// members' bells (and phones) say a new video is up.
 
 import { useState } from "react";
 import { parseYouTube } from "@/lib/study/youtube";
 import { DayVideo } from "./day-video";
 
-export function SessionVideo({ url, onSave }: { url: string | null | undefined; onSave: (url: string) => Promise<boolean> }) {
+export function SessionVideo({
+  url,
+  dayN,
+  onSave,
+}: {
+  url: string | null | undefined;
+  dayN: number;
+  onSave: (url: string, toDay?: number) => Promise<boolean>;
+}) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
+  const [upTo, setUpTo] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save(next: string) {
     if (next && !parseYouTube(next)) return setError("That isn't a YouTube link - copy it from YouTube's Share button.");
+    const to = upTo.trim() ? Number(upTo) : undefined;
+    if (to !== undefined && (!Number.isInteger(to) || to < dayN || to > Math.min(365, dayN + 30))) {
+      return setError(`"Up to Day" should be between Day ${dayN} and Day ${Math.min(365, dayN + 30)} - or leave it empty for just this day.`);
+    }
     setBusy(true);
     setError(null);
-    const ok = await onSave(next);
+    const ok = await onSave(next, to && to > dayN ? to : undefined);
     setBusy(false);
     if (ok) {
       setEditing(false);
       setText("");
+      setUpTo("");
     }
   }
 
@@ -75,6 +91,20 @@ export function SessionVideo({ url, onSave }: { url: string | null | undefined; 
         }}
         aria-label="YouTube link for this day's session"
       />
+      <label className="session-video-upto">
+        <span>This call covered up to Day</span>
+        <input
+          className="dash-input"
+          inputMode="numeric"
+          placeholder={String(dayN)}
+          value={upTo}
+          onChange={(e) => {
+            setUpTo(e.target.value.replace(/[^0-9]/g, "").slice(0, 3));
+            if (error) setError(null);
+          }}
+          aria-label="The last day this call covered"
+        />
+      </label>
       <button type="button" className="dash-btn dash-btn-primary dash-note-nav" disabled={busy || !text.trim()} onClick={() => void save(text.trim())}>
         {busy ? "Saving…" : "Add"}
       </button>
@@ -86,7 +116,9 @@ export function SessionVideo({ url, onSave }: { url: string | null | undefined; 
       {error ? (
         <p className="dash-starter-error session-video-error">{error}</p>
       ) : (
-        <p className="session-video-hint">Members see the video on this day in their journal.</p>
+        <p className="session-video-hint">
+          Members see the video on this day (and every day up to the one you put) in their journal, and their bell tells them it&apos;s up.
+        </p>
       )}
     </div>
   );

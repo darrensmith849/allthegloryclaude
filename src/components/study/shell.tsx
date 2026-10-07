@@ -13,6 +13,7 @@ import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
 import { HashScroll } from "./hash-scroll";
+import { NoticesBell } from "./notices-bell";
 
 export type MeMember = Member & { emailUpdates?: boolean };
 
@@ -153,13 +154,16 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="study-root study-app">
       <aside className="dash-sidebar study-sidebar">
-        <Link href="/study" className="study-side-brand">
-          <Image src="/media/dove-mark.png" alt="" width={40} height={40} className="study-brand-dove" priority />
-          <span>
-            <span className="eyebrow eyebrow-amber block">All The Glory</span>
-            <span className="study-side-title">The Study</span>
-          </span>
-        </Link>
+        <div className="study-side-top">
+          <Link href="/study" className="study-side-brand">
+            <Image src="/media/dove-mark.png" alt="" width={40} height={40} className="study-brand-dove" priority />
+            <span>
+              <span className="eyebrow eyebrow-amber block">All The Glory</span>
+              <span className="study-side-title">The Study</span>
+            </span>
+          </Link>
+          {me.member && <NoticesBell />}
+        </div>
         <ThemeSwitch className="mt-4 study-side-theme" />
         <nav className="study-side-nav" aria-label="The Study" ref={navRef} onScroll={markNavEnd}>
           <Suspense fallback={<NavLinks nav={nav} pathname={pathname} daniel={false} navRef={navRef} onMoved={markNavEnd} />}>

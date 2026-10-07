@@ -10,7 +10,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/analytics/store";
 import { chapterLabel, dayLabel, isDay, passageOf, planDay } from "@/lib/dashboard/notes";
-import { isHeld } from "@/lib/study/hold";
+import { inHold } from "@/lib/study/hold";
 import { getSettings } from "@/lib/study/members";
 import { bibleAppDay, STUDY_HEART } from "@/lib/study/plan";
 
@@ -46,8 +46,8 @@ const load = cache(async (day: string): Promise<DayPreview | null> => {
     db.prepare("SELECT 1 AS n FROM study_words WHERE day = ?1 AND deleted_at IS NULL LIMIT 1").bind(day).first(),
   ]);
   // Same rule as the reader: a day shows only with shared notes or words,
-  // and not while it's held back until next year.
-  if (info?.shared === 0 || isHeld(day, settings.hold)) return null;
+  // and never a held day (those are for members as they reach them).
+  if (info?.shared === 0 || inHold(day, settings.hold)) return null;
   if (!refs.length && !words) return null;
   const chapters: string[] = [];
   for (const r of refs) {
