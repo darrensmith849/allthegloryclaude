@@ -2038,14 +2038,37 @@ html:has(.dash-welcome-root),
 .dash-note-cal.is-plan .dash-note-cal-day { height: 56px; gap: 1px; }
 .dash-cal-book { font-size: 10.5px; line-height: 1.1; color: var(--colour-ink-quiet); white-space: nowrap; }
 .dash-note-cal-day.is-selected .dash-cal-book { color: var(--on-gold); opacity: 0.85; }
-/* Where the member is up to: a gold ring (the open day is filled gold). */
+/* Members' plan: days read are solid gold (with a tick) so progress builds
+   up in gold; where they're up to has a gold outline; the day that's open
+   has a dark ring - on a gold square or a plain one. */
+.dash-note-cal.is-plan .dash-note-cal-day.is-selected:not(.is-read) {
+  background: transparent;
+  color: var(--colour-ink);
+  border-color: transparent;
+}
+.dash-note-cal.is-plan .dash-note-cal-day.is-selected:not(.is-read) .dash-cal-book { color: var(--colour-ink-quiet); opacity: 1; }
+.dash-note-cal.is-plan .dash-note-cal-day.is-selected:not(.is-read) .dash-cal-study-dot { background: var(--colour-amber); }
+.dash-note-cal.is-plan .dash-note-cal-day.is-selected:not(.is-read) .dash-cal-star { color: var(--colour-amber); }
+.dash-note-cal.is-plan .dash-note-cal-day.is-read,
+.dash-note-cal.is-plan .dash-note-cal-day.is-read:hover {
+  background: var(--colour-amber);
+  border-color: var(--colour-amber);
+  color: var(--on-gold);
+}
+.dash-note-cal.is-plan .dash-note-cal-day.is-read .dash-cal-book,
+.dash-note-cal.is-plan .dash-note-cal-day.is-read em { color: var(--on-gold); opacity: 0.9; }
+.dash-note-cal.is-plan .dash-note-cal-day.is-read .dash-cal-study-dot { background: var(--on-gold); box-shadow: none; }
 .dash-note-cal.is-plan .dash-note-cal-day.is-today { border: 2px solid var(--colour-amber); }
-.dash-note-cal.is-plan .dash-note-cal-day.is-today.is-selected { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--colour-amber); }
-.dash-cal-key-plan { flex-wrap: wrap; gap: 6px 8px; }
+.dash-note-cal.is-plan .dash-note-cal-day.is-selected { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--colour-ink-strong); z-index: 1; }
+.dash-note-year.is-plan .dash-note-mini-grid .is-read { background: var(--colour-amber); }
+.dash-cal-key-plan { flex-wrap: wrap; gap: 6px 16px; }
+.dash-cal-key-item { display: inline-flex; align-items: center; gap: 7px; }
+.dash-cal-key-read,
 .dash-cal-key-upto,
 .dash-cal-key-open { display: inline-block; width: 16px; height: 16px; border-radius: 5px; flex: none; }
+.dash-cal-key-read { background: var(--colour-amber); }
 .dash-cal-key-upto { border: 2px solid var(--colour-amber); }
-.dash-cal-key-open { margin-left: 10px; background: var(--colour-amber); }
+.dash-cal-key-open { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--colour-ink-strong); margin: 0 3px; }
 @media (max-width: 360px) {
   .dash-note-cal.is-plan { gap: 2px; }
   .dash-cal-book { font-size: 9.5px; letter-spacing: -0.02em; }

@@ -1325,7 +1325,7 @@ export function StudyNotes() {
                   </span>
                 </div>
                 {calView === "year" && (
-                  <div className="dash-note-year">
+                  <div className={`dash-note-year ${planMode ? "is-plan" : ""}`}>
                     {Array.from({ length: 12 }, (_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, "0")}-01`).map((m) => (
                       <div key={m} className="dash-note-mini">
                         <button
@@ -1410,8 +1410,15 @@ export function StudyNotes() {
                 {planMode && (
                   <>
                   <p className="dash-cal-key dash-cal-key-plan">
-                    <span className="dash-cal-key-upto" aria-hidden /> Where you&apos;re up to
-                    <span className="dash-cal-key-open" aria-hidden /> The day that&apos;s open
+                    <span className="dash-cal-key-item">
+                      <span className="dash-cal-key-read" aria-hidden /> Read
+                    </span>
+                    <span className="dash-cal-key-item">
+                      <span className="dash-cal-key-upto" aria-hidden /> Where you&apos;re up to
+                    </span>
+                    <span className="dash-cal-key-item">
+                      <span className="dash-cal-key-open" aria-hidden /> The day that&apos;s open
+                    </span>
                   </p>
                   <p className="dash-cal-key">Each square is a day of the plan, with its page in the book underneath. Day 1 is Genesis 1.</p>
                   </>
