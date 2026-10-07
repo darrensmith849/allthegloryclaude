@@ -141,7 +141,7 @@ export default function ContactPage() {
           >
             <div
               aria-hidden="true"
-              className="absolute inset-0 -m-10 rounded-full blur-3xl opacity-55"
+              className="pointer-events-none absolute inset-0 -m-10 rounded-full blur-3xl opacity-55"
               style={{
                 background:
                   "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.55), rgba(216,178,90,0.12) 55%, transparent 75%)",
@@ -156,7 +156,7 @@ export default function ContactPage() {
               className="relative object-contain"
             />
           </motion.div>
-          <div className="eyebrow mb-4">Contact</div>
+          <div className="eyebrow mb-4 relative">Contact</div>
           <h1 className="font-display text-4xl md:text-6xl font-normal text-white tracking-tight mb-4">
             Get in touch
           </h1>

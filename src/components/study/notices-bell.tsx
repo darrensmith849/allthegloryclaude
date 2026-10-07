@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface Notice {
   id: string;
@@ -37,6 +38,7 @@ export function NoticesBell() {
   const [at, setAt] = useState<{ top: number; left: number; width: number } | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const btn = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
 
   const load = useCallback(() => {
     fetch("/api/study/notices", { cache: "no-store" })
@@ -62,7 +64,8 @@ export function NoticesBell() {
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!box.current?.contains(t) && !panel.current?.contains(t)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     const onScroll = () => setOpen(false);
@@ -119,8 +122,10 @@ export function NoticesBell() {
         </svg>
         {unseen > 0 && <span className="study-bell-count">{unseen > 9 ? "9+" : unseen}</span>}
       </button>
-      {open && (
+      {open &&
+        createPortal(
         <div
+          ref={panel}
           className="study-bell-panel"
           role="dialog"
           aria-label="What's new"
@@ -155,8 +160,12 @@ export function NoticesBell() {
               </Link>
             )}
           </p>
-        </div>
-      )}
+        </div>,
+          // Over the whole page - the menu column is its own layer, so a panel
+          // inside it went under the cards beside it. (Inside .study-root so
+          // it keeps the light / dark colours.)
+          box.current?.closest(".study-root") ?? document.body,
+        )}
     </div>
   );
 }

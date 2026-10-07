@@ -46,7 +46,7 @@ export const startBanner = (_today?: string) => "We're starting again at Genesis
 
 // How the videos come: one call a week, as far through the reading as they get.
 export const CALLS_NOTE =
-  "Daniel and Reggie meet on a call every Monday and go through as much of the reading as they can - so the videos come weekly, not daily.";
+  "Daniel and Reggie meet on a call once or twice a week and go through as much of the reading as they can - so the videos come weekly, not daily.";
 
 export const START_WHY =
   "We've already been through the whole Bible - and we want to start it again, from the very beginning, together.";

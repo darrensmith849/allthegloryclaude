@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { fireTrack } from "@/lib/track-event";
+import { useTucked } from "./use-tucked";
 
 // Log a "played the opening song" event once per session.
 function logHeroPlay() {
@@ -42,6 +43,9 @@ export default function HeroMusicPlayer() {
   const [started, setStarted] = useState(false); // hides the "tap me" pulse once it has ever played
 
   const hidden = !!pathname && (pathname.startsWith("/dashboard") || pathname.startsWith("/study"));
+  // Phones: tucked away once scrolled - unless the song is playing, so it
+  // can always be paused.
+  const tucked = useTucked() && !playing;
 
   const optedOut = useCallback(() => {
     try {
@@ -127,7 +131,8 @@ export default function HeroMusicPlayer() {
         onClick={toggle}
         aria-label={playing ? "Pause music" : "Play the album’s opening song"}
         title={playing ? "Pause" : "Play ‘John 19:30’"}
-        className="hero-music-btn"
+        className={`hero-music-btn ${tucked ? "is-tucked" : ""}`}
+        tabIndex={tucked ? -1 : undefined}
       >
         {!started && <span className="hero-music-ping" aria-hidden="true" />}
         {playing ? (

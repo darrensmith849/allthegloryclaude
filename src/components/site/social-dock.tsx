@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { site } from "@/content/site";
 import type { ReactNode } from "react";
 import { fireLinkClick } from "@/lib/track-event";
+import { useTucked } from "./use-tucked";
 
 /** Inline SVG icons — same glyphs as the painted footer's social row,
  *  so the dock and the footer read as the same iconography rather than
@@ -112,6 +113,7 @@ function Item({
 
 export default function SocialDock() {
   const pathname = usePathname();
+  const tucked = useTucked();
   // Hidden on /dashboard (private app chrome), /album (music page -
   // the artist asked not to show socials there), and /press (unlisted
   // press-kit landing read as a standalone share link).
@@ -133,7 +135,7 @@ export default function SocialDock() {
     "https://music.apple.com/search?term=" +
       encodeURIComponent("All The Glory From Darkness To Light");
   return (
-    <div className="social-dock-bottom">
+    <div className={`social-dock-bottom ${tucked ? "is-tucked" : ""}`} aria-hidden={tucked || undefined}>
       {/* Ordered longest word-mark → shortest, so the desktop column
           tapers visually as you read down (Apple Music at top, Spotify
           at bottom). Mobile icons still render in source order, which

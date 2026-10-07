@@ -288,7 +288,7 @@ video::-webkit-media-controls-overlay-play-button {
   border: 1px solid var(--colour-amber-soft);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  transition: color .25s ease, background .25s ease, border-color .25s ease, transform .25s ease;
+  transition: color .25s ease, background .25s ease, border-color .25s ease, transform .25s ease, opacity .3s ease;
 }
 .hero-music-btn:hover {
   color: var(--colour-bg);
@@ -723,3 +723,9 @@ input[type="radio"]:not(:disabled),
 select:not(:disabled),
 label:has(> input[type="checkbox"]:not(:disabled)),
 label:has(> input[type="radio"]:not(:disabled)) { cursor: pointer; }
+
+/* Phones: the floating socials and play button tuck away once the page is
+   scrolled, so they never sit over text or form fields (src/components/site/use-tucked.ts). */
+.social-dock-bottom { transition: opacity .3s ease, transform .3s ease; }
+.social-dock-bottom.is-tucked,
+.hero-music-btn.is-tucked { opacity: 0; transform: translateY(14px); pointer-events: none; }

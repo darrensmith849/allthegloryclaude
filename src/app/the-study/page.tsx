@@ -200,7 +200,7 @@ export default function TheStudyPage() {
           <div className="relative mx-auto mb-6 w-[clamp(130px,18vw,180px)] aspect-square">
             <div
               aria-hidden="true"
-              className="absolute inset-0 -m-10 rounded-full blur-3xl opacity-55"
+              className="pointer-events-none absolute inset-0 -m-10 rounded-full blur-3xl opacity-55"
               style={{
                 background:
                   "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.55), rgba(216,178,90,0.12) 55%, transparent 75%)",
@@ -208,7 +208,7 @@ export default function TheStudyPage() {
             />
             <Image src="/media/logo-dove.png" alt="" fill priority sizes="180px" className="relative object-contain" />
           </div>
-          <div className="eyebrow eyebrow-amber mb-4">The Study</div>
+          <div className="eyebrow eyebrow-amber mb-4 relative">The Study</div>
           <h1 className="font-display text-4xl md:text-6xl font-normal text-white tracking-tight mb-5">
             Read through the Bible in the order it happened.
           </h1>
