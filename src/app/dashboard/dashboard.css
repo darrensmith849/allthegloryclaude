@@ -2038,6 +2038,14 @@ html:has(.dash-welcome-root),
 .dash-note-cal.is-plan .dash-note-cal-day { height: 56px; gap: 1px; }
 .dash-cal-book { font-size: 10.5px; line-height: 1.1; color: var(--colour-ink-quiet); white-space: nowrap; }
 .dash-note-cal-day.is-selected .dash-cal-book { color: var(--on-gold); opacity: 0.85; }
+/* Where the member is up to: a gold ring (the open day is filled gold). */
+.dash-note-cal.is-plan .dash-note-cal-day.is-today { border: 2px solid var(--colour-amber); }
+.dash-note-cal.is-plan .dash-note-cal-day.is-today.is-selected { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--colour-amber); }
+.dash-cal-key-plan { flex-wrap: wrap; gap: 6px 8px; }
+.dash-cal-key-upto,
+.dash-cal-key-open { display: inline-block; width: 16px; height: 16px; border-radius: 5px; flex: none; }
+.dash-cal-key-upto { border: 2px solid var(--colour-amber); }
+.dash-cal-key-open { margin-left: 10px; background: var(--colour-amber); }
 @media (max-width: 360px) {
   .dash-note-cal.is-plan { gap: 2px; }
   .dash-cal-book { font-size: 9.5px; letter-spacing: -0.02em; }

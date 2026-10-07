@@ -1385,7 +1385,6 @@ export function StudyNotes() {
                           d === day ? "is-selected" : ""
                         } ${count || hasWords ? "has-notes" : ""} ${read ? "is-read" : ""} ${study ? "has-study" : ""} ${starredDay ? "is-starred" : ""}`}
                         aria-label={`${planMode ? dayWithDate(d) : dayLabel(d)}${count ? `, ${count} notes` : ""}${hasWords ? ", words studied" : ""}${read ? ", read" : ""}`}
-                        title={planMode ? `In the book: ${bookDate(d)}` : undefined}
                       >
                         <span>{planMode ? planDay(d).n : Number(d.slice(8))}</span>
                         {planMode && (
@@ -1409,10 +1408,13 @@ export function StudyNotes() {
                 </div>
                 )}
                 {planMode && (
-                  <p className="dash-cal-key">
-                    Each square is a day of the plan, with its page in the book underneath - Day 1 is Genesis 1. The gold square is
-                    where you&apos;re up to.
+                  <>
+                  <p className="dash-cal-key dash-cal-key-plan">
+                    <span className="dash-cal-key-upto" aria-hidden /> Where you&apos;re up to
+                    <span className="dash-cal-key-open" aria-hidden /> The day that&apos;s open
                   </p>
+                  <p className="dash-cal-key">Each square is a day of the plan, with its page in the book underneath. Day 1 is Genesis 1.</p>
+                  </>
                 )}
                 {!planMode && reflections.byDay.size > 0 && (
                   <p className="dash-cal-key">
