@@ -250,7 +250,9 @@ function Journal() {
     }
     setFilling(true);
     setFillNote(null);
-    try {
+    // Two steps, so it feels quick: the Hebrew / Greek word, meaning and
+    // verses come back in a second; the written reflection follows.
+    const ask = async (quick: boolean) => {
       const r = await fetch(client.fillApi, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -259,13 +261,17 @@ function Journal() {
           reference: draft.reference,
           pick: opts.pick,
           only: mode === "switch" ? opts.want : undefined,
+          quick,
         }),
       });
       if (!r.ok) {
         const err = (await r.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? String(r.status));
       }
-      const data = (await r.json()) as WordFill;
+      return (await r.json()) as WordFill & { pending?: boolean };
+    };
+    try {
+      const data = await ask(true);
       const fetched: Slots = { hebrew: slotFrom(data.hebrew), greek: slotFrom(data.greek) };
 
       let next: Slots;
@@ -291,6 +297,31 @@ function Journal() {
       }));
       setFillNote(next[target] ? (data.note ?? null) : noneFound(target));
       setShowDetails(true);
+      if (data.pending && next[target]) {
+        setFilling(false);
+        setFillNote("✍️ Writing the reflection - it'll appear here in a moment. You can carry on.");
+        const full = await ask(false).catch(() => null);
+        if (!full) {
+          setFillNote("Couldn't write the reflection this time - tap Fill it in again, or write your own.");
+          return;
+        }
+        const done = slotFrom(target === "hebrew" ? full.hebrew : full.greek);
+        // Only fill what's still as the quick answer left it (keep any edits).
+        setSlots((sl) => ({ ...sl, ...(done ? { [target]: done } : {}) }));
+        setDraft((d) => {
+          if (d.word.trim() !== word || d.language !== target || !done) return d;
+          const was = next[target];
+          return {
+            ...d,
+            application: d.application || done.application,
+            originalMeaning: d.originalMeaning === (was?.meaning ?? "") ? done.meaning : d.originalMeaning,
+            meaningSource: d.originalMeaning === (was?.meaning ?? "") ? done.meaningSource : d.meaningSource,
+            keyVerses: JSON.stringify(d.keyVerses) === JSON.stringify(was?.keyVerses ?? []) ? done.keyVerses : d.keyVerses,
+            englishMeaning: d.englishMeaning === (data.englishMeaning || "") || !d.englishMeaning ? full.englishMeaning || d.englishMeaning : d.englishMeaning,
+          };
+        });
+        setFillNote(full.note ?? null);
+      }
     } catch (e) {
       const msg = e instanceof Error && !/^\d+$/.test(e.message) ? e.message : "";
       setFillNote(msg || "Couldn't fill it in just now - check your connection and try again.");

@@ -19,6 +19,7 @@
 //    text and the first verses, and the reflection is left for the user.
 
 import { NextResponse } from "next/server";
+import { getDb } from "@/lib/analytics/store";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAllStrongs, searchStrongs, StrongsEntry } from "@/lib/dashboard/strongs";
 import {
@@ -516,18 +517,40 @@ function goodLife(s: string): { text: string; cited: boolean } {
 
 // opts.ai false skips the AI writing (e.g. a member's daily allowance is
 // used up): the lexicon meaning and verses still come back, with aiNote.
+// A finished fill is remembered (word + verse + choice), so the next person
+// to look up the same word on the same verse gets it at once. Kept 60 days.
+async function cacheDb() {
+  return getDb().catch(() => null);
+}
+const cacheKey = (word: string, reference: string, pick: string, only: string) =>
+  [word.toLowerCase(), reference.toLowerCase().replace(/\s+/g, " "), pick, only].join("|");
+
+// quick: everything except the AI-written reflection (lexicon meaning, verses,
+// dictionary), which takes a second - the reflection follows in a second call.
 export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: string } = {}) {
   const body = (await req.json().catch(() => ({}))) as {
     word?: unknown;
     reference?: unknown;
     pick?: unknown;
     only?: unknown;
+    quick?: unknown;
   };
+  const quick = body.quick === true;
   const word = String(body.word ?? "").trim().slice(0, 80);
   const reference = String(body.reference ?? "").trim().slice(0, 80);
   const pick = String(body.pick ?? "").trim().toUpperCase();
   const onlyArg = String(body.only ?? "");
   if (!word) return NextResponse.json({ error: "word is required" }, { status: 400 });
+  const key = cacheKey(word, reference, pick, onlyArg);
+  const cdb = await cacheDb();
+  if (cdb) {
+    const hit = await cdb
+      .prepare("SELECT json FROM word_fill_cache WHERE key = ?1 AND created_at > ?2")
+      .bind(key, Date.now() - 60 * 86_400_000)
+      .first<{ json: string }>()
+      .catch(() => null);
+    if (hit) return NextResponse.json({ ...(JSON.parse(hit.json) as WordFill), cached: true });
+  }
 
   const ranked = rankCandidates(word);
   const lists: Record<WordLanguage, StrongsEntry[]> = { hebrew: ranked.hebrew, greek: ranked.greek };
@@ -579,7 +602,8 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
   // Writing.
   let written: Written | null = null;
   let note: string | undefined;
-  if (research.length && opts.ai === false) note = opts.aiNote;
+  if (research.length && quick) note = undefined;
+  else if (research.length && opts.ai === false) note = opts.aiNote;
   else if (research.length) {
     const prompt = researchPrompt(word, reference, senses, research);
     const key = process.env.ANTHROPIC_API_KEY;
@@ -651,6 +675,18 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
   if (!(primary === "hebrew" ? hebrew : greek)) primary = primary === "hebrew" ? "greek" : "hebrew";
 
   const wroteLife = Boolean(hebrew?.application || greek?.application);
+  if (quick) {
+    // The reflection is on its way (a second call) - say so, not "couldn't".
+    return NextResponse.json({
+      primary,
+      hebrew,
+      greek,
+      englishMeaning: dictionaryText(senses),
+      ai: false,
+      pending: Boolean(research.length) && opts.ai !== false,
+      note: !hebrew && !greek ? `Couldn't find “${word}” in Strong's. Try the singular form, or a Strong's number like H2617.` : opts.ai === false ? opts.aiNote : undefined,
+    });
+  }
   const result: WordFill = {
     primary,
     hebrew,
@@ -665,5 +701,12 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
           ? undefined
           : "Couldn't write the reflection this time - tap Fill it in again, or write your own."),
   };
+  if (cdb && wroteLife) {
+    await cdb
+      .prepare("INSERT INTO word_fill_cache (key, json, created_at) VALUES (?1, ?2, ?3) ON CONFLICT(key) DO UPDATE SET json = excluded.json, created_at = excluded.created_at")
+      .bind(key, JSON.stringify(result), Date.now())
+      .run()
+      .catch(() => {});
+  }
   return NextResponse.json(result);
 }

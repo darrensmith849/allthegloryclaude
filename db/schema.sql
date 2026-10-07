@@ -500,3 +500,11 @@ CREATE TABLE IF NOT EXISTS study_notices (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_study_notices_created ON study_notices(created_at);
+
+-- Finished word look-ups (Study a word), so the same word on the same verse
+-- comes back at once (src/lib/dashboard/word-fill.ts). Kept 60 days.
+CREATE TABLE IF NOT EXISTS word_fill_cache (
+  key        TEXT PRIMARY KEY,   -- word|reference|pick|only
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

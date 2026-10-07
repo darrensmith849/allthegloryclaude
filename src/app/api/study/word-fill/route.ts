@@ -28,8 +28,10 @@ export async function POST(req: Request) {
     .catch(() => ({ results: [] as { who: string; n: number }[] }));
   const used = (who: string) => Number(results.find((r) => r.who === who)?.n ?? 0);
   const ai = used(member.id) < MEMBER_DAILY && used("*members") < MEMBERS_DAILY;
+  // The quick first answer (no AI) doesn't count towards the allowance.
+  const quick = ((await req.clone().json().catch(() => ({}))) as { quick?: unknown }).quick === true;
 
-  if (ai) {
+  if (ai && !quick) {
     const bump = (who: string) =>
       db
         .prepare("INSERT INTO ai_usage (day, who, n) VALUES (?1, ?2, 1) ON CONFLICT(day, who) DO UPDATE SET n = n + 1")
