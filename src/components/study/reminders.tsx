@@ -89,6 +89,8 @@ export function Reminders({
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) as { reminders?: { endpoint: string; hour: number }[]; publicKey?: string } | null;
       setPublicKey(data?.publicKey ?? "");
+      // Turned down before: the phone won't ask again - say how to allow it.
+      if (Notification.permission === "denied") setMessage(blockedHelp());
       const reg = await navigator.serviceWorker.getRegistration(target.scope);
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
@@ -132,11 +134,7 @@ export function Reminders({
         return;
       }
       if (permission !== "granted") {
-        setMessage(
-          /iPhone|iPad|iPod/.test(navigator.userAgent)
-            ? `Notifications are off for ${target.app} - turn them on in your iPhone's Settings → Notifications → ${target.app}, then tap Turn on again.`
-            : "Notifications are blocked for this site - allow them in your browser or phone settings, then try again.",
-        );
+        setMessage(blockedHelp());
         return;
       }
       const reg = await navigator.serviceWorker.register(target.sw, { scope: target.scope });
@@ -153,6 +151,13 @@ export function Reminders({
     } finally {
       setBusy(false);
     }
+  }
+
+  // How to allow notifications once they've been turned down.
+  function blockedHelp(): string {
+    return /iPhone|iPad|iPod/.test(navigator.userAgent)
+      ? `Your iPhone has notifications off for ${target.app}. Open the iPhone's Settings → Notifications → ${target.app}, turn on Allow Notifications, then come back and tap Turn on reminders. Not in that list? Delete the ${target.app} icon from your Home Screen and add it again from Safari (Share → Add to Home Screen, with "Open as Web App" on).`
+      : "Notifications are blocked for this site. Click the icon just left of the web address → Notifications → Allow, reload the page, then tap Turn on reminders.";
   }
 
   async function turnOff() {
