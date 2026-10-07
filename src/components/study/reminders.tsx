@@ -1,9 +1,11 @@
 "use client";
 
 // "Remind me each day": a notification on this phone or computer at the
-// time the member picks - "Day 277 is ready". Web Push via the service
-// worker at /study/sw.js; on iPhone it works once The Study is added to the
-// Home Screen (iOS 16.4+), so this explains that when it's needed.
+// time the member picks - "Day 5 is waiting for you". Web Push via the
+// service worker at /study/sw.js; on iPhone it works once The Study is added
+// to the Home Screen (iOS 16.4+), so this explains that when it's needed.
+// Daniel's dashboard uses the same switch with its own worker and API
+// (target = DASHBOARD below).
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -38,7 +40,33 @@ function activated(reg: ServiceWorkerRegistration): Promise<void> {
 
 type Support = "checking" | "yes" | "install" | "old-ios" | "no";
 
-export function Reminders({ compact = false }: { compact?: boolean }) {
+interface Target {
+  api: string;
+  sw: string;
+  scope: string;
+  app: string; // as it's named in the phone's Settings → Notifications
+  settings: string; // where the full switch lives
+}
+const STUDY: Target = { api: "/api/study/reminders", sw: "/study/sw.js", scope: "/study/", app: "The Study", settings: "/study/account#reminder" };
+export const DASHBOARD: Target = {
+  api: "/api/owner-reminders",
+  sw: "/dashboard-sw.js",
+  scope: "/dashboard/",
+  app: "ATG Dashboard",
+  settings: "/dashboard/reminders",
+};
+
+export function Reminders({
+  compact = false,
+  target = STUDY,
+  hideWhenOn = false,
+  installGuide,
+}: {
+  compact?: boolean;
+  target?: Target;
+  hideWhenOn?: boolean;
+  installGuide?: React.ReactNode;
+}) {
   const [support, setSupport] = useState<Support>("checking");
   const [endpoint, setEndpoint] = useState<string | null>(null);
   const [hour, setHour] = useState(7);
@@ -57,11 +85,11 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
     }
     setSupport("yes");
     void (async () => {
-      const data = (await fetch("/api/study/reminders", { cache: "no-store" })
+      const data = (await fetch(target.api, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) as { reminders?: { endpoint: string; hour: number }[]; publicKey?: string } | null;
       setPublicKey(data?.publicKey ?? "");
-      const reg = await navigator.serviceWorker.getRegistration("/study/");
+      const reg = await navigator.serviceWorker.getRegistration(target.scope);
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
         setEndpoint(sub.endpoint);
@@ -77,7 +105,7 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
   async function save(nextHour: number, sub?: PushSubscription | null) {
     const ep = sub?.endpoint ?? endpoint;
     if (!ep) return false;
-    const r = await fetch("/api/study/reminders", {
+    const r = await fetch(target.api, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ endpoint: ep, hour: nextHour, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Johannesburg" }),
@@ -93,12 +121,12 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
       if (permission !== "granted") {
         setMessage(
           /iPhone|iPad|iPod/.test(navigator.userAgent)
-            ? "Notifications are off for The Study - turn them on in your iPhone's Settings → Notifications → The Study, then tap Turn on again."
+            ? `Notifications are off for ${target.app} - turn them on in your iPhone's Settings → Notifications → ${target.app}, then tap Turn on again.`
             : "Notifications are blocked for this site - allow them in your browser or phone settings, then try again.",
         );
         return;
       }
-      const reg = await navigator.serviceWorker.register("/study/sw.js", { scope: "/study/" });
+      const reg = await navigator.serviceWorker.register(target.sw, { scope: target.scope });
       await activated(reg);
       const sub =
         (await reg.pushManager.getSubscription()) ??
@@ -117,12 +145,12 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
   async function turnOff() {
     setBusy(true);
     try {
-      await fetch("/api/study/reminders", {
+      await fetch(target.api, {
         method: "DELETE",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ endpoint }),
       }).catch(() => {});
-      const reg = await navigator.serviceWorker.getRegistration("/study/");
+      const reg = await navigator.serviceWorker.getRegistration(target.scope);
       await (await reg?.pushManager.getSubscription())?.unsubscribe().catch(() => {});
       setOn(false);
       setEndpoint(null);
@@ -139,7 +167,7 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
 
   async function test() {
     setMessage(null);
-    const r = await fetch("/api/study/reminders", {
+    const r = await fetch(target.api, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ endpoint, test: true }),
@@ -151,11 +179,11 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
   if (support === "checking") return null;
   if (support === "install") {
     return compact ? (
-      <Link href="/study/account#reminder" className="study-remind-link">
+      <Link href={target.settings} className="study-remind-link">
         🔔 Get a daily reminder on your phone →
       </Link>
     ) : (
-      <IosInstallGuide forReminders />
+      (installGuide ?? <IosInstallGuide forReminders />)
     );
   }
   if (support === "old-ios") {
@@ -171,9 +199,10 @@ export function Reminders({ compact = false }: { compact?: boolean }) {
     );
   }
   // On the home page: a one-line switch, or a quiet note once it's on.
+  if (on && hideWhenOn) return null;
   if (compact && on) {
     return (
-      <Link href="/study/account#reminder" className="study-remind-on">
+      <Link href={target.settings} className="study-remind-on">
         🔔 Daily reminder on at {hourLabel(hour)} · change
       </Link>
     );

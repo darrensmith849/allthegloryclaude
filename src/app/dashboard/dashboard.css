@@ -4043,6 +4043,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-app-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 /* The dashboard's own "put it on your Home Screen" card, above Study Notes. */
 .dash-app-card { margin: 0 0 18px; }
+.dash-app-card:empty { display: none; }
 @media (max-width: 640px) {
   .study-app-card { padding: 18px 16px; }
   .study-app-actions .dash-btn-primary { flex: 1 1 100%; justify-content: center; }

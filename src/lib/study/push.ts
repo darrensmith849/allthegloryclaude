@@ -93,7 +93,8 @@ export async function runReminders(db: D1Like, privateJwk: string | undefined): 
   const { results } = await db
     .prepare(
       "SELECT r.endpoint, r.member_id, r.hour, r.tz, r.last_sent, r.failures FROM member_reminders r " +
-        "JOIN members m ON m.id = r.member_id AND m.disabled_at IS NULL",
+        "LEFT JOIN members m ON m.id = r.member_id " +
+        "WHERE r.member_id = 'owner' OR (m.id IS NOT NULL AND m.disabled_at IS NULL)",
     )
     .all<{ endpoint: string; member_id: string; hour: number; tz: string; last_sent: string | null; failures: number }>();
   let sent = 0;
@@ -103,10 +104,14 @@ export async function runReminders(db: D1Like, privateJwk: string | undefined): 
     if (now.hour !== r.hour || r.last_sent === now.day) continue;
     // Already marked a day as read today (everyone goes at their own pace)?
     const sinceMidnight = Date.now() - (now.hour * 60 + new Date().getUTCMinutes()) * 60_000;
-    const read = await db
-      .prepare("SELECT 1 AS ok FROM member_days WHERE member_id = ?1 AND read_at >= ?2 LIMIT 1")
-      .bind(r.member_id, sinceMidnight)
-      .first();
+    // (Daniel's own reminder - member_id 'owner' - checks his study days.)
+    const read =
+      r.member_id === "owner"
+        ? await db.prepare("SELECT 1 AS ok FROM study_days WHERE read_at >= ?1 LIMIT 1").bind(sinceMidnight).first()
+        : await db
+            .prepare("SELECT 1 AS ok FROM member_days WHERE member_id = ?1 AND read_at >= ?2 LIMIT 1")
+            .bind(r.member_id, sinceMidnight)
+            .first();
     if (read) continue;
     const status = await sendPush(r.endpoint, privateJwk).catch(() => 0);
     if (status >= 200 && status < 300) {

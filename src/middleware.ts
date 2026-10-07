@@ -51,6 +51,7 @@ export const config = {
     "/api/study-days",
     "/api/study-names",
     "/api/study-bin",
+    "/api/owner-reminders",
     "/api/word-fill",
     "/api/analytics",
     "/api/members",

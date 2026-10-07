@@ -6,10 +6,13 @@
 // back (openDashAppCard). The app is public/dashboard-manifest.webmanifest
 // (the dark dove; members' The Study is the light one). A Home Screen app
 // keeps its own sign-in, so the steps say to log in once there - team
-// members with their Study email, on the same login page.
+// members with their Study email, on the same login page. Once Daniel opens
+// it from the Home Screen, the card offers his daily reading reminder
+// instead (until it's on; the full switch is on Reminders).
 
 import { useEffect, useRef, useState } from "react";
 import { IosInstallGuide } from "@/components/study/ios-install-guide";
+import { DASHBOARD, Reminders } from "@/components/study/reminders";
 import { useDashUser } from "@/lib/dashboard/who";
 
 interface InstallPrompt extends Event {
@@ -47,6 +50,7 @@ export function DashAppCard() {
   const [ios, setIos] = useState(false);
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [steps, setSteps] = useState(false);
+  const [installed, setInstalled] = useState(false);
   const card = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -60,6 +64,9 @@ export function DashAppCard() {
     }
     setIos(isIos);
     setShow(canAddToHomeScreen() && !hidden);
+    setInstalled(
+      window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone),
+    );
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setPrompt(e as InstallPrompt);
@@ -80,6 +87,14 @@ export function DashAppCard() {
     };
   }, []);
 
+  // On the Home Screen: Daniel's daily reminder (hidden once it's on).
+  if (installed && user?.role === "owner") {
+    return (
+      <section className="study-app-card dash-app-card">
+        <Reminders compact target={DASHBOARD} hideWhenOn />
+      </section>
+    );
+  }
   if (!show || user === undefined) return null;
 
   function notNow() {
