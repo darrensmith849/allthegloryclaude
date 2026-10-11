@@ -4641,3 +4641,9 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .dash-reminder-status { margin-top: 8px; font-size: 11.5px; color: var(--colour-ink-faint); }
 .dash-reminder-calendar { margin-top: 10px; font-size: 13.5px; }
 .dash-reminder-calendar a { color: var(--colour-amber); font-weight: 600; }
+/* Members' home: how The Study works, in four short lines */
+.study-how { margin-top: 18px; padding: 20px 24px; border-radius: 18px; border: 1px solid rgb(var(--gold-rgb) / 0.3); background: var(--paper); }
+.study-how ul { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }
+.study-how li { font-size: 15px; line-height: 1.55; color: var(--colour-ink-soft); }
+.study-how li strong { display: block; font-family: var(--font-read), Georgia, serif; font-weight: 400; font-size: 18px; color: var(--colour-amber); }
+.study-how a { color: var(--colour-amber); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }

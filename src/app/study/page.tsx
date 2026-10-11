@@ -12,8 +12,7 @@ import { canRead, studyName, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, startMessage, START_WHY, STUDY_HEART } from "@/lib/study/plan";
-import { ReadAlong } from "@/components/study/read-along";
+import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, STUDY_HEART } from "@/lib/study/plan";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { WhyNiv } from "@/components/study/why-niv";
@@ -178,46 +177,39 @@ export default function StudyHome() {
         <div className="study-hero-sub">The Study · {PLAN.name} · NIV</div>
         <h1 className="study-home-title">Read through the Bible in the order it happened.</h1>
         <p className="study-home-lead">
-          {me.study?.intro ||
-            "One day at a time - with notes on what each passage says, the Hebrew and Greek behind its key words, and room to write your own."}
+          This is your own Bible study. Each day you read the next part of the Bible, write what stands out in your journal,
+          and mark the day as read. Go at your own pace.
         </p>
         {me.member && <p className="study-home-hello">Welcome back, {me.member.name.split(" ")[0]}.</p>}
       </header>
 
       {/* ── Today ───────────────────────────────────────────── */}
       <section className="study-today">
-        <div className="eyebrow eyebrow-amber">{started ? `Your next reading · Day ${n} of 365` : "Where we start · Day 1"}</div>
-        <h2 className="study-today-title">{started ? `Day ${n}` : "We start at the beginning - Genesis 1"}</h2>
-        {started && (
-          <p className="study-next-where">
-            In the book: {bookDate(focus)} · In the Bible App: Day {n}
-          </p>
-        )}
-        {!started && daysLoaded && (
-          <>
-            <p className="study-start-text">
-              We&apos;re reading the whole Bible in the order it happened, from Day 1. {startMessage()}
-            </p>
-            <p className="study-start-why">
-              <strong>Why Genesis, in October?</strong> {START_WHY}
-            </p>
-            <p className="study-start-why">
-              <strong>Weekly calls.</strong> {CALLS_NOTE}
-            </p>
-            <ReadAlong className="study-start-why" />
-          </>
-        )}
+        <div className="eyebrow eyebrow-amber">{started ? `Your next reading · Day ${n} of 365` : "Start here · Day 1 of 365"}</div>
+        <h2 className="study-today-title">{started ? `Day ${n}` : "Day 1 - Genesis 1"}</h2>
+        <p className="study-next-where">
+          {started ? `In the book: ${bookDate(focus)} · In the Bible App: Day ${n}` : "Read the passage, write what stands out, then mark the day as read below."}
+        </p>
         <div className="study-today-actions">
           <a className="study-today-step" href={bibleAppDay(n)} target="_blank" rel="noreferrer">
             <span className="study-today-num">1</span>
             <span>
-              <strong>Read the passages</strong>
-              <em>Day {n} in the Bible App · NIV ↗</em>
+              <strong>Read the passage</strong>
+              <em>Day {n} in the Bible App (NIV) ↗ - or your book: {bookDate(focus)}</em>
             </span>
           </a>
+          {me.member && (
+            <Link className="study-today-step" href={`/study/journal?day=${focus}`}>
+              <span className="study-today-num">2</span>
+              <span>
+                <strong>Write what stands out</strong>
+                <em>On Day {n} in your journal - private to you</em>
+              </span>
+            </Link>
+          )}
           {readable && (
             <Link className="study-today-step" href={me.member ? `/study/journal?day=${focus}&daniel=1` : "/study/read"}>
-              <span className="study-today-num">2</span>
+              <span className="study-today-num">{me.member ? 3 : 2}</span>
               <span>
                 <strong>{author ? `Read ${author}'s notes` : "Read the study notes"}</strong>
                 <em>
@@ -230,15 +222,7 @@ export default function StudyHome() {
               </span>
             </Link>
           )}
-          {me.member ? (
-            <Link className="study-today-step" href={`/study/journal?day=${focus}`}>
-              <span className="study-today-num">{readable ? 3 : 2}</span>
-              <span>
-                <strong>Write your own notes</strong>
-                <em>On Day {n} in your journal</em>
-              </span>
-            </Link>
-          ) : (
+          {!me.member && (
             me.loaded && (
               <Link className="study-today-step" href="/study/login">
                 <span className="study-today-num">{readable ? 3 : 2}</span>
@@ -270,6 +254,36 @@ export default function StudyHome() {
           </div>
         )}
       </section>
+
+      {/* ── How it works, in four lines ─────────────────────── */}
+      {me.member && (
+        <section className="study-how">
+          <div className="eyebrow eyebrow-amber">How The Study works</div>
+          <ul>
+            <li>
+              <strong>The plan</strong> The whole Bible in a year, in the order events happened. Day 1 is Genesis 1.
+            </li>
+            <li>
+              <strong>Your pace</strong> No dates to keep up with - every day you mark as read turns gold, and the next one is ready.
+            </li>
+            <li>
+              <strong>The calls</strong> {CALLS_NOTE.replace(" - so the videos come weekly, not daily.", ".")} The videos appear on
+              those days, and the 🔔 tells you when one is up.
+            </li>
+            <li>
+              <strong>Your Bible</strong> Read in the Bible App (NIV), or get the paper book:{" "}
+              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                Takealot
+              </a>{" "}
+              ·{" "}
+              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                Amazon
+              </a>
+              .
+            </li>
+          </ul>
+        </section>
+      )}
 
       {me.member && !me.member.emailUpdates && !asked && (
         <div className="study-ask">

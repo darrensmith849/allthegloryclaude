@@ -7,8 +7,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { CALLS_NOTE, PLAN, startBanner, STUDY_HEART } from "@/lib/study/plan";
-import { todayDay } from "@/lib/dashboard/notes";
+import { PLAN, STUDY_HEART } from "@/lib/study/plan";
 import { PasswordInput } from "@/components/ui/password-input";
 
 interface Me {
@@ -33,27 +32,23 @@ const input =
   "w-full bg-colour-surface border border-colour-fg/10 rounded px-4 py-3 text-base text-colour-fg placeholder:text-colour-fg/30 focus:outline-none focus:border-colour-accent transition-colors";
 const label = "block text-sm font-medium text-colour-fg/70 mb-2";
 
-const FEATURES = [
+// How it works, in three plain steps - and what you get, in four lines.
+const STEPS = [
+  { title: "Join free", text: "Make an account in 30 seconds - just your name, email and a password." },
   {
-    title: "Read it in the order it happened",
-    text: `${PLAN.name} (NIV) takes you through the whole Bible in 365 daily readings - books, chapters and even verses in the order events happened. Read free in the Bible App, or in the book. Why the NIV? Most chronological Bibles don't break the reading into daily portions in order - this is the only one we've found so far that does, and we keep looking.`,
+    title: "Read the day's passage",
+    text: `Day 1 is Genesis 1. Read it in the Bible App, or in the paper book, ${PLAN.name} (NIV).`,
   },
   {
-    title: "Keep your own journal",
-    text: "A calendar of your notes, day by day - private to you and kept for good, so you can look back on what God showed you, year after year.",
+    title: "Write it down, tick it off",
+    text: "Write what stands out in your private journal, then mark the day as read. It turns gold and the next day is ready.",
   },
-  {
-    title: "Go deeper into the words",
-    text: "Look up any word from the day's reading and see the Hebrew or Greek behind it, what it means, and the verses that use it.",
-  },
-  {
-    title: "Learn the names of God",
-    text: "El Shaddai, Yahweh Yireh, Immanuel - what each name of God and of Jesus means, where it first appears and how to say it, and which name is behind “God” in the day's reading.",
-  },
-  {
-    title: "Ask, and learn together",
-    text: "Ask your questions privately. Daniel or a trusted helper answers, and answers are shared so everyone can learn - your name is never shown.",
-  },
+];
+const GETS = [
+  { title: "Your own journal", text: "Private notes for every day, kept for good." },
+  { title: "Daniel's notes", text: "Read what Daniel saw in each day's reading." },
+  { title: "Videos from our calls", text: "Daniel and Reggie go through the readings once or twice a week." },
+  { title: "Go deeper", text: "The Hebrew and Greek behind the words, and the names of God." },
 ];
 
 export default function TheStudyPage() {
@@ -100,8 +95,6 @@ export default function TheStudyPage() {
   const author = me?.study.author && me.study.author !== "All The Glory" ? me.study.author : "Daniel";
   const heart = me?.study.intro || STUDY_HEART;
   // When we start (set in the browser - the page is pre-rendered).
-  const [banner, setBanner] = useState("");
-  useEffect(() => setBanner(startBanner(todayDay())), []);
   const canJoin = me?.study.signup === "open" || (me?.study.signup === "invite" && Boolean(invite));
 
   function open(which: "join" | "login") {
@@ -208,16 +201,14 @@ export default function TheStudyPage() {
             />
             <Image src="/media/logo-dove.png" alt="" fill priority sizes="180px" className="relative object-contain" />
           </div>
-          <div className="eyebrow eyebrow-amber mb-4 relative">The Study</div>
+          <div className="eyebrow eyebrow-amber mb-4 relative">The Study · free</div>
           <h1 className="font-display text-4xl md:text-6xl font-normal text-white tracking-tight mb-5">
-            Read through the Bible in the order it happened.
+            Read the whole Bible in the order it happened.
           </h1>
-          <p className="text-base md:text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-            A free daily Bible study from All The Glory - one day at a time, with a journal of your own, the Hebrew and
-            Greek behind the words, and {author}&apos;s notes to read alongside.
+          <p className="text-base md:text-lg text-white/75 max-w-xl mx-auto leading-relaxed">
+            A free online Bible study. One reading a day, starting at Genesis 1 - and your own private journal to write what
+            God shows you.
           </p>
-          {banner && <p className="mt-5 inline-block rounded-full border border-colour-accent/40 bg-colour-accent/10 px-4 py-2 text-sm font-semibold text-colour-accent">{banner}</p>}
-          <p className="mt-4 text-sm text-white/60 max-w-xl mx-auto leading-relaxed">{CALLS_NOTE}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {me?.member ? (
               <a
@@ -251,15 +242,41 @@ export default function TheStudyPage() {
         </motion.div>
       </section>
 
-      {/* ── How it works ─────────────────────────────────────── */}
+      {/* ── How it works: three steps ─────────────────────────── */}
       <section className="w-full py-10 md:py-14">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            {FEATURES.map((f, i) => (
+          <div className="text-center mb-8">
+            <div className="eyebrow eyebrow-amber mb-3">How it works</div>
+            <h2 className="font-display text-3xl md:text-4xl text-white">Three simple steps</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {STEPS.map((f, i) => (
               <motion.div key={f.title} {...fade(0.15 + i * 0.08)} className="panel-scrim p-6 md:p-7">
-                <div className="eyebrow eyebrow-amber mb-3">0{i + 1}</div>
-                <h2 className="font-display text-2xl text-white mb-3">{f.title}</h2>
+                <div className="font-display text-4xl text-colour-accent mb-3">{i + 1}</div>
+                <h3 className="font-display text-2xl text-white mb-2">{f.title}</h3>
                 <p className="text-sm md:text-[15px] text-white/70 leading-relaxed">{f.text}</p>
+              </motion.div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-sm text-white/60 max-w-2xl mx-auto leading-relaxed">
+            Go at your own pace - there are no dates to keep up with. Why this order? Job beside Genesis, the Psalms in
+            David&apos;s life, the prophets beside their kings: the whole story finally fits together.
+          </p>
+        </div>
+      </section>
+
+      {/* ── What you get ──────────────────────────────────────── */}
+      <section className="w-full py-6 md:py-10">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <div className="eyebrow eyebrow-amber mb-3">What you get</div>
+            <h2 className="font-display text-3xl md:text-4xl text-white">Everything in one place</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {GETS.map((g, i) => (
+              <motion.div key={g.title} {...fade(0.1 + i * 0.06)} className="panel-scrim px-6 py-5">
+                <h3 className="font-display text-xl text-white">{g.title.replace("Daniel", author)}</h3>
+                <p className="mt-1 text-sm text-white/65 leading-relaxed">{g.text.replace("Daniel saw", `${author} saw`)}</p>
               </motion.div>
             ))}
           </div>

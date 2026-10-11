@@ -33,8 +33,7 @@ import { inHold, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient, type StudyClient } from "@/lib/study/client";
-import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, PLAN_END, startMessage, START_WHY, STUDY_START } from "@/lib/study/plan";
-import { ReadAlong } from "./read-along";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, PLAN_END, STUDY_START } from "@/lib/study/plan";
 import { matchesWord } from "@/lib/dashboard/words";
 import { isSameMonth, monthGrid, shiftMonth, startOfMonth } from "@/lib/dashboard/dates";
 import {
@@ -1105,15 +1104,9 @@ export function StudyNotes() {
             {client.kind === "member" ? (
               <>
                 <p>
-                  <strong>Day 1 is Genesis 1 - the book&apos;s 1 January reading.</strong> {startMessage()}
+                  <strong>Start at Day 1 - Genesis 1.</strong> Read the passage, write what stands out, then tap{" "}
+                  <strong>Mark as read</strong> - the day turns gold and the next one is ready.
                 </p>
-                <p className="journal-start-why">
-                  <strong>Why Genesis, in October?</strong> {START_WHY}
-                </p>
-                <p className="journal-start-why">
-                  <strong>Weekly calls.</strong> {CALLS_NOTE}
-                </p>
-                <ReadAlong className="journal-start-why" />
               </>
             ) : (
               <p>
