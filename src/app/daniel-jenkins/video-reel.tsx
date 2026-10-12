@@ -66,14 +66,6 @@ export default function VideoReel({ reels }: { reels: Reel[] }) {
             </button>
           )}
         </div>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1 pt-4">
-          <p className="font-[family-name:var(--dj-serif)] text-3xl leading-tight text-[var(--dj-paper)] sm:text-4xl">
-            {active.title}
-          </p>
-          <p className="font-[family-name:var(--dj-mono)] text-[11px] uppercase tracking-[0.15em] text-[var(--dj-paper)]/50">
-            {playing ? "Now playing" : "Featured"} &mdash; {active.note}, {active.year}
-          </p>
-        </div>
       </div>
 
       {/* Playlist */}

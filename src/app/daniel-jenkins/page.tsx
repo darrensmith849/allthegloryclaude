@@ -1,6 +1,7 @@
 import Image from "next/image";
 import VideoReel, { type Reel } from "./video-reel";
 import { CountUp, HeroImage, Reveal } from "./motion";
+import Nav from "./nav";
 
 // Daniel's personal resume page - a standalone share link that lives on the
 // All The Glory domain. The site's nav, footer, socials and album player are
@@ -134,41 +135,35 @@ export default function DanielJenkinsPage() {
         @keyframes dj-eq { 0%,100%{height:30%} 50%{height:100%} }
         .dj-scroll { scrollbar-width: thin; scrollbar-color: rgba(236,229,217,.25) transparent; }
         .dj-scroll::-webkit-scrollbar { width:4px; } .dj-scroll::-webkit-scrollbar-thumb { background:rgba(236,229,217,.25); }
-        @media (prefers-reduced-motion: reduce) { .dj-eq i { animation: none; } }
+        .dj-bob { animation: dj-bob 2.2s ease-in-out infinite; }
+        @keyframes dj-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+        .dj-rule { transform-origin: left; animation: dj-rule 1.4s cubic-bezier(.16,1,.3,1) both; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+        @keyframes dj-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @media (prefers-reduced-motion: reduce) { .dj-eq i, .dj-bob, .dj-rule { animation: none; } }
       `}</style>
 
-      {/* ───────── Hero photo ───────── */}
-      <section className="p-2 sm:p-3">
-        <div className="relative h-[78svh] min-h-[520px] overflow-hidden rounded-[6px] bg-[var(--dj-dark)]">
-          <HeroImage>
-            <Image
-              src="/media/daniel/hero.webp"
-              alt="Daniel Jenkins sitting by a red door with his guitar"
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[24%_45%] md:object-[50%_45%]"
-            />
-          </HeroImage>
-          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/50 to-transparent" />
+      <Nav />
 
-          <header className="relative z-10 m-3 flex items-center justify-between rounded-[4px] bg-black/30 px-4 py-3 text-[var(--dj-paper)] backdrop-blur-md sm:m-4 sm:px-5">
-            <a href="/daniel-jenkins" className="dj-serif text-xl leading-none">Daniel Jenkins</a>
-            <nav className="dj-mono hidden items-center gap-7 text-[11px] uppercase tracking-[0.12em] md:flex">
-              <a href="#showreels" className="opacity-80 hover:opacity-100">Showreels</a>
-              <a href="#about" className="opacity-80 hover:opacity-100">About</a>
-              <a href="#experience" className="opacity-80 hover:opacity-100">Experience</a>
-              <a href="#testimonials" className="opacity-80 hover:opacity-100">Testimonials</a>
-            </nav>
-            <a href="#contact" className="dj-mono rounded-[3px] bg-[var(--dj-paper)] px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-[var(--dj-ink)] transition hover:bg-white">
-              Contact
-            </a>
-          </header>
-        </div>
+      {/* ───────── Hero photo ───────── */}
+      <section className="relative h-[86svh] min-h-[520px] overflow-hidden bg-[var(--dj-dark)]">
+        <HeroImage>
+          <Image
+            src="/media/daniel/hero.webp"
+            alt="Daniel Jenkins sitting by a red door with his guitar"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[24%_45%] md:object-[50%_45%]"
+          />
+        </HeroImage>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
+        <a href="#intro" className="dj-mono absolute bottom-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.15em] text-[var(--dj-paper)]/80 transition hover:text-white">
+          <span className="dj-bob inline-block">Scroll ↓</span>
+        </a>
       </section>
 
       {/* ───────── Introduction ───────── */}
-      <section className={`${WRAP} pb-20 pt-14 md:pb-28 md:pt-20`}>
+      <section id="intro" className={`${WRAP} pb-20 pt-14 md:pb-28 md:pt-20`}>
         <div className="grid gap-10 md:grid-cols-2 md:gap-16">
           <Reveal>
             <h1 className="dj-serif text-[3.4rem] leading-[0.95] sm:text-[4.8rem]">Daniel Jenkins</h1>
@@ -195,16 +190,23 @@ export default function DanielJenkinsPage() {
           </Reveal>
         </div>
 
-        <dl className="mt-16 grid grid-cols-2 border-t border-[var(--dj-ink)] md:mt-20 md:grid-cols-4">
-          {STATS.map((s, i) => (
-            <div key={s.label} className={`border-b border-[var(--dj-line)] py-6 md:border-b-0 ${i % 2 ? "pl-5" : ""} ${i > 0 ? "md:border-l md:pl-6" : ""} ${i === 1 || i === 3 ? "border-l" : ""}`}>
-              <dd className="text-[2.6rem] font-light leading-none tracking-[-0.04em] sm:text-[3.2rem]">
-                <CountUp to={s.to} from={s.from} suffix={s.suffix} />
-              </dd>
-              <dt className="dj-mono mt-3 text-[11px] uppercase tracking-[0.12em] text-[var(--dj-muted)]">{s.label}</dt>
-            </div>
-          ))}
-        </dl>
+        <div className="mt-16 md:mt-20">
+          <Reveal y={0} className="origin-left">
+            <div className="dj-rule h-px bg-[var(--dj-ink)]" />
+          </Reveal>
+          <dl className="grid grid-cols-2 md:grid-cols-4">
+            {STATS.map((s, i) => (
+              <Reveal key={s.label} delay={0.15 + i * 0.12} y={24}>
+                <div className={`h-full border-b border-[var(--dj-line)] py-6 md:border-b-0 ${i % 2 ? "pl-5" : ""} ${i > 0 ? "md:border-l md:pl-6" : ""} ${i === 1 || i === 3 ? "border-l" : ""}`}>
+                  <dd className="text-[2.6rem] font-light leading-none tracking-[-0.04em] sm:text-[3.2rem]">
+                    <CountUp to={s.to} from={s.from} suffix={s.suffix} />
+                  </dd>
+                  <dt className="dj-mono mt-3 text-[11px] uppercase tracking-[0.12em] text-[var(--dj-muted)]">{s.label}</dt>
+                </div>
+              </Reveal>
+            ))}
+          </dl>
+        </div>
       </section>
 
       {/* ───────── Showreels ───────── */}
