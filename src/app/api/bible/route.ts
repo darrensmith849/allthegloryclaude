@@ -47,7 +47,10 @@ export async function GET(req: Request) {
       if (!r.ok) throw new Error(`bolls ${r.status}`);
       const verses = (await r.json()) as { verse: number; text: string }[];
       const from = p.verse ?? 1;
-      const to = p.verse ? (p.verseEnd ?? p.verse) : verses.length;
+      // A whole chapter runs to its last verse number - not the count, which
+      // is short where the BSB leaves a verse out (Mark 9:44, 46), and would
+      // drop the chapter's last verses.
+      const to = p.verse ? (p.verseEnd ?? p.verse) : Infinity;
       const results: Hit[] = verses
         .filter((v) => v.verse >= from && v.verse <= to)
         .slice(0, p.verse ? MAX_PASSAGE : 200)

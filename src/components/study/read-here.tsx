@@ -5,11 +5,13 @@
 // Standard Bible (public domain - the NIV can't be shown on other sites);
 // the NIV plan stays one tap away, and on a computer it opens in a window
 // beside the dashboard instead of replacing it. Tap a verse number to start
-// a note on that verse.
+// a note on that verse. Under the bar, the Context for the day's books -
+// who's speaking, and where the same story is told elsewhere.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parsePassage } from "@/lib/dashboard/notes";
 import { ReadAlong } from "./read-along";
+import { ReadingContext, WhoIsSpeaking } from "./reading-context";
 
 interface Verse {
   chapter: number;
@@ -95,6 +97,19 @@ export function ReadHere({
     });
   }
 
+  // From Context: open that passage here and bring it into view.
+  const panelRef = useRef<HTMLDivElement>(null);
+  function readThis(ref: string) {
+    setPassage(ref);
+    setOpen(true);
+    try {
+      window.localStorage.setItem(OPEN_KEY, "1");
+    } catch {
+      // private window
+    }
+    window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+
   // On a computer, the Bible App opens in a window beside the dashboard.
   function openBeside(e: React.MouseEvent) {
     if (!window.matchMedia("(min-width: 1100px) and (pointer: fine)").matches) return;
@@ -114,8 +129,10 @@ export function ReadHere({
         </a>
       </div>
 
+      <ReadingContext passages={chapters.length ? chapters : passage ? [passage] : []} onRead={readThis} />
+
       {open && (
-        <div className="read-here-panel">
+        <div className="read-here-panel" ref={panelRef}>
           <ReadAlong className="read-here-along" />
           <div className="read-here-picks">
             {chapters.map((c) => (
@@ -164,6 +181,7 @@ export function ReadHere({
               {blocks.map((b) => (
                 <section key={b.label}>
                   <h3 className="read-here-title">{b.label}</h3>
+                  <WhoIsSpeaking passage={b.label} />
                   <p>
                     {b.verses.map((v) => (
                       <span key={`${v.chapter}:${v.verse}`} className="read-here-verse">
