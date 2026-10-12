@@ -38,7 +38,9 @@ export async function GET(req: Request) {
   if (!db) return Response.json({ error: "Accounts aren't available right now." }, { status: 503 });
   const [member, settings] = await Promise.all([getMember(req, db), getSettings(db)]);
   const emailUpdates = member ? await isSubscribed(db, member.email) : false;
-  return Response.json({ member: member && { ...member, emailUpdates }, study: settings }, { headers: noStore });
+  // Who may read held days early is the owner's business (Members page) - not public.
+  const study = settings.hold ? { ...settings, hold: { from: settings.hold.from, to: settings.hold.to } } : settings;
+  return Response.json({ member: member && { ...member, emailUpdates }, study }, { headers: noStore });
 }
 
 export async function PATCH(req: Request) {
