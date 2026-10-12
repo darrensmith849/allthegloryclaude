@@ -69,11 +69,12 @@ const SEABOURN = [
   "Daniel is a very good performer, singer and guitarist. He is part of the Club Trio and consistently performs his role in a very professional manner. He is very friendly with both guests and crew, a true team player.",
 ];
 
+// Three square photos shown whole (no cropping). The two small originals
+// were cleaned and enlarged for sharp display; see public/media/daniel.
 const GALLERY = [
-  { src: "/media/daniel/red-door.webp", alt: "Daniel Jenkins at a red door with an acoustic guitar", pos: "object-[30%_50%]" },
-  { src: "/media/daniel/stage.webp", alt: "Daniel Jenkins with his electric guitar before a show", pos: "object-[35%_40%]" },
-  { src: "/media/daniel/rooftop.webp", alt: "Daniel Jenkins on a city rooftop", pos: "object-[70%_50%]" },
-  { src: "/media/daniel/shadow.webp", alt: "Daniel Jenkins walking through light and shadow with his guitar", pos: "object-[50%_50%]" },
+  { src: "/media/daniel/gallery-red-door.webp", alt: "Daniel Jenkins at a red door with an acoustic guitar" },
+  { src: "/media/daniel/gallery-stage.webp", alt: "Daniel Jenkins with his electric guitar before a show" },
+  { src: "/media/daniel/gallery-rooftop.webp", alt: "Daniel Jenkins on a city rooftop" },
 ];
 
 function SectionHead({ title, n, dark }: { title: string; n: string; dark?: boolean }) {
@@ -332,11 +333,11 @@ export default function DanielJenkinsPage() {
             ))}
           </div>
 
-          <div className="mt-[var(--dj-section-y)] grid grid-cols-2 gap-[clamp(8px,1.2vw,16px)] md:grid-cols-4">
+          <div className="mt-[var(--dj-section-y)] grid grid-cols-2 gap-[clamp(8px,1.2vw,16px)] md:grid-cols-3">
             {GALLERY.map((g, i) => (
-              <Reveal key={g.src} delay={i * 0.06} y={16}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[4px] bg-[var(--dj-dark)]">
-                  <Image src={g.src} alt={g.alt} fill sizes="(max-width: 768px) 50vw, 25vw" className={`object-cover transition duration-[1.4s] ease-out hover:scale-[1.04] ${g.pos}`} />
+              <Reveal key={g.src} delay={i * 0.08} y={16} className={i === 0 ? "col-span-2 md:col-span-1" : ""}>
+                <div className="relative aspect-square overflow-hidden rounded-[4px] bg-[var(--dj-dark)]">
+                  <Image src={g.src} alt={g.alt} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-[1.4s] ease-out hover:scale-[1.03]" />
                 </div>
               </Reveal>
             ))}
