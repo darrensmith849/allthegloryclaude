@@ -28,7 +28,7 @@ export default function SiteFooter() {
   // landing meant to read as a standalone share link. Neither gets
   // the public marketing footer.
   const isDashboard = (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study")) ?? false;
-  const isPress = pathname?.startsWith("/press") ?? false;
+  const isPress = (pathname?.startsWith("/press") || pathname?.startsWith("/daniel-jenkins")) ?? false;
 
   useEffect(() => {
     setInView(false);
