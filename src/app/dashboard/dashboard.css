@@ -4601,9 +4601,23 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .suggest-new { padding: 1px 8px; border-radius: 999px; background: var(--colour-amber); color: var(--on-gold); font-size: 11px; font-weight: 600; }
 
 /* Read here - the day's chapters inside the journal */
-.read-here { margin-bottom: 12px; }
-.read-here-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.read-here-toggle { font-weight: 600; }
+.read-here { margin-bottom: 16px; }
+.read-here-niv { display: inline-block; margin-bottom: 14px; font-size: 14px; }
+/* The box to type a verse in - like the writing box below. */
+.read-here-box { display: flex; gap: 8px; }
+.read-here-input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-family: var(--font-read), Georgia, serif;
+  font-size: 17px;
+}
+.read-here-input::placeholder { font-style: italic; color: var(--colour-ink-faint); }
+.read-here-go { flex: none; padding-inline: 22px; border-radius: 12px; }
+.read-here-picks-label { font-size: 12.5px; color: var(--colour-ink-quiet); margin-right: 2px; }
+.read-here-hint { margin-top: 8px; font-size: 12.5px; color: var(--colour-ink-quiet); }
+.read-here-panel-top { display: flex; justify-content: flex-end; }
 .read-here-panel {
   margin-top: 12px;
   padding: 14px 16px 12px;
@@ -4611,9 +4625,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   border: 1px solid rgb(var(--gold-rgb) / 0.4);
   background: var(--paper);
 }
-.read-here-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.read-here-find { display: flex; gap: 6px; flex: 1 1 220px; min-width: 0; }
-.read-here-find .dash-input { flex: 1; min-width: 0; }
+.read-here-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
 .read-here-text {
   margin-top: 12px;
   max-height: min(62vh, 560px);
@@ -4641,7 +4653,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 }
 .read-here-num:hover { background: rgb(var(--gold-rgb) / 0.18); }
 .read-here-source { margin-top: 10px; font-size: 12px; color: var(--colour-ink-quiet); }
-.read-here-along { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgb(var(--gold-rgb) / 0.22); font-size: 13.5px; line-height: 1.55; color: var(--colour-ink-soft); }
+.read-here-along { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgb(var(--gold-rgb) / 0.22); font-size: 13.5px; line-height: 1.55; color: var(--colour-ink-soft); }
 .read-here-along strong { color: var(--colour-amber); font-weight: 600; }
 :is(.read-here-along, .study-start-why, .journal-start-why) a { color: var(--colour-amber); text-decoration: underline; text-underline-offset: 2px; }
 @media (max-width: 640px) {

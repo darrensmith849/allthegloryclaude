@@ -1150,7 +1150,7 @@ export function StudyNotes() {
                       means read.
                     </li>
                     <li>
-                      <strong>Read the passage.</strong> Tap 📖 Read here or the Bible App link (NIV), or use your book.
+                      <strong>Read the passage.</strong> Type it in the box to read it right here, or use the Bible App link (NIV) or your book.
                     </li>
                     <li>
                       <strong>Write what stands out.</strong> Type in the box and tap Save note.

@@ -1,7 +1,9 @@
 "use client";
 
-// "Read here" - the day's chapters right inside the journal, so nobody has
-// to leave the page to read and come back to write. The text is the Berean
+// "Read it here" - a box, like the writing box, to type a verse or passage
+// and read it right inside the journal, so nobody has to leave the page to
+// read and come back to write. The day in the Bible App (NIV) sits above it,
+// and the Context for the day's books below. The text is the Berean
 // Standard Bible (public domain - the NIV can't be shown on other sites);
 // the NIV plan stays one tap away, and on a computer it opens in a window
 // beside the dashboard instead of replacing it. Tap a verse number to start
@@ -55,24 +57,33 @@ export function ReadHere({
   dayN: number;
   onVerse: (line: string) => void; // start a note: "Genesis 1 vs 3 - "
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // the reading is showing
   const [passage, setPassage] = useState("");
   const [typed, setTyped] = useState("");
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [state, setState] = useState<{ loading?: boolean; error?: string }>({});
   const firstChapter = chapters[0] ?? "";
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const remember = (on: boolean) => {
     try {
-      setOpen(window.localStorage.getItem(OPEN_KEY) === "1");
+      window.localStorage.setItem(OPEN_KEY, on ? "1" : "0");
     } catch {
       // private window
     }
-  }, []);
-  // A new day: start on its first chapter.
+  };
+  // A new day: its first chapter, already open for those who keep it open.
   useEffect(() => {
+    let keepOpen = false;
+    try {
+      keepOpen = window.localStorage.getItem(OPEN_KEY) === "1";
+    } catch {
+      // private window
+    }
     setPassage(firstChapter);
+    setOpen(keepOpen && Boolean(firstChapter));
     setBlocks(null);
+    setState({});
   }, [firstChapter]);
   useEffect(() => {
     if (!open || !passage) return;
@@ -86,28 +97,16 @@ export function ReadHere({
     };
   }, [open, passage]);
 
-  function toggle() {
-    setOpen((o) => {
-      try {
-        window.localStorage.setItem(OPEN_KEY, o ? "0" : "1");
-      } catch {
-        // private window
-      }
-      return !o;
-    });
-  }
-
-  // From Context: open that passage here and bring it into view.
-  const panelRef = useRef<HTMLDivElement>(null);
-  function readThis(ref: string) {
+  // Open a passage here (typed, a chip, or from Context) and bring it into view.
+  function readThis(ref: string, scroll = true) {
     setPassage(ref);
     setOpen(true);
-    try {
-      window.localStorage.setItem(OPEN_KEY, "1");
-    } catch {
-      // private window
-    }
-    window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    remember(true);
+    if (scroll) window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+  function close() {
+    setOpen(false);
+    remember(false);
   }
 
   // On a computer, the Bible App opens in a window beside the dashboard.
@@ -120,62 +119,65 @@ export function ReadHere({
 
   return (
     <div className={`read-here ${open ? "is-open" : ""}`}>
-      <div className="read-here-bar">
-        <button type="button" className={`dash-btn dash-note-nav ${open ? "dash-btn-primary" : "dash-btn-ghost"} read-here-toggle`} onClick={toggle}>
-          📖 {open ? "Hide the reading" : "Read here"}
+      <a className="dash-plan-link read-here-niv" href={bibleAppUrl} target="_blank" rel="noreferrer" onClick={openBeside}>
+        📖 Day {dayN} in the Bible App (NIV) ↗
+      </a>
+      <label className="dash-label" htmlFor={`read-here-${dayN}`}>
+        Type a verse to read it here
+      </label>
+      <form
+        className="read-here-box"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const p = typed.trim();
+          if (!p) return;
+          if (!parsePassage(p) && !/^(.+?)\s+\d{1,3}\s*[-–]\s*\d{1,3}$/.test(p)) {
+            return setState({ error: "Type a book and chapter, like Genesis 3, Luke 5 or John 3:16." });
+          }
+          setState({});
+          readThis(p, false);
+        }}
+      >
+        <input
+          id={`read-here-${dayN}`}
+          className="dash-input read-here-input"
+          placeholder="e.g. Luke 5 or John 3:16"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          enterKeyHint="go"
+          autoComplete="off"
+        />
+        <button type="submit" className="dash-btn dash-btn-primary read-here-go">
+          Read
         </button>
-        <a className="dash-plan-link" href={bibleAppUrl} target="_blank" rel="noreferrer" onClick={openBeside}>
-          Day {dayN} in the Bible App (NIV) ↗
-        </a>
-      </div>
-
-      <ReadingContext passages={chapters.length ? chapters : passage ? [passage] : []} onRead={readThis} />
-
-      {open && (
-        <div className="read-here-panel" ref={panelRef}>
-          <ReadAlong className="read-here-along" />
-          <div className="read-here-picks">
-            {chapters.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`dash-starter-chip ${passage === c ? "is-on" : ""}`}
-                onClick={() => setPassage(c)}
-              >
-                {c}
-              </button>
-            ))}
-            <form
-              className="read-here-find"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const p = typed.trim();
-                if (!p) return;
-                if (!parsePassage(p) && !/^(.+?)\s+\d{1,3}\s*[-–]\s*\d{1,3}$/.test(p)) {
-                  return setState({ error: "Type a book and chapter, like Genesis 3 or Job 1-2." });
-                }
-                setPassage(p);
-              }}
+      </form>
+      {chapters.length > 0 ? (
+        <div className="read-here-picks">
+          <span className="read-here-picks-label">This day:</span>
+          {chapters.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`dash-starter-chip ${open && passage === c ? "is-on" : ""}`}
+              onClick={() => readThis(c, false)}
             >
-              <input
-                className="dash-input"
-                placeholder={chapters.length ? "Another passage" : "A passage, e.g. Genesis 1-2"}
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                aria-label="A passage to read"
-              />
-              <button type="submit" className="dash-btn dash-btn-ghost dash-note-nav">
-                Read
-              </button>
-            </form>
+              {c}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="read-here-hint">Not sure of the passage? It&apos;s at the top of Day {dayN} in the Bible App.</p>
+      )}
+      {state.error && <p className="dash-starter-error">{state.error}</p>}
+
+      {open && passage && (
+        <div className="read-here-panel" ref={panelRef}>
+          <div className="read-here-panel-top">
+            <button type="button" className="dash-word-link" onClick={close}>
+              Hide the reading
+            </button>
           </div>
-          {!chapters.length && !passage && (
-            <p className="dash-word-hint mt-2">
-              Type the day&apos;s passage above (it&apos;s listed in the Bible App plan) and read it right here.
-            </p>
-          )}
           {state.loading && <p className="dash-word-hint mt-3">Opening {passage}…</p>}
-          {state.error && <p className="dash-starter-error">{state.error}</p>}
           {blocks && !state.loading && (
             <div className="read-here-text">
               {blocks.map((b) => (
@@ -201,11 +203,14 @@ export function ReadHere({
               ))}
             </div>
           )}
+          <ReadAlong className="read-here-along" />
           <p className="read-here-source">
             Berean Standard Bible - free to read here. Tap a verse number to start a note on it.
           </p>
         </div>
       )}
+
+      <ReadingContext passages={chapters.length ? chapters : open && passage ? [passage] : []} onRead={readThis} />
     </div>
   );
 }
