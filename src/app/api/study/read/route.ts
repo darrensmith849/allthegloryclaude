@@ -20,7 +20,7 @@
  */
 import { getDb } from "@/lib/analytics/store";
 import { isSignedIn } from "@/lib/admin-auth";
-import { chapterLabel, isDay, matchesNote, passageOf } from "@/lib/dashboard/notes";
+import { chapterLabel, isDay, matchesNote, passageOf, verseOrder } from "@/lib/dashboard/notes";
 import type { BibleWord } from "@/lib/dashboard/types";
 import { hiddenByHold, inHold } from "@/lib/study/hold";
 import { memberReach } from "@/lib/study/progress";
@@ -198,7 +198,8 @@ export async function GET(req: Request) {
         .all<{ json: string }>(),
     ]);
 
-    const notes = noteRows
+    // Same order as the owner's journal: by verse within each book (verseOrder).
+    const notes = verseOrder(noteRows)
       .filter((n) => !n.private)
       .map((n) => ({
         id: n.id,

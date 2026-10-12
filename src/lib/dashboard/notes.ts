@@ -159,16 +159,46 @@ export function chapterLabel(p: Passage): string {
 // ── Order ────────────────────────────────────────────────────────
 
 // Reading order: by day, then the order the user has set within the day
-// (position starts as the order written). Notes without a day come last,
-// ordered by page.
+// (position starts as the order written), with each day put in verse order
+// (verseOrder). Notes without a day come last, ordered by page.
 export function readingOrder(notes: StudyNote[]): StudyNote[] {
-  return [...notes].sort(
+  const written = [...notes].sort(
     (a, b) =>
       (a.day ?? "9999").localeCompare(b.day ?? "9999") ||
       (a.day ? 0 : (a.page ?? 1e9) - (b.page ?? 1e9)) ||
       a.position - b.position ||
       a.seq - b.seq,
   );
+  const out: StudyNote[] = [];
+  for (let i = 0; i < written.length; ) {
+    let j = i;
+    while (j < written.length && written[j].day === written[i].day) j++;
+    const group = written.slice(i, j);
+    out.push(...(written[i].day ? verseOrder(group) : group));
+    i = j;
+  }
+  return out;
+}
+
+// Within a day: a note goes above any note before it from later in the same
+// book - Gen 6 vs 4 written after Gen 7 vs 1 moves up above it. The order
+// between books (a chronological day mixes them on purpose) and notes
+// without a passage keep the order written. Days and pages never change.
+export function verseOrder<T extends { book: number | null; chapter: number | null; verse: number | null }>(notes: T[]): T[] {
+  const at = (n: T) => (n.chapter ?? 0) * 1000 + (n.verse ?? 0);
+  const out: T[] = [];
+  for (const n of notes) {
+    const i = n.book != null && n.chapter != null ? out.findIndex((o) => o.book === n.book && o.chapter != null && at(o) > at(n)) : -1;
+    if (i < 0) out.push(n);
+    else out.splice(i, 0, n);
+  }
+  return out;
+}
+
+// Two notes whose order is set by their verses (both from the same book) -
+// moving one past the other wouldn't stick.
+export function orderedByVerse(a: Pick<StudyNote, "book" | "chapter">, b: Pick<StudyNote, "book" | "chapter">): boolean {
+  return a.book != null && a.book === b.book && a.chapter != null && b.chapter != null;
 }
 
 // The latest written note - its day, page and passage seed the next one.
@@ -238,15 +268,21 @@ function passageInText(text: string): Passage | null {
 //   "Matt 2 vs 7 - text"          (passage, text; same page)
 //   "Vs 12 - text"                (verse in the same book and chapter)
 //   "• question" / "* question"   (a bullet in the note above)
-// A paragraph after a blank line starts a new note (taking a reference
-// written inside it, if any); a line straight after another - or after a
-// line ending in ":" - continues it. Plain numbers ("1 - Tell these
+// When pasting, a paragraph after a blank line starts a new note (taking a
+// reference written inside it, if any); a line straight after another - or
+// after a line ending in ":" - continues it. In the writing box a blank line
+// is only a new paragraph (opts.blankStartsNote = false). Plain numbers ("1 - Tell these
 // stones...") are list items, not verses. `from` carries on from what was
 // written before: the day, the page, and the passage "Vs 12" continues.
 export function parseImport(
   raw: string,
   from: { day?: string | null; page?: number | null; prev?: Passage | null } = {},
+  opts: { blankStartsNote?: boolean } = {},
 ): NoteInput[] {
+  // Pasting from the Google Doc: a blank line starts a new note. Writing in
+  // the journal: it's just a new paragraph - a new note starts only with a
+  // new verse line ("Vs 12 - ", or what Start a note writes).
+  const blankStartsNote = opts.blankStartsNote ?? true;
   const out: NoteInput[] = [];
   let page: number | null = from.page ?? null;
   let prev: Passage | null = from.prev ?? null;
@@ -318,8 +354,8 @@ export function parseImport(
     if (consumed) continue;
 
     const prevNote = last();
-    if (prevNote && (!blank || /:\s*$/.test(prevNote.text))) {
-      prevNote.text = `${prevNote.text}\n${line}`;
+    if (prevNote && (!blank || !blankStartsNote || /:\s*$/.test(prevNote.text))) {
+      prevNote.text = `${prevNote.text}\n${blank && !blankStartsNote ? "\n" : ""}${line}`;
       // A reference inside the continuation names the passage of a note
       // that didn't have one ("Forgiveness ... - Matt 3 vs 6").
       if (!prevNote.book) {

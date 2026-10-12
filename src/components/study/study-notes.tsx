@@ -49,6 +49,7 @@ import {
   parseImport,
   parsePassage,
   passageOf,
+  orderedByVerse,
   readingOrder,
   shiftDay,
   todayDay,
@@ -690,7 +691,8 @@ export function StudyNotes() {
     }, 0);
   }
   const preview = useMemo(
-    () => parseImport(draft, { day: day === UNDATED ? null : day, page: context.page, prev: context.prev }),
+    () =>
+      parseImport(draft, { day: day === UNDATED ? null : day, page: context.page, prev: context.prev }, { blankStartsNote: false }),
     [draft, day, context],
   );
 
@@ -1954,7 +1956,7 @@ export function StudyNotes() {
                                     type="button"
                                     className="dash-note-move"
                                     onClick={() => move(n, -1)}
-                                    disabled={i === 0}
+                                    disabled={i === 0 || orderedByVerse(n, dayNotes[i - 1])}
                                     aria-label="Move up"
                                     title="Move up"
                                   >
@@ -1964,7 +1966,7 @@ export function StudyNotes() {
                                     type="button"
                                     className="dash-note-move"
                                     onClick={() => move(n, 1)}
-                                    disabled={i === dayNotes.length - 1}
+                                    disabled={i === dayNotes.length - 1 || orderedByVerse(n, dayNotes[i + 1])}
                                     aria-label="Move down"
                                     title="Move down"
                                   >
