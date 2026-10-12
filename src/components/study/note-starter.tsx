@@ -16,6 +16,7 @@ export function NoteStarter({
   page: startPage,
   passage: startPassage,
   prev,
+  hint,
   onStart,
 }: {
   dayText: string; // "Day 269 · Sat 26 September"
@@ -23,6 +24,7 @@ export function NoteStarter({
   page: number | null; // the page this day's notes were last on
   passage: string; // the chapter this day's notes were last on
   prev: Passage | null; // what "Vs 12" would carry on from
+  hint: { passage: string; page: string }; // the grey examples in the boxes - this day's (Day 1: Genesis 1)
   onStart: (line: string) => void;
 }) {
   const [page, setPage] = useState(startPage != null ? String(startPage) : "");
@@ -72,7 +74,7 @@ export function NoteStarter({
           <input
             className="dash-input"
             inputMode="numeric"
-            placeholder="1257"
+            placeholder={hint.page}
             value={page}
             onChange={(e) => setPage(e.target.value)}
             onKeyDown={onKey}
@@ -84,7 +86,7 @@ export function NoteStarter({
           <input
             className="dash-input"
             list="dash-starter-books"
-            placeholder="Matthew 2"
+            placeholder={hint.passage}
             value={passage}
             onChange={(e) => setPassage(e.target.value)}
             onKeyDown={onKey}
@@ -96,7 +98,7 @@ export function NoteStarter({
           <input
             className="dash-input"
             inputMode="numeric"
-            placeholder="7"
+            placeholder="1"
             value={verse}
             onChange={(e) => setVerse(e.target.value)}
             onKeyDown={onKey}

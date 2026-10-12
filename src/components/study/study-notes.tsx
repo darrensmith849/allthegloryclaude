@@ -671,6 +671,13 @@ export function StudyNotes() {
   const starterChapters = [
     ...new Set([...dayChapters, ...(isDay(day) ? (studyChapters.get(day.slice(5)) ?? []) : [])]),
   ].slice(0, 12);
+  // The grey examples in Start a note and the writing box follow the day: its
+  // own chapter when we know it (Day 1 is Genesis 1, on page 1), otherwise
+  // the chapter and page written on last.
+  const firstDay = isDay(day) && planDay(day).n === 1;
+  const hintPassage = starterChapters[0] ?? (firstDay || !context.prev ? "Genesis 1" : chapterLabel(context.prev));
+  const lastPage = [...ordered].reverse().find((n) => n.page != null && (!isDay(day) || (n.day != null && n.day <= day)))?.page;
+  const hintPage = firstDay ? "1" : lastPage != null ? String(lastPage) : "";
   function startLine(line: string) {
     const current = draft.replace(/\s+$/, "");
     const next = current ? `${current}\n${line}` : line;
@@ -2046,6 +2053,7 @@ export function StudyNotes() {
                     page={context.page}
                     passage={dayChapters[dayChapters.length - 1] ?? ""}
                     prev={[...dayNotes].reverse().map(passageOf).find(Boolean) ?? context.prev}
+                    hint={{ passage: hintPassage, page: hintPage }}
                     onStart={startLine}
                   />
                   <label className="dash-label" htmlFor="sn-write">
@@ -2056,11 +2064,7 @@ export function StudyNotes() {
                     ref={writeBox}
                     className="dash-textarea dash-word-field"
                     minRows={5}
-                    placeholder={
-                      context.prev
-                        ? `Write the way you do in your doc:\nVs 14 - …  (carries on in ${chapterLabel(context.prev)})\nLuke 2 vs 41 - …\n* a question or point`
-                        : "Write the way you do in your doc:\n1257 - Matt 2 vs 7 - …\nVs 12 - …\n* a question or point"
-                    }
+                    placeholder={`What stands out to you in ${hintPassage}?\n${hintPassage} vs 1 - …\nVs 3 - …\n* a question or thought`}
                     value={draft}
                     onChange={(e) => {
                       setDraft(day, e.target.value);
