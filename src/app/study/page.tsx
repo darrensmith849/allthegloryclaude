@@ -421,8 +421,8 @@ export default function StudyHome() {
           <div className="eyebrow eyebrow-amber">Invite a friend</div>
           <h2 className="study-today-title">Read through the Bible together</h2>
           <p className="study-card-text mb-4">
-            Know someone who&apos;d love to read along? Send them your link - they&apos;ll have their own private journal,
-            and you&apos;ll both be on the same day of the plan.
+            Know someone who&apos;d love to read along? Send them your link - they&apos;ll start at Day 1 with their own private
+            journal, and go at their own pace.
           </p>
           <ShareLink
             url={invite}

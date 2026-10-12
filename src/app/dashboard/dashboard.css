@@ -914,6 +914,11 @@ html:has(.dash-welcome-root),
   background: var(--colour-amber);
   transform: scale(1.3);
 }
+/* All 25 verse dots on one line on a phone (they wrapped two onto a second line). */
+@media (max-width: 420px) {
+  .dash-carousel-dots { gap: 4px; }
+  .dash-carousel-dot { width: 7px; height: 7px; }
+}
 
 .dash-welcome-cta-big {
   margin-top: 28px;
@@ -3939,7 +3944,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   .study-remind-link::after,
   .why-niv-toggle::after,
   .dash-community-memory::after { content: ""; position: absolute; inset: -9px -6px; }
-  .dash-carousel-dot::after { content: ""; position: absolute; inset: -12px -3px; }
+  .dash-carousel-dot::after { content: ""; position: absolute; inset: -12px -2px; }
   .dash-word-link { font-size: 13.5px; }
   .hide-touch { display: none; }
 }

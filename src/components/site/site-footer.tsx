@@ -78,7 +78,7 @@ export default function SiteFooter() {
       {/* Jesus painting background - full width */}
       <div className="absolute inset-0">
         <Image
-          src="/media/jesus-painting.jpg"
+          src="/media/jesus-painting.webp"
           alt=""
           fill
           sizes="100vw"

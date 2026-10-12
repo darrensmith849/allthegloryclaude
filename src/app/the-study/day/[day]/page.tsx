@@ -99,7 +99,7 @@ export default async function SharedDayPage({ params }: { params: Promise<{ day:
                   "radial-gradient(50% 50% at 50% 55%, rgba(216,178,90,0.55), rgba(216,178,90,0.12) 55%, transparent 75%)",
               }}
             />
-            <Image src="/media/logo-dove.png" alt="" fill priority sizes="130px" className="relative object-contain" />
+            <Image src="/media/logo-dove-440.webp" alt="" fill priority sizes="130px" className="relative object-contain" />
           </div>
           <div className="eyebrow eyebrow-amber mb-4">
             The Study · Day {n} · {dayLabel(d.day)}

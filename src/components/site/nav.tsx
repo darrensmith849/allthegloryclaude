@@ -45,13 +45,13 @@ export default function Nav() {
           className="group flex items-center gap-3 font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
           aria-label="All The Glory - home"
         >
-          {/* Dove + sunburst logo — same transparent PNG as the /contact
+          {/* Dove + sunburst logo — same transparent dove as the /contact
               hero (black field chroma-keyed out via
               scripts/dove-transparent.mjs), so the mark floats next to
               the wordmark instead of sitting inside a dark circle.
               Wider (44px) to give the dove room to read at small size. */}
           <Image
-            src="/media/logo-dove.png"
+            src="/media/logo-dove-440.webp"
             alt=""
             width={88}
             height={88}

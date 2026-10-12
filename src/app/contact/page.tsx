@@ -148,7 +148,7 @@ export default function ContactPage() {
               }}
             />
             <Image
-              src="/media/logo-dove.png"
+              src="/media/logo-dove-440.webp"
               alt="All The Glory"
               fill
               priority
