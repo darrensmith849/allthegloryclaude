@@ -84,17 +84,17 @@ export default function VideoReel({ reels }: { reels: Reel[] }) {
                     type="button"
                     onClick={() => pick(r)}
                     aria-current={on}
-                    className={`group flex w-full items-center gap-4 px-4 py-4 text-left transition-colors duration-300 ${on ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"}`}
+                    className={`group flex w-full items-center gap-3 px-3 py-3.5 sm:gap-4 sm:px-4 sm:py-4 text-left transition-colors duration-300 ${on ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"}`}
                   >
-                    <span className={`w-6 shrink-0 font-[family-name:var(--dj-mono)] text-[11px] ${on ? "text-[var(--dj-accent-l)]" : "text-[var(--dj-paper)]/40"}`}>
+                    <span className={`hidden w-6 shrink-0 font-[family-name:var(--dj-mono)] sm:inline text-[11px] ${on ? "text-[var(--dj-accent-l)]" : "text-[var(--dj-paper)]/40"}`}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
-                    <span className="relative block aspect-video w-[88px] shrink-0 overflow-hidden bg-black">
+                    <span className="relative block aspect-video w-[72px] shrink-0 sm:w-[88px] overflow-hidden bg-black">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`https://i.ytimg.com/vi/${r.id}/mqdefault.jpg`} alt="" loading="lazy" className={`h-full w-full object-cover transition duration-500 ${on ? "opacity-100" : "opacity-60 grayscale group-hover:opacity-90 group-hover:grayscale-0"}`} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-[family-name:var(--dj-serif)] text-xl leading-tight text-[var(--dj-paper)]">{r.title}</span>
+                      <span className="block font-[family-name:var(--dj-serif)] text-lg leading-tight sm:text-xl text-[var(--dj-paper)]">{r.title}</span>
                       <span className="mt-0.5 block truncate text-xs text-[var(--dj-paper)]/45">{r.note}</span>
                     </span>
                     <span className="shrink-0 font-[family-name:var(--dj-mono)] text-[11px] text-[var(--dj-paper)]/40">
