@@ -1,21 +1,19 @@
 "use client";
 
-// The Study's front door, in the album flyer's style: the member's next
-// reading (they go at their own pace), the owner's notes for it, their
-// progress, the reading plan and
-// the album.
+// The Study's front door, kept short: the member's next reading (they go at
+// their own pace) as read / write / mark as read, then this week's word from
+// the owner, and a few cards that fold away. Everything else is in the menu.
 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { canRead, studyName, useMe } from "@/components/study/shell";
+import { canRead, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, CALLS_NOTE, inPlan, nextPage, PLAN, STUDY_HEART } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN } from "@/lib/study/plan";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
-import { WhyNiv } from "@/components/study/why-niv";
 import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
 
 export default function StudyHome() {
@@ -66,6 +64,10 @@ export default function StudyHome() {
       .then((d: { reflection?: Weekly | null } | null) => setWeekly(d?.reflection ?? null))
       .catch(() => {});
   }, [memberId]);
+
+  // How it works and the invite fold away (remembered on this device).
+  const [howFolded, toggleHow] = useFolded(`atg:study:${memberId ?? "guest"}:howFolded`);
+  const [inviteFolded, toggleInvite] = useFolded(`atg:study:${memberId ?? "guest"}:inviteFolded`);
 
   // A friend's invite link of their own.
   const [invite, setInvite] = useState<string | null>(null);
@@ -173,23 +175,17 @@ export default function StudyHome() {
     <div className="study-home">
       <header className="study-hero">
         <Image src="/media/dove-mark.png" alt="" width={64} height={64} className="study-hero-dove" priority />
-        <div className="study-hero-mark">All The Glory</div>
-        <div className="study-hero-sub">The Study · {PLAN.name} · NIV</div>
-        <h1 className="study-home-title">Read through the Bible in the order it happened.</h1>
+        <div className="study-hero-mark">The Study</div>
+        <h1 className="study-home-title">{me.member ? `Welcome back, ${me.member.name.split(" ")[0]}.` : "The Study"}</h1>
         <p className="study-home-lead">
-          This is your own Bible study. Each day you read the next part of the Bible, write what stands out in your journal,
-          and mark the day as read. Go at your own pace.
+          Read the Bible in the order it happened - one day at a time, at your own pace.
         </p>
-        {me.member && <p className="study-home-hello">Welcome back, {me.member.name.split(" ")[0]}.</p>}
       </header>
 
-      {/* ── Today ───────────────────────────────────────────── */}
+      {/* ── Your next reading: read, write, tick ─────────────── */}
       <section className="study-today">
         <div className="eyebrow eyebrow-amber">{started ? `Your next reading · Day ${n} of 365` : "Start here · Day 1 of 365"}</div>
         <h2 className="study-today-title">{started ? `Day ${n}` : "Day 1 - Genesis 1"}</h2>
-        <p className="study-next-where">
-          {started ? `In the book: ${bookDate(focus)} · In the Bible App: Day ${n}` : "Read the passage, write what stands out, then mark the day as read below."}
-        </p>
         <div className="study-today-actions">
           <a className="study-today-step" href={bibleAppDay(n)} target="_blank" rel="noreferrer">
             <span className="study-today-num">1</span>
@@ -203,35 +199,25 @@ export default function StudyHome() {
               <span className="study-today-num">2</span>
               <span>
                 <strong>Write what stands out</strong>
-                <em>On Day {n} in your journal - private to you</em>
-              </span>
-            </Link>
-          )}
-          {readable && (
-            <Link className="study-today-step" href={me.member ? `/study/journal?day=${focus}&daniel=1` : "/study/read"}>
-              <span className="study-today-num">{me.member ? 3 : 2}</span>
-              <span>
-                <strong>{author ? `Read ${author}'s notes` : "Read the study notes"}</strong>
                 <em>
-                  {studyToday === undefined
-                    ? "…"
-                    : studyToday
-                      ? studyToday.title || `For Day ${n}`
-                      : `Day ${n} - written as we go`}
+                  In your journal
+                  {readable
+                    ? studyToday
+                      ? ` - with ${author ?? "the study"}'s notes: ${studyToday.title}`
+                      : ` - ${author ? `${author}'s` : "the study's"} notes are there too`
+                    : " - private to you"}
                 </em>
               </span>
             </Link>
           )}
-          {!me.member && (
-            me.loaded && (
-              <Link className="study-today-step" href="/study/login">
-                <span className="study-today-num">{readable ? 3 : 2}</span>
-                <span>
-                  <strong>Keep your own journal</strong>
-                  <em>{me.study?.signup === "open" ? "Log in or make an account" : "Log in - joining is by invite for now"}</em>
-                </span>
-              </Link>
-            )
+          {me.member && daysLoaded && !read.has(focus) && (
+            <button type="button" className="study-today-step is-tick" onClick={markRead}>
+              <span className="study-today-num">3</span>
+              <span>
+                <strong>Mark Day {n} as read</strong>
+                <em>{n < 365 ? `It turns gold, and Day ${n + 1} is ready` : "It turns gold - the last day of the plan"}</em>
+              </span>
+            </button>
           )}
         </div>
 
@@ -239,13 +225,8 @@ export default function StudyHome() {
           <div className="study-progress">
             <div className="study-progress-row">
               <span>
-                <strong>{readCount}</strong> of 365 days read · at your own pace
+                <strong>{readCount}</strong> of 365 days read
               </span>
-              {daysLoaded && !read.has(focus) && (
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav dash-read-btn" onClick={markRead}>
-                  Mark Day {n} as read
-                </button>
-              )}
             </div>
             {justRead && <p className="dash-word-saved mt-2">✓ Day {justRead} done - Day {n} is next.</p>}
             <span className="dash-read-bar" aria-hidden>
@@ -254,36 +235,6 @@ export default function StudyHome() {
           </div>
         )}
       </section>
-
-      {/* ── How it works, in four lines ─────────────────────── */}
-      {me.member && (
-        <section className="study-how">
-          <div className="eyebrow eyebrow-amber">How The Study works</div>
-          <ul>
-            <li>
-              <strong>The plan</strong> The whole Bible in a year, in the order events happened. Day 1 is Genesis 1.
-            </li>
-            <li>
-              <strong>Your pace</strong> No dates to keep up with - every day you mark as read turns gold, and the next one is ready.
-            </li>
-            <li>
-              <strong>The calls</strong> {CALLS_NOTE.replace(" - so the videos come weekly, not daily.", ".")} The videos appear on
-              those days, and the 🔔 tells you when one is up.
-            </li>
-            <li>
-              <strong>Your Bible</strong> Read in the Bible App (NIV), or get the paper book:{" "}
-              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
-                Takealot
-              </a>{" "}
-              ·{" "}
-              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
-                Amazon
-              </a>
-              .
-            </li>
-          </ul>
-        </section>
-      )}
 
       {me.member && !me.member.emailUpdates && !asked && (
         <div className="study-ask">
@@ -319,7 +270,6 @@ export default function StudyHome() {
         </Link>
       )}
 
-
       {weekly && (
         <section className={`study-weekly study-foldable ${weeklyFolded ? "is-folded" : ""}`}>
           <FoldToggle folded={weeklyFolded} onToggle={toggleWeekly} what="this week's reflection" />
@@ -342,96 +292,64 @@ export default function StudyHome() {
       )}
       {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
 
-
-      {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
-
-      <div className="study-cards">
-        <Link href="/study/names" className="study-card">
-          <span className="eyebrow eyebrow-amber">Who He is</span>
-          <span className="study-card-title">Names of God</span>
-          <span className="study-card-text">
-            El Shaddai, Yahweh Yireh, Immanuel - what each name of God and of Jesus means, where it first appears, and how
-            to say it. Look up any Bible name too.
-          </span>
-        </Link>
-        {readable && (
-          <Link href={me.member ? "/study/journal?daniel=1" : "/study/read"} className="study-card">
-            <span className="eyebrow eyebrow-amber">Follow along</span>
-            <span className="study-card-title">{studyName(me.study)}</span>
-            <span className="study-card-text">{me.study?.intro || STUDY_HEART}</span>
-          </Link>
-        )}
-        {me.member && (
-          <Link href="/study/journal" className="study-card">
-            <span className="eyebrow eyebrow-amber">Your journal</span>
-            <span className="study-card-title">My journal</span>
-            <span className="study-card-text">
-              Your notes and word studies on a calendar - private to you, kept for good.
-            </span>
-          </Link>
-        )}
-        {me.member && (
-          <Link href="/study/prayers" className="study-card">
-            <span className="eyebrow eyebrow-amber">Private to you</span>
-            <span className="study-card-title">Prayer list</span>
-            <span className="study-card-text">
-              Write down what you&apos;re praying for, with a verse to pray if you like - private to you.
-            </span>
-          </Link>
-        )}
-        {me.member && (
-          <Link href="/study/journal?day=starred" className="study-card">
-            <span className="eyebrow eyebrow-amber">Your highlights</span>
-            <span className="study-card-title">Starred days and notes</span>
-            <span className="study-card-text">
-              Tap ☆ Star this day on a day you love, or ☆ Star on a single note - they&apos;re all kept here, on every device.
-            </span>
-          </Link>
-        )}
-        <div className="study-card is-static">
-          <span className="eyebrow eyebrow-amber">The reading plan</span>
-          <span className="study-card-title">{PLAN.name}</span>
-          <span className="study-card-text">
-            {PLAN.edition} - the whole Bible in 365 readings, in the order events happened. Free in the{" "}
-            <a className="study-link" href={PLAN.bibleApp} target="_blank" rel="noreferrer">
-              Bible App
-            </a>
-            , or get the NIV book:{" "}
-            <a className="study-link" href={PLAN.takealot} target="_blank" rel="noreferrer">
-              Takealot
-            </a>{" "}
-            ·{" "}
-            <a className="study-link" href={PLAN.amazon} target="_blank" rel="noreferrer">
-              Amazon
-            </a>{" "}
-            ·{" "}
-            <a className="study-link" href={PLAN.kindle} target="_blank" rel="noreferrer">
-              Kindle
-            </a>
-          </span>
-          <span className="study-card-hint">
-            In the Bible App, if you see another translation, tap its name at the top and choose NIV - it remembers.
-          </span>
-          <WhyNiv className="mt-3" />
-        </div>
-      </div>
-
-      {invite && (
-        <section className="study-invite" id="invite">
-          <div className="eyebrow eyebrow-amber">Invite a friend</div>
-          <h2 className="study-today-title">Read through the Bible together</h2>
-          <p className="study-card-text mb-4">
-            Know someone who&apos;d love to read along? Send them your link - they&apos;ll start at Day 1 with their own private
-            journal, and go at their own pace.
-          </p>
-          <ShareLink
-            url={invite}
-            subject="Read through the Bible with me"
-            message="I'm reading through the Bible in the order it happened with The Study from All The Glory - join me:"
-          />
+      {/* ── How it works, in four lines (folds away once read) ── */}
+      {me.member && (
+        <section className={`study-how study-foldable ${howFolded ? "is-folded" : ""}`}>
+          <FoldToggle folded={howFolded} onToggle={toggleHow} what="how The Study works" />
+          <div className="eyebrow eyebrow-amber">How The Study works</div>
+          {!howFolded && (
+            <ul>
+              <li>
+                <strong>The plan</strong> The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.
+              </li>
+              <li>
+                <strong>Your pace</strong> No dates to keep up with. Each day you mark as read turns gold.
+              </li>
+              <li>
+                <strong>The calls</strong> Daniel and Reggie meet on a call once or twice a week. The video goes up on the
+                days it covers, and the 🔔 tells you.
+              </li>
+              <li>
+                <strong>Your Bible</strong> Free in the{" "}
+                <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+                  Bible App
+                </a>{" "}
+                (choose NIV), or get the paper book:{" "}
+                <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                  Takealot
+                </a>{" "}
+                ·{" "}
+                <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                  Amazon
+                </a>
+                .
+              </li>
+            </ul>
+          )}
         </section>
       )}
 
+      {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
+
+      {invite && (
+        <section className={`study-invite study-foldable ${inviteFolded ? "is-folded" : ""}`} id="invite">
+          <FoldToggle folded={inviteFolded} onToggle={toggleInvite} what="invite a friend" />
+          <div className="eyebrow eyebrow-amber">Invite a friend</div>
+          {!inviteFolded && (
+            <>
+              <h2 className="study-today-title">Read through the Bible together</h2>
+              <p className="study-card-text mb-4">
+                Send your link - they&apos;ll start at Day 1 with their own private journal, and go at their own pace.
+              </p>
+              <ShareLink
+                url={invite}
+                subject="Read through the Bible with me"
+                message="I'm reading through the Bible in the order it happened with The Study from All The Glory - join me:"
+              />
+            </>
+          )}
+        </section>
+      )}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
-// "Get The Study as an app", on members' home page - so nobody has to go
+// "Get The Study as an app", on members' home page, on phones and tablets
+// only (on a computer the reminder lives in Account) - so nobody has to go
 // into Account for it. Android / Chrome: one tap installs it. iPhone: no
 // website can add itself, so a tap opens the steps right here. Once it's on
-// the Home Screen (or wherever reminders already work), the same card is the
-// daily reminder switch.
+// the Home Screen, the same card is the daily reminder switch until it's on.
 
 import { useEffect, useState } from "react";
 import { IosInstallGuide } from "./ios-install-guide";
@@ -22,13 +22,16 @@ export function AppCard({ hideKey }: { hideKey: string }) {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [steps, setSteps] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [phone, setPhone] = useState(false);
 
   useEffect(() => {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
     setInstalled(standalone);
-    setIos(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    setIos(isIos);
+    setPhone(isIos || /Android/i.test(navigator.userAgent));
     try {
       setHidden(Number(window.localStorage.getItem(hideKey) ?? 0) > Date.now());
     } catch {
@@ -50,15 +53,15 @@ export function AppCard({ hideKey }: { hideKey: string }) {
 
   if (!ready) return null;
 
-  // On the Home Screen already: just the reminder switch.
+  // On the Home Screen already: just the reminder switch (gone once it's on).
   if (installed) {
     return (
-      <section className="study-app-card">
-        <Reminders compact />
+      <section className="study-app-card dash-app-card">
+        <Reminders compact hideWhenOn />
       </section>
     );
   }
-  if (hidden) return null;
+  if (hidden || !phone) return null;
 
   function notNow() {
     try {
@@ -116,14 +119,12 @@ export function AppCard({ hideKey }: { hideKey: string }) {
           )}
         </>
       ) : (
-        <>
-          {/* Android / computers: reminders work in the browser too. */}
-          <Reminders compact />
-          <p className="dash-word-hint mt-3">
-            To add it to your home screen: on Android tap ⋮ then &ldquo;Add to Home screen&rdquo;; on a computer, the install
-            icon at the right of the address bar.
-          </p>
-        </>
+        <div className="study-app-actions">
+          <p className="dash-word-hint">Tap the ⋮ menu, then &ldquo;Add to Home screen&rdquo; or &ldquo;Install app&rdquo;.</p>
+          <button type="button" className="dash-word-link" onClick={notNow}>
+            Not now
+          </button>
+        </div>
       )}
     </section>
   );

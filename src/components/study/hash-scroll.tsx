@@ -28,6 +28,8 @@ export function HashScroll() {
         last = at;
         const late = Date.now() - started > 5000;
         if (el && (still >= 3 || late)) {
+          // A home card folded down to its title: open it first.
+          if (el.classList.contains("is-folded")) el.querySelector<HTMLButtonElement>(":scope > .study-fold")?.click();
           // On phones the menu bar stays pinned at the top - land below it.
           const bar = document.querySelector<HTMLElement>(".dash-sidebar");
           const pinned = bar && /sticky|fixed/.test(getComputedStyle(bar).position) && bar.offsetHeight < window.innerHeight / 2;

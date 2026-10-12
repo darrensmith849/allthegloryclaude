@@ -7,8 +7,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { memberClient, StudyClientProvider } from "@/lib/study/client";
 import { ThemeSwitch } from "./theme-toggle";
 import type { Member, StudySettings } from "@/lib/study/members";
@@ -110,22 +110,24 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
   );
 
   // The left menu: only the study - like the owner's dashboard menu.
-  const nav = [
-    { href: "/study/names", label: "Names of God", glyph: "א" },
-    { href: "/study", label: me.member ? "Today" : "Home", glyph: "✦" },
-    ...(readable ? [{ href: me.member ? "/study/journal?daniel=1" : "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
-    ...(me.member
-      ? [
-          { href: "/study/journal", label: "My journal", glyph: "✎" },
-          { href: "/study/words", label: "All words", glyph: "α" },
-          { href: "/study/prayers", label: "Prayer list", glyph: "♡" },
-          { href: "/study/community", label: "Community", glyph: "❧" },
-          { href: "/study/journal?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
-          { href: "/study/account", label: "Account", glyph: "⚙" },
-          { href: "/study#invite", label: "Invite a friend", glyph: "✉" },
-        ]
-      : []),
-  ];
+  // Members read the owner's study inside My journal (it sits in each day),
+  // so it has no page of its own here; the Recycle bin is in the journal too.
+  const nav = me.member
+    ? [
+        { href: "/study", label: "Today", glyph: "✦" },
+        { href: "/study/journal", label: "My journal", glyph: "✎" },
+        { href: "/study/words", label: "All words", glyph: "α" },
+        { href: "/study/names", label: "Names of God", glyph: "א" },
+        { href: "/study/prayers", label: "Prayer list", glyph: "♡" },
+        { href: "/study/community", label: "Community", glyph: "❧" },
+        { href: "/study/account", label: "Account", glyph: "⚙" },
+        { href: "/study#invite", label: "Invite a friend", glyph: "✉" },
+      ]
+    : [
+        { href: "/study", label: "Home", glyph: "✦" },
+        { href: "/study/names", label: "Names of God", glyph: "א" },
+        ...(readable ? [{ href: "/study/read", label: studyName(me.study), glyph: "✶" }] : []),
+      ];
   // Phones: the menu is one scrolling row - keep the open page's pill in
   // view, and drop the edge fade once it's scrolled to the end.
   const navRef = useRef<HTMLElement>(null);
@@ -166,9 +168,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         </div>
         <ThemeSwitch className="mt-4 study-side-theme" />
         <nav className="study-side-nav" aria-label="The Study" ref={navRef} onScroll={markNavEnd}>
-          <Suspense fallback={<NavLinks nav={nav} pathname={pathname} daniel={false} navRef={navRef} onMoved={markNavEnd} />}>
-            <NavLinksLive nav={nav} pathname={pathname} navRef={navRef} onMoved={markNavEnd} />
-          </Suspense>
+          <NavLinks nav={nav} pathname={pathname} navRef={navRef} onMoved={markNavEnd} />
           {me.loaded && !me.member && (
             <>
               <Link href={`/the-study?login=1&next=${encodeURIComponent(pathname ?? "/study")}`} className="dash-nav-link">
@@ -277,9 +277,8 @@ export function MemberOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// The menu's links. "Daniel's study" for members is the journal with
-// ?daniel=1, so it's the one lit up there (not "My journal"). On phones the
-// row scrolls: the lit link is brought into view, next to its neighbours.
+// The menu's links. On phones the row scrolls: the lit link is brought into
+// view, next to its neighbours.
 type NavItem = { href: string; label: string; glyph: string };
 interface NavProps {
   nav: NavItem[];
@@ -288,12 +287,7 @@ interface NavProps {
   onMoved: () => void;
 }
 
-function NavLinksLive(props: NavProps) {
-  const params = useSearchParams();
-  return <NavLinks {...props} daniel={params.get("daniel") === "1"} bin={params.get("day") === "deleted"} />;
-}
-
-function NavLinks({ nav, pathname, daniel, bin = false, navRef, onMoved }: NavProps & { daniel: boolean; bin?: boolean }) {
+function NavLinks({ nav, pathname, navRef, onMoved }: NavProps) {
   useEffect(() => {
     const el = navRef.current;
     const active = el?.querySelector<HTMLElement>(".is-active");
@@ -301,7 +295,7 @@ function NavLinks({ nav, pathname, daniel, bin = false, navRef, onMoved }: NavPr
       el.scrollLeft = Math.max(0, active.offsetLeft - el.clientWidth / 2 + active.offsetWidth / 2);
     }
     onMoved();
-  }, [pathname, daniel, bin, nav.length, navRef, onMoved]);
+  }, [pathname, nav.length, navRef, onMoved]);
 
   return (
     <>
@@ -309,13 +303,9 @@ function NavLinks({ nav, pathname, daniel, bin = false, navRef, onMoved }: NavPr
         const active =
           n.href === "/study"
             ? pathname === "/study"
-            : n.href.includes("daniel=1")
-              ? pathname?.startsWith("/study/read") || (pathname === "/study/journal" && daniel)
-              : n.href.includes("day=deleted")
-                ? pathname === "/study/journal" && bin
-              : n.href === "/study/journal"
-                ? pathname?.startsWith("/study/journal") && !daniel && !bin
-                : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
+            : n.href === "/study/journal"
+              ? pathname?.startsWith("/study/journal") || pathname?.startsWith("/study/read")
+              : !n.href.includes("#") && !n.href.includes("?") && pathname?.startsWith(n.href);
         return (
           <Link key={n.href} href={n.href} className={`dash-nav-link ${active ? "is-active" : ""}`}>
             <span className="dash-nav-glyph">{n.glyph}</span>

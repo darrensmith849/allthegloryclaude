@@ -174,8 +174,6 @@ export function StudyNotes() {
   const [studyOn, setStudyOn] = useState<Map<string, string>>(() => new Map());
   const [studyChapters, setStudyChapters] = useState<Map<string, string[]>>(() => new Map());
   const [studyIndex, setStudyIndex] = useState<PlanIndex>(() => new Map());
-  // Members: the owner's furthest day from Day 1 on, before the start.
-  const [studyLatest, setStudyLatest] = useState<string | null>(null);
   // Members: the owner's session video for each date (MM-DD), latest year.
   const [studyVideo, setStudyVideo] = useState<Map<string, string>>(() => new Map());
   // Bible names saved to days from "Look up a name".
@@ -212,9 +210,9 @@ export function StudyNotes() {
     if (r?.ok) setSavedNames((list) => list.map((x) => (x.id === n.id ? { ...x, deletedAt: Date.now() } : x)));
     else alert("Couldn't remove it - check your connection.");
   }
-  // "Where we start": members until they've read their first day; the
-  // owner always (it's his way into the group's Genesis days).
-  const showStart = planMode ? daysLoaded && !started : true;
+  // "Where we start": the owner only (his way into the group's Genesis
+  // days); members have theirs on their home page.
+  const showStart = !planMode;
   const toggleNote = (id: string) =>
     setOpenNotes((s) => {
       const next = new Set(s);
@@ -330,7 +328,7 @@ export function StudyNotes() {
   // The guide's steps swipe sideways on phones; which one is showing.
   const guideRef = useRef<HTMLOListElement>(null);
   const [guideStep, setGuideStep] = useState(0);
-  const guideCount = client.studyUrl ? 6 : 5;
+  const guideCount = 4;
   const onGuideScroll = () => {
     const el = guideRef.current;
     if (!el || !el.clientWidth) return;
@@ -383,7 +381,6 @@ export function StudyNotes() {
             if (!data?.contents) return;
             setStudyOn(new Map(data.contents.map((c) => [c.day.slice(5), c.title || c.chapters.join(" · ")])));
             setStudyChapters(new Map(data.contents.map((c) => [c.day.slice(5), c.chapters])));
-            setStudyLatest(data.contents.map((c) => c.day).filter(inPlan).sort().pop() ?? null);
             setStudyVideo(new Map((data.videos ?? []).map((v) => [v.day.slice(5), v.video])));
             const index: PlanIndex = new Map();
             for (const c of data.contents)
@@ -1037,21 +1034,18 @@ export function StudyNotes() {
     <>
       <div className="dash-pagehead">
         <div>
-          <div className="eyebrow eyebrow-amber">The One Year Chronological Bible · NIV</div>
+          <div className="eyebrow eyebrow-amber">{planMode ? "Private to you" : "The One Year Chronological Bible · NIV"}</div>
           <h1 className="dash-title mt-1">{client.kind === "member" ? "My journal" : "Study Notes"}</h1>
           <div className="dash-subtitle">
-            {liveNotes.length
-              ? `${liveNotes.length} ${liveNotes.length === 1 ? "note" : "notes"} across ${counts.size} ${counts.size === 1 ? "day" : "days"}. Every note is kept - tap a day to read or add to it.`
-              : "Pick the day you're reading and write your notes the way you always do."}
+            {planMode
+              ? `One page for each day of the plan: write what stands out${client.studyUrl ? `, with ${client.studyAuthor ?? "the study"}'s notes for the day right there` : ""}.`
+              : liveNotes.length
+                ? `${liveNotes.length} ${liveNotes.length === 1 ? "note" : "notes"} across ${counts.size} ${counts.size === 1 ? "day" : "days"}. Every note is kept - tap a day to read or add to it.`
+                : "Pick the day you're reading and write your notes the way you always do."}
           </div>
         </div>
         {/* The journal's tools - easy to spot, each with its sign. */}
         <div className="journal-tools">
-          {client.studyUrl && (
-            <button type="button" className="dash-btn dash-btn-primary journal-tool-main" onClick={() => showStudy()}>
-              {client.studyName} ▾
-            </button>
-          )}
           <button
             type="button"
             className={`journal-tool ${day === STARRED ? "is-on" : ""}`}
@@ -1070,10 +1064,12 @@ export function StudyNotes() {
             <span className="journal-tool-icon" aria-hidden>🗑&#xFE0E;</span>
             Recycle bin{binItems.length ? <span className="journal-tool-count">{binItems.length}</span> : null}
           </button>
-          <a className="journal-tool" href={client.wordsUrl} title="Every word you've studied">
-            <span className="journal-tool-icon" aria-hidden>α</span>
-            All words
-          </a>
+          {!planMode && (
+            <a className="journal-tool" href={client.wordsUrl} title="Every word you've studied">
+              <span className="journal-tool-icon" aria-hidden>α</span>
+              All words
+            </a>
+          )}
           <a
             className="journal-tool"
             href={`${client.printUrl}?month=${(isDay(day) ? day : todayDay()).slice(0, 7)}`}
@@ -1082,11 +1078,14 @@ export function StudyNotes() {
             <span className="journal-tool-icon" aria-hidden>⎙</span>
             Print
           </a>
-          <button type="button" className={`journal-tool dash-hide-phone ${importOpen ? "is-on" : ""}`} onClick={() => setImportOpen((v) => !v)}>
-            <span className="journal-tool-icon" aria-hidden>⧉</span>
-            {importOpen ? "Close" : "Paste many days"}
-          </button>
-          {liveNotes.length > 0 && (
+          {!planMode && (
+            <button type="button" className={`journal-tool dash-hide-phone ${importOpen ? "is-on" : ""}`} onClick={() => setImportOpen((v) => !v)}>
+              <span className="journal-tool-icon" aria-hidden>⧉</span>
+              {importOpen ? "Close" : "Paste many days"}
+            </button>
+          )}
+          {/* Members download theirs from Account. */}
+          {!planMode && liveNotes.length > 0 && (
             <button type="button" className="journal-tool dash-hide-phone" onClick={download}>
               <span className="journal-tool-icon" aria-hidden>⤓</span>
               Download
@@ -1101,38 +1100,17 @@ export function StudyNotes() {
         <div className="journal-start">
           <div className="journal-start-text">
             <span className="eyebrow eyebrow-amber">Where we start</span>
-            {client.kind === "member" ? (
-              <>
-                <p>
-                  <strong>Start at Day 1 - Genesis 1.</strong> Read the passage, write what stands out, then tap{" "}
-                  <strong>Mark as read</strong> - the day turns gold and the next one is ready.
-                </p>
-              </>
-            ) : (
-              <p>
-                <strong>Genesis with the group goes on Day 1 onwards - the 1 January page.</strong> Members go at their own pace
-                and see each day as it&apos;s written. Your New Testament stays on its own dates, kept for members until their
-                reading reaches those days.
-              </p>
-            )}
+            <p>
+              <strong>Genesis with the group goes on Day 1 onwards - the 1 January page.</strong> Members go at their own pace
+              and see each day as it&apos;s written. Your New Testament stays on its own dates, kept for members until their
+              reading reaches those days.
+            </p>
           </div>
           <div className="journal-start-actions">
             <button type="button" className="dash-btn dash-btn-primary dash-note-nav" onClick={() => goToDay(STUDY_START)}>
               Open Day 1
             </button>
-            {client.kind === "member" && studyLatest && studyLatest > STUDY_START && (
-              <button
-                type="button"
-                className="dash-btn dash-btn-ghost dash-note-nav"
-                onClick={() => {
-                  goToDay(studyLatest);
-                  showStudy(false);
-                }}
-              >
-                {client.studyAuthor ?? "Daniel"}&apos;s latest · Day {planDay(studyLatest).n}
-              </button>
-            )}
-            {client.kind === "owner" && startLatest && (
+            {startLatest && (
               <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => goToDay(shiftDay(startLatest, 1))}>
                 Next · Day {planDay(shiftDay(startLatest, 1)).n}
               </button>
@@ -1168,32 +1146,19 @@ export function StudyNotes() {
                 <>
                   <ol className="dash-guide" ref={guideRef} onScroll={onGuideScroll}>
                     <li>
-                      <strong>Open a day.</strong> {planMode
-                        ? "The day you're up to is already open - start at Day 1 and go at your own pace."
-                        : "Today is already open."}{" "}
-                      Each day is that day&apos;s reading in <em>{PLAN.name}</em>.
+                      <strong>Your day is open.</strong> The day you&apos;re up to opens by itself. On the calendar, gold
+                      means read.
                     </li>
                     <li>
-                      <strong>Read the passages.</strong> Use the 📖 Bible App link (NIV), or your own copy of the book.
-                    </li>
-                    {client.studyUrl && (
-                      <li>
-                        <strong>Read {client.studyAuthor ? `${client.studyAuthor}'s` : "the study's"} notes.</strong> Gold
-                        dots on the calendar mark the days {client.studyAuthor ?? "the study"} wrote - open the card on that
-                        day to read them right there.
-                      </li>
-                    )}
-                    <li>
-                      <strong>Write your notes.</strong> Use the Page, Passage and Verse boxes under &ldquo;Start a note&rdquo;,
-                      then write. A line like <code>Vs 14 - …</code> becomes its own note under that verse.
+                      <strong>Read the passage.</strong> Tap 📖 Read here or the Bible App link (NIV), or use your book.
                     </li>
                     <li>
-                      <strong>Study a word.</strong> Type a word from the reading under &ldquo;Study a word&rdquo; and tap Fill
-                      it in for the Hebrew or Greek, its meaning and the verses that use it.
+                      <strong>Write what stands out.</strong> Type in the box and tap Save note.
+                      {client.studyUrl ? ` ${client.studyAuthor ?? "The study"}'s notes for the day are right there too.` : ""}
                     </li>
                     <li>
-                      <strong>Tick &ldquo;Mark as read&rdquo;.</strong> It keeps your place and builds a streak. Everything
-                      is saved and private to you.
+                      <strong>Tap &ldquo;Mark as read&rdquo;.</strong> The day turns gold and the next one is ready. Everything
+                      here is private to you.
                     </li>
                   </ol>
                   {/* Phones: one step at a time - swipe, or Back / Next. */}
@@ -1412,8 +1377,12 @@ export function StudyNotes() {
                     <span className="dash-cal-key-item">
                       <span className="dash-cal-key-open" aria-hidden /> The day that&apos;s open
                     </span>
+                    {client.studyUrl && studyOn.size > 0 && (
+                      <span className="dash-cal-key-item">
+                        <i className="dash-cal-study-dot" aria-hidden /> {client.studyAuthor ?? "The study"}&apos;s notes
+                      </span>
+                    )}
                   </p>
-                  <p className="dash-cal-key">Each square is a day of the plan, with its page in the book underneath. Day 1 is Genesis 1.</p>
                   </>
                 )}
                 {!planMode && reflections.byDay.size > 0 && (
@@ -1421,7 +1390,7 @@ export function StudyNotes() {
                     <span aria-hidden>❧</span> Weekly reflection - open the day to read it
                   </p>
                 )}
-                {client.studyUrl && studyOn.size > 0 && (
+                {!planMode && client.studyUrl && studyOn.size > 0 && (
                   <p className="dash-cal-key">
                     <i className="dash-cal-study-dot" /> {client.studyAuthor ? `${client.studyAuthor} wrote on these days` : "The study has notes on these days"} -
                     open a day to read them
@@ -1438,6 +1407,8 @@ export function StudyNotes() {
                   </button>
                 )}
                 <DayJump onGo={goToDay} />
+                {!planMode && (
+                  <>
                 <button type="button" className="dash-word-link mt-3 block" onClick={() => goToDay(TRASH)}>
                   🗑 Recycle bin{binItems.length ? ` · ${binItems.length}` : ""} →
                 </button>
@@ -1461,6 +1432,8 @@ export function StudyNotes() {
                   </a>
                 </p>
                 <WhyNiv />
+                  </>
+                )}
 
               </Panel>
             </div>
@@ -1746,7 +1719,7 @@ export function StudyNotes() {
                         <span className="dash-daniel-sub">
                           {studyOn.has(day.slice(5))
                             ? studyOn.get(day.slice(5)) || `For ${label(day, { weekday: false })}`
-                            : `Nothing for ${label(day, { weekday: false })} yet - see the latest`}
+                            : "Not written for this day yet"}
                         </span>
                       </span>
                       <span className="dash-daniel-toggle">{studyOpen ? "Minimise ▴" : "Open ▾"}</span>
@@ -1755,8 +1728,8 @@ export function StudyNotes() {
                       <StudyPeek
                         key={day}
                         on={studyOn.has(day.slice(5)) ? day.slice(5) : undefined}
-                        studyUrl={client.studyUrl}
                         author={client.studyAuthor}
+                        onOpenDay={(d) => openDay(`${(planMode ? STUDY_START : todayDay()).slice(0, 4)}-${d.slice(5)}`)}
                       />
                     )}
                   </div>
