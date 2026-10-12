@@ -1,4 +1,12 @@
 import type { Metadata } from "next";
+import { Anton, Instrument_Serif, Manrope } from "next/font/google";
+
+// This page has its own type, separate from the album site: a tall
+// condensed poster face for headlines, an elegant italic serif for
+// accents, and a clean modern sans for reading.
+const poster = Anton({ subsets: ["latin"], weight: "400", display: "swap", variable: "--dj-poster" });
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], display: "swap", variable: "--dj-serif" });
+const body = Manrope({ subsets: ["latin"], display: "swap", variable: "--dj-body" });
 
 export const metadata: Metadata = {
   title: { absolute: "Daniel Jenkins - Singer, Songwriter, Lead Guitarist" },
@@ -25,5 +33,5 @@ export const metadata: Metadata = {
 };
 
 export default function DanielLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className={`${poster.variable} ${serif.variable} ${body.variable}`}>{children}</div>;
 }
