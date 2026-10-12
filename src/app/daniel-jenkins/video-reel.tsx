@@ -4,10 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 export type Reel = { id: string; title: string; year: string; note: string };
 
-// One player box: the featured video large, every reel listed beside it
-// (underneath on phones) in a scrollable strip. Tapping a reel loads it
-// into the big player. Thumbnails stand in until something is played, so
-// the page doesn't load heavy YouTube players up front.
 // Best thumbnail first; step down when a size is missing for a video.
 const SIZES = ["maxresdefault", "sddefault", "hqdefault"];
 function nextThumb(img: HTMLImageElement, id: string) {
@@ -15,6 +11,10 @@ function nextThumb(img: HTMLImageElement, id: string) {
   if (i >= 0 && i < SIZES.length - 1) img.src = `https://i.ytimg.com/vi/${id}/${SIZES[i + 1]}.jpg`;
 }
 
+// One player box: the featured video large, every reel listed beside it
+// (underneath on phones) in a scrollable list. Tapping a reel loads it into
+// the big player. Thumbnails stand in until something is played, so the
+// page doesn't load heavy YouTube players up front.
 export default function VideoReel({ reels }: { reels: Reel[] }) {
   const [active, setActive] = useState(reels[0]);
   const [playing, setPlaying] = useState(false);
@@ -32,10 +32,10 @@ export default function VideoReel({ reels }: { reels: Reel[] }) {
   };
 
   return (
-    <div className="dj-player grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[28px] border border-[var(--dj-line)] bg-[#14100e]/80 p-3 shadow-[0_40px_120px_-40px_rgba(200,69,44,0.45)] backdrop-blur sm:p-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] border border-[var(--dj-dline)] lg:grid-cols-[minmax(0,1fr)_380px]">
       {/* Main player */}
-      <div>
-        <div className="relative aspect-video overflow-hidden rounded-[20px] bg-black">
+      <div className="border-b border-[var(--dj-dline)] p-3 sm:p-4 lg:border-b-0 lg:border-r">
+        <div className="relative aspect-video overflow-hidden bg-black">
           {playing ? (
             <iframe
               key={active.id}
@@ -46,12 +46,7 @@ export default function VideoReel({ reels }: { reels: Reel[] }) {
               allowFullScreen
             />
           ) : (
-            <button
-              type="button"
-              onClick={() => setPlaying(true)}
-              className="group absolute inset-0 h-full w-full text-left"
-              aria-label={`Play ${active.title}`}
-            >
+            <button type="button" onClick={() => setPlaying(true)} className="group absolute inset-0 h-full w-full" aria-label={`Play ${active.title}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 key={active.id}
@@ -63,72 +58,61 @@ export default function VideoReel({ reels }: { reels: Reel[] }) {
                 }}
                 onError={(e) => nextThumb(e.currentTarget, active.id)}
                 alt=""
-                className="h-full w-full scale-[1.02] object-cover transition duration-700 group-hover:scale-[1.06]"
+                className="h-full w-full scale-[1.01] object-cover opacity-75 transition duration-[1.2s] ease-out group-hover:scale-[1.04] group-hover:opacity-90"
               />
-              <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10" />
-              <span className="dj-pulse absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--dj-rust)] text-white sm:h-24 sm:w-24">
-                <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" className="ml-1"><path d="M8 5v14l11-7z" /></svg>
-              </span>
-              <span className="absolute bottom-0 left-0 hidden p-5 sm:block sm:p-8">
-                <span className="block text-[11px] font-bold uppercase tracking-[0.35em] text-[var(--dj-amber)]">Featured · {active.year}</span>
-                <span className="mt-2 block font-[family-name:var(--dj-poster)] text-4xl uppercase leading-none text-[var(--dj-cream)] sm:text-6xl">{active.title}</span>
-                <span className="mt-2 block font-[family-name:var(--dj-serif)] text-lg italic text-[var(--dj-cream)]/75 sm:text-xl">{active.note}</span>
+              <span className="absolute left-1/2 top-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/50 font-[family-name:var(--dj-mono)] text-[11px] uppercase tracking-[0.2em] text-white backdrop-blur-sm transition duration-500 group-hover:scale-110 group-hover:border-white group-hover:bg-white group-hover:text-black sm:h-28 sm:w-28">
+                Play
               </span>
             </button>
           )}
         </div>
-        <div className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 pb-1 pt-4 ${playing ? "" : "sm:hidden"}`}>
-            <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-[var(--dj-amber)]">{playing ? "Now playing" : "Featured"}</span>
-            <span className="font-[family-name:var(--dj-poster)] text-2xl uppercase text-[var(--dj-cream)]">{active.title}</span>
-            <span className="font-[family-name:var(--dj-serif)] text-lg italic text-[var(--dj-cream)]/60">{active.note}, {active.year}</span>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1 pt-4">
+          <p className="font-[family-name:var(--dj-serif)] text-3xl leading-tight text-[var(--dj-paper)] sm:text-4xl">
+            {active.title}
+          </p>
+          <p className="font-[family-name:var(--dj-mono)] text-[11px] uppercase tracking-[0.15em] text-[var(--dj-paper)]/50">
+            {playing ? "Now playing" : "Featured"} &mdash; {active.note}, {active.year}
+          </p>
         </div>
       </div>
 
       {/* Playlist */}
       <div className="flex min-h-0 flex-col lg:relative">
-        <div className="lg:absolute lg:inset-0 lg:flex lg:flex-col">
-        <div className="flex items-center justify-between px-2 pb-3 pt-1">
-          <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-[var(--dj-cream)]/50">All showreels</span>
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--dj-cream)]/35">{reels.length} videos</span>
-        </div>
-        <ol className="dj-scroll flex gap-3 overflow-x-auto pb-2 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0 lg:pr-1">
-          {reels.map((r, i) => {
-            const on = r.id === active.id;
-            return (
-              <li key={r.id} className="w-[220px] shrink-0 lg:w-auto">
-                <button
-                  type="button"
-                  onClick={() => pick(r)}
-                  aria-current={on}
-                  className={`group flex w-full flex-col gap-3 rounded-2xl p-2 text-left transition lg:flex-row lg:items-center ${
-                    on ? "bg-[var(--dj-rust)]/20 ring-1 ring-[var(--dj-rust)]/60" : "hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-black lg:w-[132px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`https://i.ytimg.com/vi/${r.id}/mqdefault.jpg`} alt="" loading="lazy" className="h-full w-full object-cover opacity-80 transition group-hover:opacity-100" />
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full ${on ? "bg-[var(--dj-rust)]" : "bg-black/60"} text-white`}>
-                        {on && playing ? (
-                          <span className="dj-eq flex h-3 items-end gap-[2px]"><i /><i /><i /></span>
-                        ) : (
-                          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" className="ml-0.5"><path d="M8 5v14l11-7z" /></svg>
-                        )}
-                      </span>
+        <div className="flex min-h-0 flex-col lg:absolute lg:inset-0">
+          <div className="flex items-center justify-between border-b border-[var(--dj-dline)] px-4 py-3 font-[family-name:var(--dj-mono)] text-[11px] uppercase tracking-[0.15em] text-[var(--dj-paper)]/50">
+            <span>Index</span>
+            <span>{String(reels.length).padStart(2, "0")} films</span>
+          </div>
+          <ol className="dj-scroll max-h-[340px] min-h-0 overflow-y-auto lg:max-h-none lg:flex-1">
+            {reels.map((r, i) => {
+              const on = r.id === active.id;
+              return (
+                <li key={r.id} className="border-b border-[var(--dj-dline)] last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => pick(r)}
+                    aria-current={on}
+                    className={`group flex w-full items-center gap-4 px-4 py-4 text-left transition-colors duration-300 ${on ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"}`}
+                  >
+                    <span className={`w-6 shrink-0 font-[family-name:var(--dj-mono)] text-[11px] ${on ? "text-[var(--dj-accent-l)]" : "text-[var(--dj-paper)]/40"}`}>
+                      {String(i + 1).padStart(2, "0")}
                     </span>
-                  </span>
-                  <span className="min-w-0 px-1">
-                    <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--dj-amber)]">
-                      {String(i + 1).padStart(2, "0")} · {r.year}
+                    <span className="relative block aspect-video w-[88px] shrink-0 overflow-hidden bg-black">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://i.ytimg.com/vi/${r.id}/mqdefault.jpg`} alt="" loading="lazy" className={`h-full w-full object-cover transition duration-500 ${on ? "opacity-100" : "opacity-60 grayscale group-hover:opacity-90 group-hover:grayscale-0"}`} />
                     </span>
-                    <span className="mt-1 block font-[family-name:var(--dj-poster)] text-lg uppercase leading-tight text-[var(--dj-cream)]">{r.title}</span>
-                    <span className="block truncate text-xs text-[var(--dj-cream)]/50">{r.note}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-[family-name:var(--dj-serif)] text-xl leading-tight text-[var(--dj-paper)]">{r.title}</span>
+                      <span className="mt-0.5 block truncate text-xs text-[var(--dj-paper)]/45">{r.note}</span>
+                    </span>
+                    <span className="shrink-0 font-[family-name:var(--dj-mono)] text-[11px] text-[var(--dj-paper)]/40">
+                      {on && playing ? <span className="dj-eq inline-flex h-3 items-end gap-[2px]"><i /><i /><i /></span> : r.year}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </div>
     </div>

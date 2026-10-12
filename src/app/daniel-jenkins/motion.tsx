@@ -69,9 +69,9 @@ export function HeroImage({ children }: { children: React.ReactNode }) {
 }
 
 // Counts a number up from zero the first time it's seen.
-export function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
+export function CountUp({ to, from = 0, suffix = "" }: { to: number; from?: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [n, setN] = useState(0);
+  const [n, setN] = useState(from);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -85,14 +85,14 @@ export function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
       const start = performance.now();
       const tick = (t: number) => {
         const p = Math.min(1, (t - start) / 1600);
-        setN(Math.round(to * (1 - Math.pow(1 - p, 3))));
+        setN(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
     });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [to]);
+  }, [to, from]);
   return (
     <span ref={ref}>
       {n}

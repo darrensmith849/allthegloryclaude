@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Anton, Instrument_Serif, Manrope } from "next/font/google";
+import { IBM_Plex_Mono, Instrument_Serif, Inter_Tight } from "next/font/google";
 
-// This page has its own type, separate from the album site: a tall
-// condensed poster face for headlines, an elegant italic serif for
-// accents, and a clean modern sans for reading.
-const poster = Anton({ subsets: ["latin"], weight: "400", display: "swap", variable: "--dj-poster" });
+// This page has its own editorial type, separate from the album site:
+// a refined display serif, a tight modern sans for reading, and a small
+// typewriter mono for labels.
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], display: "swap", variable: "--dj-serif" });
-const body = Manrope({ subsets: ["latin"], display: "swap", variable: "--dj-body" });
+const sans = Inter_Tight({ subsets: ["latin"], display: "swap", variable: "--dj-sans" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--dj-mono" });
 
 export const metadata: Metadata = {
   title: { absolute: "Daniel Jenkins - Singer, Songwriter, Lead Guitarist" },
@@ -33,5 +33,5 @@ export const metadata: Metadata = {
 };
 
 export default function DanielLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${poster.variable} ${serif.variable} ${body.variable}`}>{children}</div>;
+  return <div className={`${serif.variable} ${sans.variable} ${mono.variable}`}>{children}</div>;
 }
