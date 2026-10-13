@@ -821,7 +821,7 @@ export function StudyNotes() {
   }
 
   // The owner's session video for the open day (a YouTube link, or "" to take it off).
-  async function saveVideo(url: string, toDay?: number): Promise<boolean> {
+  async function saveVideo(url: string, toDay?: number): Promise<"notified" | "saved" | false> {
     if (!isDay(day)) return false;
     const d = days[day];
     // The call covered up to Day toDay: the same video on each of those days.
@@ -832,16 +832,29 @@ export function StudyNotes() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ day, title: d?.title ?? "", takeaway: d?.takeaway ?? "", shared: d?.shared ?? true, video: url, videoTo }),
       });
-      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; also?: StudyDay[]; error?: string };
+      const data = (await r.json().catch(() => ({}))) as { day?: StudyDay; also?: StudyDay[]; notified?: boolean; error?: string };
       if (!r.ok || !data.day) throw new Error(data.error ?? "Couldn't save that.");
       const next = { ...days, [day]: data.day, ...Object.fromEntries((data.also ?? []).map((x) => [x.day, x])) };
       setDays(next);
       writeStore(DAYS_KEY, next);
-      return true;
+      return data.notified ? "notified" : "saved";
     } catch (err) {
       alert(err instanceof Error ? err.message : "Couldn't save that.");
       return false;
     }
+  }
+
+  // "Notify members" under a day's video: tell them about it (again).
+  async function notifyVideo(): Promise<string> {
+    const r = await fetch("/api/owner-videos", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ notify: day }),
+    }).catch(() => null);
+    const data = r ? ((await r.json().catch(() => ({}))) as { devices?: number; private?: boolean; error?: string }) : null;
+    if (!r?.ok || !data) throw new Error(data?.error ?? "Couldn't tell members - check your connection.");
+    if (data.private) return "Members were told, but this day is set to private - they won't see the video until it's shared.";
+    return `✓ Members told - it's under the 🔔 in their study${data.devices ? `, and ${data.devices} ${data.devices === 1 ? "phone gets" : "phones get"} an alert` : ""}.`;
   }
 
   // Tick a day's reading as done (or not). Saved per day, kept for good.
@@ -1642,7 +1655,7 @@ export function StudyNotes() {
                   </div>
                 )}
 
-                {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} dayN={planDay(day).n} onSave={saveVideo} />}
+                {isDay(day) && client.sharing && <SessionVideo key={day} url={days[day]?.video} dayN={planDay(day).n} onSave={saveVideo} onNotify={client.kind === "owner" ? notifyVideo : undefined} />}
                 {isDay(day) && client.kind === "member" && studyVideo.get(day.slice(5)) && (
                   <DayVideo url={studyVideo.get(day.slice(5))} label={`Watch ${client.studyAuthor ?? "Daniel"}'s session for this day`} />
                 )}
@@ -2147,7 +2160,7 @@ export function StudyNotes() {
                   planName={client.kind === "member" ? `${client.studyAuthor ?? "the study"}'s notes` : "your notes"}
                   onOpenDay={(d) => {
                     // Members open the same date in their own year, where the owner's notes sit too.
-                    const target = client.kind === "member" ? `${todayDay().slice(0, 4)}-${d.slice(5)}` : d;
+                    const target = client.kind === "member" ? `${STUDY_START.slice(0, 4)}-${d.slice(5)}` : d;
                     openDay(target);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}

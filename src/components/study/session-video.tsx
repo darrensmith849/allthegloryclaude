@@ -3,8 +3,9 @@
 // The owner's session video on a journal day: always there on each date -
 // paste the YouTube link and it plays right in the day (and for members on
 // the same day); change or remove it any time. One call usually covers
-// several days: "up to Day N" puts the same video on each of them, and
-// members' bells (and phones) say a new video is up.
+// several days: "up to Day N" puts the same video on each of them. Saving
+// a new video tells members (their bell, and phones with notifications on),
+// and says so; "Notify members" tells them again.
 
 import { useState } from "react";
 import { parseYouTube } from "@/lib/study/youtube";
@@ -14,12 +15,17 @@ export function SessionVideo({
   url,
   dayN,
   onSave,
+  onNotify,
 }: {
   url: string | null | undefined;
   dayN: number;
-  onSave: (url: string, toDay?: number) => Promise<boolean>;
+  // "notified": saved and members told; "saved": saved (same video, or removed).
+  onSave: (url: string, toDay?: number) => Promise<"notified" | "saved" | false>;
+  onNotify?: () => Promise<string>; // tell members again - the message to show
 }) {
   const [editing, setEditing] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [telling, setTelling] = useState(false);
   const [text, setText] = useState("");
   const [upTo, setUpTo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -33,12 +39,34 @@ export function SessionVideo({
     }
     setBusy(true);
     setError(null);
-    const ok = await onSave(next, to && to > dayN ? to : undefined);
+    setDone(null);
+    const result = await onSave(next, to && to > dayN ? to : undefined);
     setBusy(false);
-    if (ok) {
+    if (result) {
       setEditing(false);
       setText("");
       setUpTo("");
+      setDone(
+        !next
+          ? "Video taken off this day."
+          : result === "notified"
+            ? `✓ Saved and live - members have been told${to && to > dayN ? ` (Days ${dayN}-${to})` : ""}. It's under the 🔔 in their study.`
+            : "✓ Saved.",
+      );
+    }
+  }
+
+  async function notify() {
+    if (!onNotify) return;
+    setTelling(true);
+    setError(null);
+    setDone(null);
+    try {
+      setDone(await onNotify());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't tell members.");
+    } finally {
+      setTelling(false);
     }
   }
 
@@ -66,7 +94,14 @@ export function SessionVideo({
           >
             Remove
           </button>
+          {onNotify && (
+            <button type="button" className="dash-word-link" onClick={() => void notify()} disabled={telling}>
+              {telling ? "Telling members…" : "🔔 Notify members"}
+            </button>
+          )}
         </div>
+        {done && <p className="dash-word-saved session-video-done">{done}</p>}
+        {error && <p className="dash-starter-error session-video-error">{error}</p>}
       </div>
     );
   }
@@ -106,13 +141,14 @@ export function SessionVideo({
         />
       </label>
       <button type="button" className="dash-btn dash-btn-primary dash-note-nav" disabled={busy || !text.trim()} onClick={() => void save(text.trim())}>
-        {busy ? "Saving…" : "Add"}
+        {busy ? "Saving…" : "Save and notify members"}
       </button>
       {editing && (
         <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setEditing(false)}>
           Cancel
         </button>
       )}
+      {done && <p className="dash-word-saved session-video-done">{done}</p>}
       {error ? (
         <p className="dash-starter-error session-video-error">{error}</p>
       ) : (

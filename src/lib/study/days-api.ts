@@ -156,9 +156,11 @@ export function daysApi(scopeOf: ScopeOf) {
               .all<Row>()
           ).results.map(toDay)
         : [];
-      // A new video on a shared day: tell members (bell now; phones in the
-      // background) - not when an existing link is just corrected.
-      if (setVideo && video && shared && (!before?.video || rangeDays.length)) {
+      // A new or different video on a shared day: tell members (bell now;
+      // phones in the background) - not when the same video is saved again.
+      const newVideo = parseYouTube(video)?.id !== parseYouTube(before?.video)?.id;
+      const notified = Boolean(setVideo && video && shared && (newVideo || rangeDays.length));
+      if (notified && video) {
         await addVideoNotice(db, { day: body.day, dayTo: rangeDays.length ? rangeDays[rangeDays.length - 1] : null, video }).catch(
           (e) => console.error("notice:", e),
         );
@@ -173,6 +175,7 @@ export function daysApi(scopeOf: ScopeOf) {
       return Response.json({
         day: row ? toDay(row) : { day: body.day, title, takeaway, shared: Boolean(shared), updatedAt: now },
         ...(also.length ? { also } : {}),
+        ...(notified ? { notified: true } : {}),
       });
     } catch (e) {
       console.error("days PUT:", e);

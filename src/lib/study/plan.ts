@@ -45,6 +45,10 @@ export const startMessage = () =>
 export const startBanner = (_today?: string) => "We're starting again at Genesis 1, together - join in and go at your own pace.";
 
 // How the videos come: one call a week, as far through the reading as they get.
+// Why the NIV - Daniel's reason, in his words, wherever the site explains it.
+export const WHY_NIV =
+  "It's the only Bible we've found that's broken down by the day, in the order things happened. Each day has its own reading, so you never study too much or too little in a day.";
+
 export const CALLS_NOTE =
   "Daniel and Reggie meet on a call once or twice a week and go through as much of the reading as they can - so the videos come weekly, not daily.";
 

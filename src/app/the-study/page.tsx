@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { PLAN, STUDY_HEART } from "@/lib/study/plan";
+import { PLAN, STUDY_HEART, WHY_NIV } from "@/lib/study/plan";
 import { PasswordInput } from "@/components/ui/password-input";
 
 interface Me {
@@ -261,6 +261,9 @@ export default function TheStudyPage() {
           <p className="mt-6 text-center text-sm text-white/60 max-w-2xl mx-auto leading-relaxed">
             Go at your own pace - there are no dates to keep up with. Why this order? Job beside Genesis, the Psalms in
             David&apos;s life, the prophets beside their kings: the whole story finally fits together.
+          </p>
+          <p className="mt-3 text-center text-sm text-white/60 max-w-2xl mx-auto leading-relaxed">
+            Why the NIV? {WHY_NIV}
           </p>
         </div>
       </section>

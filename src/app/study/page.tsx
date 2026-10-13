@@ -11,7 +11,7 @@ import { canRead, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, inPlan, nextPage, PLAN } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, WHY_NIV } from "@/lib/study/plan";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
@@ -329,6 +329,9 @@ export default function StudyHome() {
                   Amazon
                 </a>
                 .
+              </li>
+              <li>
+                <strong>Why the NIV</strong> {WHY_NIV}
               </li>
             </ul>
           )}

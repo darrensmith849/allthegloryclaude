@@ -4737,3 +4737,5 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   .reading-context dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .reading-context dd { margin-bottom: 6px; }
 }
+
+.session-video-done { flex-basis: 100%; margin-top: 8px; }
