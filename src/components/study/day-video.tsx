@@ -9,7 +9,7 @@
 // (dashboard.css), so you can watch the talk and write at the same time.
 
 import { useEffect, useRef, useState } from "react";
-import { embedUrl, parseYouTube, watchUrl } from "@/lib/study/youtube";
+import { embedUrl, parseYouTube, subscribeUrl, watchUrl } from "@/lib/study/youtube";
 
 const PLAYER_ORIGIN = "https://www.youtube-nocookie.com";
 
@@ -113,9 +113,18 @@ export function DayVideo({ url, label = "Watch the session" }: { url: string | n
           </span>
         </button>
       )}
-      <a className="dash-word-link day-video-link" href={watchUrl(v)} target="_blank" rel="noreferrer">
-        Open in YouTube ↗
-      </a>
+      <div className="day-video-links">
+        <a className="day-video-subscribe" href={subscribeUrl} target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 68 48" aria-hidden>
+            <path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3.3 34 .3 34 .3s-21.3 0-26.6 1.4c-2.9.8-5.1 3.1-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 47.7 34 47.7 34 47.7s21.3 0 26.6-1.4c2.9-.8 5.1-3.1 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#f00" />
+            <path d="M45 24 27 14v20z" fill="#fff" />
+          </svg>
+          Subscribe on YouTube
+        </a>
+        <a className="dash-word-link day-video-link" href={watchUrl(v)} target="_blank" rel="noreferrer">
+          Open in YouTube ↗
+        </a>
+      </div>
     </div>
   );
 }

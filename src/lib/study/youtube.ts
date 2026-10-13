@@ -39,3 +39,8 @@ export function parseYouTube(raw: string | null | undefined): YouTubeVideo | nul
 export const embedUrl = (v: YouTubeVideo) =>
   `https://www.youtube-nocookie.com/embed/${v.id}?rel=0&modestbranding=1${v.start ? `&start=${v.start}` : ""}`;
 export const watchUrl = (v: YouTubeVideo) => `https://www.youtube.com/watch?v=${v.id}${v.start ? `&t=${v.start}s` : ""}`;
+
+// The study's YouTube channel (ChronologicalNIVBibleStudy) - "Subscribe"
+// opens it with YouTube's own subscribe prompt.
+export const CHANNEL_ID = "UCoUSDMMY4ZyzBp2u5tNhMHQ";
+export const subscribeUrl = `https://www.youtube.com/channel/${CHANNEL_ID}?sub_confirmation=1`;

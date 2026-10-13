@@ -71,8 +71,7 @@ export default function StudyHome() {
       .catch(() => {});
   }, [memberId]);
 
-  // How it works and the invite fold away (remembered on this device).
-  const [howFolded, toggleHow] = useFolded(`atg:study:${memberId ?? "guest"}:howFolded`);
+  // The invite folds away (remembered on this device).
   const [inviteFolded, toggleInvite] = useFolded(`atg:study:${memberId ?? "guest"}:inviteFolded`);
 
   // A friend's invite link of their own.
@@ -242,6 +241,53 @@ export default function StudyHome() {
         )}
       </section>
 
+      {/* ── How it works: the first thing to read, always open ── */}
+      {me.member && (
+        <section className="study-how" id="how">
+          <div className="eyebrow eyebrow-amber">How The Study works</div>
+          <ul>
+            <li>
+              <strong>The plan</strong> The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.
+            </li>
+            <li>
+              <strong>Your pace</strong> No dates to keep up with. Each day you mark as read turns gold.
+            </li>
+            <li>
+              <strong>Finding your way</strong> <em>Today</em> (this page) shows your next reading.{" "}
+              <em>My journal</em> has a page for every day - your notes, {author ?? "Daniel"}&apos;s notes and the videos.{" "}
+              <em>All words</em> keeps the Hebrew and Greek words you study. The menu is on the left - at the top on a phone.
+            </li>
+            <li>
+              <strong>The calls</strong> Daniel and Reggie meet on a call once or twice a week. The video goes up on the
+              days it covers, and the 🔔 at the top tells you.
+            </li>
+            <li>
+              <strong>Your Bible</strong> Free in the{" "}
+              <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+                Bible App
+              </a>{" "}
+              (choose NIV), or get the paper book:{" "}
+              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                Takealot
+              </a>{" "}
+              ·{" "}
+              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                Amazon
+              </a>
+              .
+            </li>
+            <li>
+              <strong>Why the NIV</strong> {WHY_NIV}
+            </li>
+            <li>
+              <strong>On your phone</strong> Put The Study on your Home Screen and open it like an app. iPhone: open
+              alltheglory.co.za/study in Safari, tap Share (the square with the arrow), then &ldquo;Add to Home Screen&rdquo;.
+              Android: tap the ⋮ menu in Chrome, then &ldquo;Add to Home screen&rdquo;.
+            </li>
+          </ul>
+        </section>
+      )}
+
       {me.member && !me.member.emailUpdates && !asked && (
         <div className="study-ask">
           <span>Would you like the occasional email when new studies, music or videos go up?</span>
@@ -297,46 +343,6 @@ export default function StudyHome() {
         </section>
       )}
       {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
-
-      {/* ── How it works, in four lines (folds away once read) ── */}
-      {me.member && (
-        <section className={`study-how study-foldable ${howFolded ? "is-folded" : ""}`}>
-          <FoldToggle folded={howFolded} onToggle={toggleHow} what="how The Study works" />
-          <div className="eyebrow eyebrow-amber">How The Study works</div>
-          {!howFolded && (
-            <ul>
-              <li>
-                <strong>The plan</strong> The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.
-              </li>
-              <li>
-                <strong>Your pace</strong> No dates to keep up with. Each day you mark as read turns gold.
-              </li>
-              <li>
-                <strong>The calls</strong> Daniel and Reggie meet on a call once or twice a week. The video goes up on the
-                days it covers, and the 🔔 tells you.
-              </li>
-              <li>
-                <strong>Your Bible</strong> Free in the{" "}
-                <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
-                  Bible App
-                </a>{" "}
-                (choose NIV), or get the paper book:{" "}
-                <a href={PLAN.takealot} target="_blank" rel="noreferrer">
-                  Takealot
-                </a>{" "}
-                ·{" "}
-                <a href={PLAN.amazon} target="_blank" rel="noreferrer">
-                  Amazon
-                </a>
-                .
-              </li>
-              <li>
-                <strong>Why the NIV</strong> {WHY_NIV}
-              </li>
-            </ul>
-          )}
-        </section>
-      )}
 
       {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
 

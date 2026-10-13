@@ -4440,7 +4440,24 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   font-size: 13px;
   font-weight: 600;
 }
+.day-video-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
+.day-video-links .day-video-link { margin-top: 0; }
 .day-video-link { display: inline-block; margin-top: 6px; font-size: 12.5px; }
+.day-video-subscribe {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--colour-ink-strong);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.day-video-subscribe:hover { border-color: #f00; background: rgb(255 0 0 / 0.05); }
+.day-video-subscribe svg { width: 22px; height: 16px; flex: none; }
 .dash-day-video { margin-bottom: 12px; }
 .dash-day-video > .dash-word-link { margin-left: 12px; font-size: 12.5px; }
 .dash-day-held {
