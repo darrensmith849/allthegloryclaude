@@ -4386,7 +4386,10 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-weekly .study-weekly-go { align-self: flex-start; }
 
 /* A day's session video (YouTube) */
-.day-video { margin: 14px 0 6px; }
+.day-video { position: relative; margin: 14px 0 6px; }
+/* The player getting ready behind the picture - out of sight, but full size so it starts up properly. */
+.day-video-preload { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 16 / 9; opacity: 0; pointer-events: none; z-index: -1; overflow: hidden; }
+.day-video-preload iframe { width: 100%; height: 100%; border: 0; }
 .day-video-frame,
 .day-video-poster {
   position: relative;

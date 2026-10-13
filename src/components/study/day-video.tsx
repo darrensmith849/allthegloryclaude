@@ -1,33 +1,99 @@
 "use client";
 
-// A day's session video (YouTube), played right inside the day. The player
-// only loads when tapped, so a day with a video opens as fast as any other.
-// Once it's playing it stays put at the top of the day's box while the
-// notes and the writing box scroll up beneath it (dashboard.css), so you
-// can watch the talk and write at the same time.
+// A day's session video (YouTube), played right inside the day. YouTube's
+// player is heavy (a few seconds and ~1MB before a video can start), so it
+// loads quietly in the background once the video is on screen - then a tap
+// starts it straight away. (Not on phones asking to save data: there it
+// loads on the tap.) Once it's playing it stays put at the top of the day's
+// box while the notes and the writing box scroll up beneath it
+// (dashboard.css), so you can watch the talk and write at the same time.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { embedUrl, parseYouTube, watchUrl } from "@/lib/study/youtube";
 
+const PLAYER_ORIGIN = "https://www.youtube-nocookie.com";
+
 export function DayVideo({ url, label = "Watch the session" }: { url: string | null | undefined; label?: string }) {
-  const [playing, setPlaying] = useState(false);
   const v = parseYouTube(url);
+  const [playing, setPlaying] = useState(false);
+  const [load, setLoad] = useState(false); // the player is in the page (hidden until playing)
+  const [autoplay, setAutoplay] = useState(false); // loaded by the tap itself
+  const [ready, setReady] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const wantPlay = useRef(false);
+
+  // A different video: start again.
+  useEffect(() => {
+    setPlaying(false);
+    setLoad(false);
+    setAutoplay(false);
+    setReady(false);
+    wantPlay.current = false;
+  }, [v?.id]);
+
+  // Get the player ready once the video is on screen.
+  useEffect(() => {
+    if (!v || load) return;
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (saveData || !box.current || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setLoad(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(box.current);
+    return () => io.disconnect();
+  }, [v, load]);
+
+  // Ask the loaded player to play (a few times: it may still be starting up).
+  const command = (func: string) =>
+    frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), PLAYER_ORIGIN);
+  const startIt = () => {
+    for (const ms of [0, 400, 1200]) window.setTimeout(() => command("playVideo"), ms);
+  };
+
+  function play() {
+    setPlaying(true);
+    if (!load) {
+      setAutoplay(true);
+      setLoad(true);
+    } else if (ready) startIt();
+    else wantPlay.current = true;
+  }
+
   if (!v) return null;
+  const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
+  const src = `${embedUrl(v)}&enablejsapi=1&playsinline=1${origin}${autoplay ? "&autoplay=1" : ""}`;
+
   return (
-    <div className="day-video">
-      {playing ? (
-        <div className="day-video-frame">
+    <div className="day-video" ref={box}>
+      {load && (
+        <div className={playing ? "day-video-frame" : "day-video-preload"} aria-hidden={!playing}>
           <iframe
-            src={`${embedUrl(v)}&autoplay=1`}
+            ref={frame}
+            src={src}
             title={label}
-            loading="lazy"
+            tabIndex={playing ? 0 : -1}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
+            onLoad={() => {
+              setReady(true);
+              if (wantPlay.current) {
+                wantPlay.current = false;
+                startIt();
+              }
+            }}
           />
         </div>
-      ) : (
-        <button type="button" className="day-video-poster" onClick={() => setPlaying(true)} aria-label={label}>
+      )}
+      {!playing && (
+        <button type="button" className="day-video-poster" onClick={play} aria-label={label}>
           <img
             src={`https://img.youtube.com/vi/${v.id}/hqdefault.jpg`}
             alt=""
