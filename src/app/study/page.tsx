@@ -11,7 +11,7 @@ import { canRead, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, WHY_NIV } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, START_WHY, WHY_NIV } from "@/lib/study/plan";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
@@ -241,50 +241,83 @@ export default function StudyHome() {
         )}
       </section>
 
-      {/* ── How it works: the first thing to read, always open ── */}
+      {/* ── How it works: the first thing to read, always open, one box per topic ── */}
       {me.member && (
         <section className="study-how" id="how">
           <div className="eyebrow eyebrow-amber">How The Study works</div>
-          <ul>
-            <li>
-              <strong>The plan</strong> The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.
-            </li>
-            <li>
-              <strong>Your pace</strong> No dates to keep up with. Each day you mark as read turns gold.
-            </li>
-            <li>
-              <strong>Finding your way</strong> <em>Today</em> (this page) shows your next reading.{" "}
-              <em>My journal</em> has a page for every day - your notes, {author ?? "Daniel"}&apos;s notes and the videos.{" "}
-              <em>All words</em> keeps the Hebrew and Greek words you study. The menu is on the left - at the top on a phone.
-            </li>
-            <li>
-              <strong>The calls</strong> Daniel and Reggie meet on a call once or twice a week. The video goes up on the
-              days it covers, and the 🔔 at the top tells you.
-            </li>
-            <li>
-              <strong>Your Bible</strong> Free in the{" "}
-              <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
-                Bible App
-              </a>{" "}
-              (choose NIV), or get the paper book:{" "}
-              <a href={PLAN.takealot} target="_blank" rel="noreferrer">
-                Takealot
-              </a>{" "}
-              ·{" "}
-              <a href={PLAN.amazon} target="_blank" rel="noreferrer">
-                Amazon
-              </a>
-              .
-            </li>
-            <li>
-              <strong>Why the NIV</strong> {WHY_NIV}
-            </li>
-            <li>
-              <strong>On your phone</strong> Put The Study on your Home Screen and open it like an app. iPhone: open
-              alltheglory.co.za/study in Safari, tap Share (the square with the arrow), then &ldquo;Add to Home Screen&rdquo;.
-              Android: tap the ⋮ menu in Chrome, then &ldquo;Add to Home screen&rdquo;.
-            </li>
-          </ul>
+          <div className="study-how-grid">
+            <div className="study-how-card">
+              <h3>The plan</h3>
+              <p>The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.</p>
+            </div>
+            <div className="study-how-card">
+              <h3>Why we start at 1 January</h3>
+              <p>
+                The book&apos;s readings run from 1 January to 31 December. {START_WHY} So everyone starts at Day 1 - the
+                1 January page - whatever today&apos;s date is.
+              </p>
+            </div>
+            <div className="study-how-card">
+              <h3>Your pace</h3>
+              <p>
+                No dates to keep up with - go at your own speed. Each day you mark as read turns gold, and the next one is
+                ready.
+              </p>
+            </div>
+            <div className="study-how-card">
+              <h3>Finding your way</h3>
+              <p>
+                <strong>Today</strong> (this page) shows your next reading.
+                <br />
+                <strong>My journal</strong> has a page for every day - your notes, {author ?? "Daniel"}&apos;s notes and the
+                videos.
+                <br />
+                <strong>All words</strong> keeps the Hebrew and Greek words you study.
+                <br />
+                The menu is on the left - at the top on a phone.
+              </p>
+            </div>
+            <div className="study-how-card">
+              <h3>The calls</h3>
+              <p>
+                Daniel and Reggie meet on a call once or twice a week. Each video goes up on the days it covers, and the 🔔
+                at the top tells you.
+              </p>
+            </div>
+            <div className="study-how-card">
+              <h3>Your Bible</h3>
+              <p>
+                Free in the{" "}
+                <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+                  Bible App
+                </a>{" "}
+                (choose NIV), or get the paper book from{" "}
+                <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+                  Takealot
+                </a>{" "}
+                or{" "}
+                <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+                  Amazon
+                </a>
+                .
+              </p>
+            </div>
+            <div className="study-how-card">
+              <h3>Why the NIV</h3>
+              <p>{WHY_NIV}</p>
+            </div>
+            <div className="study-how-card">
+              <h3>On your phone</h3>
+              <p>
+                Put The Study on your Home Screen and open it like an app.
+                <br />
+                <strong>iPhone:</strong> open alltheglory.co.za/study in Safari, tap Share (the square with the arrow), then
+                &ldquo;Add to Home Screen&rdquo;.
+                <br />
+                <strong>Android:</strong> tap the ⋮ menu in Chrome, then &ldquo;Add to Home screen&rdquo;.
+              </p>
+            </div>
+          </div>
         </section>
       )}
 

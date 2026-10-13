@@ -4704,10 +4704,18 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .dash-reminder-calendar { margin-top: 10px; font-size: 13.5px; }
 .dash-reminder-calendar a { color: var(--colour-amber); font-weight: 600; }
 /* Members' home: how The Study works, in four short lines */
-.study-how { margin-top: 18px; padding: 20px 24px; border-radius: 18px; border: 1px solid rgb(var(--gold-rgb) / 0.3); background: var(--paper); }
-.study-how ul { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }
-.study-how li { font-size: 15px; line-height: 1.55; color: var(--colour-ink-soft); }
-.study-how li strong { display: block; font-family: var(--font-read), Georgia, serif; font-weight: 400; font-size: 18px; color: var(--colour-amber); }
+.study-how { margin-top: 18px; padding: 20px 24px 24px; border-radius: 18px; border: 1px solid rgb(var(--gold-rgb) / 0.3); background: var(--paper); }
+/* One box per topic: two across on a wide screen, one on a phone. */
+.study-how-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 720px) {
+  .study-how { padding: 18px 14px 16px; }
+  .study-how-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .study-how-card { padding: 14px 16px; }
+}
+.study-how-card { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-soft); background: var(--field); }
+.study-how-card h3 { font-family: var(--font-read), Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1.25; color: var(--colour-amber); margin-bottom: 6px; }
+.study-how-card p { font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
+.study-how-card p strong { font-weight: 600; color: var(--colour-ink-strong); }
 .study-how a { color: var(--colour-amber); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── Context under Read here: who's speaking, and the same story elsewhere ── */
