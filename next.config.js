@@ -26,6 +26,9 @@ const nextConfig = {
       // The commissioned-work page used to live at /events. Permanent so any
       // crawled link or bookmark lands on the canonical URL.
       { source: '/events', destination: '/commissions', permanent: true },
+      // The short link shared for The Study (YouTube, WhatsApp, emails) goes
+      // to the real page - with any ?invite= code kept.
+      { source: '/join', destination: '/the-study', permanent: true },
     ];
   },
   async headers() {
