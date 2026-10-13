@@ -2914,8 +2914,6 @@ a.study-card:hover { border-color: rgb(var(--gold-rgb) / 0.45); background: rgb(
 }
 .study-today-step:hover { border-color: rgb(var(--gold-rgb) / 0.5); background: rgb(var(--gold-rgb) / 0.05); }
 button.study-today-step { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
-.study-today-step.is-tick { border-color: rgb(var(--gold-rgb) / 0.55); }
-.study-today-step.is-tick .study-today-num { background: var(--colour-amber); border-color: var(--colour-amber); color: var(--on-gold); }
 .study-today-step strong { display: block; font-family: var(--font-display), serif; font-weight: 500; font-size: 16px; color: var(--colour-ink-strong); }
 .study-today-step em { display: block; margin-top: 2px; font-style: normal; font-size: 12.5px; color: var(--colour-ink-quiet); }
 .study-today-num {
@@ -4716,6 +4714,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-how-card h3 { font-family: var(--font-read), Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1.25; color: var(--colour-amber); margin-bottom: 6px; }
 .study-how-card p { font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
 .study-how-card p strong { font-weight: 600; color: var(--colour-ink-strong); }
+.study-how-steps { margin-top: 12px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-soft); background: var(--field); }
+.study-how-bible { margin-top: 14px; font-size: 14px; line-height: 1.6; color: var(--colour-ink-quiet); }
 .study-how a { color: var(--colour-amber); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── Context under Read here: who's speaking, and the same story elsewhere ── */

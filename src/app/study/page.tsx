@@ -11,11 +11,12 @@ import { canRead, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, START_WHY, WHY_NIV } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, START_WHY } from "@/lib/study/plan";
+import { IosInstallGuide } from "@/components/study/ios-install-guide";
+import { WhyNiv } from "@/components/study/why-niv";
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
-import { shownThisVisit, whoAmIOff } from "@/lib/study/who-am-i";
 
 export default function StudyHome() {
   const me = useMe();
@@ -24,11 +25,6 @@ export default function StudyHome() {
   useEffect(() => {
     if (me.loaded && !me.member) router.replace("/the-study");
   }, [me.loaded, me.member, router]);
-  // Opening The Study opens on "Who am I?" first, each visit - unless they
-  // chose not to (and not when following a link to a spot on this page).
-  useEffect(() => {
-    if (me.member && !window.location.hash && !shownThisVisit() && !whoAmIOff(me.member.id)) router.replace("/study/who-am-i");
-  }, [me.member, router]);
   const readable = canRead(me);
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : null;
   // Effects below key on the id, not the member object (which is replaced
@@ -71,6 +67,8 @@ export default function StudyHome() {
       .catch(() => {});
   }, [memberId]);
 
+  // How it works: the phone steps, opened on request.
+  const [phoneSteps, setPhoneSteps] = useState(false);
   // The invite folds away (remembered on this device).
   const [inviteFolded, toggleInvite] = useFolded(`atg:study:${memberId ?? "guest"}:inviteFolded`);
 
@@ -216,7 +214,7 @@ export default function StudyHome() {
             </Link>
           )}
           {me.member && daysLoaded && !read.has(focus) && (
-            <button type="button" className="study-today-step is-tick" onClick={markRead}>
+            <button type="button" className="study-today-step" onClick={markRead}>
               <span className="study-today-num">3</span>
               <span>
                 <strong>Mark Day {n} as read</strong>
@@ -241,83 +239,64 @@ export default function StudyHome() {
         )}
       </section>
 
-      {/* ── How it works: the first thing to read, always open, one box per topic ── */}
+      {/* ── How it works: the first thing to read, always open - four short boxes ── */}
       {me.member && (
         <section className="study-how" id="how">
           <div className="eyebrow eyebrow-amber">How The Study works</div>
           <div className="study-how-grid">
             <div className="study-how-card">
-              <h3>The plan</h3>
-              <p>The whole Bible in 365 days, in the order it happened. Day 1 is Genesis 1.</p>
-            </div>
-            <div className="study-how-card">
-              <h3>Why we start at 1 January</h3>
+              <h3>One day at a time</h3>
               <p>
-                The book&apos;s readings run from 1 January to 31 December. {START_WHY} So everyone starts at Day 1 - the
-                1 January page - whatever today&apos;s date is.
+                The whole Bible in 365 days, in the order it happened. Go at your own pace - each day you mark as read
+                turns gold.
               </p>
             </div>
             <div className="study-how-card">
-              <h3>Your pace</h3>
+              <h3>Why Day 1 is 1 January</h3>
               <p>
-                No dates to keep up with - go at your own speed. Each day you mark as read turns gold, and the next one is
-                ready.
+                {START_WHY} So everyone starts at Day 1 - the book&apos;s 1 January page - whatever today&apos;s date is.
               </p>
             </div>
             <div className="study-how-card">
               <h3>Finding your way</h3>
               <p>
-                <strong>Today</strong> (this page) shows your next reading.
-                <br />
-                <strong>My journal</strong> has a page for every day - your notes, {author ?? "Daniel"}&apos;s notes and the
-                videos.
-                <br />
-                <strong>All words</strong> keeps the Hebrew and Greek words you study.
-                <br />
-                The menu is on the left - at the top on a phone.
+                <strong>Today</strong> shows your next reading. <strong>My journal</strong> has a page for every day, with
+                your notes, {author ?? "Daniel"}&apos;s notes and the videos. The 🔔 tells you when a new video is up.
               </p>
-            </div>
-            <div className="study-how-card">
-              <h3>The calls</h3>
-              <p>
-                Daniel and Reggie meet on a call once or twice a week. Each video goes up on the days it covers, and the 🔔
-                at the top tells you.
-              </p>
-            </div>
-            <div className="study-how-card">
-              <h3>Your Bible</h3>
-              <p>
-                Free in the{" "}
-                <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
-                  Bible App
-                </a>{" "}
-                (choose NIV), or get the paper book from{" "}
-                <a href={PLAN.takealot} target="_blank" rel="noreferrer">
-                  Takealot
-                </a>{" "}
-                or{" "}
-                <a href={PLAN.amazon} target="_blank" rel="noreferrer">
-                  Amazon
-                </a>
-                .
-              </p>
-            </div>
-            <div className="study-how-card">
-              <h3>Why the NIV</h3>
-              <p>{WHY_NIV}</p>
             </div>
             <div className="study-how-card">
               <h3>On your phone</h3>
-              <p>
-                Put The Study on your Home Screen and open it like an app.
-                <br />
-                <strong>iPhone:</strong> open alltheglory.co.za/study in Safari, tap Share (the square with the arrow), then
-                &ldquo;Add to Home Screen&rdquo;.
-                <br />
-                <strong>Android:</strong> tap the ⋮ menu in Chrome, then &ldquo;Add to Home screen&rdquo;.
-              </p>
+              <p>Put The Study on your Home Screen and open it like an app.</p>
+              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav mt-3" onClick={() => setPhoneSteps((v) => !v)}>
+                {phoneSteps ? "Hide the steps" : "Show me how · 20 seconds"}
+              </button>
             </div>
           </div>
+          {phoneSteps && (
+            <div className="study-how-steps">
+              <IosInstallGuide />
+              <p className="dash-word-hint mt-3">
+                <strong>Android:</strong> open alltheglory.co.za/study in Chrome, tap the ⋮ menu, then &ldquo;Add to Home
+                screen&rdquo;.
+              </p>
+            </div>
+          )}
+          <p className="study-how-bible">
+            Read in the{" "}
+            <a href={PLAN.bibleApp} target="_blank" rel="noreferrer">
+              Bible App
+            </a>{" "}
+            (choose NIV), or the paper book from{" "}
+            <a href={PLAN.takealot} target="_blank" rel="noreferrer">
+              Takealot
+            </a>{" "}
+            or{" "}
+            <a href={PLAN.amazon} target="_blank" rel="noreferrer">
+              Amazon
+            </a>
+            .
+          </p>
+          <WhyNiv className="mt-1" />
         </section>
       )}
 

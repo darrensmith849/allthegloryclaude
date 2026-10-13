@@ -29,6 +29,8 @@ const nextConfig = {
       // The short link shared for The Study (YouTube, WhatsApp, emails) goes
       // to the real page - with any ?invite= code kept.
       { source: '/join', destination: '/the-study', permanent: true },
+      // Members' "Who am I?" was taken out - they go straight to their study.
+      { source: '/study/who-am-i', destination: '/study', permanent: false },
     ];
   },
   async headers() {

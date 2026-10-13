@@ -2,8 +2,7 @@
 
 // "Who am I?" - the 25 truths the Father has spoken over you, one card at a
 // time over the painting. The owner's dashboard opens on it (ESV, his own
-// page); members of The Study see it first each day (BSB). `open` is the way
-// on: his dashboard, or their study.
+// page). `open` is the way on to the dashboard.
 
 import Link from "next/link";
 import Image from "next/image";
