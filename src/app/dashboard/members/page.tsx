@@ -4,7 +4,7 @@
 // the owner's study, invite links, and the people who have joined.
 
 import { useEffect, useState } from "react";
-import { Panel } from "@/components/dashboard/panel";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { ShareLink } from "@/components/study/share-link";
 import type { ReadingMode, SignupMode, StudySettings } from "@/lib/study/members";
@@ -308,7 +308,7 @@ export default function MembersPage() {
 
       <div className="dash-grid">
         <div className="dash-col-12">
-          <Panel eyebrow="Your link" title="Share The Study">
+          <FoldPanel id="members-share" eyebrow="Your link" title="Share The Study">
             {settings?.signup === "closed" ? (
               <p className="dash-word-hint">Joining is set to Nobody, so there&apos;s nothing to share right now.</p>
             ) : shareUrl ? (
@@ -332,12 +332,12 @@ export default function MembersPage() {
                 </button>
               </div>
             )}
-          </Panel>
+          </FoldPanel>
         </div>
 
         {isOwner && (
         <div className="dash-col-6">
-          <Panel eyebrow="Switches" title="Who can join">
+          <FoldPanel id="members-join" eyebrow="Switches" title="Who can join">
             <div className="dash-toggle dash-members-toggle" role="group" aria-label="Who can join">
               {SIGNUP.map((o) => (
                 <button
@@ -482,12 +482,12 @@ export default function MembersPage() {
               </button>
               {savedText && <span className="dash-word-hint">Saved ✓</span>}
             </div>
-          </Panel>
+          </FoldPanel>
         </div>
         )}
 
         <div className="dash-col-6">
-          <Panel eyebrow="Invite links" title="Invite someone">
+          <FoldPanel id="members-invite" eyebrow="Invite links" title="Invite someone">
             <p className="dash-word-hint mb-3">
               Send a link - whoever opens it can make an account
               {settings?.signup === "closed" ? " (once you switch joining back on)" : ""}.
@@ -580,11 +580,11 @@ export default function MembersPage() {
                   </div>
                 </div>
               ))}
-          </Panel>
+          </FoldPanel>
         </div>
 
         <div className="dash-col-12">
-          <Panel
+          <FoldPanel id="members-email-list"
             eyebrow="Staying in touch"
             title={`Your email list${emailList ? ` · ${emailList.total}` : ""}`}
             action={
@@ -646,11 +646,11 @@ export default function MembersPage() {
                   ))}
               </div>
             )}
-          </Panel>
+          </FoldPanel>
         </div>
 
         <div className="dash-col-12">
-          <Panel eyebrow={`${members.length} ${members.length === 1 ? "person" : "people"}`} title="Members">
+          <FoldPanel id="members-list" eyebrow={`${members.length} ${members.length === 1 ? "person" : "people"}`} title="Members">
             {members.length === 0 && (
               <p className="dash-word-hint">Nobody has joined yet. Make an invite link and send it to someone.</p>
             )}
@@ -707,11 +707,11 @@ export default function MembersPage() {
             <p className="dash-word-hint mt-4">
               Members&apos; journals are theirs - you see only counts here, never their notes.
             </p>
-          </Panel>
+          </FoldPanel>
         </div>
         {isOwner && (
         <div className="dash-col-12">
-          <Panel
+          <FoldPanel id="members-backups"
             eyebrow="Kept for good"
             title="Backups"
             action={
@@ -760,7 +760,7 @@ export default function MembersPage() {
                 )}
               </>
             )}
-          </Panel>
+          </FoldPanel>
         </div>
         )}
       </div>

@@ -5,7 +5,7 @@
 // the reply under their suggestion. Nothing is ever removed.
 
 import { useState } from "react";
-import { Panel } from "@/components/dashboard/panel";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 
@@ -108,7 +108,7 @@ export function SuggestionsPanel({ items, onChange }: { items: Suggestion[]; onC
   );
 
   return (
-    <Panel eyebrow={fresh ? `${fresh} new` : "From members, privately"} title="Suggestions">
+    <FoldPanel id="community-suggestions" eyebrow={fresh ? `${fresh} new` : "From members, privately"} title="Suggestions">
       {open.length === 0 && <p className="dash-word-hint">No suggestions waiting. Members send them from Community → Suggest something.</p>}
       <div className="flex flex-col gap-3">{open.map(card)}</div>
       {done.length > 0 && (
@@ -119,6 +119,6 @@ export function SuggestionsPanel({ items, onChange }: { items: Suggestion[]; onC
           {showDone && <div className="flex flex-col gap-3 mt-3">{done.map(card)}</div>}
         </>
       )}
-    </Panel>
+    </FoldPanel>
   );
 }

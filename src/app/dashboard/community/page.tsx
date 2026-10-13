@@ -7,7 +7,7 @@
 
 import { SuggestionsPanel, type Suggestion } from "@/components/dashboard/suggestions-panel";
 import { useEffect, useMemo, useState } from "react";
-import { Panel } from "@/components/dashboard/panel";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { dayLabel } from "@/lib/dashboard/notes";
@@ -291,7 +291,7 @@ export default function CommunityAdminPage() {
 
       <div className="dash-grid">
         <div className="dash-col-7">
-          <Panel eyebrow={`${openQuestions.length} to answer`} title="Questions">
+          <FoldPanel id="community-questions" eyebrow={`${openQuestions.length} to answer`} title="Questions">
             {openQuestions.length === 0 && <p className="dash-word-hint">No questions waiting.</p>}
             <div className="flex flex-col gap-3">
               {openQuestions.map((q) => (
@@ -364,7 +364,7 @@ export default function CommunityAdminPage() {
                 ))}
               </div>
             )}
-          </Panel>
+          </FoldPanel>
 
           <div className="mt-[18px]">
             <SuggestionsPanel
@@ -374,30 +374,30 @@ export default function CommunityAdminPage() {
           </div>
 
           <div className="mt-[18px]">
-          <Panel eyebrow={`${pending.length} waiting`} title="Testimonies waiting for you">
+          <FoldPanel id="community-testimonies-waiting" eyebrow={`${pending.length} waiting`} title="Testimonies waiting for you">
             {pending.length === 0 && <p className="dash-word-hint">All clear - nothing waiting.</p>}
             <div className="flex flex-col gap-3">
               {pending.map((p) => (
                 <PostCard key={p.id} p={p} onStatus={setStatus} />
               ))}
             </div>
-          </Panel>
+          </FoldPanel>
           </div>
 
           {reported.length > 0 && (
             <div className="mt-[18px]">
-              <Panel eyebrow="Members flagged these" title={`Reported · ${reported.length}`}>
+              <FoldPanel id="community-reported" eyebrow="Members flagged these" title={`Reported · ${reported.length}`}>
                 <div className="flex flex-col gap-3">
                   {reported.map((p) => (
                     <PostCard key={p.id} p={p} onStatus={setStatus} />
                   ))}
                 </div>
-              </Panel>
+              </FoldPanel>
             </div>
           )}
 
           <div className="mt-[18px]">
-            <Panel
+            <FoldPanel id="community-testimonies-shared"
               eyebrow={`${shared.length} shared`}
               title="Testimonies shared"
               action={
@@ -415,12 +415,12 @@ export default function CommunityAdminPage() {
                   ))}
                 </div>
               )}
-            </Panel>
+            </FoldPanel>
           </div>
         </div>
 
         <div className="dash-col-5">
-          <Panel eyebrow="Weekly" title="This week's reflection">
+          <FoldPanel id="community-weekly" eyebrow="Weekly" title="This week's reflection">
             <p className="dash-word-hint mb-3">
               Shows on every member&apos;s home page and Community page. Replies to the check-in come only to you.
             </p>
@@ -587,10 +587,10 @@ export default function CommunityAdminPage() {
                 </div>
               </div>
             )}
-          </Panel>
+          </FoldPanel>
 
           <div className="mt-[18px]">
-            <Panel
+            <FoldPanel id="community-checkins"
               eyebrow={unread ? `${unread} new` : "Private to you"}
               title="Check-in replies"
               action={
@@ -629,7 +629,7 @@ export default function CommunityAdminPage() {
                   </div>
                 ))}
               </div>
-            </Panel>
+            </FoldPanel>
           </div>
         </div>
       </div>
