@@ -3735,9 +3735,6 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 }
 .dash-starter-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; }
 .dash-starter-day { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-read), Georgia, serif; font-size: 15px; color: var(--colour-ink-strong); }
-.dash-starter-day .study-fold { width: 28px; height: 28px; margin: -4px -6px -4px 0; }
-.dash-starter.is-folded > :not(.dash-starter-head) { display: none; }
-.dash-starter.is-folded .dash-starter-head { margin-bottom: 0; align-items: center; }
 .dash-starter-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .dash-starter-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .dash-starter-field > span { font-size: 12px; font-weight: 600; color: var(--colour-ink-soft); }

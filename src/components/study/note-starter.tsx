@@ -7,7 +7,6 @@
 // owner's journal and members'.
 
 import { useState, type KeyboardEvent } from "react";
-import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
 import { BOOKS } from "@/lib/dashboard/bible-books";
 import { parsePassage, type Passage } from "@/lib/dashboard/notes";
 
@@ -56,8 +55,6 @@ export function NoteStarter({
     setVerse("");
   }
 
-  const [folded, toggleFold] = useFolded("atg:fold:starter");
-
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -66,13 +63,10 @@ export function NoteStarter({
   };
 
   return (
-    <div className={`dash-starter ${folded ? "is-folded" : ""}`}>
+    <div className="dash-starter">
       <div className="dash-starter-head">
         <span className="eyebrow eyebrow-amber">Start a note</span>
-        <span className="dash-starter-day">
-          {dayText}
-          <FoldToggle folded={folded} onToggle={toggleFold} what="Start a note" inline />
-        </span>
+        <span className="dash-starter-day">{dayText}</span>
       </div>
       <div className="dash-starter-fields">
         <label className="dash-starter-field is-page">
