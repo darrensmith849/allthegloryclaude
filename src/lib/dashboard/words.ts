@@ -42,6 +42,14 @@ export function foldText(s: string): string {
   return s.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
 }
 
+// The plan's day number for a date (as planDay in notes.ts - 29 Feb shares Day 59).
+function dayOfYear(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  const n = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  return leap && n >= 60 ? n - 1 : n;
+}
+
 function haystack(w: BibleWord): string {
   return foldText(
     [
@@ -53,6 +61,7 @@ function haystack(w: BibleWord): string {
       w.englishMeaning,
       w.application,
       w.reference,
+      w.day ? `day ${dayOfYear(w.day)} ${w.day} ${new Date(`${w.day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" })}` : "",
       w.comment,
       ...(w.keyVerses ?? []).map((v) => `${v.ref} ${v.text}`),
     ]

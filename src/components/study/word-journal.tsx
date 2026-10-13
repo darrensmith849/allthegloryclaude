@@ -9,6 +9,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses, WordRow } from "@/components/dashboard/word-entry";
+import { BOOKS, parseRef } from "@/lib/dashboard/bible-books";
+import { dayLabel, planDay } from "@/lib/dashboard/notes";
 import { useWords } from "@/lib/dashboard/words-store";
 import { useStudyClient } from "@/lib/study/client";
 import { BibleWord, KeyVerse, WordLanguage } from "@/lib/dashboard/types";
@@ -143,7 +145,18 @@ const LANG_NAME: Record<WordLanguage, string> = { hebrew: "Hebrew", greek: "Gree
 const PAGE = 40;
 
 type LangFilter = "all" | WordLanguage;
-type SortMode = "newest" | "az";
+type SortMode = "newest" | "day" | "book" | "az";
+
+// Where a word sits for "By day" / "By book": its day, and its verse in Bible order.
+const NO = 1e9;
+function verseKey(w: BibleWord): number {
+  const r = w.reference ? parseRef(w.reference) : null;
+  return r ? r.book * 1e6 + r.chapter * 1e3 + (r.verses[0] ?? 0) : NO;
+}
+function bookOf(w: BibleWord): string {
+  const r = w.reference ? parseRef(w.reference) : null;
+  return r ? BOOKS[r.book - 1] : "No verse given";
+}
 
 function monthLabel(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
@@ -423,6 +436,10 @@ function Journal() {
           const rank = wordRank(a, q) - wordRank(b, q);
           if (rank) return rank;
         }
+        if (sort === "day") {
+          return (a.day ?? "9999").localeCompare(b.day ?? "9999") || verseKey(a) - verseKey(b) || a.createdAt.localeCompare(b.createdAt);
+        }
+        if (sort === "book") return verseKey(a) - verseKey(b) || (a.day ?? "9999").localeCompare(b.day ?? "9999");
         return sort === "az"
           ? a.word.localeCompare(b.word, undefined, { sensitivity: "base" })
           : b.createdAt.localeCompare(a.createdAt);
@@ -438,7 +455,7 @@ function Journal() {
     if (query.trim() && shown.length === 1) setOpenId(shown[0].id);
   }, [query, shown]);
 
-  // Month headings when newest-first, letter headings when A-Z.
+  // Headings: the month when newest-first, the day or the book, or the letter when A-Z.
   const groups = useMemo(() => {
     const out: { label: string; items: BibleWord[] }[] = [];
     for (const w of shown.slice(0, visible)) {
@@ -446,7 +463,13 @@ function Journal() {
         ? ""
         : sort === "az"
           ? (w.word.trim()[0] ?? "#").toUpperCase()
-          : monthLabel(w.createdAt);
+          : sort === "day"
+            ? w.day
+              ? `Day ${planDay(w.day).n} · ${dayLabel(w.day, { weekday: false })}`
+              : "No day"
+            : sort === "book"
+              ? bookOf(w)
+              : monthLabel(w.createdAt);
       const last = out[out.length - 1];
       if (last && last.label === label) last.items.push(w);
       else out.push({ label, items: [w] });
@@ -728,6 +751,12 @@ function Journal() {
                   >
                     Newest
                   </button>
+                  <button type="button" className={sort === "day" ? "is-on" : ""} onClick={() => setSort("day")}>
+                    By day
+                  </button>
+                  <button type="button" className={sort === "book" ? "is-on" : ""} onClick={() => setSort("book")}>
+                    By book
+                  </button>
                   <button
                     type="button"
                     className={sort === "az" ? "is-on" : ""}
@@ -806,6 +835,7 @@ function Journal() {
                       <WordRow
                         key={w.id}
                         w={w}
+                        showDay={sort !== "day" || Boolean(query.trim())}
                         open={openId === w.id}
                         isNew={saved?.id === w.id}
                         editing={editingId === w.id}

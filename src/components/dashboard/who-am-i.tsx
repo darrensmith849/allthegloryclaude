@@ -15,11 +15,15 @@ export function WhoAmI({
   statements,
   open,
   version,
+  everyTime,
 }: {
   statements: IdentityStatement[];
   open: { href: string; label: string };
   version?: string; // shown after each reference, e.g. "BSB"
+  // Whether it opens every time; the switch sits under the cards.
+  everyTime?: { on: boolean; set: (on: boolean) => void; where: string; menu: string };
 }) {
+  const [justOff, setJustOff] = useState(false);
   // Today's date is filled in on the device (the page is built ahead of time).
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(todayISO()), []);
@@ -154,6 +158,38 @@ export function WhoAmI({
         <p className="dash-welcome-hint">
           ← → arrow keys to navigate · tap dots to jump · swipe on mobile
         </p>
+
+        {everyTime &&
+          (everyTime.on ? (
+            <button
+              type="button"
+              className="dash-welcome-every"
+              onClick={() => {
+                everyTime.set(false);
+                setJustOff(true);
+              }}
+            >
+              Don&apos;t show this every time
+            </button>
+          ) : (
+            <div className="dash-welcome-every-off">
+              {justOff && (
+                <p>
+                  Okay - it won&apos;t open every time. You&apos;ll find it in the menu under <strong>{everyTime.menu}</strong>
+                </p>
+              )}
+              <button
+                type="button"
+                className="dash-welcome-every"
+                onClick={() => {
+                  everyTime.set(true);
+                  setJustOff(false);
+                }}
+              >
+                Show this every time I open {everyTime.where}
+              </button>
+            </div>
+          ))}
       </div>
     </div>
   );

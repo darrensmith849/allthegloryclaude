@@ -2012,6 +2012,7 @@ export function StudyNotes() {
                       <WordRow
                         key={w.id}
                         w={w}
+                        showDay={false}
                         open={openWord === w.id}
                         onToggle={() => setOpenWord((id) => (id === w.id ? null : w.id))}
                         onEdit={() => window.location.assign(`${client.wordsUrl}?edit=${encodeURIComponent(w.id)}`)}

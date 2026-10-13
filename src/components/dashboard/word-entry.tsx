@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { formatShort } from "@/lib/dashboard/dates";
-import { dayLabel } from "@/lib/dashboard/notes";
+import { dayLabel, planDay } from "@/lib/dashboard/notes";
 import type { BibleWord, KeyVerse } from "@/lib/dashboard/types";
 import { languageLabel, wordDate } from "@/lib/dashboard/words";
 import { DictionaryMeaning } from "@/components/study/dictionary-meaning";
@@ -47,11 +47,19 @@ export function KeyVerses({ verses, onRemove }: { verses: KeyVerse[]; onRemove?:
   );
 }
 
+// Where a word was studied: "Day 3 · 3 January · Genesis 3:15".
+export function wordWhere(w: BibleWord, showDay = true): string {
+  return [showDay && w.day ? `Day ${planDay(w.day).n} · ${dayLabel(w.day, { weekday: false })}` : "", w.reference ?? ""]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 export function WordRow({
   w,
   open,
   isNew = false,
   editing = false,
+  showDay = true,
   onToggle,
   onEdit,
   onDelete,
@@ -60,10 +68,12 @@ export function WordRow({
   open: boolean;
   isNew?: boolean;
   editing?: boolean;
+  showDay?: boolean; // off where the day is already the heading
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
+  const where = wordWhere(w, showDay);
   const [verse, setVerse] = useState<VerseView | null>(null);
   const preview = w.application || w.englishMeaning || w.originalMeaning;
 
@@ -100,6 +110,7 @@ export function WordRow({
             )}
             {w.translit && <span className="dash-word-row-translit">{w.translit}</span>}
           </span>
+          {where && <span className="dash-word-row-where">{where}</span>}
           {!open && preview && <span className="dash-word-row-sub">{preview}</span>}
         </span>
         <span className={`dash-word-lang is-${w.language}`}>{languageLabel(w)}</span>

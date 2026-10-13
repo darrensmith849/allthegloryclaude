@@ -9,7 +9,7 @@ import { canAddToHomeScreen, openDashAppCard } from "@/components/dashboard/app-
 
 const NAV = [
   { href: "/dashboard/names", label: "Names of God", glyph: "א" },
-  { href: "/dashboard", label: "Who am I?", glyph: "✶" },
+  { href: "/dashboard?show=1", label: "Who am I?", glyph: "✶" }, // ?show: even when it's set not to open every time
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
   { href: "/dashboard/notes?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
@@ -48,7 +48,7 @@ export default function DashboardSidebar() {
   // Phones not yet using the Home Screen app: a way back to the steps.
   const [addable, setAddable] = useState(false);
   useEffect(() => setAddable(canAddToHomeScreen()), []);
-  const here = nav.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
+  const here = nav.find((item) => (item.href.split("?")[0] === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href)));
   return (
     <aside className="dash-sidebar">
       <div className="dash-brand">
@@ -137,7 +137,7 @@ function NavItems({ nav, pathname, waiting, bin }: NavItemsProps & { bin: boolea
     <>
       {nav.map((item) => {
         const active =
-          item.href === "/dashboard"
+          item.href.split("?")[0] === "/dashboard"
             ? pathname === "/dashboard"
             : item.href.includes("day=deleted")
               ? pathname === "/dashboard/notes" && bin
