@@ -118,6 +118,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         { href: "/study/journal", label: "My journal", glyph: "✎" },
         { href: "/study/words", label: "All words", glyph: "α" },
         { href: "/study/names", label: "Names of God", glyph: "א" },
+        { href: "/study/who-am-i", label: "Who am I?", glyph: "✶" },
         { href: "/study/prayers", label: "Prayer list", glyph: "♡" },
         { href: "/study/community", label: "Community", glyph: "❧" },
         { href: "/study/account", label: "Account", glyph: "⚙" },

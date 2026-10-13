@@ -1,7 +1,7 @@
 "use client";
 
-// "Context" under Read here in a journal day: for each book in the day's
-// reading, who is speaking, who it was for, when, and what was going on -
+// "Context" under the reading box in a journal day: each book in the day's
+// reading in brief, then who is speaking, who it was for and when -
 // and the stories in it that another book tells too (a chronological plan
 // reads Mark's and Luke's accounts side by side). Tap a reference to read it
 // right there. Folds away; remembered on this device. Data: src/lib/study/context.ts.
@@ -39,7 +39,7 @@ export function ReadingContext({ passages, onRead }: { passages: string[]; onRea
       <button type="button" className="reading-context-head" onClick={toggle} aria-expanded={open}>
         <span className="eyebrow eyebrow-amber">Context</span>
         <span className="reading-context-sum">
-          Who&apos;s speaking in {names.length > 2 ? "today's reading" : names.join(" and ")}
+          {names.length > 2 ? "Today's books" : names.join(" and ")} in brief - who&apos;s speaking, and when
           {ctx.same.length ? ` · ${ctx.same.length} ${ctx.same.length === 1 ? "story" : "stories"} told elsewhere too` : ""}
         </span>
         <span className="dash-daniel-toggle">{open ? "Minimise ▴" : "Open ▾"}</span>
@@ -50,6 +50,7 @@ export function ReadingContext({ passages, onRead }: { passages: string[]; onRea
           {ctx.books.map(({ name, context: c }) => (
             <section key={name} className="reading-context-book">
               <h4>{name}</h4>
+              <p className="reading-context-brief">{c.brief}</p>
               <dl>
                 <dt>Who&apos;s speaking</dt>
                 <dd>{c.who}</dd>
@@ -57,8 +58,6 @@ export function ReadingContext({ passages, onRead }: { passages: string[]; onRea
                 <dd>{c.to}</dd>
                 <dt>When</dt>
                 <dd>{c.when}</dd>
-                <dt>What&apos;s going on</dt>
-                <dd>{c.about}</dd>
               </dl>
               {c.see && (
                 <button type="button" className="reading-context-link reading-context-see" onClick={() => onRead(c.see!.read)}>

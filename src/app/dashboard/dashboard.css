@@ -720,6 +720,8 @@ html:has(.dash-welcome-root),
   background: var(--bg-deep);
   isolation: isolate;
 }
+/* Members' "Who am I?" - full screen over The Study's menu. */
+.dash-welcome-root.study-welcome { position: fixed; inset: 0; z-index: 90; overflow-y: auto; overscroll-behavior: contain; }
 .dash-welcome-bg-art {
   position: fixed;
   inset: 0;
@@ -3719,7 +3721,10 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
   background: rgb(var(--gold-rgb) / 0.05);
 }
 .dash-starter-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; }
-.dash-starter-day { font-family: var(--font-read), Georgia, serif; font-size: 15px; color: var(--colour-ink-strong); }
+.dash-starter-day { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-read), Georgia, serif; font-size: 15px; color: var(--colour-ink-strong); }
+.dash-starter-day .study-fold { width: 28px; height: 28px; margin: -4px -6px -4px 0; }
+.dash-starter.is-folded > :not(.dash-starter-head) { display: none; }
+.dash-starter.is-folded .dash-starter-head { margin-bottom: 0; align-items: center; }
 .dash-starter-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .dash-starter-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .dash-starter-field > span { font-size: 12px; font-weight: 600; color: var(--colour-ink-soft); }
@@ -4692,6 +4697,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .reading-context.is-open .reading-context-head { border-bottom: 1px solid rgb(var(--gold-rgb) / 0.18); }
 .reading-context-body { display: grid; gap: 16px; padding: 14px 16px 16px; }
 .reading-context h4 { font-family: var(--font-read), Georgia, serif; font-size: 18px; font-weight: 400; color: var(--colour-amber); margin-bottom: 6px; }
+.reading-context-brief { margin-bottom: 10px; font-family: var(--font-read), Georgia, serif; font-size: 15.5px; line-height: 1.6; color: var(--colour-ink-strong); }
 .reading-context dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: 14px; line-height: 1.5; }
 .reading-context dt { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--colour-ink-quiet); padding-top: 3px; }
 .reading-context dd { color: var(--colour-ink-soft); }

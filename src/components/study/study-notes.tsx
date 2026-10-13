@@ -29,6 +29,7 @@ import { DayJump } from "@/components/study/day-jump";
 import { SessionVideo } from "@/components/study/session-video";
 import { ReadHere } from "@/components/study/read-here";
 import { FoldToggle } from "@/components/study/fold-toggle";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { inHold, type Hold } from "@/lib/study/hold";
 import { WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -1247,7 +1248,8 @@ export function StudyNotes() {
           <div className="dash-grid dash-journal-row">
             {/* ── Calendar + search ───────────────────────────────────── */}
             <div className="dash-col-5 dash-note-side" ref={sideRef}>
-              <Panel
+              <FoldPanel
+                id="calendar"
                 eyebrow="Reading plan"
                 title={calView === "year" ? (planMode ? "The whole plan" : month.slice(0, 4)) : monthName}
               >
@@ -1444,7 +1446,7 @@ export function StudyNotes() {
                   </>
                 )}
 
-              </Panel>
+              </FoldPanel>
             </div>
 
             {/* ── The open day ────────────────────────────────────────── */}
@@ -2110,7 +2112,7 @@ export function StudyNotes() {
         <div className="dash-col-12 dash-tools-row">
           <div className="dash-tools">
             {isDay(day) && (
-              <Panel eyebrow={`Word study · ${label(day, { weekday: false })}`} title="Study a word">
+              <FoldPanel id="word-study" eyebrow={`Word study · ${label(day, { weekday: false })}`} title="Study a word">
                 <QuickWord
                   day={day}
                   verseHint={verseHint}
@@ -2125,20 +2127,20 @@ export function StudyNotes() {
                 <div className="eyebrow eyebrow-amber mb-1">Look up a name</div>
                 <p className="dash-word-hint mb-2">Who a person or place was, and what the name means.</p>
                 <NameLookup onSave={saveName} saved={dayNames.map((n) => n.name)} />
-              </Panel>
+              </FoldPanel>
             )}
 
             {isDay(day) && (
-              <Panel eyebrow={`Names of God · ${label(day, { weekday: false })}`} title="In this reading">
+              <FoldPanel id="names-in-reading" eyebrow={`Names of God · ${label(day, { weekday: false })}`} title="In this reading">
                 <NamesInReading
                   chapters={starterChapters}
                   namesUrl={client.kind === "member" ? "/study/names" : "/dashboard/names"}
                 />
-              </Panel>
+              </FoldPanel>
             )}
 
             {!special && (
-              <Panel eyebrow="The Bible" title="Look up a verse">
+              <FoldPanel id="look-up" eyebrow="The Bible" title="Look up a verse">
                 <BibleLookup
                   plan={planIndex}
                   planName={client.kind === "member" ? `${client.studyAuthor ?? "the study"}'s notes` : "your notes"}
@@ -2157,7 +2159,7 @@ export function StudyNotes() {
                     }, 60);
                   }}
                 />
-              </Panel>
+              </FoldPanel>
             )}
           </div>
         </div>

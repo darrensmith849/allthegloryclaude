@@ -15,6 +15,7 @@ import { bibleAppDay, bookDate, inPlan, nextPage, PLAN } from "@/lib/study/plan"
 import { MemoryVerse } from "@/components/study/memory-verse";
 import { AppCard } from "@/components/study/app-card";
 import { FoldToggle, useFolded } from "@/components/study/fold-toggle";
+import { seenWhoAmIToday } from "@/lib/study/who-am-i";
 
 export default function StudyHome() {
   const me = useMe();
@@ -23,6 +24,11 @@ export default function StudyHome() {
   useEffect(() => {
     if (me.loaded && !me.member) router.replace("/the-study");
   }, [me.loaded, me.member, router]);
+  // The first visit of the day opens on "Who am I?" (not when following a
+  // link to a spot on this page, like Invite a friend).
+  useEffect(() => {
+    if (me.member && !window.location.hash && !seenWhoAmIToday(me.member.id)) router.replace("/study/who-am-i");
+  }, [me.member, router]);
   const readable = canRead(me);
   const author = me.study?.author && me.study.author !== "All The Glory" ? me.study.author : null;
   // Effects below key on the id, not the member object (which is replaced

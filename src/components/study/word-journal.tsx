@@ -6,7 +6,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Panel } from "@/components/dashboard/panel";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
 import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { KeyVerses, WordRow } from "@/components/dashboard/word-entry";
 import { useWords } from "@/lib/dashboard/words-store";
@@ -474,7 +474,9 @@ function Journal() {
       <div className="dash-grid">
         {/* ── Add / edit a word ─────────────────────────────── */}
         <div className="dash-col-5" ref={formTop} style={{ scrollMarginTop: 24 }}>
-          <Panel
+          <FoldPanel
+            id="add-word"
+            forceOpen={Boolean(editingId)}
             eyebrow={editingId ? "Editing" : "New word"}
             title={editingId ? "Edit word" : "Add a word"}
             action={
@@ -707,12 +709,13 @@ function Journal() {
                 {editingId ? "Save changes" : "Save to my journal"}
               </button>
             </form>
-          </Panel>
+          </FoldPanel>
         </div>
 
         {/* ── The journal ─────────────────────────────────────── */}
         <div className="dash-col-7">
-          <Panel
+          <FoldPanel
+            id="word-list"
             eyebrow="Your journal"
             title={`${words.length} ${words.length === 1 ? "word" : "words"}`}
             action={
@@ -845,7 +848,7 @@ function Journal() {
                   ))}
               </div>
             )}
-          </Panel>
+          </FoldPanel>
         </div>
       </div>
     </>
