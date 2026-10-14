@@ -404,6 +404,7 @@ export interface MoneyEntry {
   id: string;
   kind: "spend" | "add" | "set"; // "set": the balance was set to `amount` (to match the bank)
   amount: number; // dollars, always positive
+  km?: number; // fuel: the car's mileage (km on the clock) when he filled up
   category: string; // "Coffee" ... (or "Money in" for adds)
   note?: string;
   date: ISODate; // the day it happened

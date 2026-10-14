@@ -11,7 +11,8 @@ export const SPEND_CATEGORIES = [
   "Fuel",
   "Cash out",
   "Tolls & transport",
-  "Gym & golf",
+  "Gym fees",
+  "Golf",
   "Phone & data",
   "Subscriptions",
   "Bank fees",
@@ -19,10 +20,19 @@ export const SPEND_CATEGORIES = [
   "Other",
 ] as const;
 
-export const allCategories = (m: MoneyState) => [...SPEND_CATEGORIES, ...(m.categories ?? [])];
+export const FUEL = "Fuel";
+export const GYM = "Gym fees";
+
+// The built-in kinds, his own, then any older kind still in use (so nothing goes missing).
+export function allCategories(m: MoneyState): string[] {
+  const out: string[] = [...SPEND_CATEGORIES, ...(m.categories ?? [])];
+  for (const e of m.entries) if (!e.deletedAt && e.kind === "spend" && !out.includes(e.category)) out.push(e.category);
+  for (const s of m.subs) if (!out.includes(s.category)) out.push(s.category);
+  return out;
+}
 
 // One colour per kind, the same everywhere (warm, muted - the dashboard's look).
-const PALETTE = ["#9a7425", "#6f8a5b", "#4f6d8a", "#b5654a", "#7b5a7e", "#3f7f7a", "#c2a26b", "#b0707f", "#8a8a4a", "#5b5650", "#6a9ec0", "#a0522d"];
+const PALETTE = ["#9a7425", "#6f8a5b", "#4f6d8a", "#b5654a", "#7b5a7e", "#3f7f7a", "#c2a26b", "#b0707f", "#8a8a4a", "#5b5650", "#6a9ec0", "#a0522d", "#c08a3e", "#7a8f9e", "#8e6f5a"];
 export function colourFor(m: MoneyState, category: string): string {
   const i = allCategories(m).indexOf(category);
   if (i >= 0) return PALETTE[i % PALETTE.length];
@@ -35,6 +45,12 @@ export const dollars = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.round(n * 100) / 100);
 // "$4" for whole amounts, "$4.50" otherwise - for buttons.
 export const shortDollars = (n: number) => (Number.isInteger(n) ? `$${n}` : dollars(n));
+
+export const kmText = (n: number) => `${new Intl.NumberFormat("en-US").format(Math.round(n))} km`;
+export const parseKm = (v: string) => {
+  const n = Math.round(Number(String(v).replace(/[^0-9.]/g, "")));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -126,6 +142,42 @@ export function usualBuys(m: MoneyState, max = 4): { category: string; amount: n
     .map(({ category, amount, note }) => ({ category, amount, note }));
 }
 
+// One kind of spending: every payment (latest first), this month's and this year's.
+export function kindLog(m: MoneyState, category: string, ym: string) {
+  const all = m.entries
+    .filter((e) => live(e) && e.kind === "spend" && e.category === category)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
+  const sum = (pick: (e: MoneyEntry) => boolean) => all.filter(pick).reduce((t, e) => t + e.amount, 0);
+  return { all, month: sum((e) => monthOf(e.date) === ym), year: sum((e) => e.date.slice(0, 4) === ym.slice(0, 4)) };
+}
+
+// Fuel, with the mileage at each fill-up: the km since the fill-up before,
+// km driven in the month, and what the car costs a km - the fuel bought
+// after the first reading, over the km from the first reading to the last.
+export function fuelLog(m: MoneyState, ym: string) {
+  const log = kindLog(m, FUEL, ym);
+  const oldest = [...log.all].reverse();
+  const since = new Map<string, number>();
+  let prev: number | undefined;
+  for (const e of oldest) {
+    if (e.km == null) continue;
+    if (prev != null && e.km > prev) since.set(e.id, e.km - prev);
+    prev = e.km;
+  }
+  let km = 0;
+  for (const e of log.all) if (monthOf(e.date) === ym) km += since.get(e.id) ?? 0;
+  const read = oldest.filter((e) => e.km != null);
+  let perKm: number | null = null;
+  if (read.length >= 2) {
+    const first = read[0];
+    const last = read[read.length - 1];
+    const dist = last.km! - first.km!;
+    const paid = oldest.slice(oldest.indexOf(first) + 1, oldest.indexOf(last) + 1).reduce((t, e) => t + e.amount, 0);
+    if (dist > 0) perKm = paid / dist;
+  }
+  return { ...log, since, km, perKm, lastKm: read.length ? read[read.length - 1].km! : null };
+}
+
 // Places / notes used before for a kind, latest first.
 export function notesFor(m: MoneyState, category: string, max = 8): string[] {
   const out: string[] = [];
@@ -197,11 +249,11 @@ export function toCsv(m: MoneyState): string {
     const t = String(v ?? "");
     return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
-  const rows = [["Date", "Kind", "What", "Note", "Amount", "Regular debit"]];
+  const rows = [["Date", "Kind", "What", "Note", "Amount", "Mileage (km)", "Regular debit"]];
   for (const e of [...m.entries].filter(live).sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at))) {
     const kind = e.kind === "spend" ? "Spent" : e.kind === "add" ? "Money in" : "Balance set";
     const amount = e.kind === "spend" ? -e.amount : e.amount;
-    rows.push([e.date, kind, e.kind === "set" ? "" : e.category, e.note ?? "", amount.toFixed(2), e.sub ? "yes" : ""]);
+    rows.push([e.date, kind, e.kind === "set" ? "" : e.category, e.note ?? "", amount.toFixed(2), e.km != null ? String(e.km) : "", e.sub ? "yes" : ""]);
   }
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }

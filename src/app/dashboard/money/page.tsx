@@ -3,14 +3,16 @@
 // Money - Daniel's own spending tracker (not for the team, never members).
 // The balance up top (tap it to change it); one tap on what he usually buys,
 // or a kind of spending then the price; every entry editable. Each month
-// broken down by kind, with how it compares to last month; the regular
+// broken down by kind, with how it compares to last month; Fuel (with the
+// car's mileage) and Gym fees each in a tab of their own; the regular
 // debits that come off by themselves, and what's still to come. Saved with
 // the rest of the dashboard.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FoldPanel } from "@/components/dashboard/fold-panel";
+import { EntryEdit, editingFor, KindPanel, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
-import type { MoneyEntry, MoneyState } from "@/lib/dashboard/types";
+import type { MoneyEntry } from "@/lib/dashboard/types";
 import {
   allCategories,
   balance,
@@ -18,6 +20,9 @@ import {
   dollars,
   dueDate,
   dueDebits,
+  FUEL,
+  GYM,
+  kmText,
   localDate,
   monthName,
   monthOf,
@@ -25,6 +30,7 @@ import {
   newSub,
   nextDue,
   notesFor,
+  parseKm,
   shiftMonth,
   shortDollars,
   spentOn,
@@ -82,6 +88,7 @@ export default function MoneyPage() {
   const [form, setForm] = useState<Form>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [km, setKm] = useState("");
   const [date, setDate] = useState(today);
   const amountRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
@@ -103,6 +110,7 @@ export default function MoneyPage() {
     setForm(f);
     setAmount("");
     setNote("");
+    setKm("");
     setDate(today);
     window.setTimeout(() => amountRef.current?.focus(), 30);
   }
@@ -127,12 +135,14 @@ export default function MoneyPage() {
     if (!form) return;
     const n = quick ?? parseAmount(amount);
     if (n == null) return amountRef.current?.focus();
+    const reading = form.mode === "spend" && form.category === FUEL ? parseKm(km) : null;
     addEntry({
       kind: form.mode === "add" ? "add" : "spend",
       amount: n,
       category: form.mode === "add" ? "Money in" : form.category,
       note: note.trim() || undefined,
       date,
+      ...(reading != null ? { km: reading } : {}),
     });
     setForm(null);
   }
@@ -167,7 +177,7 @@ export default function MoneyPage() {
   }
 
   // ── Editing an entry ────────────────────────────────────────────
-  const [editing, setEditing] = useState<{ id: string; amount: string; category: string; note: string; date: string } | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
   function saveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
@@ -181,6 +191,9 @@ export default function MoneyPage() {
         x.category = editing.category;
         x.note = editing.note.trim() || undefined;
         x.date = editing.date || x.date;
+        const reading = x.category === FUEL ? parseKm(editing.km) : null;
+        if (reading != null) x.km = reading;
+        else delete x.km;
       }
     });
     setEditing(null);
@@ -279,6 +292,18 @@ export default function MoneyPage() {
   const comingTotal = coming.reduce((t, c) => t + c.sub.amount, 0);
   const monthlySubs = money.subs.filter((s) => s.active).reduce((t, s) => t + s.amount, 0);
   const cats = allCategories(money);
+  const fuelLast = money.entries
+    .filter((e) => !e.deletedAt && e.category === FUEL && e.km != null)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at))[0]?.km;
+  const kindProps = {
+    money,
+    today,
+    onAdd: addEntry,
+    editing,
+    setEditing,
+    onSaveEdit: saveEdit,
+    onRemove: removeEntry,
+  };
 
   return (
     <>
@@ -431,6 +456,19 @@ export default function MoneyPage() {
                       {shortDollars(a)}
                     </button>
                   ))}
+                {form.mode === "spend" && form.category === FUEL && (
+                  <label className="money-km">
+                    <input
+                      className="dash-input"
+                      inputMode="numeric"
+                      placeholder={fuelLast != null ? `Last ${fuelLast}` : "Mileage"}
+                      value={km}
+                      onChange={(e) => setKm(e.target.value)}
+                      aria-label="Mileage (km on the clock)"
+                    />
+                    <span>km</span>
+                  </label>
+                )}
                 <input
                   className="dash-input money-note"
                   list="money-notes"
@@ -559,7 +597,7 @@ export default function MoneyPage() {
                       {g.spent > 0 && <span>{dollars(g.spent)}</span>}
                     </div>
                     {g.items.map((e) =>
-                      editing?.id === e.id ? (
+                      editing?.id === e.id && editing.where === "list" ? (
                         <EntryEdit
                           key={e.id}
                           money={money}
@@ -575,12 +613,13 @@ export default function MoneyPage() {
                           key={e.id}
                           type="button"
                           className={`money-row is-${e.kind}`}
-                          onClick={() => setEditing({ id: e.id, amount: String(e.amount), category: e.category, note: e.note ?? "", date: e.date })}
+                          onClick={() => setEditing(editingFor(e, "list"))}
                         >
                           <i style={{ background: e.kind === "spend" ? colourFor(money, e.category) : "transparent" }} aria-hidden />
                           <span className="money-row-what">
                             {e.kind === "set" ? "Balance set" : e.note || e.category}
                             {e.kind !== "set" && e.note && <em> · {e.category}</em>}
+                            {e.km != null && <em> · {kmText(e.km)}</em>}
                             {e.sub && <em> · comes off by itself</em>}
                           </span>
                           <span className="money-row-amount">
@@ -597,7 +636,9 @@ export default function MoneyPage() {
         </div>
 
         {/* ── Coming up + regular debits ───────────────────────── */}
-        <div className="dash-col-5">
+        <div className="dash-col-5 money-side">
+          <KindPanel kind="fuel" colour={colourFor(money, FUEL)} {...kindProps} />
+          <KindPanel kind="gym" colour={colourFor(money, GYM)} {...kindProps} />
           {coming.length > 0 && (
             <FoldPanel id="money-coming" eyebrow="Still to come this month" title={dollars(comingTotal)}>
               <div className="money-subs">
@@ -690,64 +731,5 @@ export default function MoneyPage() {
         </div>
       </div>
     </>
-  );
-}
-
-// One entry, being changed.
-function EntryEdit({
-  money,
-  entry,
-  editing,
-  setEditing,
-  onSave,
-  onRemove,
-  today,
-}: {
-  money: MoneyState;
-  entry: MoneyEntry;
-  editing: { id: string; amount: string; category: string; note: string; date: string };
-  setEditing: (e: { id: string; amount: string; category: string; note: string; date: string } | null) => void;
-  onSave: (e: React.FormEvent) => void;
-  onRemove: () => void;
-  today: string;
-}) {
-  return (
-    <form className="money-edit" onSubmit={onSave}>
-      <span className="money-form-what">{entry.kind === "set" ? "Balance set to" : entry.kind === "add" ? "Money in" : "Spent"}</span>
-      <label className="money-amount">
-        <span aria-hidden>$</span>
-        <input
-          className="dash-input"
-          inputMode="decimal"
-          autoFocus
-          value={editing.amount}
-          onChange={(e) => setEditing({ ...editing, amount: e.target.value })}
-          onKeyDown={(e) => e.key === "Escape" && setEditing(null)}
-          aria-label="Amount"
-        />
-      </label>
-      {entry.kind === "spend" && (
-        <select className="dash-input money-edit-cat" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} aria-label="Kind">
-          {[...new Set([...allCategories(money), editing.category])].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      )}
-      {entry.kind !== "set" && (
-        <>
-          <input className="dash-input money-note" placeholder="Where / what?" value={editing.note} onChange={(e) => setEditing({ ...editing, note: e.target.value })} />
-          <input type="date" className="dash-input money-date" value={editing.date} max={today} onChange={(e) => setEditing({ ...editing, date: e.target.value })} aria-label="Date" />
-        </>
-      )}
-      <button type="submit" className="dash-btn dash-btn-primary dash-note-nav">
-        Save
-      </button>
-      <button type="button" className="dash-word-link" onClick={() => setEditing(null)}>
-        Cancel
-      </button>
-      <button type="button" className="dash-word-link money-edit-remove" onClick={onRemove}>
-        Remove
-      </button>
-    </form>
   );
 }
