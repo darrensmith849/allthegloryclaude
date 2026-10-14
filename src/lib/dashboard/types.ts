@@ -396,13 +396,13 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
 
 // ─── Root state ───────────────────────────────────────────────────
 // ── Money (Daniel only) ─────────────────────────────────────────
-// Spending and the account balance. The balance is `start.amount` plus
-// everything added and minus everything spent since `start.at` - "Set
-// balance" moves that starting point. Regular debits (Spotify etc.) are
+// Spending and the account balance. The balance starts at `start.amount`
+// and runs through every entry since `start.at` in the order entered: spend
+// takes off, add puts on, "set" makes it match the bank from then on. Regular debits (Spotify etc.) are
 // taken off by themselves on their day each month (src/lib/dashboard/money.ts).
 export interface MoneyEntry {
   id: string;
-  kind: "spend" | "add";
+  kind: "spend" | "add" | "set"; // "set": the balance was set to `amount` (to match the bank)
   amount: number; // dollars, always positive
   category: string; // "Coffee" ... (or "Money in" for adds)
   note?: string;
@@ -424,6 +424,7 @@ export interface MoneyState {
   start: { amount: number; at: string };
   entries: MoneyEntry[];
   subs: MoneySub[];
+  categories?: string[]; // his own kinds of spending, besides the built-in ones
 }
 
 export interface DashboardState {

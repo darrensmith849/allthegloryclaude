@@ -1,5 +1,6 @@
-// Money (Daniel's private page): the balance, spending by month, and the
-// regular debits that come off by themselves. Plain dollars, his account.
+// Money (Daniel's private page): the balance, spending by month, quick
+// re-use of what he usually buys, and the regular debits that come off by
+// themselves. Plain dollars, his account.
 
 import type { MoneyEntry, MoneyState, MoneySub } from "./types";
 
@@ -18,8 +19,22 @@ export const SPEND_CATEGORIES = [
   "Other",
 ] as const;
 
+export const allCategories = (m: MoneyState) => [...SPEND_CATEGORIES, ...(m.categories ?? [])];
+
+// One colour per kind, the same everywhere (warm, muted - the dashboard's look).
+const PALETTE = ["#9a7425", "#6f8a5b", "#4f6d8a", "#b5654a", "#7b5a7e", "#3f7f7a", "#c2a26b", "#b0707f", "#8a8a4a", "#5b5650", "#6a9ec0", "#a0522d"];
+export function colourFor(m: MoneyState, category: string): string {
+  const i = allCategories(m).indexOf(category);
+  if (i >= 0) return PALETTE[i % PALETTE.length];
+  let h = 0;
+  for (const ch of category) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
 export const dollars = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.round(n * 100) / 100);
+// "$4" for whole amounts, "$4.50" otherwise - for buttons.
+export const shortDollars = (n: number) => (Number.isInteger(n) ? `$${n}` : dollars(n));
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -33,7 +48,7 @@ export const shiftMonth = (ym: string, by: number) => {
 };
 export const monthName = (ym: string) =>
   new Date(`${ym}-15T12:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-const daysIn = (ym: string) => {
+export const daysIn = (ym: string) => {
   const [y, m] = ym.split("-").map(Number);
   return new Date(y, m, 0).getDate();
 };
@@ -42,22 +57,100 @@ export const dueDate = (sub: Pick<MoneySub, "day">, ym: string) => `${ym}-${pad(
 
 const live = (e: MoneyEntry) => !e.deletedAt;
 
+// The balance now: from the start, through every entry in the order entered.
 export function balance(m: MoneyState): number {
   let b = m.start.amount;
-  for (const e of m.entries) if (live(e) && e.at >= m.start.at) b += e.kind === "add" ? e.amount : -e.amount;
+  const after = m.entries.filter((e) => live(e) && e.at >= m.start.at).sort((a, b2) => a.at.localeCompare(b2.at));
+  for (const e of after) b = e.kind === "set" ? e.amount : e.kind === "add" ? b + e.amount : b - e.amount;
   return Math.round(b * 100) / 100;
 }
 
-export function monthSummary(m: MoneyState, ym: string) {
+const spentIn = (m: MoneyState, pick: (date: string) => boolean) =>
+  m.entries.filter((e) => live(e) && e.kind === "spend" && pick(e.date)).reduce((t, e) => t + e.amount, 0);
+
+export function monthSummary(m: MoneyState, ym: string, today = localDate()) {
   const spent = m.entries.filter((e) => live(e) && e.kind === "spend" && monthOf(e.date) === ym);
-  const added = m.entries.filter((e) => live(e) && e.kind === "add" && monthOf(e.date) === ym);
   const total = spent.reduce((t, e) => t + e.amount, 0);
   const byCat = new Map<string, number>();
   for (const e of spent) byCat.set(e.category, (byCat.get(e.category) ?? 0) + e.amount);
   const parts = [...byCat.entries()]
     .map(([category, amount]) => ({ category, amount, pct: total ? (amount / total) * 100 : 0 }))
     .sort((a, b) => b.amount - a.amount);
-  return { total, in: added.reduce((t, e) => t + e.amount, 0), parts, count: spent.length };
+  const moneyIn = m.entries.filter((e) => live(e) && e.kind === "add" && monthOf(e.date) === ym).reduce((t, e) => t + e.amount, 0);
+  // Days so far: the whole month if it's over, else up to today.
+  const days = ym < monthOf(today) ? daysIn(ym) : ym === monthOf(today) ? Number(today.slice(8, 10)) : 0;
+  // Last month to compare with: all of it, or - while this month is still
+  // going - only up to the same day, so it's like for like.
+  const before = shiftMonth(ym, -1);
+  const soFar = ym === monthOf(today);
+  const last = spentIn(m, (d) => monthOf(d) === before && (!soFar || Number(d.slice(8, 10)) <= days));
+  return {
+    total,
+    in: moneyIn,
+    parts,
+    count: spent.length,
+    lastMonth: last,
+    soFar,
+    change: last > 0 ? ((total - last) / last) * 100 : null,
+    perDay: days ? total / days : 0,
+  };
+}
+
+export const spentOn = (m: MoneyState, date: string) => spentIn(m, (d) => d === date);
+
+// The prices he usually pays for a kind of thing (most often first, then smallest).
+export function usualAmounts(m: MoneyState, category: string, max = 4): number[] {
+  const count = new Map<number, number>();
+  for (const e of m.entries) if (live(e) && e.kind === "spend" && e.category === category) count.set(e.amount, (count.get(e.amount) ?? 0) + 1);
+  return [...count.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .slice(0, max)
+    .map(([a]) => a)
+    .sort((a, b) => a - b);
+}
+
+// What he buys again and again - one tap to log it again.
+export function usualBuys(m: MoneyState, max = 4): { category: string; amount: number; note?: string }[] {
+  const seen = new Map<string, { category: string; amount: number; note?: string; n: number; last: string }>();
+  for (const e of m.entries) {
+    if (!live(e) || e.kind !== "spend" || e.sub) continue;
+    const key = `${e.category}|${e.amount}|${e.note ?? ""}`;
+    const s = seen.get(key) ?? { category: e.category, amount: e.amount, note: e.note, n: 0, last: "" };
+    s.n++;
+    if (e.at > s.last) s.last = e.at;
+    seen.set(key, s);
+  }
+  return [...seen.values()]
+    .sort((a, b) => b.n - a.n || b.last.localeCompare(a.last))
+    .slice(0, max)
+    .map(({ category, amount, note }) => ({ category, amount, note }));
+}
+
+// Places / notes used before for a kind, latest first.
+export function notesFor(m: MoneyState, category: string, max = 8): string[] {
+  const out: string[] = [];
+  for (const e of [...m.entries].sort((a, b) => b.at.localeCompare(a.at))) {
+    if (!live(e) || e.category !== category || !e.note || out.includes(e.note)) continue;
+    out.push(e.note);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+// Regular debits still to come off this month.
+export function stillToCome(m: MoneyState, today = localDate()) {
+  const ym = monthOf(today);
+  return m.subs
+    .filter((s) => s.active && s.lastPaid < ym && dueDate(s, ym) > today)
+    .map((s) => ({ sub: s, date: dueDate(s, ym) }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// The next date a regular debit comes off.
+export function nextDue(s: MoneySub, today = localDate()): string {
+  let ym = shiftMonth(s.lastPaid, 1);
+  while (dueDate(s, ym) < today) ym = shiftMonth(ym, 1);
+  return dueDate(s, ym);
 }
 
 // A regular debit just set up: if its day has already passed this month,
@@ -96,6 +189,21 @@ export function dueDebits(m: MoneyState, today = localDate()): { entries: MoneyE
     if (last !== s.lastPaid) paid[s.id] = last;
   }
   return { entries, paid };
+}
+
+// Every entry, for a spreadsheet.
+export function toCsv(m: MoneyState): string {
+  const cell = (v: unknown) => {
+    const t = String(v ?? "");
+    return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const rows = [["Date", "Kind", "What", "Note", "Amount", "Regular debit"]];
+  for (const e of [...m.entries].filter(live).sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at))) {
+    const kind = e.kind === "spend" ? "Spent" : e.kind === "add" ? "Money in" : "Balance set";
+    const amount = e.kind === "spend" ? -e.amount : e.amount;
+    rows.push([e.date, kind, e.kind === "set" ? "" : e.category, e.note ?? "", amount.toFixed(2), e.sub ? "yes" : ""]);
+  }
+  return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
 // First time: the balance Daniel gave, and the debits from his bank statement
