@@ -242,7 +242,14 @@ function Account() {
             <Panel eyebrow="Your journal" title="Kept for good">
               <p className="dash-word-hint mb-3">
                 Everything you write - every note, word and day - is saved permanently, and a full copy is backed up every
-                night. Nothing is ever wiped. Your journal is private to you, and you can download your own copy any time.
+                night. Nothing is ever wiped, and you can download your own copy any time.
+              </p>
+              <p className="dash-word-hint mb-3">
+                <strong>🔒 Private to you.</strong> Your notes, words, days and prayers are stored securely so they&apos;re
+                there on any device - but no one else can see them: not Daniel, not the team, not other members. All we keep
+                about you is your name and email address, and your password is scrambled so no one can read it, not even
+                us. The only things that reach Daniel and the team are the ones you send them - a question, a check-in or a
+                suggestion.
               </p>
               <div className="flex gap-2 flex-wrap">
                 <button type="button" className="dash-btn dash-btn-ghost" onClick={download} disabled={downloading}>

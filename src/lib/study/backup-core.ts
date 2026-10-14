@@ -59,6 +59,21 @@ export const BACKUP_TABLES = [
   "checkin_replies",
 ] as const;
 
+// Members' private writing: in every stored backup (so it can always be
+// restored), but left out of the copy Daniel downloads - members are told
+// nobody else can see their journal, and that stays true.
+export const MEMBER_PRIVATE_TABLES = [
+  "member_notes",
+  "member_note_versions",
+  "member_words",
+  "member_word_versions",
+  "member_days",
+  "member_day_versions",
+  "member_prayers",
+  "member_memory",
+  "member_names",
+] as const;
+
 export const BACKUP_PREFIX = "study/";
 export const KEEP_DAYS = 365;
 

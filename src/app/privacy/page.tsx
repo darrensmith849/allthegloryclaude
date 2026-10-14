@@ -57,7 +57,9 @@ export default function PrivacyPage() {
                 <strong className="text-white/85">When you join The Study</strong>{" "}
                 — your name, email address and password (kept only in scrambled,
                 hashed form), and the notes and words you write in your journal,
-                which are private to you. We only email you updates if you tick
+                which are private to you: no one else can see them, not us, not
+                the team, not other members, and they are left out of any copy
+                we download. We only email you updates if you tick
                 the box to say yes. You can download everything or delete your
                 account and all of it from your Account page at any time.
               </li>

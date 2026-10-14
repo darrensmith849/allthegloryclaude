@@ -3,12 +3,12 @@
  * Admin session required (middleware).
  *
  *   GET            -> { last, backups: [{ key, size, at, rows, reason }] }
- *   GET ?key=...   -> that backup file, to download
+ *   GET ?key=...   -> that backup file, to download - without members' private journals
  *   POST           -> { backup }   back up now
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/lib/analytics/store";
-import { BACKUP_PREFIX, runBackup, type R2Like } from "@/lib/study/backup-core";
+import { BACKUP_PREFIX, MEMBER_PRIVATE_TABLES, runBackup, type R2Like } from "@/lib/study/backup-core";
 import { isSignedIn } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,21 @@ export async function GET(req: Request) {
     if (!key.startsWith(BACKUP_PREFIX) || key.includes("..")) return Response.json({ error: "No such backup." }, { status: 404 });
     const obj = await b.get(key);
     if (!obj) return Response.json({ error: "No such backup." }, { status: 404 });
-    return new Response(obj.body, {
+    // Members' private journals stay out of the downloaded copy (counted, not copied).
+    const full = (await new Response(obj.body).json()) as { tables?: Record<string, unknown[]> };
+    const leftOut: Record<string, number> = {};
+    for (const t of MEMBER_PRIVATE_TABLES) {
+      if (full.tables?.[t]) {
+        leftOut[t] = full.tables[t].length;
+        full.tables[t] = [];
+      }
+    }
+    const body = JSON.stringify({
+      ...full,
+      membersPrivateLeftOut: leftOut,
+      note: "Members' private journals (notes, words, days, prayers) are not in this download. The full copy stays in the private backup store, so they can always be restored.",
+    });
+    return new Response(body, {
       headers: {
         "content-type": "application/json",
         "content-disposition": `attachment; filename="the-study-backup-${key.slice(BACKUP_PREFIX.length).replace(/\//g, "-")}"`,

@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { PLAN, STUDY_HEART, WHY_NIV } from "@/lib/study/plan";
+import { PLAN, PRIVATE_NOTE, STUDY_HEART, WHY_NIV } from "@/lib/study/plan";
 import { PasswordInput } from "@/components/ui/password-input";
 
 interface Me {
@@ -452,12 +452,7 @@ export default function TheStudyPage() {
                   <p className="text-xs text-white/45 leading-relaxed">
                     {tab === "join" ? (
                       <>
-                        Your journal is private to you. We keep only your name, email and what you write, and you can
-                        download or delete it all any time. See our{" "}
-                        <a href="/privacy" className="underline hover:text-white/70">
-                          privacy policy
-                        </a>
-                        .
+                        You can download or delete everything you write, any time.
                       </>
                     ) : tab === "login" ? (
                       <button
@@ -481,7 +476,14 @@ export default function TheStudyPage() {
                 </form>
               )}
             </div>
-            <p className="mt-6 text-center text-xs text-white/40">
+            <p className="mt-6 text-center text-sm text-white/70 leading-relaxed max-w-md mx-auto">
+              🔒 {PRIVATE_NOTE}{" "}
+              <a href="/privacy" className="underline hover:text-white">
+                Our privacy policy
+              </a>
+              .
+            </p>
+            <p className="mt-4 text-center text-xs text-white/40">
               Readings follow{" "}
               <a href={PLAN.bibleApp} target="_blank" rel="noreferrer" className="underline hover:text-white/70">
                 {PLAN.name} (NIV)

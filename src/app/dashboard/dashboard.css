@@ -4712,6 +4712,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-how-card p { font-size: 15px; line-height: 1.6; color: var(--colour-ink-soft); }
 .study-how-card p strong { font-weight: 600; color: var(--colour-ink-strong); }
 .study-how-steps { margin-top: 12px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-soft); background: var(--field); }
+.study-how-private { margin-top: 10px; font-size: 14px; line-height: 1.6; color: var(--colour-ink-soft); }
 .study-how-bible { margin-top: 14px; font-size: 14px; line-height: 1.6; color: var(--colour-ink-quiet); }
 .study-how a { color: var(--colour-amber); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 

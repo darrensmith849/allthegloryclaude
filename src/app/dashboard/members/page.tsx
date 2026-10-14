@@ -724,8 +724,9 @@ export default function MembersPage() {
               Everything in The Study - your study, every member&apos;s journal, their words and days, questions, testimonies
               and the email list - is kept for good; only a member deleting their own account removes theirs. On top of
               that, a full copy is saved every night at 04:00 to your own private storage, and each copy is kept for a
-              year (download any copy to keep it longer). Passwords are never copied - after a restore, members use
-              &quot;Forgotten your password?&quot;.
+              year. Passwords are never copied - after a restore, members use &quot;Forgotten your password?&quot;. A
+              copy you download has everything except members&apos; private journals (their notes, words, days and
+              prayers) - members are told nobody else can see those, so they stay only in the private backups.
             </p>
             {backups === null ? (
               <p className="dash-word-hint mt-3">Loading…</p>

@@ -11,7 +11,7 @@ import { canRead, useMe } from "@/components/study/shell";
 import { ShareLink } from "@/components/study/share-link";
 import { planDay, type StudyDay } from "@/lib/dashboard/notes";
 import { useRouter } from "next/navigation";
-import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, START_WHY } from "@/lib/study/plan";
+import { bibleAppDay, bookDate, inPlan, nextPage, PLAN, PRIVATE_NOTE, START_WHY } from "@/lib/study/plan";
 import { IosInstallGuide } from "@/components/study/ios-install-guide";
 import { WhyNiv } from "@/components/study/why-niv";
 import { MemoryVerse } from "@/components/study/memory-verse";
@@ -297,6 +297,7 @@ export default function StudyHome() {
             .
           </p>
           <WhyNiv className="mt-1" />
+          <p className="study-how-private">🔒 {PRIVATE_NOTE}</p>
         </section>
       )}
 
