@@ -122,11 +122,12 @@ function pushNow() {
 //   - local newer / remote empty      → seed/update D1 from local
 // The server also refuses to let an empty state overwrite a non-empty one,
 // so a fresh browser (e.g. the bare domain) can never wipe your history.
-async function hydrateFromD1(apply: (s: DashboardState) => void) {
-  if (typeof window === "undefined") return;
+// Resolves true once the durable copy has been read (and adopted if newer).
+async function hydrateFromD1(apply: (s: DashboardState) => void): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   try {
     const res = await fetch(API, { cache: "no-store" });
-    if (!res.ok) return;
+    if (!res.ok) return false;
     const data = (await res.json()) as { json?: string | null; updatedAt?: number };
     const remoteTs = Number(data?.updatedAt ?? 0) || 0;
     const lTs = localTs();
@@ -151,8 +152,10 @@ async function hydrateFromD1(apply: (s: DashboardState) => void) {
       }
       pushNow();
     }
+    return true;
   } catch {
     // offline / transient — the local cache still works; we'll sync next time.
+    return false;
   }
 }
 
@@ -167,6 +170,10 @@ function broadcast(state: DashboardState) {
 export function useDashboard() {
   const [state, setState] = useState<DashboardState>(() => emptyState());
   const [ready, setReady] = useState(false);
+  // The durable copy has been read: true, or false while loading / offline.
+  // Anything that writes by itself on load (Money's debits) waits for this,
+  // so a device with an old copy can't overwrite newer changes.
+  const [synced, setSynced] = useState<boolean | null>(null);
 
   useEffect(() => {
     setState(read());
@@ -176,7 +183,7 @@ export function useDashboard() {
     hydrateFromD1((next) => {
       setState(next);
       broadcast(next);
-    });
+    }).then(setSynced);
 
     const sync = (next: DashboardState) => setState(next);
     listeners.add(sync);
@@ -211,7 +218,7 @@ export function useDashboard() {
     [],
   );
 
-  return { state, update, ready };
+  return { state, update, ready, synced };
 }
 
 // Standalone helpers for places where you just need to read once.

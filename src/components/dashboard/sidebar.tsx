@@ -18,6 +18,7 @@ const NAV = [
   { href: "/dashboard/today", label: "Today", glyph: "✦" },
   { href: "/dashboard/calendar", label: "Calendar", glyph: "▦" },
   { href: "/dashboard/tasks", label: "Tasks", glyph: "▢" },
+  { href: "/dashboard/money", label: "Money", glyph: "$" },
   { href: "/dashboard/guitar", label: "Guitar", glyph: "♪" },
   { href: "/dashboard/book", label: "Book", glyph: "❦" },
   { href: "/dashboard/reminders", label: "Reminders", glyph: "☼" },

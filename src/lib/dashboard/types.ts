@@ -395,7 +395,39 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
 }
 
 // ─── Root state ───────────────────────────────────────────────────
+// ── Money (Daniel only) ─────────────────────────────────────────
+// Spending and the account balance. The balance is `start.amount` plus
+// everything added and minus everything spent since `start.at` - "Set
+// balance" moves that starting point. Regular debits (Spotify etc.) are
+// taken off by themselves on their day each month (src/lib/dashboard/money.ts).
+export interface MoneyEntry {
+  id: string;
+  kind: "spend" | "add";
+  amount: number; // dollars, always positive
+  category: string; // "Coffee" ... (or "Money in" for adds)
+  note?: string;
+  date: ISODate; // the day it happened
+  at: string; // when it was entered (ISO) - counts toward the balance if after start.at
+  sub?: string; // the regular debit it came from
+  deletedAt?: string; // removed (kept, never wiped)
+}
+export interface MoneySub {
+  id: string;
+  name: string;
+  amount: number;
+  day: number; // day of the month it comes off (1-31; short months use their last day)
+  category: string;
+  active: boolean;
+  lastPaid: string; // YYYY-MM it was last taken off
+}
+export interface MoneyState {
+  start: { amount: number; at: string };
+  entries: MoneyEntry[];
+  subs: MoneySub[];
+}
+
 export interface DashboardState {
+  money?: MoneyState;
   tasks: Task[];
   habits: Record<ISODate, DayHabits>;
   // Per-day "is this schedule row done?" checks, keyed by row id.
