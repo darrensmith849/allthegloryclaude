@@ -4991,6 +4991,49 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .money-sub-remove { color: rgb(var(--bad-rgb)); }
 .money-balance-amount.is-static { cursor: default; }
 .money-balance-amount.is-static:hover { background: none; }
+.money-dayflag { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-bottom: 14px; padding: 9px 14px; border-radius: 12px; border: 1px dashed rgb(var(--gold-rgb) / 0.6); background: rgb(var(--gold-rgb) / 0.08); font-size: 14px; color: var(--colour-ink-soft); }
+.money-dayflag strong { color: var(--colour-ink-strong); }
+.money-form-day { font-family: var(--font-sans), system-ui, sans-serif; font-style: normal; font-size: 13px; font-weight: 600; color: var(--colour-ink-quiet); }
+.money-days { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.money-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13.5px; font-weight: 600; color: var(--colour-ink-strong); }
+.money-cal-head .dash-word-link { padding: 2px 8px; font-size: 16px; }
+.money-cal-head .dash-word-link:disabled { opacity: 0.3; cursor: default; }
+.money-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.money-cal-dow { padding-bottom: 2px; text-align: center; font-size: 11px; font-weight: 600; color: var(--colour-ink-quiet); }
+.money-cal-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 4px 0 3px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.money-cal-day:hover:not(:disabled) { background: rgb(var(--tint-rgb) / calc(0.06 * var(--tint-k))); }
+.money-cal-day:disabled { opacity: 0.35; cursor: default; }
+.money-cal-day.is-today { border-color: rgb(var(--gold-rgb) / 0.6); }
+.money-cal-day.is-on { background: var(--colour-amber); border-color: var(--colour-amber); }
+.money-cal-day.is-on .money-cal-num, .money-cal-day.is-on .money-cal-spent { color: var(--on-gold); }
+.money-cal-num { font-size: 13px; font-weight: 600; color: var(--colour-ink-strong); font-variant-numeric: tabular-nums; }
+.money-cal-spent { font-size: 10px; line-height: 1.2; color: var(--colour-ink-quiet); font-variant-numeric: tabular-nums; }
+.money-cal-in { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 999px; background: rgb(var(--ok-rgb)); }
+.money-daycard { min-width: 0; }
+.money-daycard-bal { display: flex; flex-wrap: wrap; gap: 10px 26px; }
+.money-daycard-bal > div { display: flex; flex-direction: column; gap: 1px; }
+.money-daycard-bal span { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--colour-ink-quiet); }
+.money-daycard-bal strong { font-family: var(--font-read), Georgia, serif; font-weight: 400; font-size: 24px; line-height: 1.2; color: var(--colour-ink-strong); font-variant-numeric: tabular-nums; }
+.money-daycard-sums { display: flex; gap: 18px; margin-top: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft); font-size: 14px; color: var(--colour-ink-soft); }
+.money-daycard-sums strong { color: var(--colour-ink-strong); font-variant-numeric: tabular-nums; }
+.money-daycard-sums strong.is-in { color: rgb(var(--ok-rgb)); }
+.money-daycard-list { margin-top: 4px; }
+@media (max-width: 760px) {
+  .money-days { grid-template-columns: minmax(0, 1fr); }
+  .money-cal-day { min-height: 44px; }
+}
 .money-side { display: grid; gap: 18px; align-content: start; }
 .money-km { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--colour-ink-quiet); }
 .money-km .dash-input { width: 120px; font-variant-numeric: tabular-nums; }

@@ -74,21 +74,48 @@ export const dueDate = (sub: Pick<MoneySub, "day">, ym: string) => `${ym}-${pad(
 
 const live = (e: MoneyEntry) => !e.deletedAt;
 
-// The balance now: from the start, through every entry in the order entered.
-export function balance(m: MoneyState): number {
-  let b = m.start.amount;
-  const after = m.entries.filter((e) => live(e) && !e.cash && e.at >= m.start.at).sort((a, b2) => a.at.localeCompare(b2.at));
-  for (const e of after) b = e.kind === "set" ? e.amount : e.kind === "add" ? b + e.amount : b - e.amount; // spend and move take off
-  return Math.round(b * 100) / 100;
+const byDay = (a: MoneyEntry, b: MoneyEntry) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at);
+const cents = (n: number) => Math.round(n * 100) / 100;
+
+// The account and the cash in hand, walked through the entries day by day
+// (in the order entered within a day). An entry for an earlier day counts
+// on that day - so one logged late, after a balance was set that already
+// included it, isn't taken off twice.
+function walk(m: MoneyState, pick: (e: MoneyEntry) => boolean = () => true): { acct: number; cash: number } {
+  let acct = m.start.amount;
+  let cash = 0;
+  for (const e of m.entries.filter((x) => live(x) && pick(x)).sort(byDay)) {
+    if (e.cash) {
+      cash = e.kind === "set" ? e.amount : e.kind === "spend" ? cash - e.amount : cash + e.amount;
+      continue;
+    }
+    if (e.kind === "move") cash += e.amount; // drawn from the account into cash
+    if (e.at < m.start.at) continue; // before the page began - already in the starting balance
+    acct = e.kind === "set" ? e.amount : e.kind === "add" ? acct + e.amount : acct - e.amount; // spend and move take off
+  }
+  return { acct: cents(acct), cash: cents(cash) };
 }
 
-// Cash in hand: what's been set, added, drawn from the account, less what's
-// been paid in cash.
-export function cashBalance(m: MoneyState): number {
-  let b = 0;
-  const all = m.entries.filter((e) => live(e) && (e.cash || e.kind === "move")).sort((a, b2) => a.at.localeCompare(b2.at));
-  for (const e of all) b = e.kind === "set" ? e.amount : e.kind === "spend" ? b - e.amount : b + e.amount;
-  return Math.round(b * 100) / 100;
+export const balance = (m: MoneyState) => walk(m).acct;
+export const cashBalance = (m: MoneyState) => walk(m).cash;
+
+// A day in the calendar: what it started with (carried over from the day
+// before) and what it ended with.
+export function dayBalances(m: MoneyState, day: string) {
+  return { open: walk(m, (e) => e.date < day), close: walk(m, (e) => e.date <= day) };
+}
+
+// Each day of a month: spent and money in.
+export function daySums(m: MoneyState, ym: string): Map<string, { spent: number; in: number }> {
+  const out = new Map<string, { spent: number; in: number }>();
+  for (const e of m.entries) {
+    if (!live(e) || monthOf(e.date) !== ym || (e.kind !== "spend" && e.kind !== "add")) continue;
+    const d = out.get(e.date) ?? { spent: 0, in: 0 };
+    if (e.kind === "spend") d.spent += e.amount;
+    else d.in += e.amount;
+    out.set(e.date, d);
+  }
+  return out;
 }
 
 const spentIn = (m: MoneyState, pick: (date: string) => boolean) =>

@@ -25,6 +25,8 @@ import {
 } from "@/lib/dashboard/types";
 import { languageLabel, wordDate } from "@/lib/dashboard/words";
 
+const usd = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -115,6 +117,11 @@ export default function CalendarPage() {
   const wordsThatDay = useMemo(
     () => words.filter((w) => wordDate(w) === selected),
     [words, selected],
+  );
+  // Money logged on the selected day (Daniel's own Money page).
+  const moneyThatDay = useMemo(
+    () => (state.money?.entries ?? []).filter((e) => !e.deletedAt && e.date === selected).sort((a, b) => a.at.localeCompare(b.at)),
+    [state.money, selected],
   );
 
   function toggleHabitForSelected(habitId: string) {
@@ -561,6 +568,43 @@ export default function CalendarPage() {
                   to re-order it.
                 </div>
               </section>
+
+              {/* Money logged on this day */}
+              {moneyThatDay.length > 0 && (
+                <section>
+                  <div className="eyebrow eyebrow-amber mb-2">Money</div>
+                  <div className="flex gap-4 text-[13px] text-[var(--colour-ink-soft)] mb-1.5">
+                    <span>
+                      Spent{" "}
+                      <strong className="text-[var(--colour-ink-strong)]">
+                        {usd(moneyThatDay.filter((e) => e.kind === "spend").reduce((t, e) => t + e.amount, 0))}
+                      </strong>
+                    </span>
+                    <span>
+                      In{" "}
+                      <strong className="text-[var(--colour-ink-strong)]">
+                        {usd(moneyThatDay.filter((e) => e.kind === "add").reduce((t, e) => t + e.amount, 0))}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    {moneyThatDay.slice(0, 8).map((e) => (
+                      <div key={e.id} className="flex items-baseline gap-2 text-[13px] px-1.5 py-0.5">
+                        <span className="text-[var(--colour-ink-strong)] truncate">
+                          {e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || e.category}
+                        </span>
+                        <span className="ml-auto tabular-nums text-[var(--colour-ink-soft)]">
+                          {e.kind === "spend" ? "-" : e.kind === "add" ? "+" : ""}
+                          {usd(e.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link href={`/dashboard/money?day=${selected}`} className="dash-word-link inline-block mt-1.5 text-[13px]">
+                    {moneyThatDay.length > 8 ? `All ${moneyThatDay.length} on the Money page →` : "Open this day in Money →"}
+                  </Link>
+                </section>
+              )}
 
               {/* Words saved to the journal on this day */}
               {wordsThatDay.length > 0 && (

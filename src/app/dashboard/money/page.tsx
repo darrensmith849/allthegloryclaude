@@ -1,6 +1,8 @@
 "use client";
 
 // Money - Daniel's own spending tracker (not for the team, never members).
+// A calendar, day by day: each day keeps its own entries, with the balance
+// it started with (carried over) and ended with; tomorrow starts empty.
 // The balance up top and the cash in hand beside it (tap either to change
 // it); spending paid from either; one tap on what he usually buys,
 // or a kind of spending then the price; every entry editable. Each month
@@ -18,6 +20,9 @@ import {
   allCategories,
   balance,
   CASH_OUT,
+  dayBalances,
+  daySums,
+  daysIn,
   cashBalance,
   colourFor,
   dollars,
@@ -60,6 +65,13 @@ const dayHeading = (d: string, today: string) => {
   if (d === localDate(y)) return "Yesterday";
   return new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 };
+const fullDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+const shiftDay = (d: string, by: number) => {
+  const x = new Date(`${d}T12:00:00`);
+  x.setDate(x.getDate() + by);
+  return localDate(x);
+};
+const CAL_HEAD = ["M", "T", "W", "T", "F", "S", "S"];
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
 
 type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean } | { mode: "move" } | null;
@@ -99,6 +111,21 @@ export default function MoneyPage() {
   const [month, setMonth] = useState(monthOf(today));
   const [only, setOnly] = useState<string | null>(null); // the month's list, one kind only
   const [view, setView] = useState<"all" | "in" | "out">("all"); // the month: everything, money in, or spending
+  // The day open in the calendar - what's added goes on this day (today unless another is picked).
+  const [day, setDay] = useState(today);
+  const [calMonth, setCalMonth] = useState(monthOf(today));
+  const pickDay = (d: string) => {
+    const next = d > today ? today : d;
+    setDay(next);
+    setCalMonth(monthOf(next));
+    setEditing(null);
+  };
+  // /dashboard/money?day=2026-10-13 (from the Calendar) opens that day.
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get("day");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickDay(d);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function say(text: string, undo?: () => void) {
     setToast({ text, undo });
@@ -121,7 +148,7 @@ export default function MoneyPage() {
     setAmount("");
     setNote("");
     setKm("");
-    setDate(today);
+    setDate(day);
     window.setTimeout(() => amountRef.current?.focus(), 30);
   }
 
@@ -129,6 +156,7 @@ export default function MoneyPage() {
     const entry: MoneyEntry = { ...e, id: uid(), at: new Date().toISOString() };
     update((d) => void d.money?.entries.push(entry));
     setMonth(monthOf(entry.date));
+    if (entry.date !== day) pickDay(entry.date);
     say(
       entry.kind === "add"
         ? `${dollars(entry.amount)} added${entry.cash ? " to your cash" : ""}`
@@ -352,6 +380,48 @@ export default function MoneyPage() {
   const fuelLast = money.entries
     .filter((e) => !e.deletedAt && e.category === FUEL && e.km != null)
     .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at))[0]?.km;
+  // One entry: tap to change it, ✕ to delete it.
+  const entryRow = (e: MoneyEntry, where: string) =>
+    editing?.id === e.id && editing.where === where ? (
+      <EntryEdit
+        key={e.id}
+        money={money}
+        entry={e}
+        editing={editing}
+        setEditing={setEditing}
+        onSave={saveEdit}
+        onRemove={() => removeEntry(e.id)}
+        today={today}
+      />
+    ) : (
+      <div key={e.id} className="money-row-line">
+        <button type="button" className={`money-row is-${e.kind}`} onClick={() => setEditing(editingFor(e, where))}>
+          <i style={{ background: e.kind === "spend" ? colourFor(money, e.category) : "transparent" }} aria-hidden />
+          <span className="money-row-what">
+            {e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || (e.kind === "add" && e.cash ? "Cash in" : e.category)}
+            {e.kind !== "set" && e.note && <em> · {e.kind === "add" && e.cash ? "Cash in" : e.category}</em>}
+            {e.kind === "move" && <em> · account → cash</em>}
+            {e.kind === "spend" && e.cash && <em> · cash</em>}
+            {e.km != null && <em> · {kmText(e.km)}</em>}
+            {e.sub && <em> · comes off by itself</em>}
+          </span>
+          <span className="money-row-amount">
+            {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
+          </span>
+        </button>
+        <DeleteButton onClick={() => removeEntry(e.id)} />
+      </div>
+    );
+
+  // The calendar: the open day's entries and balances, and each day of its month.
+  const dayEntries = money.entries.filter((e) => !e.deletedAt && e.date === day).sort((a, b) => a.at.localeCompare(b.at));
+  const dayBal = dayBalances(money, day);
+  const sums = daySums(money, calMonth);
+  const daySum = daySums(money, monthOf(day)).get(day) ?? { spent: 0, in: 0 };
+  const calLead = (new Date(`${calMonth}-01T12:00:00`).getDay() + 6) % 7;
+  const calDays = Array.from({ length: daysIn(calMonth) }, (_, k) => `${calMonth}-${String(k + 1).padStart(2, "0")}`);
+  const showCash = dayBal.open.cash !== 0 || dayBal.close.cash !== 0;
+
   const kindProps = {
     money,
     today,
@@ -439,6 +509,7 @@ export default function MoneyPage() {
               : form.cash
                 ? "Cash in"
                 : "Money in"}
+          {date !== today && <em className="money-form-day">for {fullDay(date)}</em>}
         </span>
         <label className="money-amount">
           <span aria-hidden>$</span>
@@ -564,6 +635,16 @@ export default function MoneyPage() {
               </div>
             </div>
 
+            {day !== today && (
+              <div className="money-dayflag">
+                <span>
+                  Adding to <strong>{fullDay(day)}</strong>
+                </span>
+                <button type="button" className="dash-word-link" onClick={() => pickDay(today)}>
+                  Back to today
+                </button>
+              </div>
+            )}
             {form?.mode === "add" && formBox}
             {toastBox}
 
@@ -575,7 +656,7 @@ export default function MoneyPage() {
                     key={`${b.category}|${b.amount}|${b.note ?? ""}|${b.cash ? "cash" : ""}`}
                     type="button"
                     className="money-again-btn"
-                    onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: today, ...(b.cash ? { cash: true } : {}) })}
+                    onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: day, ...(b.cash ? { cash: true } : {}) })}
                   >
                     <i style={{ background: colourFor(money, b.category) }} aria-hidden />
                     {b.note || b.category} {shortDollars(b.amount)}
@@ -618,7 +699,121 @@ export default function MoneyPage() {
         </div>
 
         {/* ── The month ─────────────────────────────────────── */}
-        <div className="dash-col-7">
+        <div className="dash-col-7 money-side">
+          <FoldPanel
+            id="money-days"
+            eyebrow="Day by day"
+            title={day === today ? `Today · ${fullDay(day)}` : fullDay(day)}
+            action={
+              <div className="flex gap-1">
+                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(shiftDay(day, -1))} aria-label="Day before">
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-ghost dash-note-nav"
+                  onClick={() => pickDay(shiftDay(day, 1))}
+                  disabled={day >= today}
+                  aria-label="Day after"
+                >
+                  ›
+                </button>
+              </div>
+            }
+          >
+            <div className="money-days">
+              <div className="money-cal">
+                <div className="money-cal-head">
+                  <button type="button" className="dash-word-link" onClick={() => setCalMonth(shiftMonth(calMonth, -1))} aria-label="Month before">
+                    ‹
+                  </button>
+                  <span>{monthName(calMonth)}</span>
+                  <button
+                    type="button"
+                    className="dash-word-link"
+                    onClick={() => setCalMonth(shiftMonth(calMonth, 1))}
+                    disabled={calMonth >= monthOf(today)}
+                    aria-label="Month after"
+                  >
+                    ›
+                  </button>
+                </div>
+                <div className="money-cal-grid">
+                  {CAL_HEAD.map((h, k) => (
+                    <span key={k} className="money-cal-dow">
+                      {h}
+                    </span>
+                  ))}
+                  {Array.from({ length: calLead }, (_, k) => (
+                    <span key={`x${k}`} />
+                  ))}
+                  {calDays.map((d) => {
+                    const t = sums.get(d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        className={`money-cal-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
+                        onClick={() => pickDay(d)}
+                        disabled={d > today}
+                        aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}${t.in ? `, in ${dollars(t.in)}` : ""}` : ""}`}
+                        aria-pressed={d === day}
+                      >
+                        <span className="money-cal-num">{Number(d.slice(8))}</span>
+                        {t && t.spent > 0 && <span className="money-cal-spent">${Math.round(t.spent)}</span>}
+                        {t && t.in > 0 && <i className="money-cal-in" aria-hidden />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="money-daycard">
+                <div className="money-daycard-bal">
+                  <div>
+                    <span>Started the day</span>
+                    <strong>{dollars(dayBal.open.acct)}</strong>
+                  </div>
+                  <div>
+                    <span>{day === today ? "Now" : "Ended the day"}</span>
+                    <strong>{dollars(dayBal.close.acct)}</strong>
+                  </div>
+                  {showCash && (
+                    <div>
+                      <span>Cash</span>
+                      <strong>
+                        {dollars(dayBal.open.cash)} → {dollars(dayBal.close.cash)}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+                <div className="money-daycard-sums">
+                  <span>
+                    Spent <strong>{dollars(daySum.spent)}</strong>
+                  </span>
+                  <span>
+                    In <strong className="is-in">{dollars(daySum.in)}</strong>
+                  </span>
+                </div>
+                {dayEntries.length ? (
+                  <div className="money-daycard-list">{dayEntries.map((e) => entryRow(e, "day"))}</div>
+                ) : (
+                  <p className="dash-word-hint mt-3">
+                    {day === today ? "Nothing logged today yet - tap what you spent at the top, or + Add money." : "Nothing was logged on this day."}
+                  </p>
+                )}
+                {day !== today ? (
+                  <p className="dash-word-hint mt-3">
+                    Anything you add at the top now goes on this day.{" "}
+                    <button type="button" className="dash-word-link" onClick={() => pickDay(today)}>
+                      Back to today
+                    </button>
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </FoldPanel>
+
           <FoldPanel
             id="money-month"
             eyebrow="Money in and out"
@@ -760,42 +955,7 @@ export default function MoneyPage() {
                         {g.spent > 0 && <span>-{dollars(g.spent)}</span>}
                       </span>
                     </div>
-                    {g.items.map((e) =>
-                      editing?.id === e.id && editing.where === "list" ? (
-                        <EntryEdit
-                          key={e.id}
-                          money={money}
-                          entry={e}
-                          editing={editing}
-                          setEditing={setEditing}
-                          onSave={saveEdit}
-                          onRemove={() => removeEntry(e.id)}
-                          today={today}
-                        />
-                      ) : (
-                        <div key={e.id} className="money-row-line">
-                        <button
-                          type="button"
-                          className={`money-row is-${e.kind}`}
-                          onClick={() => setEditing(editingFor(e, "list"))}
-                        >
-                          <i style={{ background: e.kind === "spend" ? colourFor(money, e.category) : "transparent" }} aria-hidden />
-                          <span className="money-row-what">
-                            {e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || (e.kind === "add" && e.cash ? "Cash in" : e.category)}
-                            {e.kind !== "set" && e.note && <em> · {e.kind === "add" && e.cash ? "Cash in" : e.category}</em>}
-                            {e.kind === "move" && <em> · account → cash</em>}
-                            {e.kind === "spend" && e.cash && <em> · cash</em>}
-                            {e.km != null && <em> · {kmText(e.km)}</em>}
-                            {e.sub && <em> · comes off by itself</em>}
-                          </span>
-                          <span className="money-row-amount">
-                            {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
-                          </span>
-                        </button>
-                        <DeleteButton onClick={() => removeEntry(e.id)} />
-                        </div>
-                      ),
-                    )}
+                    {g.items.map((e) => entryRow(e, "list"))}
                   </div>
                 ))}
               </div>
