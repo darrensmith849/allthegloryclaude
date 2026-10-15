@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   // Shared by direct link and carries a phone number, so it stays out of
   // search results (same as /daniel-jenkins).
   robots: { index: false, follow: false },
-  icons: { icon: "/media/websites/icon.png", apple: "/media/websites/apple-icon.png" },
+  icons: { icon: "/media/websites/icon.png?v=dove", apple: "/media/websites/apple-icon.png?v=dove" },
   openGraph: {
     title,
     description,
