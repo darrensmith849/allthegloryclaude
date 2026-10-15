@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FoldPanel } from "@/components/dashboard/fold-panel";
-import { EntryEdit, editingFor, KindPanel, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
+import { DeleteButton, EntryEdit, editingFor, KindPanel, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
 import type { MoneyEntry } from "@/lib/dashboard/types";
 import {
@@ -231,7 +231,7 @@ export default function MoneyPage() {
       if (x) x.deletedAt = new Date().toISOString();
     });
     setEditing(null);
-    say("Removed", () =>
+    say("Deleted - your balance is back to what it was without it", () =>
       update((d) => {
         const x = d.money?.entries.find((y) => y.id === id);
         if (x) delete x.deletedAt;
@@ -278,6 +278,21 @@ export default function MoneyPage() {
       // Back on: carry on from this month, without back-charging the paused months.
       if (s.active) s.lastPaid = dueDate(s, monthOf(today)) <= today ? monthOf(today) : shiftMonth(monthOf(today), -1);
     });
+  }
+
+  function removeSub(id: string) {
+    const s = money?.subs.find((x) => x.id === id);
+    update((d) => {
+      const x = d.money?.subs.find((y) => y.id === id);
+      if (x) x.removedAt = new Date().toISOString();
+    });
+    if (subForm?.id === id) setSubForm(null);
+    say(`${s?.name ?? "Debit"} removed - it won't come off any more`, () =>
+      update((d) => {
+        const x = d.money?.subs.find((y) => y.id === id);
+        if (x) delete x.removedAt;
+      }),
+    );
   }
 
   function downloadCsv() {
@@ -332,7 +347,7 @@ export default function MoneyPage() {
   const bal = balance(money);
   const cashNow = cashBalance(money);
   const comingTotal = coming.reduce((t, c) => t + c.sub.amount, 0);
-  const monthlySubs = money.subs.filter((s) => s.active).reduce((t, s) => t + s.amount, 0);
+  const monthlySubs = money.subs.filter((s) => s.active && !s.removedAt).reduce((t, s) => t + s.amount, 0);
   const cats = allCategories(money);
   const fuelLast = money.entries
     .filter((e) => !e.deletedAt && e.category === FUEL && e.km != null)
@@ -525,6 +540,13 @@ export default function MoneyPage() {
               <div className="money-balances">
                 {balanceBlock(false)}
                 {balanceBlock(true)}
+                {cashNow !== 0 && (
+                  <div className="money-balance is-cash is-total">
+                    <span className="eyebrow">Total</span>
+                    <span className="money-balance-amount is-static">{dollars(bal + cashNow)}</span>
+                    <span className="money-balance-sub">account + cash</span>
+                  </div>
+                )}
               </div>
               <div className="money-stats">
                 <div>
@@ -751,8 +773,8 @@ export default function MoneyPage() {
                           today={today}
                         />
                       ) : (
+                        <div key={e.id} className="money-row-line">
                         <button
-                          key={e.id}
                           type="button"
                           className={`money-row is-${e.kind}`}
                           onClick={() => setEditing(editingFor(e, "list"))}
@@ -770,6 +792,8 @@ export default function MoneyPage() {
                             {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
                           </span>
                         </button>
+                        <DeleteButton onClick={() => removeEntry(e.id)} />
+                        </div>
                       ),
                     )}
                   </div>
@@ -805,7 +829,7 @@ export default function MoneyPage() {
           <FoldPanel id="money-subs" eyebrow={`${dollars(monthlySubs)} a month`} title="Comes off by itself">
             <p className="dash-word-hint mb-3">Taken off on its day each month - no need to add these.</p>
             <div className="money-subs">
-              {money.subs.map((s) =>
+              {money.subs.filter((s) => !s.removedAt).map((s) =>
                 subForm?.id === s.id ? null : (
                   <div key={s.id} className={`money-sub ${s.active ? "" : "is-paused"}`}>
                     <span className="money-sub-what">
@@ -825,6 +849,9 @@ export default function MoneyPage() {
                       </button>
                       <button type="button" className="dash-word-link" onClick={() => toggleSub(s.id)}>
                         {s.active ? "Pause" : "Start again"}
+                      </button>
+                      <button type="button" className="dash-word-link money-sub-remove" onClick={() => removeSub(s.id)}>
+                        Remove
                       </button>
                     </span>
                   </div>

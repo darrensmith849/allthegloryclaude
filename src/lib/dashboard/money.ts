@@ -203,7 +203,7 @@ export function notesFor(m: MoneyState, category: string, max = 8): string[] {
 export function stillToCome(m: MoneyState, today = localDate()) {
   const ym = monthOf(today);
   return m.subs
-    .filter((s) => s.active && s.lastPaid < ym && dueDate(s, ym) > today)
+    .filter((s) => s.active && !s.removedAt && s.lastPaid < ym && dueDate(s, ym) > today)
     .map((s) => ({ sub: s, date: dueDate(s, ym) }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -229,7 +229,7 @@ export function dueDebits(m: MoneyState, today = localDate()): { entries: MoneyE
   const paid: Record<string, string> = {};
   const now = monthOf(today);
   for (const s of m.subs) {
-    if (!s.active) continue;
+    if (!s.active || s.removedAt) continue;
     let ym = shiftMonth(s.lastPaid, 1);
     let last = s.lastPaid;
     while (ym <= now) {

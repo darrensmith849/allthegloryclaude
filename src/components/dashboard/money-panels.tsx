@@ -127,6 +127,15 @@ export function EntryEdit({
   );
 }
 
+// The ✕ on a row: deletes it straight away (Undo is offered, nothing is wiped).
+export function DeleteButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" className="money-row-delete" onClick={onClick} aria-label="Delete" title="Delete">
+      ✕
+    </button>
+  );
+}
+
 const SHOW = 5; // payments listed before "Show all"
 
 // The Fuel tab (with mileage) or the Gym fees tab.
@@ -292,15 +301,18 @@ export function KindPanel({
                 today={today}
               />
             ) : (
-              <button key={e.id} type="button" className="money-kind-row" onClick={() => setEditing(editingFor(e, kind))}>
-                <span className="money-kind-date">{shortDate(e.date)}</span>
-                <span className="money-kind-what">
-                  {fuel ? (e.km != null ? kmText(e.km) : <em>no mileage</em>) : e.note || "Gym"}
-                  {fuel && flog?.since.get(e.id) != null && <em> · +{kmText(flog.since.get(e.id)!)}</em>}
-                  {fuel && e.note && <em> · {e.note}</em>}
-                </span>
-                <span className="money-row-amount">{dollars(e.amount)}</span>
-              </button>
+              <div key={e.id} className="money-row-line">
+                <button type="button" className="money-kind-row" onClick={() => setEditing(editingFor(e, kind))}>
+                  <span className="money-kind-date">{shortDate(e.date)}</span>
+                  <span className="money-kind-what">
+                    {fuel ? (e.km != null ? kmText(e.km) : <em>no mileage</em>) : e.note || "Gym"}
+                    {fuel && flog?.since.get(e.id) != null && <em> · +{kmText(flog.since.get(e.id)!)}</em>}
+                    {fuel && e.note && <em> · {e.note}</em>}
+                  </span>
+                  <span className="money-row-amount">{dollars(e.amount)}</span>
+                </button>
+                <DeleteButton onClick={() => onRemove(e.id)} />
+              </div>
             ),
           )}
           {log.all.length > SHOW && (

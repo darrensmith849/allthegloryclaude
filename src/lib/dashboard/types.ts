@@ -422,6 +422,7 @@ export interface MoneySub {
   category: string;
   active: boolean;
   lastPaid: string; // YYYY-MM it was last taken off
+  removedAt?: string; // removed from the list (kept, never wiped)
 }
 export interface MoneyState {
   start: { amount: number; at: string };
