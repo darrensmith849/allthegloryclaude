@@ -1,5 +1,5 @@
 import { CONTACT, PROJECTS } from "./projects";
-import { BigSentence, EnquiryForm, HeroLayer, Venn, WordReveal, WorkOrbit, WxNav, WxReveal } from "./parts";
+import { BigSentence, EnquiryForm, HeroLayer, MeScatter, Venn, WordReveal, WorkOrbit, WxNav, WxReveal, type Shot } from "./parts";
 
 // /websites - Daniel's page for selling the websites he builds, modelled on
 // weareheroes.one and made his own: deep blue-black, plain light type, his
@@ -14,6 +14,16 @@ const WALL = [
   ["01", "04", "07", "10"],
   ["02", "05", "08", "11"],
   ["12", "09", "04", "07"],
+];
+
+// Photos of Daniel for the collage near the bottom: where each lands, and
+// where it flies in from.
+const ME: Shot[] = [
+  { src: `${W}/me-graffiti.webp`, alt: "Daniel walking past a graffiti wall with his guitar", ratio: "760 / 949", w: "min(19vw, 300px)", at: ["15%", "34%"], wM: "36vw", atM: ["21%", "21%"], from: ["-70vw", "-40vh"], spin: [-38, -7], z: 2 },
+  { src: `${W}/me-rooftop.webp`, alt: "Daniel on a city rooftop", ratio: "900 / 1125", w: "min(14vw, 220px)", at: ["36%", "26%"], wM: "31vw", atM: ["79%", "18%"], from: ["-10vw", "-90vh"], spin: [24, -3], z: 1 },
+  { src: `${W}/me-door.webp`, alt: "Daniel by an old door on a rooftop", ratio: "1 / 1", w: "min(20vw, 320px)", at: ["81%", "30%"], wM: "34vw", atM: ["80%", "86%"], from: ["70vw", "-50vh"], spin: [42, 6], z: 2 },
+  { src: `${W}/me-studio.webp`, alt: "Daniel at work at a studio desk", ratio: "1300 / 974", w: "min(27vw, 430px)", at: ["24%", "73%"], wM: "46vw", atM: ["28%", "87%"], from: ["-60vw", "70vh"], spin: [30, 4], z: 3 },
+  { src: `${W}/me-shadow.webp`, alt: "Daniel in a pool of light", ratio: "828 / 540", w: "min(23vw, 360px)", at: ["79%", "74%"], from: ["70vw", "60vh"], spin: [-30, -4], z: 3 },
 ];
 
 const STEPS = [
@@ -172,9 +182,17 @@ export default function WebsitesPage() {
           <span>
             made to be <span className="gold">remembered</span>
           </span>
-          <i>●</i>
-          <span>Beautiful websites</span>
         </BigSentence>
+
+        {/* ===== PHOTOS OF DANIEL ===== */}
+        <MeScatter shots={ME}>
+          <p className="wx-micro">Daniel Jenkins</p>
+          <h2 className="wx-h2">From the first idea to launch day.</h2>
+          <p className="wx-body">You work directly with me, every step of the way.</p>
+          <a href="#contact" className="wx-pill wx-pill-gold">
+            Let&apos;s talk
+          </a>
+        </MeScatter>
 
         {/* ===== CONTACT ===== */}
         <section className="wx-contact" id="contact">

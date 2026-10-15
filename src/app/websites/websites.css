@@ -62,7 +62,7 @@
   padding: 1.25rem var(--pad); transition: background 0.4s, padding 0.3s, border-color 0.4s; border-bottom: 1px solid transparent; }
 .wx-nav.solid { background: rgba(12, 20, 26, 0.72); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom-color: var(--line); padding-block: 0.85rem; }
 .wx-logo { display: inline-flex; align-items: center; gap: 0.7rem; font-size: 0.86rem; font-weight: 400; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink); }
-.wx-logo-ring { width: 18px; height: 18px; border-radius: 99px; border: 1.5px solid var(--gold); box-shadow: 0 0 14px rgba(216, 178, 90, 0.5); }
+.wx-logo-dove { width: 46px; height: 46px; margin: -8px -4px -8px -8px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(216, 178, 90, 0.35)); }
 .wx-navlinks { display: flex; align-items: center; gap: clamp(1rem, 2.6vw, 2.2rem); }
 .wx-navlinks a:not(.wx-pill) { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); transition: color 0.2s; }
 .wx-navlinks a:not(.wx-pill):hover { color: var(--ink); }
@@ -191,9 +191,23 @@ a.wx-oc.on:hover { border-color: rgba(241, 215, 166, 0.5); }
 
 /* giant moving sentence */
 .wx-big { overflow: hidden; padding: clamp(3rem, 7vw, 6rem) 0; border-block: 1px solid var(--line); }
-.wx-big-run { display: inline-flex; white-space: nowrap; font-weight: 300; font-size: clamp(4rem, 13vw, 12rem); line-height: 1; letter-spacing: -0.035em; color: var(--ink); will-change: transform; }
+.wx-big-run { display: inline-flex; white-space: nowrap; padding-inline: var(--pad); font-weight: 300; font-size: clamp(2.2rem, 5.6vw, 5.2rem); line-height: 1.1; letter-spacing: -0.03em; color: var(--ink); will-change: transform; }
 .wx-big-run .gold { color: var(--gold-2); }
 .wx-big-run i { font-style: normal; color: var(--gold); font-size: 0.4em; margin: 0 0.5em; align-self: center; }
+
+/* photos of Daniel - fly in and land as a collage */
+.wx-me { position: relative; height: 210vh; }
+.wx-me-sticky { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+.wx-me-sticky::before { content: ""; position: absolute; left: 50%; top: 52%; width: 70vmin; height: 70vmin; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(216, 178, 90, 0.12), transparent); }
+.wx-me-photo { position: absolute; margin: 0; translate: -50% -50%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(238, 242, 243, 0.14);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9); background: var(--bg-2); will-change: transform; }
+.wx-me-photo img { width: 100%; height: 100%; object-fit: cover; }
+.wx-me-text { position: absolute; left: 50%; top: 56%; translate: -50% -50%; z-index: 5; width: min(30rem, 84vw); text-align: center; padding: 1.8rem 1.6rem;
+  border-radius: 20px; background: rgba(12, 20, 26, 0.6); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.wx-me-text .wx-h2 { margin-top: 1rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); }
+.wx-me-text .wx-body { margin-top: 0.9rem; }
+.wx-me-text .wx-pill { margin-top: 1.4rem; }
 
 /* contact */
 .wx-contact { padding: clamp(5rem, 12vw, 10rem) 0; text-align: center; }
@@ -234,6 +248,7 @@ a.wx-oc.on:hover { border-color: rgba(241, 215, 166, 0.5); }
   .wx-feature img { opacity: 0.55; }
   .wx-wo { --cw: min(84vw, calc((100svh - 360px) * 1.6)); }
   .wx-wo-cap { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .wx-me-text { top: 52%; padding: 1.4rem 1.2rem; }
 }
 @media (max-width: 520px) {
   .wx-circles { grid-template-columns: 1fr; max-width: 300px; margin-inline: auto; }

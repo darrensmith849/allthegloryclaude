@@ -16,7 +16,8 @@ export function WxNav() {
   return (
     <header className={`wx-nav ${solid ? "solid" : ""}`}>
       <a href="#top" className="wx-logo" aria-label="Daniel Jenkins - back to top">
-        <span className="wx-logo-ring" aria-hidden="true" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/media/logo-dove-440.webp" alt="" className="wx-logo-dove" width={44} height={44} />
         Daniel Jenkins
       </a>
       <nav className="wx-navlinks" aria-label="Primary">
@@ -254,18 +255,101 @@ export function WorkOrbit({ projects }: { projects: Project[] }) {
   );
 }
 
-/* ───────── A huge sentence that slides as you scroll past ───────── */
+/* ───────── A big sentence that slides past - start to finish - as you scroll ───────── */
 export function BigSentence({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const run = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["4%", "-48%"]);
+  const [overflow, setOverflow] = useState(0);
+  useEffect(() => {
+    const measure = () => {
+      if (!ref.current || !run.current) return;
+      setOverflow(Math.max(0, run.current.scrollWidth - ref.current.clientWidth));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (run.current) ro.observe(run.current);
+    if (ref.current) ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.9", "end 0.1"] });
+  // Begins with the first word on screen and ends with the last one.
+  const x = useTransform(scrollYProgress, [0.15, 0.85], reduce ? [0, 0] : [0, -overflow]);
   return (
     <div ref={ref} className="wx-big" aria-hidden="true">
-      <motion.div className="wx-big-run" style={{ x }}>
+      <motion.div ref={run} className="wx-big-run" style={{ x }}>
         {children}
       </motion.div>
     </div>
+  );
+}
+
+/* ───────── Photos of Daniel fly in and land around a line about him ───────── */
+// Pinned: as you scroll, each photo sweeps in from off-screen, spinning,
+// and settles into a loose collage. They start black and white and warm
+// into full colour as they land - he comes into focus.
+export type Shot = {
+  src: string;
+  alt: string;
+  ratio: string;
+  w: string; // width on a computer
+  at: [string, string]; // where it lands (left, top) on a computer
+  wM?: string; // ...and on a phone (omit to hide it there)
+  atM?: [string, string];
+  from: [string, string]; // where it flies in from
+  spin: [number, number]; // rotation: start, end
+  z: number;
+};
+
+function FlyingPhoto({ s, i, p, phone }: { s: Shot; i: number; p: MotionValue<number>; phone: boolean }) {
+  const reduce = useReducedMotion();
+  const a = i * 0.06;
+  const b = a + 0.36;
+  const x = useTransform(p, [a, b], reduce ? ["0vw", "0vw"] : [s.from[0], "0vw"]);
+  const y = useTransform(p, [a, b], reduce ? ["0vh", "0vh"] : [s.from[1], "0vh"]);
+  const rotate = useTransform(p, [a, b], reduce ? [s.spin[1], s.spin[1]] : s.spin);
+  const scale = useTransform(p, [a, b], reduce ? [1, 1] : [1.35, 1]);
+  const opacity = useTransform(p, [a, a + 0.12], reduce ? [1, 1] : [0, 1]);
+  const filter = useTransform(p, [0.5, 0.9], reduce ? ["grayscale(0)", "grayscale(0)"] : ["grayscale(1) brightness(0.7)", "grayscale(0) brightness(1)"]);
+  if (phone && !s.atM) return null;
+  const at = phone && s.atM ? s.atM : s.at;
+  return (
+    <motion.figure
+      className="wx-me-photo"
+      style={{ left: at[0], top: at[1], width: phone ? s.wM : s.w, aspectRatio: s.ratio, zIndex: s.z, x, y, rotate, scale, opacity }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <motion.img src={s.src} alt={s.alt} loading="lazy" style={{ filter }} />
+    </motion.figure>
+  );
+}
+
+export function MeScatter({ shots, children }: { shots: Shot[]; children: React.ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  // Starts while the section is still sliding into view, so the screen is
+  // never empty.
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.55", "end end"] });
+  const textOpacity = useTransform(scrollYProgress, [0.3, 0.55], [0, 1]);
+  const textY = useTransform(scrollYProgress, [0.3, 0.55], [30, 0]);
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setPhone(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return (
+    <section ref={ref} className="wx-me" aria-label="Photos of Daniel">
+      <div className="wx-me-sticky">
+        {shots.map((s, i) => (
+          <FlyingPhoto key={s.src} s={s} i={i} p={scrollYProgress} phone={phone} />
+        ))}
+        <motion.div className="wx-me-text" style={{ opacity: textOpacity, y: textY }}>
+          {children}
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
