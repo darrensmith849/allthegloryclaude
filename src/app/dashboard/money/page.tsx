@@ -1,7 +1,8 @@
 "use client";
 
 // Money - Daniel's own spending tracker (not for the team, never members).
-// The balance up top (tap it to change it); one tap on what he usually buys,
+// The balance up top and the cash in hand beside it (tap either to change
+// it); spending paid from either; one tap on what he usually buys,
 // or a kind of spending then the price; every entry editable. Each month
 // broken down by kind, with how it compares to last month; Fuel (with the
 // car's mileage) and Gym fees each in a tab of their own; the regular
@@ -10,12 +11,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FoldPanel } from "@/components/dashboard/fold-panel";
-import { EntryEdit, editingFor, KindPanel, type Editing } from "@/components/dashboard/money-panels";
+import { EntryEdit, editingFor, KindPanel, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
 import type { MoneyEntry } from "@/lib/dashboard/types";
 import {
   allCategories,
   balance,
+  CASH_OUT,
+  cashBalance,
   colourFor,
   dollars,
   dueDate,
@@ -59,7 +62,7 @@ const dayHeading = (d: string, today: string) => {
 };
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
 
-type Form = { mode: "spend"; category: string } | { mode: "add" } | null;
+type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean } | { mode: "move" } | null;
 
 export default function MoneyPage() {
   const { state, update, ready, synced } = useDashboard();
@@ -103,7 +106,13 @@ export default function MoneyPage() {
   }
 
   function openForm(f: Form) {
-    if (f && form && f.mode === form.mode && (f.mode !== "spend" || (form.mode === "spend" && f.category === form.category))) {
+    const same =
+      f &&
+      form &&
+      f.mode === form.mode &&
+      (f.mode !== "spend" || (form.mode === "spend" && f.category === form.category)) &&
+      (f.mode !== "add" || (form.mode === "add" && f.cash === form.cash));
+    if (same) {
       setForm(null); // the same button again closes it
       return;
     }
@@ -121,8 +130,10 @@ export default function MoneyPage() {
     setMonth(monthOf(entry.date));
     say(
       entry.kind === "add"
-        ? `${dollars(entry.amount)} added`
-        : `${dollars(entry.amount)} ${entry.note ? `at ${entry.note}` : `on ${entry.category.toLowerCase()}`} - taken off`,
+        ? `${dollars(entry.amount)} added${entry.cash ? " to your cash" : ""}`
+        : entry.kind === "move"
+          ? `${dollars(entry.amount)} moved from your account to cash`
+          : `${dollars(entry.amount)} ${entry.note ? `at ${entry.note}` : `on ${entry.category.toLowerCase()}`} - taken off${entry.cash ? " your cash" : ""}`,
       () => update((d) => {
         const x = d.money?.entries.find((y) => y.id === entry.id);
         if (x) x.deletedAt = new Date().toISOString();
@@ -137,22 +148,24 @@ export default function MoneyPage() {
     if (n == null) return amountRef.current?.focus();
     const reading = form.mode === "spend" && form.category === FUEL ? parseKm(km) : null;
     addEntry({
-      kind: form.mode === "add" ? "add" : "spend",
+      kind: form.mode,
       amount: n,
-      category: form.mode === "add" ? "Money in" : form.category,
+      category: form.mode === "add" ? "Money in" : form.mode === "move" ? CASH_OUT : form.category,
       note: note.trim() || undefined,
       date,
       ...(reading != null ? { km: reading } : {}),
+      ...(form.mode !== "move" && form.cash ? { cash: true } : {}),
     });
     setForm(null);
   }
 
   // ── The balance, changed in place ───────────────────────────────
-  const [balanceEdit, setBalanceEdit] = useState<string | null>(null);
+  const [balanceEdit, setBalanceEdit] = useState<{ cash: boolean; value: string } | null>(null);
   const balanceRef = useRef<HTMLInputElement>(null);
-  function startBalanceEdit() {
+  function startBalanceEdit(cash = false) {
     if (!money) return;
-    setBalanceEdit(balance(money).toFixed(2));
+    setForm(null);
+    setBalanceEdit({ cash, value: (cash ? cashBalance(money) : balance(money)).toFixed(2) });
     window.setTimeout(() => {
       balanceRef.current?.focus();
       balanceRef.current?.select();
@@ -161,14 +174,23 @@ export default function MoneyPage() {
   function saveBalance(e?: React.FormEvent) {
     e?.preventDefault();
     if (balanceEdit == null || !money) return;
-    const n = Number(balanceEdit.replace(/[^0-9.-]/g, ""));
+    const { cash } = balanceEdit;
+    const n = Number(balanceEdit.value.replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(n)) return balanceRef.current?.focus();
-    const now = balance(money);
+    const now = cash ? cashBalance(money) : balance(money);
     setBalanceEdit(null);
     if (Math.round(n * 100) === Math.round(now * 100)) return;
-    const entry: MoneyEntry = { id: uid(), kind: "set", amount: Math.round(n * 100) / 100, category: "Balance", date: today, at: new Date().toISOString() };
+    const entry: MoneyEntry = {
+      id: uid(),
+      kind: "set",
+      amount: Math.round(n * 100) / 100,
+      category: cash ? "Cash" : "Balance",
+      date: today,
+      at: new Date().toISOString(),
+      ...(cash ? { cash: true } : {}),
+    };
     update((d) => void d.money?.entries.push(entry));
-    say(`Balance set to ${dollars(entry.amount)}`, () =>
+    say(`${cash ? "Cash" : "Balance"} set to ${dollars(entry.amount)}`, () =>
       update((d) => {
         const x = d.money?.entries.find((y) => y.id === entry.id);
         if (x) x.deletedAt = new Date().toISOString();
@@ -194,6 +216,10 @@ export default function MoneyPage() {
         const reading = x.category === FUEL ? parseKm(editing.km) : null;
         if (reading != null) x.km = reading;
         else delete x.km;
+        if (x.kind === "spend" || x.kind === "add") {
+          if (editing.cash) x.cash = true;
+          else delete x.cash;
+        }
       }
     });
     setEditing(null);
@@ -224,7 +250,7 @@ export default function MoneyPage() {
       });
     }
     setNewCat(null);
-    openForm({ mode: "spend", category: c });
+    openForm({ mode: "spend", category: c, cash: false });
   }
 
   // ── Regular debits ──────────────────────────────────────────────
@@ -289,6 +315,7 @@ export default function MoneyPage() {
   if (!ready || !money || !summary || !thisMonth) return <p className="dash-word-hint">Opening…</p>;
 
   const bal = balance(money);
+  const cashNow = cashBalance(money);
   const comingTotal = coming.reduce((t, c) => t + c.sub.amount, 0);
   const monthlySubs = money.subs.filter((s) => s.active).reduce((t, s) => t + s.amount, 0);
   const cats = allCategories(money);
@@ -303,6 +330,58 @@ export default function MoneyPage() {
     setEditing,
     onSaveEdit: saveEdit,
     onRemove: removeEntry,
+  };
+
+  // "In your account" / "Cash": the figure (tap to change it), or the box to change it in.
+  const balanceBlock = (cash: boolean) => {
+    const value = cash ? cashNow : bal;
+    return (
+      <div className={`money-balance ${cash ? "is-cash" : ""}`}>
+        <span className="eyebrow">{cash ? "Cash" : "In your account"}</span>
+        {balanceEdit?.cash !== cash ? (
+          <button
+            type="button"
+            className={`money-balance-amount ${value < 0 ? "is-low" : ""}`}
+            onClick={() => startBalanceEdit(cash)}
+            title="Tap to change it"
+          >
+            {dollars(value)}
+            <span className="money-balance-edit" aria-hidden>
+              ✎
+            </span>
+          </button>
+        ) : (
+          <form className="money-balance-form" onSubmit={saveBalance}>
+            <label className={`money-amount ${cash ? "" : "is-big"}`}>
+              <span aria-hidden>$</span>
+              <input
+                ref={balanceRef}
+                className="dash-input"
+                inputMode="decimal"
+                value={balanceEdit.value}
+                onChange={(e) => setBalanceEdit({ cash, value: e.target.value })}
+                onKeyDown={(e) => e.key === "Escape" && setBalanceEdit(null)}
+                aria-label={cash ? "The cash you have" : "Your balance at the bank"}
+              />
+            </label>
+            <button type="submit" className="dash-btn dash-btn-primary">
+              Save
+            </button>
+            <button type="button" className="dash-word-link" onClick={() => setBalanceEdit(null)}>
+              Cancel
+            </button>
+            <p className="dash-word-hint money-form-hint">
+              {cash ? "Count what's in your wallet - it carries on from there." : "Type what your bank says - it carries on from there."}
+            </p>
+          </form>
+        )}
+        {!cash && coming.length > 0 && balanceEdit?.cash !== false && (
+          <span className="money-balance-sub">
+            {dollars(bal - comingTotal)} after the {dollars(comingTotal)} still to come off this month
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -323,43 +402,9 @@ export default function MoneyPage() {
         <div className="dash-col-12">
           <section className="dash-panel money-top">
             <div className="money-head">
-              <div className="money-balance">
-                <span className="eyebrow">In your account</span>
-                {balanceEdit == null ? (
-                  <button type="button" className={`money-balance-amount ${bal < 0 ? "is-low" : ""}`} onClick={startBalanceEdit} title="Tap to change it">
-                    {dollars(bal)}
-                    <span className="money-balance-edit" aria-hidden>
-                      ✎
-                    </span>
-                  </button>
-                ) : (
-                  <form className="money-balance-form" onSubmit={saveBalance}>
-                    <label className="money-amount is-big">
-                      <span aria-hidden>$</span>
-                      <input
-                        ref={balanceRef}
-                        className="dash-input"
-                        inputMode="decimal"
-                        value={balanceEdit}
-                        onChange={(e) => setBalanceEdit(e.target.value)}
-                        onKeyDown={(e) => e.key === "Escape" && setBalanceEdit(null)}
-                        aria-label="Your balance at the bank"
-                      />
-                    </label>
-                    <button type="submit" className="dash-btn dash-btn-primary">
-                      Save
-                    </button>
-                    <button type="button" className="dash-word-link" onClick={() => setBalanceEdit(null)}>
-                      Cancel
-                    </button>
-                    <p className="dash-word-hint money-form-hint">Type what your bank says - it carries on from there.</p>
-                  </form>
-                )}
-                {coming.length > 0 && balanceEdit == null && (
-                  <span className="money-balance-sub">
-                    {dollars(bal - comingTotal)} after the {dollars(comingTotal)} still to come off this month
-                  </span>
-                )}
+              <div className="money-balances">
+                {balanceBlock(false)}
+                {balanceBlock(true)}
               </div>
               <div className="money-stats">
                 <div>
@@ -382,13 +427,14 @@ export default function MoneyPage() {
                 <span className="money-again-label">Again:</span>
                 {buys.map((b) => (
                   <button
-                    key={`${b.category}|${b.amount}|${b.note ?? ""}`}
+                    key={`${b.category}|${b.amount}|${b.note ?? ""}|${b.cash ? "cash" : ""}`}
                     type="button"
                     className="money-again-btn"
-                    onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: today })}
+                    onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: today, ...(b.cash ? { cash: true } : {}) })}
                   >
                     <i style={{ background: colourFor(money, b.category) }} aria-hidden />
                     {b.note || b.category} {shortDollars(b.amount)}
+                    {b.cash && <em className="money-again-cash">cash</em>}
                   </button>
                 ))}
               </div>
@@ -399,8 +445,8 @@ export default function MoneyPage() {
                 <button
                   key={c}
                   type="button"
-                  className={`money-cat ${form?.mode === "spend" && form.category === c ? "is-on" : ""}`}
-                  onClick={() => openForm({ mode: "spend", category: c })}
+                  className={`money-cat ${(form?.mode === "spend" && form.category === c) || (form?.mode === "move" && c === CASH_OUT) ? "is-on" : ""}`}
+                  onClick={() => openForm(c === CASH_OUT ? { mode: "move" } : { mode: "spend", category: c, cash: false })}
                 >
                   <i style={{ background: colourFor(money, c) }} aria-hidden />
                   {c}
@@ -423,10 +469,21 @@ export default function MoneyPage() {
               )}
             </div>
             <div className="money-actions">
-              <button type="button" className={`dash-btn dash-note-nav ${form?.mode === "add" ? "dash-btn-primary" : "dash-btn-ghost"}`} onClick={() => openForm({ mode: "add" })}>
+              <button
+                type="button"
+                className={`dash-btn dash-note-nav ${form?.mode === "add" && !form.cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
+                onClick={() => openForm({ mode: "add", cash: false })}
+              >
                 + Add money
               </button>
-              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={startBalanceEdit}>
+              <button
+                type="button"
+                className={`dash-btn dash-note-nav ${form?.mode === "add" && form.cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
+                onClick={() => openForm({ mode: "add", cash: true })}
+              >
+                + Add cash
+              </button>
+              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => startBalanceEdit(false)}>
                 Set balance
               </button>
             </div>
@@ -435,7 +492,13 @@ export default function MoneyPage() {
               <form className="money-form" onSubmit={save}>
                 <span className="money-form-what">
                   {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
-                  {form.mode === "spend" ? form.category : "Money in"}
+                  {form.mode === "spend"
+                    ? form.category
+                    : form.mode === "move"
+                      ? "Cash out - from your account into cash"
+                      : form.cash
+                        ? "Cash in"
+                        : "Money in"}
                 </span>
                 <label className="money-amount">
                   <span aria-hidden>$</span>
@@ -469,21 +532,28 @@ export default function MoneyPage() {
                     <span>km</span>
                   </label>
                 )}
+                {form.mode !== "move" && (
+                  <WalletToggle
+                    cash={form.cash}
+                    onChange={(cash) => setForm({ ...form, cash })}
+                    label={form.mode === "add" ? "Into" : "Paid with"}
+                  />
+                )}
                 <input
                   className="dash-input money-note"
                   list="money-notes"
-                  placeholder={form.mode === "add" ? "Where from? (optional)" : "Where / what? (optional)"}
+                  placeholder={form.mode === "add" ? "Where from? (optional)" : form.mode === "move" ? "Where? (optional)" : "Where / what? (optional)"}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                 />
                 <datalist id="money-notes">
-                  {(form.mode === "add" ? [...notesFor(money, "Money in"), ...MONEY_IN] : notesFor(money, form.category)).map((n) => (
+                  {(form.mode === "add" ? [...notesFor(money, "Money in"), ...MONEY_IN] : notesFor(money, form.mode === "move" ? CASH_OUT : form.category)).map((n) => (
                     <option key={n} value={n} />
                   ))}
                 </datalist>
                 <input type="date" className="dash-input money-date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />
                 <button type="submit" className="dash-btn dash-btn-primary">
-                  {form.mode === "spend" ? "Take it off" : "Add it"}
+                  {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : "Add it"}
                 </button>
                 <button type="button" className="dash-word-link" onClick={() => setForm(null)}>
                   Cancel
@@ -617,13 +687,15 @@ export default function MoneyPage() {
                         >
                           <i style={{ background: e.kind === "spend" ? colourFor(money, e.category) : "transparent" }} aria-hidden />
                           <span className="money-row-what">
-                            {e.kind === "set" ? "Balance set" : e.note || e.category}
-                            {e.kind !== "set" && e.note && <em> · {e.category}</em>}
+                            {e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || (e.kind === "add" && e.cash ? "Cash in" : e.category)}
+                            {e.kind !== "set" && e.note && <em> · {e.kind === "add" && e.cash ? "Cash in" : e.category}</em>}
+                            {e.kind === "move" && <em> · account → cash</em>}
+                            {e.kind === "spend" && e.cash && <em> · cash</em>}
                             {e.km != null && <em> · {kmText(e.km)}</em>}
                             {e.sub && <em> · comes off by itself</em>}
                           </span>
                           <span className="money-row-amount">
-                            {e.kind === "set" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
+                            {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
                           </span>
                         </button>
                       ),

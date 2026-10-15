@@ -8,7 +8,7 @@ import { FoldPanel } from "@/components/dashboard/fold-panel";
 import type { MoneyEntry, MoneyState } from "@/lib/dashboard/types";
 import { allCategories, dollars, FUEL, fuelLog, GYM, kindLog, kmText, monthName, monthOf, parseKm } from "@/lib/dashboard/money";
 
-export type Editing = { id: string; amount: string; category: string; note: string; date: string; km: string; where: string };
+export type Editing = { id: string; amount: string; category: string; note: string; date: string; km: string; cash: boolean; where: string };
 
 export const editingFor = (e: MoneyEntry, where: string): Editing => ({
   id: e.id,
@@ -17,8 +17,24 @@ export const editingFor = (e: MoneyEntry, where: string): Editing => ({
   note: e.note ?? "",
   date: e.date,
   km: e.km != null ? String(e.km) : "",
+  cash: e.cash === true,
   where,
 });
+
+// Account or cash - for spending ("Paid with") and money coming in ("Into").
+export function WalletToggle({ cash, onChange, label }: { cash: boolean; onChange: (cash: boolean) => void; label: string }) {
+  return (
+    <span className="money-wallet" role="group" aria-label={label}>
+      <span className="money-wallet-label">{label}</span>
+      <button type="button" className={cash ? "" : "is-on"} aria-pressed={!cash} onClick={() => onChange(false)}>
+        Account
+      </button>
+      <button type="button" className={cash ? "is-on" : ""} aria-pressed={cash} onClick={() => onChange(true)}>
+        Cash
+      </button>
+    </span>
+  );
+}
 
 const shortDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const parseAmount = (v: string) => {
@@ -46,7 +62,17 @@ export function EntryEdit({
 }) {
   return (
     <form className="money-edit" onSubmit={onSave}>
-      <span className="money-form-what">{entry.kind === "set" ? "Balance set to" : entry.kind === "add" ? "Money in" : "Spent"}</span>
+      <span className="money-form-what">
+        {entry.kind === "set"
+          ? entry.cash
+            ? "Cash set to"
+            : "Balance set to"
+          : entry.kind === "move"
+            ? "Cash out - from your account into cash"
+            : entry.kind === "add"
+              ? "Money in"
+              : "Spent"}
+      </span>
       <label className="money-amount">
         <span aria-hidden>$</span>
         <input
@@ -65,6 +91,9 @@ export function EntryEdit({
             <option key={c}>{c}</option>
           ))}
         </select>
+      )}
+      {(entry.kind === "spend" || entry.kind === "add") && (
+        <WalletToggle cash={editing.cash} onChange={(cash) => setEditing({ ...editing, cash })} label={entry.kind === "add" ? "Into" : "Paid with"} />
       )}
       {entry.kind === "spend" && editing.category === FUEL && (
         <label className="money-km">

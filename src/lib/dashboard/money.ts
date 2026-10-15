@@ -21,6 +21,7 @@ export const SPEND_CATEGORIES = [
 ] as const;
 
 export const FUEL = "Fuel";
+export const CASH_OUT = "Cash out"; // money drawn from the account into cash
 export const GYM = "Gym fees";
 
 // The built-in kinds, his own, then any older kind still in use (so nothing goes missing).
@@ -76,8 +77,17 @@ const live = (e: MoneyEntry) => !e.deletedAt;
 // The balance now: from the start, through every entry in the order entered.
 export function balance(m: MoneyState): number {
   let b = m.start.amount;
-  const after = m.entries.filter((e) => live(e) && e.at >= m.start.at).sort((a, b2) => a.at.localeCompare(b2.at));
-  for (const e of after) b = e.kind === "set" ? e.amount : e.kind === "add" ? b + e.amount : b - e.amount;
+  const after = m.entries.filter((e) => live(e) && !e.cash && e.at >= m.start.at).sort((a, b2) => a.at.localeCompare(b2.at));
+  for (const e of after) b = e.kind === "set" ? e.amount : e.kind === "add" ? b + e.amount : b - e.amount; // spend and move take off
+  return Math.round(b * 100) / 100;
+}
+
+// Cash in hand: what's been set, added, drawn from the account, less what's
+// been paid in cash.
+export function cashBalance(m: MoneyState): number {
+  let b = 0;
+  const all = m.entries.filter((e) => live(e) && (e.cash || e.kind === "move")).sort((a, b2) => a.at.localeCompare(b2.at));
+  for (const e of all) b = e.kind === "set" ? e.amount : e.kind === "spend" ? b - e.amount : b + e.amount;
   return Math.round(b * 100) / 100;
 }
 
@@ -126,12 +136,12 @@ export function usualAmounts(m: MoneyState, category: string, max = 4): number[]
 }
 
 // What he buys again and again - one tap to log it again.
-export function usualBuys(m: MoneyState, max = 4): { category: string; amount: number; note?: string }[] {
-  const seen = new Map<string, { category: string; amount: number; note?: string; n: number; last: string }>();
+export function usualBuys(m: MoneyState, max = 4): { category: string; amount: number; note?: string; cash?: boolean }[] {
+  const seen = new Map<string, { category: string; amount: number; note?: string; cash?: boolean; n: number; last: string }>();
   for (const e of m.entries) {
     if (!live(e) || e.kind !== "spend" || e.sub) continue;
-    const key = `${e.category}|${e.amount}|${e.note ?? ""}`;
-    const s = seen.get(key) ?? { category: e.category, amount: e.amount, note: e.note, n: 0, last: "" };
+    const key = `${e.category}|${e.amount}|${e.note ?? ""}|${e.cash ? "cash" : ""}`;
+    const s = seen.get(key) ?? { category: e.category, amount: e.amount, note: e.note, cash: e.cash, n: 0, last: "" };
     s.n++;
     if (e.at > s.last) s.last = e.at;
     seen.set(key, s);
@@ -139,7 +149,7 @@ export function usualBuys(m: MoneyState, max = 4): { category: string; amount: n
   return [...seen.values()]
     .sort((a, b) => b.n - a.n || b.last.localeCompare(a.last))
     .slice(0, max)
-    .map(({ category, amount, note }) => ({ category, amount, note }));
+    .map(({ category, amount, note, cash }) => ({ category, amount, note, cash }));
 }
 
 // One kind of spending: every payment (latest first), this month's and this year's.
@@ -249,11 +259,12 @@ export function toCsv(m: MoneyState): string {
     const t = String(v ?? "");
     return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
-  const rows = [["Date", "Kind", "What", "Note", "Amount", "Mileage (km)", "Regular debit"]];
+  const rows = [["Date", "Kind", "What", "Note", "Amount", "Account or cash", "Mileage (km)", "Regular debit"]];
   for (const e of [...m.entries].filter(live).sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at))) {
-    const kind = e.kind === "spend" ? "Spent" : e.kind === "add" ? "Money in" : "Balance set";
+    const kind = e.kind === "spend" ? "Spent" : e.kind === "add" ? "Money in" : e.kind === "move" ? "Account to cash" : "Balance set";
     const amount = e.kind === "spend" ? -e.amount : e.amount;
-    rows.push([e.date, kind, e.kind === "set" ? "" : e.category, e.note ?? "", amount.toFixed(2), e.km != null ? String(e.km) : "", e.sub ? "yes" : ""]);
+    const where = e.kind === "move" ? "Account to cash" : e.cash ? "Cash" : "Account";
+    rows.push([e.date, kind, e.kind === "set" ? "" : e.category, e.note ?? "", amount.toFixed(2), where, e.km != null ? String(e.km) : "", e.sub ? "yes" : ""]);
   }
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }

@@ -403,9 +403,10 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
 // taken off by themselves on their day each month (src/lib/dashboard/money.ts).
 export interface MoneyEntry {
   id: string;
-  kind: "spend" | "add" | "set"; // "set": the balance was set to `amount` (to match the bank)
+  kind: "spend" | "add" | "set" | "move"; // "set": the balance was set to `amount` (to match the bank); "move": cash taken out of the account into cash
   amount: number; // dollars, always positive
   km?: number; // fuel: the car's mileage (km on the clock) when he filled up
+  cash?: boolean; // paid with / added to cash in hand, not the account
   category: string; // "Coffee" ... (or "Money in" for adds)
   note?: string;
   date: ISODate; // the day it happened
