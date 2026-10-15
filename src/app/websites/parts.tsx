@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
-import { CONTACT } from "./projects";
-
-// Runs before paint in the browser, harmlessly as a normal effect on the server.
-const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { CONTACT, type Project } from "./projects";
 
 /* ───────── Top bar: clear over the hero, frosted once you scroll ───────── */
 export function WxNav() {
@@ -59,41 +56,14 @@ export function WxReveal() {
   return null;
 }
 
-/* ───────── A soft ring that follows the mouse, and says "Visit" over work ───────── */
-export function WxCursor() {
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const sx = useSpring(x, { stiffness: 500, damping: 40, mass: 0.4 });
-  const sy = useSpring(y, { stiffness: 500, damping: 40, mass: 0.4 });
-  const [label, setLabel] = useState<string | null>(null);
-  useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    const move = (e: PointerEvent) => {
-      x.set(e.clientX);
-      y.set(e.clientY);
-      const t = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-cursor]");
-      setLabel(t ? t.dataset.cursor ?? null : null);
-    };
-    window.addEventListener("pointermove", move, { passive: true });
-    return () => window.removeEventListener("pointermove", move);
-  }, [x, y]);
-  return (
-    <motion.div className="wx-cursor" style={{ x: sx, y: sy }} aria-hidden="true">
-      <div className={`wx-cursor-ring ${label ? "big" : ""}`}>
-        <span className="wx-cursor-label">{label}</span>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ───────── The wall of sites behind the hero drifts away as you scroll ───────── */
-export function HeroWall({ children }: { children: React.ReactNode }) {
+/* ───────── Hero layers drift at their own pace as you scroll ───────── */
+export function HeroLayer({ children, className, speed = 220, fade = 0.35 }: { children: React.ReactNode; className: string; speed?: number; fade?: number }) {
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 900], [0, reduce ? 0 : 220]);
-  const opacity = useTransform(scrollY, [0, 700], [1, 0.35]);
+  const y = useTransform(scrollY, [0, 900], [0, reduce ? 0 : speed]);
+  const opacity = useTransform(scrollY, [0, 700], [1, fade]);
   return (
-    <motion.div className="wx-wall-holder" style={{ y, opacity }} aria-hidden="true">
+    <motion.div className={className} style={{ y, opacity }} aria-hidden="true">
       {children}
     </motion.div>
   );
@@ -170,38 +140,115 @@ export function WordReveal({ text, gold = [] }: { text: string; gold?: string[] 
   );
 }
 
-/* ───────── Work: on desktop the cards slide sideways as you scroll down ───────── */
-export function WorkScroller({ children }: { children: React.ReactNode }) {
-  const outer = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
-  const [dist, setDist] = useState(0);
-  const [wide, setWide] = useState(false);
-  const reduce = useReducedMotion();
-  useIsoLayoutEffect(() => {
-    const mq = window.matchMedia("(min-width: 900px)");
-    const measure = () => {
-      setWide(mq.matches && !reduce);
-      if (track.current) setDist(Math.max(0, track.current.scrollWidth - window.innerWidth));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (track.current) ro.observe(track.current);
-    window.addEventListener("resize", measure);
-    mq.addEventListener("change", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-      mq.removeEventListener("change", measure);
-    };
-  }, [reduce]);
-  const { scrollYProgress } = useScroll({ target: outer, offset: ["start start", "end end"] });
-  const x = useTransform(scrollYProgress, [0, 1], [0, -dist]);
+/* ───────── Work: the sites sit on a turning 3D ring ───────── */
+// Scrolling turns the ring one site at a time - it pauses with each site
+// facing you, then swings the next one round. Only the front site can be
+// clicked; it opens the live site.
+const smooth = (x: number) => x * x * (3 - 2 * x);
+
+function OrbitCard({ p, i, step, depth, rot, active }: { p: Project; i: number; step: number; depth: number; rot: MotionValue<number>; active: boolean }) {
+  // How directly this card faces you: 1 at the front, 0 side-on or behind.
+  const facing = useTransform(rot, (r) => {
+    const a = ((((i * step + r) % 360) + 540) % 360) - 180;
+    return Math.max(0, Math.cos((a * Math.PI) / 180));
+  });
+  const opacity = useTransform(facing, (c) => (c <= 0.02 ? 0 : 0.2 + 0.8 * c * c));
+  const shade = useTransform(facing, (c) => 0.75 * (1 - c));
+  const style = { transform: `rotateY(${i * step}deg) translateZ(calc(var(--cw) * ${depth}))`, opacity };
+  const inner = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={p.shot} alt={`The ${p.name} website`} />
+      <span className="wx-oc-no">{String(i + 1).padStart(2, "0")}</span>
+      {!p.url && <span className="wx-oc-soon">Coming soon</span>}
+      <motion.span className="wx-oc-shade" style={{ opacity: shade }} />
+    </>
+  );
+  return p.url ? (
+    <motion.a
+      href={p.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`wx-oc ${active ? "on" : ""}`}
+      style={style}
+      tabIndex={active ? 0 : -1}
+      aria-hidden={!active}
+      aria-label={`${p.name} - open the live site (new tab)`}
+    >
+      {inner}
+    </motion.a>
+  ) : (
+    <motion.div className={`wx-oc ${active ? "on" : ""}`} style={style} aria-hidden={!active}>
+      {inner}
+    </motion.div>
+  );
+}
+
+export function WorkOrbit({ projects }: { projects: Project[] }) {
+  const ref = useRef<HTMLElement>(null);
+  const n = projects.length;
+  const step = 360 / n;
+  const depth = 1 / (2 * Math.tan(Math.PI / n)); // ring radius, in card widths
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  // Scroll position -> which site faces you, with a pause on each one.
+  const pos = useTransform(scrollYProgress, (v) => {
+    const t = Math.min(Math.max(v, 0), 1) * (n - 1);
+    const k = Math.floor(t);
+    const f = t - k;
+    const e = f < 0.28 ? 0 : f > 0.72 ? 1 : smooth((f - 0.28) / 0.44);
+    return Math.min(k + e, n - 1);
+  });
+  const rot = useTransform(pos, (q) => -q * step);
+  const [active, setActive] = useState(0);
+  useMotionValueEvent(pos, "change", (q) => setActive(Math.round(q)));
+  const p = projects[active];
+  const goTo = (i: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * (i / (n - 1));
+    window.scrollTo({ top, behavior: "smooth" });
+  };
   return (
-    <section id="work" ref={outer} className="wx-work" style={wide ? { height: `calc(100svh + ${dist}px)` } : undefined}>
-      <div className="wx-work-sticky">
-        <motion.div ref={track} className="wx-work-track" style={wide ? { x } : undefined}>
-          {children}
-        </motion.div>
+    <section id="work" ref={ref} className="wx-wo" style={{ height: `${100 + (n - 1) * 75}vh` }}>
+      <div className="wx-wo-sticky">
+        <div className="wx-wo-head">
+          <p className="wx-micro">Selected work · {String(n).padStart(2, "0")}</p>
+          <h2 className="wx-h2">Websites I&apos;ve built</h2>
+        </div>
+        <div className="wx-wo-stage">
+          <div className="wx-wo-pull" style={{ transform: `rotateX(-5deg) translateZ(calc(var(--cw) * -${depth}))` }}>
+            <motion.div className="wx-wo-ring" style={{ rotateY: rot }}>
+              {projects.map((q, i) => (
+                <OrbitCard key={q.key} p={q} i={i} step={step} depth={depth} rot={rot} active={i === active} />
+              ))}
+            </motion.div>
+          </div>
+        </div>
+        <div className="wx-wo-cap" key={p.key}>
+          <div className="wx-wo-name">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.logo} alt="" className={p.logo.includes("logo-dove") ? "dove" : undefined} />
+            <div>
+              <h3>{p.name}</h3>
+              <span>{p.kind}</span>
+            </div>
+          </div>
+          {p.url ? (
+            <a href={p.url} target="_blank" rel="noopener noreferrer" className="wx-pill wx-pill-gold">
+              Visit site ↗
+            </a>
+          ) : (
+            <span className="wx-pill">Launching soon</span>
+          )}
+        </div>
+        <div className="wx-wo-dots">
+          {projects.map((q, i) => (
+            <button key={q.key} type="button" className={i === active ? "on" : ""} onClick={() => goTo(i)} aria-label={`Show ${q.name}`} />
+          ))}
+          <span>
+            {String(active + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+          </span>
+        </div>
       </div>
     </section>
   );

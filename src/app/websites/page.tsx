@@ -1,5 +1,5 @@
-import { CONTACT, PROJECTS, type Project } from "./projects";
-import { BigSentence, EnquiryForm, HeroWall, Venn, WordReveal, WorkScroller, WxCursor, WxNav, WxReveal } from "./parts";
+import { CONTACT, PROJECTS } from "./projects";
+import { BigSentence, EnquiryForm, HeroLayer, Venn, WordReveal, WorkOrbit, WxNav, WxReveal } from "./parts";
 
 // /websites - Daniel's page for selling the websites he builds, modelled on
 // weareheroes.one and made his own: deep blue-black, plain light type, his
@@ -23,55 +23,16 @@ const STEPS = [
   { title: "Launch", body: "Your site goes live on your own address, ready to share." },
 ];
 
-function Card({ p, i }: { p: Project; i: number }) {
-  const dove = p.logo.includes("logo-dove");
-  const inner = (
-    <>
-      <div className="wx-card-frame">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.shot} alt={`The ${p.name} website`} />
-        <span className="wx-card-no">{String(i + 1).padStart(2, "0")}</span>
-        {!p.url && <span className="wx-card-soon">Coming soon</span>}
-      </div>
-      <div className="wx-card-meta">
-        <div className="wx-card-name">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.logo} alt="" className={dove ? "dove" : undefined} />
-          <div className="min-w-0">
-            <h3>{p.name}</h3>
-            <span>{p.kind}</span>
-          </div>
-        </div>
-        {p.url && (
-          <span className="wx-card-go">
-            Visit site <b>↗</b>
-          </span>
-        )}
-      </div>
-    </>
-  );
-  return p.url ? (
-    <a href={p.url} target="_blank" rel="noopener noreferrer" className="wx-card" data-cursor="Visit" aria-label={`${p.name} - open the live site (new tab)`}>
-      {inner}
-    </a>
-  ) : (
-    <div className="wx-card" data-cursor="Soon">
-      {inner}
-    </div>
-  );
-}
-
 export default function WebsitesPage() {
   return (
     <div className="wx">
       <WxReveal />
-      <WxCursor />
       <WxNav />
 
       <main id="top">
         {/* ===== HERO ===== */}
         <section className="wx-hero">
-          <HeroWall>
+          <HeroLayer className="wx-wall-holder">
             <div className="wx-wall">
               {WALL.map((col, c) => (
                 <div key={c} className="wx-wall-col">
@@ -82,26 +43,33 @@ export default function WebsitesPage() {
                 </div>
               ))}
             </div>
-          </HeroWall>
+          </HeroLayer>
           <div className="wx-hero-shade" />
           <div className="wx-hero-glow" />
+          {/* Manuchie, front and centre in the background */}
+          <HeroLayer className="wx-feature-holder" speed={120} fade={0.5}>
+            <div className="wx-feature">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${W}/manuchie-shot.webp`} alt="" />
+            </div>
+          </HeroLayer>
 
           <div className="wx-wrap wx-hero-in">
             <h1 className="wx-h1">
               <span className="wx-line">
-                <span>Beautiful,</span>
+                <span>Websites</span>
               </span>
               <span className="wx-line i1">
-                <span>incredible</span>
+                <span>that stop</span>
               </span>
               <span className="wx-line i2">
-                <span className="gold">websites.</span>
+                <span className="gold">the scroll.</span>
               </span>
             </h1>
             <div className="wx-hero-side wx-reveal" style={{ "--d": 6 } as React.CSSProperties}>
               <p>
-                I design and build websites that make people stop, stay and get in touch - for businesses, brands and people
-                who want to stand out.
+                I design and build websites that turn a first glance into a first call - for businesses, brands and people who
+                want to stand out.
               </p>
               <a href="#contact" className="wx-pill wx-pill-gold">
                 Start your website
@@ -111,10 +79,6 @@ export default function WebsitesPage() {
 
           <div className="wx-hero-foot">
             <div className="wx-wrap">
-              <a href="#work" className="wx-scroll wx-micro">
-                <span className="wx-scroll-ring" aria-hidden="true" />
-                <span className="hidden sm:inline">Scroll to explore</span>
-              </a>
               <span className="wx-micro">Web design &amp; development</span>
             </div>
           </div>
@@ -147,16 +111,7 @@ export default function WebsitesPage() {
         </section>
 
         {/* ===== WORK ===== */}
-        <WorkScroller>
-          <div className="wx-work-intro">
-            <p className="wx-micro">Selected work · {String(PROJECTS.length).padStart(2, "0")}</p>
-            <h2 className="wx-h2">Websites I&apos;ve built</h2>
-            <p className="wx-body">Click any project to open the live site.</p>
-          </div>
-          {PROJECTS.map((p, i) => (
-            <Card key={p.key} p={p} i={i} />
-          ))}
-        </WorkScroller>
+        <WorkOrbit projects={PROJECTS} />
 
         {/* ===== ABOUT ===== */}
         <section className="wx-about" id="about">
@@ -242,39 +197,10 @@ export default function WebsitesPage() {
                 Email <a href={CONTACT.emailHref}>{CONTACT.email}</a>
               </span>
             </div>
+            <p className="wx-sign">© {new Date().getFullYear()} Daniel Jenkins · Websites for businesses, brands &amp; people</p>
           </div>
         </section>
       </main>
-
-      <footer className="wx-foot">
-        <div className="wx-foot-run" aria-hidden="true">
-          {[0, 1].map((n) => (
-            <span key={n}>Let&apos;s build something beautiful ● Let&apos;s build something beautiful ●</span>
-          ))}
-        </div>
-        <div className="wx-wrap">
-          <div className="wx-foot-cols">
-            <div>
-              <a href="#work">Work</a>
-              <a href="#about">About</a>
-              <a href="#contact">Contact</a>
-            </div>
-            <div>
-              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer">
-                WhatsApp
-              </a>
-              <a href={CONTACT.emailHref}>Email</a>
-            </div>
-            <div>
-              <a href="#top">Back to top ↑</a>
-            </div>
-          </div>
-          <div className="wx-foot-base">
-            <span>© {new Date().getFullYear()} Daniel Jenkins</span>
-            <span>Websites for businesses, brands &amp; people</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

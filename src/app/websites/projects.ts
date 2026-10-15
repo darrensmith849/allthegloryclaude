@@ -18,6 +18,27 @@ const M = "/media/websites";
 
 export const PROJECTS: Project[] = [
   {
+    key: "alltheglory",
+    shot: `${M}/alltheglory-shot.webp`,
+    name: "All The Glory",
+    kind: "Music & ministry",
+    blurb: "My own home for a worship album and a free chronological Bible study, with a music player and a members' area.",
+    host: "alltheglory.co.za",
+    url: "https://www.alltheglory.co.za/",
+    logo: "/media/logo-dove-440.webp",
+    color: "#d8b25a",
+  },
+  {
+    key: "manuchie",
+    shot: `${M}/manuchie-shot.webp`,
+    name: "Manuchie",
+    kind: "Music producer · Harare",
+    blurb: "An artist site for the producer and music director behind Zimpraise.",
+    host: "manuchie",
+    logo: `${M}/manuchie-icon.svg`,
+    color: "#d9682c",
+  },
+  {
     key: "virgin",
     shot: `${M}/virgin-shot.webp`,
     name: "Virgin Estate Agents",
@@ -49,27 +70,6 @@ export const PROJECTS: Project[] = [
     url: "https://www.crosscoders.co.za/",
     logo: `${M}/crosscoders-icon.svg`,
     color: "#2fbf63",
-  },
-  {
-    key: "alltheglory",
-    shot: `${M}/alltheglory-shot.webp`,
-    name: "All The Glory",
-    kind: "Music & ministry",
-    blurb: "My own home for a worship album and a free chronological Bible study, with a music player and a members' area.",
-    host: "alltheglory.co.za",
-    url: "https://www.alltheglory.co.za/",
-    logo: "/media/logo-dove-440.webp",
-    color: "#d8b25a",
-  },
-  {
-    key: "manuchie",
-    shot: `${M}/manuchie-shot.webp`,
-    name: "Manuchie",
-    kind: "Music producer · Harare",
-    blurb: "An artist site for the producer and music director behind Zimpraise.",
-    host: "manuchie",
-    logo: `${M}/manuchie-icon.svg`,
-    color: "#d9682c",
   },
 ];
 
