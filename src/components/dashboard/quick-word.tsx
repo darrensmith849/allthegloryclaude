@@ -112,6 +112,7 @@ export function QuickWord({
       originalMeaning: f.meaning,
       meaningSource: f.meaningSource,
       englishMeaning: data?.englishMeaning ?? "",
+      repeated: data?.repeated || undefined,
       keyVerses: f.keyVerses.length ? f.keyVerses : undefined,
       application: application[lang].trim(),
       reference: verse.trim() || undefined,
@@ -222,6 +223,12 @@ export function QuickWord({
               <div>
                 <dt>English meaning</dt>
                 <dd>{data.englishMeaning}</dd>
+              </div>
+            )}
+            {data.repeated && (
+              <div>
+                <dt>Why it&apos;s repeated</dt>
+                <dd>{data.repeated}</dd>
               </div>
             )}
           </dl>

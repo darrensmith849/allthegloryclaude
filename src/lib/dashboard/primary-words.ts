@@ -143,8 +143,10 @@ export const PRIMARY_WORDS: Record<string, string[]> = {
   tribulation: ["H6869", "G2347"],
   trouble: ["H6869", "G2347"],
   trust: ["H982", "G3982"],
+  truly: ["H551", "G281"], // Jesus' "Truly, truly" is amēn
   truth: ["H571", "G225"],
   understanding: ["H998", "G4907"],
+  verily: ["H551", "G281"],
   vine: ["H1612", "G288"],
   wait: ["H6960"],
   walk: ["H1980", "G4043"],

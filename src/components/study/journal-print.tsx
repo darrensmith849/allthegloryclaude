@@ -187,6 +187,7 @@ export function JournalPrint({ name }: { name?: string }) {
                       {w.translit ? ` (${w.translit})` : ""}
                       {w.strongs ? ` · ${w.strongs}` : ""}
                       {w.englishMeaning && <p>{w.englishMeaning}</p>}
+                      {w.repeated && <p>{w.repeated}</p>}
                       {w.application && <p className="dash-print-apply">{w.application}</p>}
                     </div>
                   ))}

@@ -13,6 +13,7 @@ export type ReaderWord = Pick<
   | "strongs"
   | "originalMeaning"
   | "englishMeaning"
+  | "repeated"
   | "application"
   | "keyVerses"
 >;

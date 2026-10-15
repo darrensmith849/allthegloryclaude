@@ -11,6 +11,8 @@
 //      - Thayer's Greek Lexicon / Brown-Driver-Briggs (via bolls.life)
 //      - verses that use the word, in the Berean Standard Bible (bolls.life)
 //      - the English word's dictionary senses (Wiktionary)
+//    A repeated word ("Lord, Lord") is looked up once, and why it's said
+//    twice in that verse is explained too.
 // 3. Write it up. Claude (ANTHROPIC_API_KEY) if set, otherwise Cloudflare
 //    Workers AI (the AI binding): a plain-English meaning drawn from the
 //    lexicon, the key verses that best show it, and a short reflection that
@@ -33,7 +35,11 @@ import usageData from "@/lib/dashboard/data/strongs-usage.json";
 import type { KeyVerse, WordLanguage } from "@/lib/dashboard/types";
 import {
   foldText,
+  repeatedIn,
+  repeatedNote,
+  repeatedWord,
   type LanguageFill,
+  type Repeat,
   type WordCandidate,
   type WordFill,
 } from "@/lib/dashboard/words";
@@ -312,6 +318,7 @@ interface LangResearch {
 
 interface Written {
   english: string;
+  repeated?: string;
   per: Partial<Record<WordLanguage, { meaning: string; verses: string[]; life: string }>>;
 }
 
@@ -319,7 +326,17 @@ const WRITER_SYSTEM = `You help someone keep a personal Bible word journal. You 
 
 Use only the lexicon entries and verses you are given. Never invent roots, word pictures, Bible verses or Strong's numbers.`;
 
-function researchPrompt(word: string, reference: string, senses: string[], langs: LangResearch[]): string {
+const timesText = (n: number) => (n === 2 ? "twice" : n === 3 ? "three times" : `${n} times`);
+
+function researchPrompt(
+  word: string,
+  reference: string,
+  senses: string[],
+  langs: LangResearch[],
+  repeat: Repeat | null,
+  verseText: string,
+  passage: { ref: string; text: string } | null,
+): string {
   const blocks = langs.map((l) =>
     [
       `== ${LANG_KEY[l.lang]} word: ${l.entry.original} ${l.entry.translit} (${l.entry.number})`,
@@ -335,13 +352,18 @@ function researchPrompt(word: string, reference: string, senses: string[], langs
   );
   return [
     `English word: ${word}`,
-    reference ? `The verse the user is studying: ${reference}` : "",
+    reference ? `The verse the user is studying: ${reference}${verseText ? ` - "${verseText}"` : ""}` : "",
+    repeat ? `In this verse the word is said ${timesText(repeat.times)}: "${repeat.phrase}".` : "",
+    repeat && passage?.text ? `The passage around it (${passage.ref}, Berean Standard Bible): "${passage.text}"` : "",
     senses.length ? `Dictionary senses:\n${senses.map((s, i) => `${i + 1}. ${s}`).join("\n")}` : "",
     ...blocks,
   ]
     .filter(Boolean)
     .join("\n\n");
 }
+
+const repeatRule = (r: Repeat, reference: string) =>
+  `two or three plain sentences on why "${r.phrase}" is said ${timesText(r.times)}${reference ? ` in ${reference}` : ""}. First read the passage around it: who says it, to whom, and what the passage shows about it - don't assume the speaker is being praised. Then say what the repetition adds there (repeating a word strengthens it - urgency, deep feeling, insistence, certainty, or the very highest degree). Draw only on the passage given; don't quote or cite other verses.`;
 
 const LIFE_RULE =
   'a reflection of 20 to 45 words, in the first person ("I"), that applies the exact meaning in the lexicon entry above to everyday life today, and cites the one verse it draws on, e.g. "(Ephesians 2:4)".';
@@ -363,7 +385,7 @@ function parseLabelled(text: string): Record<string, string> {
   const out: Record<string, string> = {};
   let key = "";
   for (const line of text.split("\n")) {
-    const m = line.match(/^\s*\**\s*(ENGLISH|(?:HEBREW|GREEK)_(?:MEANING|VERSES|LIFE))\s*\**\s*:\s*(.*)$/i);
+    const m = line.match(/^\s*\**\s*(ENGLISH|REPEATED|(?:HEBREW|GREEK)_(?:MEANING|VERSES|LIFE))\s*\**\s*:\s*(.*)$/i);
     if (m) {
       key = m[1].toUpperCase();
       out[key] = m[2].trim();
@@ -375,10 +397,17 @@ function parseLabelled(text: string): Record<string, string> {
 }
 
 // Cloudflare Workers AI: labelled lines (more reliable than its JSON mode).
-async function writeWithWorkersAI(ai: WorkersAI, prompt: string, langs: LangResearch[]): Promise<Written> {
+async function writeWithWorkersAI(
+  ai: WorkersAI,
+  prompt: string,
+  langs: LangResearch[],
+  repeat: Repeat | null,
+  reference: string,
+): Promise<Written> {
   const asks = [
-    "ENGLISH: one or two plain sentences defining the English word in the sense the Bible uses it, chosen from the dictionary senses.",
+    "ENGLISH: one or two plain sentences defining the English word in the sense the Bible uses it, chosen from the dictionary senses (never mention the dictionary or number the senses).",
   ];
+  if (repeat) asks.push(`REPEATED: ${repeatRule(repeat, reference)}`);
   for (const l of langs) {
     const k = LANG_KEY[l.lang];
     if (l.needsMeaning) {
@@ -427,11 +456,17 @@ async function writeWithWorkersAI(ai: WorkersAI, prompt: string, langs: LangRese
       life: lines[`${k}_LIFE`] ?? "",
     };
   }
-  return { english: lines.ENGLISH ?? "", per };
+  return { english: lines.ENGLISH ?? "", repeated: lines.REPEATED ?? "", per };
 }
 
 // Claude, with the same research, as structured JSON.
-async function writeWithClaude(key: string, prompt: string, langs: LangResearch[]): Promise<Written> {
+async function writeWithClaude(
+  key: string,
+  prompt: string,
+  langs: LangResearch[],
+  repeat: Repeat | null,
+  reference: string,
+): Promise<Written> {
   const langSchema = (l: LangResearch) => ({
     type: "object",
     properties: {
@@ -456,11 +491,12 @@ async function writeWithClaude(key: string, prompt: string, langs: LangResearch[
     properties: {
       english: {
         type: "string",
-        description: "One or two plain sentences defining the English word in the sense the Bible uses it.",
+        description: "One or two plain sentences defining the English word in the sense the Bible uses it (never mention the dictionary or number the senses).",
       },
+      ...(repeat ? { repeated: { type: "string", description: `Write ${repeatRule(repeat, reference)}` } } : {}),
       ...Object.fromEntries(langs.map((l) => [l.lang, langSchema(l)])),
     },
-    required: ["english", ...langs.map((l) => l.lang)],
+    required: ["english", ...(repeat ? ["repeated"] : []), ...langs.map((l) => l.lang)],
     additionalProperties: false,
   };
   const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -485,10 +521,10 @@ async function writeWithClaude(key: string, prompt: string, langs: LangResearch[
   const data = (await r.json()) as { stop_reason?: string; content?: { type: string; text?: string }[] };
   const text = data.stop_reason === "refusal" ? "" : data.content?.find((b) => b.type === "text")?.text;
   if (!text) throw new Error("Claude returned no text");
-  const json = JSON.parse(text) as { english?: string } & Partial<
+  const json = JSON.parse(text) as { english?: string; repeated?: string } & Partial<
     Record<WordLanguage, { meaning: string; verses: string[]; life: string }>
   >;
-  return { english: json.english ?? "", per: { hebrew: json.hebrew, greek: json.greek } };
+  return { english: json.english ?? "", repeated: json.repeated ?? "", per: { hebrew: json.hebrew, greek: json.greek } };
 }
 
 // ── Checks ───────────────────────────────────────────────────────
@@ -523,7 +559,7 @@ async function cacheDb() {
   return getDb().catch(() => null);
 }
 const cacheKey = (word: string, reference: string, pick: string, only: string) =>
-  [word.toLowerCase(), reference.toLowerCase().replace(/\s+/g, " "), pick, only].join("|");
+  ["v2", word.toLowerCase(), reference.toLowerCase().replace(/\s+/g, " "), pick, only].join("|");
 
 // quick: everything except the AI-written reflection (lexicon meaning, verses,
 // dictionary), which takes a second - the reflection follows in a second call.
@@ -552,7 +588,10 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
     if (hit) return NextResponse.json({ ...(JSON.parse(hit.json) as WordFill), cached: true });
   }
 
-  const ranked = rankCandidates(word);
+  // "Lord, Lord" is looked up as "Lord".
+  const typedRepeat = repeatedWord(word);
+  const lookup = typedRepeat?.word ?? word;
+  const ranked = rankCandidates(lookup);
   const lists: Record<WordLanguage, StrongsEntry[]> = { hebrew: ranked.hebrew, greek: ranked.greek };
 
   // "Not the right word? Try ..." pins that language's word and only that
@@ -575,14 +614,22 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
   }
   const langs = LANGS.filter((l) => chosen[l]);
   const userRef = parseRef(reference);
+  // The verses either side, so a repeated word is read in its setting.
+  const around: VerseRef | null = userRef
+    ? (() => {
+        const from = Math.max(1, userRef.verses[0] - 2);
+        const to = userRef.verses[userRef.verses.length - 1] + 2;
+        return { book: userRef.book, chapter: userRef.chapter, verses: Array.from({ length: to - from + 1 }, (_, i) => from + i) };
+      })()
+    : null;
 
   // Research, all at once.
   const candidates = Object.fromEntries(
-    langs.map((l) => [l, verseCandidates(l, chosen[l]!, word, userRef)]),
+    langs.map((l) => [l, verseCandidates(l, chosen[l]!, lookup, userRef)]),
   ) as Record<WordLanguage, VerseRef[]>;
   const [senses, texts, ...lexicons] = await Promise.all([
-    englishSenses(word),
-    verseTexts(langs.flatMap((l) => candidates[l])),
+    englishSenses(lookup),
+    verseTexts([...langs.flatMap((l) => candidates[l]), ...(userRef && around ? [userRef, around] : [])]),
     ...langs.map((l) => bibleLexicon(chosen[l]!.number)),
   ]);
   const research: LangResearch[] = langs.map((lang, i) => ({
@@ -599,19 +646,25 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
       .map((v, j) => ({ ...v, label: `${LANG_KEY[lang][0]}${j + 1}` })),
   }));
 
+  // Said twice? As typed, or in the verse itself.
+  const verseText = userRef ? (texts.get(formatRef(userRef.book, userRef.chapter, userRef.verses)) ?? "") : "";
+  const repeat = typedRepeat ?? repeatedIn(verseText, lookup);
+  const aroundRef = around ? formatRef(around.book, around.chapter, around.verses) : "";
+  const passage = around ? { ref: aroundRef, text: texts.get(aroundRef) ?? "" } : null;
+
   // Writing.
   let written: Written | null = null;
   let note: string | undefined;
   if (research.length && quick) note = undefined;
   else if (research.length && opts.ai === false) note = opts.aiNote;
   else if (research.length) {
-    const prompt = researchPrompt(word, reference, senses, research);
+    const prompt = researchPrompt(lookup, reference, senses, research, repeat, verseText, passage);
     const key = process.env.ANTHROPIC_API_KEY;
     try {
-      if (key) written = await writeWithClaude(key, prompt, research);
+      if (key) written = await writeWithClaude(key, prompt, research, repeat, reference);
       else {
         const ai = await workersAI();
-        if (ai) written = await writeWithWorkersAI(ai, prompt, research);
+        if (ai) written = await writeWithWorkersAI(ai, prompt, research, repeat, reference);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -682,6 +735,7 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
       hebrew,
       greek,
       englishMeaning: dictionaryText(senses),
+      repeated: repeat ? repeatedNote(repeat.times) : undefined,
       ai: false,
       pending: Boolean(research.length) && opts.ai !== false,
       note: !hebrew && !greek ? `Couldn't find “${word}” in Strong's. Try the singular form, or a Strong's number like H2617.` : opts.ai === false ? opts.aiNote : undefined,
@@ -692,6 +746,7 @@ export async function fillWord(req: Request, opts: { ai?: boolean; aiNote?: stri
     hebrew,
     greek,
     englishMeaning: goodEnglish(written?.english ?? "") || dictionaryText(senses),
+    repeated: repeat ? goodMeaning(written?.repeated ?? "") || repeatedNote(repeat.times) : undefined,
     ai: wroteLife,
     note:
       note ??

@@ -116,6 +116,11 @@ export function FoldWords({ words, title = "Words studied" }: { words: ReaderWor
                       <span className="dash-reader-label">English</span> {w.englishMeaning}
                     </p>
                   )}
+                  {w.repeated && (
+                    <p>
+                      <span className="dash-reader-label">Why it&apos;s repeated</span> {w.repeated}
+                    </p>
+                  )}
                   {w.application && <p className="dash-reader-word-life">{w.application}</p>}
                   {w.keyVerses && w.keyVerses.length > 0 && (
                     <div className="dash-fold-verses">

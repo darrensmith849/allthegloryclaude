@@ -144,6 +144,12 @@ export function WordRow({
                 <dd>{w.englishMeaning}</dd>
               </div>
             )}
+            {w.repeated && (
+              <div>
+                <dt>Why it&apos;s repeated</dt>
+                <dd>{w.repeated}</dd>
+              </div>
+            )}
           </dl>
 
           {w.keyVerses && w.keyVerses.length > 0 && (

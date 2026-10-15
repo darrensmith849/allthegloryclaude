@@ -223,6 +223,7 @@ export async function GET(req: Request) {
           strongs: w.strongs,
           originalMeaning: w.originalMeaning,
           englishMeaning: w.englishMeaning,
+          repeated: w.repeated,
           application: w.application,
           keyVerses: w.keyVerses,
         });

@@ -38,6 +38,7 @@ interface Draft {
   originalMeaning: string;
   meaningSource: string;
   englishMeaning: string;
+  repeated: string;
   keyVerses: KeyVerse[];
   application: string;
   reference: string;
@@ -53,6 +54,7 @@ const EMPTY_DRAFT: Draft = {
   originalMeaning: "",
   meaningSource: "",
   englishMeaning: "",
+  repeated: "",
   keyVerses: [],
   application: "",
   reference: "",
@@ -69,6 +71,7 @@ function toDraft(w: BibleWord): Draft {
     originalMeaning: w.originalMeaning ?? "",
     meaningSource: w.meaningSource ?? "",
     englishMeaning: w.englishMeaning ?? "",
+    repeated: w.repeated ?? "",
     keyVerses: w.keyVerses ?? [],
     application: w.application ?? "",
     reference: w.reference ?? "",
@@ -307,6 +310,7 @@ function Journal() {
         ...fieldsFrom(target, next[target]),
         englishMeaning:
           mode !== "fresh" && d.englishMeaning ? d.englishMeaning : data.englishMeaning || d.englishMeaning,
+        repeated: mode !== "fresh" && d.repeated ? d.repeated : (data.repeated ?? ""),
       }));
       setFillNote(next[target] ? (data.note ?? null) : noneFound(target));
       setShowDetails(true);
@@ -331,6 +335,7 @@ function Journal() {
             meaningSource: d.originalMeaning === (was?.meaning ?? "") ? done.meaningSource : d.meaningSource,
             keyVerses: JSON.stringify(d.keyVerses) === JSON.stringify(was?.keyVerses ?? []) ? done.keyVerses : d.keyVerses,
             englishMeaning: d.englishMeaning === (data.englishMeaning || "") || !d.englishMeaning ? full.englishMeaning || d.englishMeaning : d.englishMeaning,
+            repeated: d.repeated === (data.repeated ?? "") || !d.repeated ? full.repeated || d.repeated : d.repeated,
           };
         });
         setFillNote(full.note ?? null);
@@ -380,6 +385,7 @@ function Journal() {
       originalMeaning: draft.originalMeaning.trim(),
       meaningSource: draft.originalMeaning.trim() ? draft.meaningSource || undefined : undefined,
       englishMeaning: draft.englishMeaning.trim(),
+      repeated: draft.repeated.trim() || undefined,
       keyVerses: draft.keyVerses.length ? draft.keyVerses : undefined,
       application: draft.application.trim(),
       reference: draft.reference.trim() || undefined,
@@ -679,6 +685,20 @@ function Journal() {
                       onChange={(e) => set("englishMeaning", e.target.value)}
                     />
                   </div>
+
+                  {draft.repeated && (
+                    <div>
+                      <label className="dash-label" htmlFor="wj-repeated">
+                        Why it&apos;s repeated
+                      </label>
+                      <GrowingTextarea
+                        id="wj-repeated"
+                        className="dash-textarea dash-word-field"
+                        value={draft.repeated}
+                        onChange={(e) => set("repeated", e.target.value)}
+                      />
+                    </div>
+                  )}
 
                   {draft.keyVerses.length > 0 && (
                     <div>

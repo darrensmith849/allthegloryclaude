@@ -266,6 +266,7 @@ export interface BibleWord {
   originalMeaning: string; // what the Hebrew / Greek word means
   meaningSource?: string; // e.g. "Thayer's Greek Lexicon"
   englishMeaning: string; // plain English meaning
+  repeated?: string; // why the word is said twice (or more) in the verse, e.g. "Lord, Lord"
   application: string; // one short sentence applying it to life
   reference?: string; // where it was found, e.g. "Psalm 136:1"
   day?: ISODate; // the reading-plan day it was studied on (Study Notes)
