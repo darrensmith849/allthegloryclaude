@@ -114,6 +114,22 @@ export default function MoneyPage() {
   // The day open in the calendar - what's added goes on this day (today unless another is picked).
   const [day, setDay] = useState(today);
   const [calMonth, setCalMonth] = useState(monthOf(today));
+  const [calView, setCalViewState] = useState<"month" | "year">("month");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("atg:money:calView") === "year") setCalViewState("year");
+    } catch {
+      // no storage - month view
+    }
+  }, []);
+  const setCalView = (v: "month" | "year") => {
+    setCalViewState(v);
+    try {
+      localStorage.setItem("atg:money:calView", v);
+    } catch {
+      // not remembered - fine
+    }
+  };
   const pickDay = (d: string) => {
     const next = d > today ? today : d;
     setDay(next);
@@ -421,6 +437,26 @@ export default function MoneyPage() {
   const calLead = (new Date(`${calMonth}-01T12:00:00`).getDay() + 6) % 7;
   const calDays = Array.from({ length: daysIn(calMonth) }, (_, k) => `${calMonth}-${String(k + 1).padStart(2, "0")}`);
   const showCash = dayBal.open.cash !== 0 || dayBal.close.cash !== 0;
+  // The year view: every month's days, shaded by what was spent.
+  const calYear = calMonth.slice(0, 4);
+  const yearMonths = Array.from({ length: 12 }, (_, k) => `${calYear}-${String(k + 1).padStart(2, "0")}`);
+  const yearSums = calView === "year" ? yearMonths.map((ym) => daySums(money, ym)) : [];
+  const yearMax = Math.max(1, ...yearSums.flatMap((m) => [...m.values()].map((v) => v.spent)));
+  const yearTotal = yearSums.reduce(
+    (t, m) => {
+      for (const v of m.values()) {
+        t.spent += v.spent;
+        t.in += v.in;
+      }
+      return t;
+    },
+    { spent: 0, in: 0 },
+  );
+  const goYear = (by: number) => {
+    const y = Number(calYear) + by;
+    const ym = `${y}-${calMonth.slice(5)}`;
+    setCalMonth(ym > monthOf(today) ? monthOf(today) : ym);
+  };
 
   const kindProps = {
     money,
@@ -721,8 +757,87 @@ export default function MoneyPage() {
               </div>
             }
           >
-            <div className="money-days">
+            <div className={`money-days ${calView === "year" ? "is-year" : ""}`}>
               <div className="money-cal">
+                <div className="money-view money-cal-switch" role="group" aria-label="Calendar">
+                  {(
+                    [
+                      ["month", "Month"],
+                      ["year", "Year"],
+                    ] as const
+                  ).map(([v, label]) => (
+                    <button key={v} type="button" className={calView === v ? "is-on" : ""} aria-pressed={calView === v} onClick={() => setCalView(v)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {calView === "year" ? (
+                  <div className="money-year">
+                    <div className="money-cal-head">
+                      <button type="button" className="dash-word-link" onClick={() => goYear(-1)} aria-label="Year before">
+                        ‹
+                      </button>
+                      <span>
+                        {calYear} · spent {dollars(yearTotal.spent)}
+                        {yearTotal.in > 0 && <span className="money-year-in"> · in {dollars(yearTotal.in)}</span>}
+                      </span>
+                      <button type="button" className="dash-word-link" onClick={() => goYear(1)} disabled={calYear >= today.slice(0, 4)} aria-label="Year after">
+                        ›
+                      </button>
+                    </div>
+                    <div className="money-year-grid">
+                      {yearMonths.map((ym, k) => {
+                        const m = yearSums[k];
+                        const spent = [...m.values()].reduce((t, v) => t + v.spent, 0);
+                        const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;
+                        const later = ym > monthOf(today);
+                        return (
+                          <div key={ym} className={`money-year-month ${later ? "is-later" : ""}`}>
+                            <button
+                              type="button"
+                              className="money-year-name"
+                              onClick={() => {
+                                setCalMonth(ym);
+                                setCalView("month");
+                              }}
+                              disabled={later}
+                              title={`Open ${monthName(ym)}`}
+                            >
+                              <span>{monthName(ym).split(" ")[0].slice(0, 3)}</span>
+                              {spent > 0 && <span className="money-year-spent">${Math.round(spent)}</span>}
+                            </button>
+                            <div className="money-year-days">
+                              {Array.from({ length: lead }, (_, x) => (
+                                <span key={`x${x}`} />
+                              ))}
+                              {Array.from({ length: daysIn(ym) }, (_, x) => {
+                                const d = `${ym}-${String(x + 1).padStart(2, "0")}`;
+                                const t = m.get(d);
+                                const heat = t && t.spent > 0 ? 0.18 + 0.72 * Math.min(1, t.spent / yearMax) : 0;
+                                return (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    className={`money-year-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
+                                    style={heat ? { background: `rgb(var(--gold-rgb) / ${heat.toFixed(2)})` } : undefined}
+                                    onClick={() => pickDay(d)}
+                                    disabled={d > today}
+                                    title={`${fullDay(d)}${t ? ` · spent ${dollars(t.spent)}${t.in ? ` · in ${dollars(t.in)}` : ""}` : ""}`}
+                                    aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}` : ""}`}
+                                  >
+                                    {t && t.in > 0 && <i aria-hidden />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="dash-word-hint mt-2">Darker = more spent that day · green dot = money in. Tap a day to open it, or a month to see it bigger.</p>
+                  </div>
+                ) : (
+                  <>
                 <div className="money-cal-head">
                   <button type="button" className="dash-word-link" onClick={() => setCalMonth(shiftMonth(calMonth, -1))} aria-label="Month before">
                     ‹
@@ -766,6 +881,8 @@ export default function MoneyPage() {
                     );
                   })}
                 </div>
+                  </>
+                )}
               </div>
 
               <div className="money-daycard">

@@ -5030,6 +5030,28 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .money-daycard-sums strong { color: var(--colour-ink-strong); font-variant-numeric: tabular-nums; }
 .money-daycard-sums strong.is-in { color: rgb(var(--ok-rgb)); }
 .money-daycard-list { margin-top: 4px; }
+.money-cal-switch { margin: 0 0 10px; }
+.money-days.is-year { grid-template-columns: minmax(0, 1fr); }
+.money-year-in { color: rgb(var(--ok-rgb)); }
+.money-year-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 14px 18px; }
+.money-year-month.is-later { opacity: 0.4; }
+.money-year-name { display: flex; justify-content: space-between; align-items: baseline; width: 100%; margin-bottom: 4px; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--colour-ink-strong); cursor: pointer; }
+.money-year-name:hover:not(:disabled) { color: var(--colour-amber); }
+.money-year-name:disabled { cursor: default; }
+.money-year-spent { font-size: 12px; font-weight: 600; color: var(--colour-ink-quiet); font-variant-numeric: tabular-nums; }
+.money-year-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.money-year-day {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 3px;
+  background: rgb(var(--tint-rgb) / calc(0.06 * var(--tint-k)));
+  cursor: pointer;
+}
+.money-year-day:disabled { opacity: 0.35; cursor: default; }
+.money-year-day.is-today { box-shadow: inset 0 0 0 1.5px rgb(var(--gold-rgb) / 0.9); }
+.money-year-day.is-on { box-shadow: inset 0 0 0 2px var(--colour-ink-strong); }
+.money-year-day i { position: absolute; top: 1px; right: 1px; width: 4px; height: 4px; border-radius: 999px; background: rgb(var(--ok-rgb)); }
 @media (max-width: 760px) {
   .money-days { grid-template-columns: minmax(0, 1fr); }
   .money-cal-day { min-height: 44px; }
