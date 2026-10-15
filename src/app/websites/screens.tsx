@@ -38,7 +38,6 @@ function SiteScreen({
   p,
   play,
   session = 0,
-  loop = false,
   priority = false,
   sizes,
   onProgress,
@@ -48,7 +47,6 @@ function SiteScreen({
   p: Project;
   play: boolean;
   session?: number;
-  loop?: boolean;
   priority?: boolean;
   sizes: string;
   onProgress?: (t: number) => void;
@@ -86,7 +84,6 @@ function SiteScreen({
           src={p.video}
           muted
           playsInline
-          loop={loop}
           preload={priority ? "auto" : "none"}
           aria-hidden="true"
           tabIndex={-1}
@@ -242,38 +239,6 @@ export function Showreel({ projects }: { projects: Project[] }) {
           {String(active + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
         </span>
       </div>
-    </div>
-  );
-}
-
-// A project's own picture in the work list: its browser window plays while
-// on screen, with the phone view tucked over the corner.
-export function ProjectMedia({ p, priority = false }: { p: Project; priority?: boolean }) {
-  const motionOk = useMotionOk();
-  const [ref, inView] = useInView<HTMLDivElement>(0.35);
-  const play = motionOk && inView;
-  return (
-    <div ref={ref} className="ws-media">
-      <div className="ws-window ws-window-sm">
-        <div className="ws-chrome ws-chrome-sm">
-          <span className="ws-dots" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          <span className="ws-url ws-url-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.icon} alt="" width={14} height={14} className="ws-fav" />
-            <span className="truncate">{p.url ? p.host : "manuchie - preview"}</span>
-          </span>
-        </div>
-        <div className="ws-screen-wrap">
-          <SiteScreen p={p} play={play} loop priority={priority} sizes="(min-width: 900px) 700px, 92vw" />
-        </div>
-      </div>
-      <Phone className="ws-media-phone">
-        <Image src={p.phone} alt="" fill sizes="200px" className="object-cover object-top" />
-      </Phone>
     </div>
   );
 }

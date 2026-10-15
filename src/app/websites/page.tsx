@@ -1,5 +1,6 @@
 import { CONTACT, PROJECTS } from "./projects";
-import { CopyEmail, ProjectMedia, Showreel } from "./screens";
+import { CopyEmail, Showreel } from "./screens";
+import { Cases } from "./cases";
 import { Reveal, TintWatcher } from "./motion";
 
 // /websites - Daniel's web design showcase: a standalone share link that
@@ -158,20 +159,68 @@ export default function WebsitesPage() {
 
         /* work */
         .ws-h2 { font-size: clamp(2.6rem, 5.4vw, 4.8rem); line-height:.98; letter-spacing:-.02em; }
-        .ws-project { padding-block: clamp(56px, 7vw, 104px); border-top:1px solid var(--line); }
         .ws-pname { font-size: clamp(2.3rem, 4.2vw, 3.8rem); line-height:1; letter-spacing:-.02em; }
-        .ws-media { position:relative; padding-right: clamp(26px, 7%, 64px); padding-bottom: clamp(18px, 4%, 36px); }
         .ws-window-sm { border-radius:12px; }
         .ws-chrome-sm { height:40px; gap:12px; background:#1f1e1d; border-bottom:1px solid rgba(0,0,0,.4); }
         .ws-url-sm { height:26px; font-size:11.5px; max-width:420px; margin-inline:auto; justify-content:center; }
         .ws-chrome-sm::after { content:""; width:47px; flex:none; }
-        .ws-media-phone { width: clamp(84px, 21%, 172px); right:0; bottom:0; }
-        .ws-swatch { width:22px; height:22px; border-radius:99px; box-shadow: 0 0 0 1px rgba(255,255,255,.14) inset, 0 0 0 2px var(--bg); }
+        .ws-window-light { background:#fbf8f2; border-color: rgba(26,22,18,.1); box-shadow: 0 40px 80px -30px rgba(60,48,30,.35), 0 10px 30px -10px rgba(60,48,30,.15); }
+        .ws-window-light .ws-chrome-sm { background:#efe9de; border-bottom-color: rgba(26,22,18,.08); }
+        .ws-window-light .ws-url { background:#fff; color:#8a8174; }
+        .ws-swatch { width:22px; height:22px; border-radius:99px; }
         .ws-swatch + .ws-swatch { margin-left:-6px; }
         .ws-sitebtn { display:inline-flex; align-items:center; gap:10px; height:46px; padding:0 20px; font-size:14px; font-weight:600;
           transition: transform .25s cubic-bezier(.16,1,.3,1), filter .25s; }
         .ws-sitebtn:hover { transform: translateY(-2px); filter: brightness(1.08); }
         .ws-sitebtn img { width:18px; height:18px; border-radius:4px; background:#fff1; }
+        .ws-case { position:relative; padding-block: clamp(72px, 10vw, 160px); }
+
+        /* Virgin: property cards floating over the window */
+        .ws-cards { display:flex; gap:12px; margin-top:20px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:none; }
+        .ws-cards::-webkit-scrollbar { display:none; }
+        .ws-card { position:relative; flex:none; width:58%; aspect-ratio: 367/401; border-radius:14px; overflow:hidden; scroll-snap-align:start;
+          background:#f4f1ea; box-shadow: 0 30px 60px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.06); }
+        @media (min-width: 768px) {
+          .ws-cards { position:absolute; right:0; bottom: clamp(-150px, -9vw, -60px); width:52%; margin:0; overflow:visible; gap: clamp(10px, 1.4vw, 18px); }
+          .ws-card { width:auto; flex:1 1 0; }
+        }
+
+        /* CrossCoders: the section turns light, like their site */
+        .ws-cc { position:relative; overflow:hidden; border-radius: clamp(20px, 3vw, 32px); background:#f7f2e8; color:#1a1612;
+          padding: clamp(48px, 7vw, 104px) clamp(20px, 5vw, 72px) 0; }
+        .ws-cc::before { content:""; position:absolute; inset:0; pointer-events:none;
+          background: radial-gradient(40% 50% at 0% 0%, rgba(240,190,140,.35), transparent 70%), radial-gradient(45% 55% at 100% 0%, rgba(63,209,116,.22), transparent 70%); }
+        .ws-fan { position:relative; margin-top: clamp(48px, 6vw, 88px); height: clamp(220px, 36vw, 520px); }
+        .ws-fan-item { position:absolute; left:50%; top:0; width: min(68%, 760px); margin-left: calc(min(68%, 760px) / -2); transform-origin: 50% 100%; }
+        .ws-fan-phone { width: clamp(78px, 14%, 170px); right: 6%; top: 18%; z-index:3; }
+
+        /* Endgame: full-width black panel, three phones */
+        .ws-bleed { width:100vw; margin-left: calc(50% - 50vw); }
+        .ws-eg { overflow:hidden; background:#000; margin-block: clamp(24px, 4vw, 64px); }
+        .ws-eg::before { content:""; position:absolute; inset:0; pointer-events:none;
+          background: radial-gradient(45% 40% at 50% 78%, rgba(125,230,245,.28), transparent 70%), radial-gradient(30% 25% at 50% 0%, rgba(125,230,245,.10), transparent 70%); }
+        .ws-eg-name { font-family: var(--ws-sans), system-ui, sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.01em;
+          font-size: clamp(2.2rem, 6.2vw, 5.6rem); line-height:.95; color:#fff; }
+        .ws-eg-name span { color:#7de6f5; text-shadow: 0 0 24px rgba(125,230,245,.65), 0 0 60px rgba(125,230,245,.35); }
+        .ws-eg-phones { --pw: clamp(96px, 19vw, 250px); position:relative; display:flex; justify-content:center; align-items:flex-start; gap: clamp(10px, 3vw, 44px);
+          margin-top: clamp(56px, 7vw, 96px); height: calc(var(--pw) * 2.164 + clamp(40px, 6vw, 90px)); }
+        .ws-eg-phone { position:relative; width: var(--pw); }
+        .ws-eg-phone-mid { z-index:2; box-shadow: 0 0 0 1px rgba(125,230,245,.35), 0 40px 90px -20px rgba(125,230,245,.45), 0 30px 60px -20px #000; }
+
+        /* All The Glory: cinematic */
+        .ws-glory { position:relative; overflow:hidden; border-radius: clamp(18px, 2.4vw, 28px); aspect-ratio: 4/5; background:#09080e; }
+        @media (min-width: 768px) { .ws-glory { aspect-ratio: 21/9; } }
+        .ws-glory-shade { position:absolute; inset:0; background: linear-gradient(to top, rgba(9,8,14,.85), rgba(9,8,14,0) 55%), linear-gradient(to right, rgba(9,8,14,.55), rgba(9,8,14,0) 50%); }
+        .ws-glory-url { position:absolute; left: clamp(14px, 2vw, 24px); top: clamp(14px, 2vw, 24px); flex:none; width:auto; background: rgba(9,8,14,.55);
+          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+        .ws-glory-meta { position:absolute; left: clamp(20px, 4vw, 56px); bottom: clamp(20px, 4vw, 52px); }
+        .ws-glory-phone { width: clamp(88px, 13%, 180px); right: clamp(14px, 5%, 64px); bottom: clamp(-60px, -6%, -24px); z-index:2; }
+
+        /* Manuchie: poster */
+        .ws-poster { position:relative; overflow:hidden; aspect-ratio:4/5; border-radius: clamp(18px, 2.4vw, 28px); background:#120e09;
+          box-shadow: 0 50px 120px -40px rgba(224,112,47,.55), 0 30px 60px -30px #000; }
+        .ws-poster-chip { position:absolute; left:16px; top:16px; height:30px; display:inline-flex; align-items:center; padding:0 12px; border-radius:99px; font-size:11px;
+          letter-spacing:.14em; text-transform:uppercase; color:#fff; background: rgba(10,10,11,.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.18); }
 
         /* steps */
         .ws-step { border-top:1px solid var(--line); padding-top:26px; }
@@ -302,59 +351,7 @@ export default function WebsitesPage() {
             </div>
           </Reveal>
 
-          {PROJECTS.map((p, i) => (
-            <article key={p.key} data-tint={p.tint} className="ws-project">
-              <div className="grid grid-cols-1 items-center gap-x-[clamp(32px,6vw,96px)] gap-y-10 md:grid-cols-12">
-                <Reveal className={`min-w-0 md:col-span-5 ${i % 2 ? "md:order-2" : ""}`}>
-                  <p className="ws-mono text-[12px] text-[var(--faint)]">
-                    {String(i + 1).padStart(2, "0")} <span className="mx-2">/</span> {String(PROJECTS.length).padStart(2, "0")}
-                  </p>
-                  <h3 className="ws-serif ws-pname mt-5">{p.name}</h3>
-                  <p className="ws-label mt-4 !tracking-[.12em]">{p.kind}</p>
-                  <p className="mt-6 max-w-[30rem] text-[1.02rem] leading-[1.7] text-[var(--muted)]">{p.blurb}</p>
-                  <div className="mt-7 flex items-center gap-4">
-                    <span className="flex" aria-hidden="true">
-                      {p.palette.map((c) => (
-                        <span key={c} className="ws-swatch" style={{ background: c }} />
-                      ))}
-                    </span>
-                    <span className="ws-mono text-[11px] uppercase tracking-[.14em] text-[var(--faint)]">Its colours</span>
-                  </div>
-                  <div className="mt-9">
-                    {p.url ? (
-                      <a
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ws-sitebtn"
-                        style={{
-                          background: p.button.bg,
-                          color: p.button.fg,
-                          borderRadius: p.button.radius,
-                          textTransform: p.button.upper ? "uppercase" : undefined,
-                          letterSpacing: p.button.upper ? ".12em" : undefined,
-                          fontSize: p.button.upper ? "12.5px" : undefined,
-                        }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.icon} alt="" width={18} height={18} />
-                        Visit website
-                        <span aria-hidden="true">↗</span>
-                      </a>
-                    ) : (
-                      <span className="ws-mono inline-flex h-[46px] items-center gap-3 rounded-full border border-dashed border-[var(--line)] px-5 text-[12px] uppercase tracking-[.14em] text-[var(--muted)]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--tint)]" />
-                        Launching soon
-                      </span>
-                    )}
-                  </div>
-                </Reveal>
-                <Reveal delay={0.1} y={48} className={`min-w-0 md:col-span-7 ${i % 2 ? "md:order-1" : ""}`}>
-                  <ProjectMedia p={p} />
-                </Reveal>
-              </div>
-            </article>
-          ))}
+          <Cases projects={PROJECTS} />
         </div>
       </section>
 
