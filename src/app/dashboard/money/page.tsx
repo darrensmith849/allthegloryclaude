@@ -98,6 +98,7 @@ export default function MoneyPage() {
   const toastTimer = useRef<number | null>(null);
   const [month, setMonth] = useState(monthOf(today));
   const [only, setOnly] = useState<string | null>(null); // the month's list, one kind only
+  const [view, setView] = useState<"all" | "in" | "out">("all"); // the month: everything, money in, or spending
 
   function say(text: string, undo?: () => void) {
     setToast({ text, undo });
@@ -294,18 +295,32 @@ export default function MoneyPage() {
   const thisMonth = useMemo(() => (money ? monthSummary(money, monthOf(today), today) : null), [money, today]);
   const days = useMemo(() => {
     if (!money) return [];
+    const shown = (e: MoneyEntry) =>
+      view === "in" ? e.kind === "add" : view === "out" || only ? e.kind === "spend" && (!only || e.category === only) : true;
     const list = money.entries
-      .filter((e) => !e.deletedAt && monthOf(e.date) === month && (!only || (e.kind === "spend" && e.category === only)))
+      .filter((e) => !e.deletedAt && monthOf(e.date) === month && shown(e))
       .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
-    const out: { date: string; items: MoneyEntry[]; spent: number }[] = [];
+    const out: { date: string; items: MoneyEntry[]; spent: number; in: number }[] = [];
     for (const e of list) {
       let g = out[out.length - 1];
-      if (!g || g.date !== e.date) out.push((g = { date: e.date, items: [], spent: 0 }));
+      if (!g || g.date !== e.date) out.push((g = { date: e.date, items: [], spent: 0, in: 0 }));
       g.items.push(e);
       if (e.kind === "spend") g.spent += e.amount;
+      if (e.kind === "add") g.in += e.amount;
     }
     return out;
-  }, [money, month, only]);
+  }, [money, month, only, view]);
+  // Where the month's money came from (by what was noted, e.g. "Salary").
+  const inParts = useMemo(() => {
+    if (!money) return [];
+    const by = new Map<string, number>();
+    for (const e of money.entries) {
+      if (e.deletedAt || e.kind !== "add" || monthOf(e.date) !== month) continue;
+      const from = e.note || (e.cash ? "Cash in" : "Money in");
+      by.set(from, (by.get(from) ?? 0) + e.amount);
+    }
+    return [...by.entries()].map(([from, amount]) => ({ from, amount })).sort((a, b) => b.amount - a.amount);
+  }, [money, month]);
   const coming = useMemo(() => (money ? stillToCome(money, today) : []), [money, today]);
   const buys = useMemo(() => (money ? usualBuys(money) : []), [money]);
 
@@ -375,6 +390,20 @@ export default function MoneyPage() {
             </p>
           </form>
         )}
+        {balanceEdit?.cash !== cash && (
+          <div className="money-balance-actions">
+            <button
+              type="button"
+              className={`dash-btn dash-note-nav ${form?.mode === "add" && form.cash === cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
+              onClick={() => openForm({ mode: "add", cash })}
+            >
+              {cash ? "+ Add cash" : "+ Add money"}
+            </button>
+            <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => startBalanceEdit(cash)}>
+              {cash ? "Set cash" : "Set balance"}
+            </button>
+          </div>
+        )}
         {!cash && coming.length > 0 && balanceEdit?.cash !== false && (
           <span className="money-balance-sub">
             {dollars(bal - comingTotal)} after the {dollars(comingTotal)} still to come off this month
@@ -383,6 +412,97 @@ export default function MoneyPage() {
       </div>
     );
   };
+
+  const formBox = form && (
+      <form className="money-form" onSubmit={save}>
+        <span className="money-form-what">
+          {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
+          {form.mode === "spend"
+            ? form.category
+            : form.mode === "move"
+              ? "Cash out - from your account into cash"
+              : form.cash
+                ? "Cash in"
+                : "Money in"}
+        </span>
+        <label className="money-amount">
+          <span aria-hidden>$</span>
+          <input
+            ref={amountRef}
+            className="dash-input"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setForm(null)}
+            aria-label="Amount in dollars"
+          />
+        </label>
+        {form.mode === "spend" &&
+          usualAmounts(money, form.category).map((a) => (
+            <button key={a} type="button" className="money-quick" onClick={() => save(undefined, a)} title={`Take off ${dollars(a)}`}>
+              {shortDollars(a)}
+            </button>
+          ))}
+        {form.mode === "spend" && form.category === FUEL && (
+          <label className="money-km">
+            <input
+              className="dash-input"
+              inputMode="numeric"
+              placeholder={fuelLast != null ? `Last ${fuelLast}` : "Mileage"}
+              value={km}
+              onChange={(e) => setKm(e.target.value)}
+              aria-label="Mileage (km on the clock)"
+            />
+            <span>km</span>
+          </label>
+        )}
+        {form.mode !== "move" && (
+          <WalletToggle
+            cash={form.cash}
+            onChange={(cash) => setForm({ ...form, cash })}
+            label={form.mode === "add" ? "Into" : "Paid with"}
+          />
+        )}
+        <input
+          className="dash-input money-note"
+          list="money-notes"
+          placeholder={form.mode === "add" ? "Where from? (optional)" : form.mode === "move" ? "Where? (optional)" : "Where / what? (optional)"}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+        <datalist id="money-notes">
+          {(form.mode === "add" ? [...notesFor(money, "Money in"), ...MONEY_IN] : notesFor(money, form.mode === "move" ? CASH_OUT : form.category)).map((n) => (
+            <option key={n} value={n} />
+          ))}
+        </datalist>
+        <input type="date" className="dash-input money-date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />
+        <button type="submit" className="dash-btn dash-btn-primary">
+          {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : "Add it"}
+        </button>
+        <button type="button" className="dash-word-link" onClick={() => setForm(null)}>
+          Cancel
+        </button>
+      </form>
+    );
+
+  const toastBox = toast && (
+      <div className="money-toast" role="status">
+        <span>✓ {toast.text}</span>
+        {toast.undo && (
+          <button
+            type="button"
+            className="dash-word-link"
+            onClick={() => {
+              toast.undo?.();
+              setToast(null);
+            }}
+          >
+            Undo
+          </button>
+        )}
+      </div>
+    );
 
   return (
     <>
@@ -421,6 +541,9 @@ export default function MoneyPage() {
                 </div>
               </div>
             </div>
+
+            {form?.mode === "add" && formBox}
+            {toastBox}
 
             {buys.length > 0 && (
               <div className="money-again" role="group" aria-label="Log it again">
@@ -468,116 +591,7 @@ export default function MoneyPage() {
                 </form>
               )}
             </div>
-            <div className="money-actions">
-              <button
-                type="button"
-                className={`dash-btn dash-note-nav ${form?.mode === "add" && !form.cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
-                onClick={() => openForm({ mode: "add", cash: false })}
-              >
-                + Add money
-              </button>
-              <button
-                type="button"
-                className={`dash-btn dash-note-nav ${form?.mode === "add" && form.cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
-                onClick={() => openForm({ mode: "add", cash: true })}
-              >
-                + Add cash
-              </button>
-              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => startBalanceEdit(false)}>
-                Set balance
-              </button>
-            </div>
-
-            {form && (
-              <form className="money-form" onSubmit={save}>
-                <span className="money-form-what">
-                  {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
-                  {form.mode === "spend"
-                    ? form.category
-                    : form.mode === "move"
-                      ? "Cash out - from your account into cash"
-                      : form.cash
-                        ? "Cash in"
-                        : "Money in"}
-                </span>
-                <label className="money-amount">
-                  <span aria-hidden>$</span>
-                  <input
-                    ref={amountRef}
-                    className="dash-input"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    onKeyDown={(e) => e.key === "Escape" && setForm(null)}
-                    aria-label="Amount in dollars"
-                  />
-                </label>
-                {form.mode === "spend" &&
-                  usualAmounts(money, form.category).map((a) => (
-                    <button key={a} type="button" className="money-quick" onClick={() => save(undefined, a)} title={`Take off ${dollars(a)}`}>
-                      {shortDollars(a)}
-                    </button>
-                  ))}
-                {form.mode === "spend" && form.category === FUEL && (
-                  <label className="money-km">
-                    <input
-                      className="dash-input"
-                      inputMode="numeric"
-                      placeholder={fuelLast != null ? `Last ${fuelLast}` : "Mileage"}
-                      value={km}
-                      onChange={(e) => setKm(e.target.value)}
-                      aria-label="Mileage (km on the clock)"
-                    />
-                    <span>km</span>
-                  </label>
-                )}
-                {form.mode !== "move" && (
-                  <WalletToggle
-                    cash={form.cash}
-                    onChange={(cash) => setForm({ ...form, cash })}
-                    label={form.mode === "add" ? "Into" : "Paid with"}
-                  />
-                )}
-                <input
-                  className="dash-input money-note"
-                  list="money-notes"
-                  placeholder={form.mode === "add" ? "Where from? (optional)" : form.mode === "move" ? "Where? (optional)" : "Where / what? (optional)"}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-                <datalist id="money-notes">
-                  {(form.mode === "add" ? [...notesFor(money, "Money in"), ...MONEY_IN] : notesFor(money, form.mode === "move" ? CASH_OUT : form.category)).map((n) => (
-                    <option key={n} value={n} />
-                  ))}
-                </datalist>
-                <input type="date" className="dash-input money-date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />
-                <button type="submit" className="dash-btn dash-btn-primary">
-                  {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : "Add it"}
-                </button>
-                <button type="button" className="dash-word-link" onClick={() => setForm(null)}>
-                  Cancel
-                </button>
-              </form>
-            )}
-
-            {toast && (
-              <div className="money-toast" role="status">
-                <span>✓ {toast.text}</span>
-                {toast.undo && (
-                  <button
-                    type="button"
-                    className="dash-word-link"
-                    onClick={() => {
-                      toast.undo?.();
-                      setToast(null);
-                    }}
-                  >
-                    Undo
-                  </button>
-                )}
-              </div>
-            )}
+            {form && form.mode !== "add" && formBox}
           </section>
         </div>
 
@@ -585,7 +599,7 @@ export default function MoneyPage() {
         <div className="dash-col-7">
           <FoldPanel
             id="money-month"
-            eyebrow="Where it went"
+            eyebrow="Money in and out"
             title={monthName(month)}
             action={
               <div className="flex gap-1">
@@ -605,7 +619,21 @@ export default function MoneyPage() {
             }
           >
             <div className="money-month-figures">
-              <div>
+              <button
+                type="button"
+                className={`money-figure ${view === "in" ? "is-on" : ""}`}
+                onClick={() => (setView(view === "in" ? "all" : "in"), setOnly(null))}
+                aria-pressed={view === "in"}
+              >
+                <span>Money in</span>
+                <strong className="is-in">{dollars(summary.in)}</strong>
+              </button>
+              <button
+                type="button"
+                className={`money-figure ${view === "out" ? "is-on" : ""}`}
+                onClick={() => (setView(view === "out" ? "all" : "out"), setOnly(null))}
+                aria-pressed={view === "out"}
+              >
                 <span>Spent</span>
                 <strong>{dollars(summary.total)}</strong>
                 {summary.change != null && (
@@ -613,18 +641,52 @@ export default function MoneyPage() {
                     {summary.change > 0 ? "▲" : "▼"} {Math.abs(Math.round(summary.change))}% {summary.soFar ? "on this time in" : "on"} {monthName(shiftMonth(month, -1)).split(" ")[0]}
                   </em>
                 )}
+              </button>
+              <div>
+                <span>Left over</span>
+                <strong className={summary.in - summary.total < 0 ? "is-low" : ""}>
+                  {summary.in - summary.total < 0 ? "-" : ""}
+                  {dollars(Math.abs(summary.in - summary.total))}
+                </strong>
               </div>
               <div>
-                <span>Money in</span>
-                <strong>{dollars(summary.in)}</strong>
-              </div>
-              <div>
-                <span>Per day</span>
+                <span>Spent a day</span>
                 <strong>{dollars(summary.perDay)}</strong>
               </div>
             </div>
 
-            {summary.parts.length === 0 ? (
+            <div className="money-view" role="group" aria-label="Show">
+              {(
+                [
+                  ["all", "Everything"],
+                  ["in", "Money in"],
+                  ["out", "Spent"],
+                ] as const
+              ).map(([v, label]) => (
+                <button key={v} type="button" className={view === v ? "is-on" : ""} aria-pressed={view === v} onClick={() => (setView(v), setOnly(null))}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {view === "in" ? (
+              inParts.length === 0 ? (
+                <p className="dash-word-hint mt-3">No money in this month yet - tap + Add money or + Add cash at the top.</p>
+              ) : (
+                <ul className="money-parts">
+                  {inParts.map((p) => (
+                    <li key={p.from}>
+                      <span className="money-part is-static">
+                        <i style={{ background: "rgb(var(--ok-rgb))" }} aria-hidden />
+                        <span className="money-part-name">{p.from}</span>
+                        <span className="money-part-pct">{summary.in ? Math.round((p.amount / summary.in) * 100) : 0}%</span>
+                        <span className="money-part-amount">{dollars(p.amount)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : summary.parts.length === 0 ? (
               <p className="dash-word-hint mt-3">Nothing spent this month yet.</p>
             ) : (
               <>
@@ -636,7 +698,14 @@ export default function MoneyPage() {
                 <ul className="money-parts">
                   {summary.parts.map((p) => (
                     <li key={p.category}>
-                      <button type="button" className={`money-part ${only === p.category ? "is-on" : ""}`} onClick={() => setOnly(only === p.category ? null : p.category)}>
+                      <button
+                        type="button"
+                        className={`money-part ${only === p.category ? "is-on" : ""}`}
+                        onClick={() => {
+                          setOnly(only === p.category ? null : p.category);
+                          setView("out");
+                        }}
+                      >
                         <i style={{ background: colourFor(money, p.category) }} aria-hidden />
                         <span className="money-part-name">{p.category}</span>
                         <span className="money-part-pct">{Math.round(p.pct)}%</span>
@@ -651,9 +720,9 @@ export default function MoneyPage() {
             {days.length > 0 && (
               <div className="money-list">
                 <div className="money-list-head">
-                  <span className="eyebrow">{only ? `${only} only` : "Every entry"}</span>
-                  {only ? (
-                    <button type="button" className="dash-word-link" onClick={() => setOnly(null)}>
+                  <span className="eyebrow">{only ? `${only} only` : view === "in" ? "Money in" : view === "out" ? "Spending" : "Every entry"}</span>
+                  {only || view !== "all" ? (
+                    <button type="button" className="dash-word-link" onClick={() => (setOnly(null), setView("all"))}>
                       Show everything
                     </button>
                   ) : (
@@ -664,7 +733,10 @@ export default function MoneyPage() {
                   <div key={g.date} className="money-day-group">
                     <div className="money-day-head">
                       <span>{dayHeading(g.date, today)}</span>
-                      {g.spent > 0 && <span>{dollars(g.spent)}</span>}
+                      <span className="money-day-sums">
+                        {g.in > 0 && <span className="is-in">+{dollars(g.in)}</span>}
+                        {g.spent > 0 && <span>-{dollars(g.spent)}</span>}
+                      </span>
                     </div>
                     {g.items.map((e) =>
                       editing?.id === e.id && editing.where === "list" ? (
