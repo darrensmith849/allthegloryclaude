@@ -34,6 +34,39 @@ export function WxNav() {
 
 /* ───────── Fades each .wx-reveal in as it scrolls into view ───────── */
 export function WxReveal() {
+  // Menu and in-page links glide to their section instead of jumping.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+      if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const id = a.getAttribute("href") ?? "";
+      const el = id === "#top" ? document.body : document.querySelector<HTMLElement>(id);
+      if (!el) return;
+      e.preventDefault();
+      const bar = document.querySelector<HTMLElement>(".wx-nav")?.offsetHeight ?? 70;
+      const from = window.scrollY;
+      const to = id === "#top" ? 0 : el.getBoundingClientRect().top + from - (id === "#work" ? 0 : bar);
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        window.scrollTo(0, to);
+        return;
+      }
+      const dist = to - from;
+      const dur = Math.min(1600, Math.max(700, Math.abs(dist) * 0.35));
+      const start = performance.now();
+      const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        window.scrollTo(0, from + dist * ease(t));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+      // Keep the address as plain /websites - no #top / #work on the end.
+      history.replaceState(null, "", location.pathname + location.search);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   useEffect(() => {
     document.querySelector(".wx")?.classList.add("wx-js");
     const els = Array.from(document.querySelectorAll(".wx-reveal"));
@@ -95,8 +128,7 @@ export function Venn() {
             <motion.circle className="ring" cx="415" cy="210" r="160" style={{ pathLength: right }} />
           </motion.g>
           <motion.g style={{ scale: core, opacity: core }}>
-            <circle className="core" cx="340" cy="210" r="30" />
-            <image href="/media/logo-dove-440.webp" x="318" y="188" width="44" height="44" />
+            <image href="/media/logo-dove-440.webp" x="300" y="170" width="80" height="80" />
           </motion.g>
           <motion.g style={{ opacity: labels }}>
             <text x="40" y="214" textAnchor="middle">DESIGN</text>

@@ -199,8 +199,6 @@ a.wx-oc.on:hover { border-color: rgba(241, 215, 166, 0.5); }
 .wx-contact { padding: clamp(5rem, 12vw, 10rem) 0; text-align: center; }
 .wx-call { position: relative; display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto; border-radius: 99px; border: 1.5px solid var(--gold-2); box-shadow: 0 0 22px rgba(216, 178, 90, 0.5); }
 .wx-call img { width: 52px; height: 52px; object-fit: contain; }
-.wx-call::after { content: ""; position: absolute; inset: -1.5px; border-radius: 99px; border: 1.5px solid var(--gold-2); animation: wx-call 2.4s var(--ease) infinite; }
-@keyframes wx-call { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.2); opacity: 0; } }
 .wx-contact .wx-h2 { margin-top: 1.8rem; }
 .wx-contact-sub { margin: 1rem auto 0; max-width: 30rem; }
 .wx-form { margin: clamp(2rem, 4vw, 3rem) auto 0; max-width: 30rem; display: grid; gap: 0.9rem; text-align: left; }
@@ -243,6 +241,6 @@ a.wx-oc.on:hover { border-color: rgba(241, 215, 166, 0.5); }
 }
 @media (prefers-reduced-motion: reduce) {
   .wx-line > span,
-  .wx-wall-col, .wx-orbit-ring.r2, .wx-orbit-dot, .wx-circle::after, .wx-call::after, .wx-feature img { animation: none; }
+  .wx-wall-col, .wx-orbit-ring.r2, .wx-orbit-dot, .wx-circle::after, .wx-feature img { animation: none; }
   .wx-js .wx-reveal { opacity: 1; transform: none; }
 }
