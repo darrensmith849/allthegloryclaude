@@ -1,99 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { CONTACT } from "./projects";
 
-const LINKS = [
-  ["#story", "Story"],
-  ["#work", "Work"],
-  ["#services", "Services"],
-] as const;
+// Runs before paint in the browser, harmlessly as a normal effect on the server.
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-// Top bar: clear over the hero, solid once the page scrolls. On phones the
-// links move into a full-screen drawer.
+/* ───────── Top bar: clear over the hero, frosted once you scroll ───────── */
 export function WxNav() {
   const [solid, setSolid] = useState(false);
-  const [open, setOpen] = useState(false);
   useEffect(() => {
-    const onScroll = () => setSolid(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const on = () => setSolid(window.scrollY > 24);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
   }, []);
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
   return (
-    <>
-      <header className={`wx-nav ${solid ? "solid" : ""}`}>
-        <a className="wx-logo" href="#top">
-          Daniel Jenkins
+    <header className={`wx-nav ${solid ? "solid" : ""}`}>
+      <a href="#top" className="wx-logo" aria-label="Daniel Jenkins - back to top">
+        <span className="wx-logo-ring" aria-hidden="true" />
+        Daniel Jenkins
+      </a>
+      <nav className="wx-navlinks" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a href="#contact" className="wx-pill wx-pill-gold">
+          Let&apos;s talk
         </a>
-        <nav className="wx-links" aria-label="Primary">
-          {LINKS.map(([href, label]) => (
-            <a key={href} href={href}>
-              {label}
-            </a>
-          ))}
-          <a href="#contact" className="wx-book">
-            Start a project
-          </a>
-        </nav>
-        <button
-          type="button"
-          className="wx-burger"
-          aria-expanded={open}
-          aria-controls="wx-drawer"
-          aria-label={open ? "Close menu" : "Open menu"}
-          onClick={() => setOpen((o) => !o)}
-        >
-          <span />
-          <span />
-        </button>
-      </header>
-      {open && (
-        <div className="wx-drawer" id="wx-drawer">
-          {LINKS.map(([href, label]) => (
-            <a key={href} href={href} onClick={() => setOpen(false)}>
-              {label}
-            </a>
-          ))}
-          <a href="#contact" className="wx-drawer-book" onClick={() => setOpen(false)}>
-            Start a project
-          </a>
-        </div>
-      )}
-    </>
+      </nav>
+    </header>
   );
 }
 
-// Marks the page as scripted, then fades each .wx-reveal in as it scrolls
-// into view (same approach as the Manuchie site).
+/* ───────── Fades each .wx-reveal in as it scrolls into view ───────── */
 export function WxReveal() {
   useEffect(() => {
-    const root = document.querySelector(".wx");
-    root?.classList.add("wx-js");
+    document.querySelector(".wx")?.classList.add("wx-js");
     const els = Array.from(document.querySelectorAll(".wx-reveal"));
     if (!("IntersectionObserver" in window)) {
       els.forEach((el) => el.classList.add("in"));
       return;
     }
     const io = new IntersectionObserver(
-      (entries) => {
+      (entries) =>
         entries.forEach((en) => {
           if (en.isIntersecting) {
             en.target.classList.add("in");
             io.unobserve(en.target);
           }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+        }),
+      { threshold: 0.15, rootMargin: "0px 0px -6% 0px" },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -101,71 +59,170 @@ export function WxReveal() {
   return null;
 }
 
-// The hero's signature: a browser address bar typing out the kind of web
-// address a client's new site could live at.
-const DOMAINS = ["yourbusiness.co.za", "yourchurch.org", "yourname.com", "yourbrand.co.zw", "yourstudio.com"];
-
-export function TypedAddress() {
-  const [text, setText] = useState(DOMAINS[0]);
+/* ───────── A soft ring that follows the mouse, and says "Visit" over work ───────── */
+export function WxCursor() {
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  const sx = useSpring(x, { stiffness: 500, damping: 40, mass: 0.4 });
+  const sy = useSpring(y, { stiffness: 500, damping: 40, mass: 0.4 });
+  const [label, setLabel] = useState<string | null>(null);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let i = 0;
-    let n = DOMAINS[0].length;
-    let deleting = true;
-    let t = 0;
-    const step = () => {
-      const word = DOMAINS[i];
-      if (deleting) {
-        n -= 1;
-        setText(word.slice(0, n));
-        if (n <= 0) {
-          deleting = false;
-          i = (i + 1) % DOMAINS.length;
-        }
-        t = window.setTimeout(step, 45);
-      } else {
-        const next = DOMAINS[i];
-        n += 1;
-        setText(next.slice(0, n));
-        if (n >= next.length) {
-          deleting = true;
-          t = window.setTimeout(step, 2200);
-        } else {
-          t = window.setTimeout(step, 85);
-        }
-      }
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+    const move = (e: PointerEvent) => {
+      x.set(e.clientX);
+      y.set(e.clientY);
+      const t = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-cursor]");
+      setLabel(t ? t.dataset.cursor ?? null : null);
     };
-    t = window.setTimeout(step, 2600);
-    return () => window.clearTimeout(t);
-  }, []);
+    window.addEventListener("pointermove", move, { passive: true });
+    return () => window.removeEventListener("pointermove", move);
+  }, [x, y]);
   return (
-    <div className="wx-addr-wrap">
-      <div className="wx-addr" aria-label="Your website, on your own web address">
-        <span className="wx-addr-dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
-        <svg className="wx-addr-lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-          <rect x="4" y="11" width="16" height="10" rx="2" />
-          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-        </svg>
-        <span className="wx-addr-pre" aria-hidden="true">
-          https://
-        </span>
-        <span className="wx-addr-typed" aria-hidden="true">
-          {text}
-        </span>
-        <span className="wx-caret" aria-hidden="true" />
+    <motion.div className="wx-cursor" style={{ x: sx, y: sy }} aria-hidden="true">
+      <div className={`wx-cursor-ring ${label ? "big" : ""}`}>
+        <span className="wx-cursor-label">{label}</span>
       </div>
-      <p className="wx-addr-note">Your website, live on your own address.</p>
+    </motion.div>
+  );
+}
+
+/* ───────── The wall of sites behind the hero drifts away as you scroll ───────── */
+export function HeroWall({ children }: { children: React.ReactNode }) {
+  const reduce = useReducedMotion();
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 900], [0, reduce ? 0 : 220]);
+  const opacity = useTransform(scrollY, [0, 700], [1, 0.35]);
+  return (
+    <motion.div className="wx-wall-holder" style={{ y, opacity }} aria-hidden="true">
+      {children}
+    </motion.div>
+  );
+}
+
+/* ───────── Pinned: two circles draw themselves as you scroll ───────── */
+export function Venn() {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress: p } = useScroll({ target: ref, offset: ["start 0.75", "end end"] });
+  const left = useTransform(p, [0.02, 0.4], reduce ? [1, 1] : [0, 1]);
+  const right = useTransform(p, [0.12, 0.5], reduce ? [1, 1] : [0, 1]);
+  const core = useTransform(p, [0.45, 0.6], reduce ? [1, 1] : [0, 1]);
+  const labels = useTransform(p, [0.3, 0.5], reduce ? [1, 1] : [0, 1]);
+  const cap = useTransform(p, [0.55, 0.72], reduce ? [1, 1] : [0, 1]);
+  const capY = useTransform(p, [0.55, 0.72], reduce ? [0, 0] : [24, 0]);
+  const spread = useTransform(p, [0.5, 0.95], reduce ? [0, 0] : [0, 14]);
+  const spreadL = useTransform(spread, (v) => -v);
+  return (
+    <section className="wx-venn" ref={ref} aria-label="Design and development">
+      <div className="wx-sticky">
+        <div className="wx-venn-glow" />
+        <svg viewBox="0 0 680 420" role="img" aria-label="Design and development, meeting at your website">
+          <motion.g style={{ x: spreadL }}>
+            <motion.circle className="ring" cx="265" cy="210" r="160" style={{ pathLength: left }} />
+          </motion.g>
+          <motion.g style={{ x: spread }}>
+            <motion.circle className="ring" cx="415" cy="210" r="160" style={{ pathLength: right }} />
+          </motion.g>
+          <motion.circle className="core" cx="340" cy="210" r="20" style={{ scale: core, opacity: core }} />
+          <motion.g style={{ opacity: labels }}>
+            <text x="40" y="214" textAnchor="middle">DESIGN</text>
+            <text x="652" y="214" textAnchor="middle">BUILD</text>
+          </motion.g>
+        </svg>
+        <motion.div className="wx-venn-cap" style={{ opacity: cap, y: capY }}>
+          <p className="wx-micro">Where beautiful design meets solid build</p>
+          <a href="#work" className="wx-pill">
+            See my work
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Words light up one by one as the sentence scrolls through ───────── */
+function Word({ p, range, children, gold }: { p: MotionValue<number>; range: [number, number]; children: string; gold?: boolean }) {
+  const opacity = useTransform(p, range, [0.16, 1]);
+  return (
+    <motion.span className={`w ${gold ? "gold" : ""}`} style={{ opacity }}>
+      {children}
+    </motion.span>
+  );
+}
+
+export function WordReveal({ text, gold = [] }: { text: string; gold?: string[] }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.85", "end 0.45"] });
+  const words = text.split(" ");
+  return (
+    <p ref={ref} className="wx-state-text">
+      {words.map((w, i) => {
+        const start = i / words.length;
+        const range: [number, number] = reduce ? [0, 0.0001] : [start, start + 1 / words.length];
+        return (
+          <Word key={i} p={scrollYProgress} range={range} gold={gold.includes(w.replace(/[.,]/g, ""))}>
+            {w}
+          </Word>
+        );
+      })}
+    </p>
+  );
+}
+
+/* ───────── Work: on desktop the cards slide sideways as you scroll down ───────── */
+export function WorkScroller({ children }: { children: React.ReactNode }) {
+  const outer = useRef<HTMLElement>(null);
+  const track = useRef<HTMLDivElement>(null);
+  const [dist, setDist] = useState(0);
+  const [wide, setWide] = useState(false);
+  const reduce = useReducedMotion();
+  useIsoLayoutEffect(() => {
+    const mq = window.matchMedia("(min-width: 900px)");
+    const measure = () => {
+      setWide(mq.matches && !reduce);
+      if (track.current) setDist(Math.max(0, track.current.scrollWidth - window.innerWidth));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (track.current) ro.observe(track.current);
+    window.addEventListener("resize", measure);
+    mq.addEventListener("change", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      mq.removeEventListener("change", measure);
+    };
+  }, [reduce]);
+  const { scrollYProgress } = useScroll({ target: outer, offset: ["start start", "end end"] });
+  const x = useTransform(scrollYProgress, [0, 1], [0, -dist]);
+  return (
+    <section id="work" ref={outer} className="wx-work" style={wide ? { height: `calc(100svh + ${dist}px)` } : undefined}>
+      <div className="wx-work-sticky">
+        <motion.div ref={track} className="wx-work-track" style={wide ? { x } : undefined}>
+          {children}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── A huge sentence that slides as you scroll past ───────── */
+export function BigSentence({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["4%", "-48%"]);
+  return (
+    <div ref={ref} className="wx-big" aria-hidden="true">
+      <motion.div className="wx-big-run" style={{ x }}>
+        {children}
+      </motion.div>
     </div>
   );
 }
 
-// The enquiry form. Sends through the site's own /api/contact, which emails
-// Daniel (flagged as a website enquiry). If that fails, it points people to
-// WhatsApp instead so nobody is left stuck.
+/* ───────── Enquiry form - emails Daniel through the site's own /api/contact ───────── */
 export function EnquiryForm() {
   const [state, setState] = useState<"idle" | "sending" | "ok" | "err">("idle");
   const [msg, setMsg] = useState("");
@@ -197,7 +254,7 @@ export function EnquiryForm() {
           if (res.ok && out.success) {
             form.reset();
             setState("ok");
-            setMsg("Got it - I'll be in touch soon. Thank you.");
+            setMsg("Thank you - I'll be in touch soon.");
           } else {
             setState("err");
             setMsg(out.error ?? "Something went wrong. Please message me on WhatsApp instead.");
@@ -209,31 +266,19 @@ export function EnquiryForm() {
       }}
     >
       <input type="text" name="website" className="wx-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-      <label className="wx-fld">
-        <span>Your name</span>
-        <input type="text" name="name" autoComplete="name" required placeholder="First and last" />
-      </label>
-      <label className="wx-fld">
-        <span>Email</span>
-        <input type="email" name="email" autoComplete="email" required placeholder="you@email.com" />
-      </label>
-      <label className="wx-fld">
-        <span>Your project</span>
-        <textarea name="message" rows={4} required minLength={10} placeholder="A little about you, your business and what you'd like your website to do..." />
-      </label>
-      <button type="submit" className="wx-btn wx-btn-gold wx-btn-wide" disabled={state === "sending"}>
-        {state === "sending" ? "Sending..." : "Send it over"}
-      </button>
+      <input type="text" name="name" autoComplete="name" required placeholder="What is your name?" aria-label="Your name" />
+      <input type="email" name="email" autoComplete="email" required placeholder="And your email address?" aria-label="Your email" />
+      <textarea name="message" rows={4} required minLength={10} placeholder="Tell me a little about your website idea" aria-label="Your project" />
+      <div className="wx-form-actions">
+        <button type="submit" className="wx-pill wx-pill-solid" disabled={state === "sending"}>
+          {state === "sending" ? "Sending..." : "Send my idea"}
+        </button>
+        <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="wx-pill wx-pill-gold">
+          WhatsApp me
+        </a>
+      </div>
       <p className={`wx-status ${state === "ok" ? "ok" : state === "err" ? "err" : ""}`} role="status" aria-live="polite">
         {msg}
-        {state === "err" && (
-          <>
-            {" "}
-            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="underline">
-              Open WhatsApp
-            </a>
-          </>
-        )}
       </p>
     </form>
   );

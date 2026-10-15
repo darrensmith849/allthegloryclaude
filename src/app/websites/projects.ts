@@ -1,6 +1,6 @@
 // The websites Daniel has built, shown on /websites. Each links out to the
-// live site. `logo` is the site's own icon; `color` is its brand colour,
-// used for the glow on its card.
+// live site. `shot` is one screenshot of the site's front page, `logo` its
+// own icon (favicon), `color` its brand colour.
 
 export type Project = {
   key: string;
@@ -9,6 +9,7 @@ export type Project = {
   blurb: string;
   host: string;
   url?: string; // not live yet = no link
+  shot: string;
   logo: string;
   color: string;
 };
@@ -18,6 +19,7 @@ const M = "/media/websites";
 export const PROJECTS: Project[] = [
   {
     key: "virgin",
+    shot: `${M}/virgin-shot.webp`,
     name: "Virgin Estate Agents",
     kind: "Real estate · Zimbabwe",
     blurb: "A property website with searchable listings across Zimbabwe, agent profiles and instant WhatsApp enquiries.",
@@ -28,6 +30,7 @@ export const PROJECTS: Project[] = [
   },
   {
     key: "endgame",
+    shot: `${M}/endgame-shot.webp`,
     name: "Endgame Strategy Lab",
     kind: "Strategy & marketing · Johannesburg",
     blurb: "A bold, modern site for a strategy and digital marketing consultancy, with its services, a blog and an easy way to get in touch.",
@@ -38,6 +41,7 @@ export const PROJECTS: Project[] = [
   },
   {
     key: "crosscoders",
+    shot: `${M}/crosscoders-shot.webp`,
     name: "CrossCoders",
     kind: "Christian nonprofit",
     blurb: "A warm, welcoming site for a nonprofit that builds free software for churches, with ways to apply and to give.",
@@ -48,6 +52,7 @@ export const PROJECTS: Project[] = [
   },
   {
     key: "alltheglory",
+    shot: `${M}/alltheglory-shot.webp`,
     name: "All The Glory",
     kind: "Music & ministry",
     blurb: "My own home for a worship album and a free chronological Bible study, with a music player and a members' area.",
@@ -58,6 +63,7 @@ export const PROJECTS: Project[] = [
   },
   {
     key: "manuchie",
+    shot: `${M}/manuchie-shot.webp`,
     name: "Manuchie",
     kind: "Music producer · Harare",
     blurb: "An artist site for the producer and music director behind Zimpraise.",
