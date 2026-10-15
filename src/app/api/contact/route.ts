@@ -75,10 +75,15 @@ export async function POST(req: Request) {
     );
   }
 
+  // Enquiries from Daniel's web design page (/websites) are flagged so they
+  // stand out from album-site messages.
+  const fromWebsites = rec.source === "websites";
   const subject =
     kind === "newsletter"
       ? "New newsletter signup — All The Glory"
-      : `New message from ${name || "someone"} (All The Glory)`;
+      : fromWebsites
+        ? `New website enquiry from ${name || "someone"}`
+        : `New message from ${name || "someone"} (All The Glory)`;
 
   const rows =
     kind === "newsletter"
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
   const htmlContent = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a">
       <h2 style="margin:0 0 4px">${kind === "newsletter" ? "New newsletter signup" : "New website message"}</h2>
-      <p style="margin:0 0 16px;color:#666">From the All The Glory website.</p>
+      <p style="margin:0 0 16px;color:#666">${fromWebsites ? "From your websites page (alltheglory.co.za/websites)." : "From the All The Glory website."}</p>
       ${rows
         .map(
           ([label, value]) =>

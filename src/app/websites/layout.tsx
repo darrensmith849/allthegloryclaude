@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import "./websites.css";
 
-// /websites - Daniel's web design page. It uses the All The Glory look
-// (the site's own fonts, sky backdrop and panels come from the root
-// layout), but stands alone: the album nav, footer, socials and music
-// player are hidden here (see components/site/*).
+// /websites - Daniel's web design page, styled after the Manuchie site in
+// his own colours (./websites.css). It uses the site's own fonts (Fraunces
+// + Inter from the root layout) but stands alone: the album nav, footer,
+// socials, music player and sky backdrop are hidden here (see
+// components/site/*).
 
 const title = "Websites by Daniel Jenkins";
 const description =
-  "Beautiful, custom websites for companies, ministries and people - designed with care and built from scratch. See sites I've built and start a project.";
+  "Beautiful websites, built with purpose. Custom websites for companies, ministries and people - see sites I've built and start a project.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
