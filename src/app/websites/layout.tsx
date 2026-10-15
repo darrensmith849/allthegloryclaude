@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Instrument_Serif, Inter_Tight } from "next/font/google";
+import { DM_Mono, Instrument_Serif, Inter_Tight } from "next/font/google";
 
-// /websites - Daniel's web design showcase, a standalone share link on the
-// All The Glory domain. Same type family as /daniel-jenkins so both
-// personal pages feel like one brand: a display serif, a tight sans for
-// reading and a mono for labels and web addresses.
+// /websites - Daniel's web design page, a standalone share link on the
+// All The Glory domain with its own look: a light grotesk for the big
+// type, an italic serif to set words apart, and a mono for small labels.
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], display: "swap", variable: "--ws-serif" });
-const sans = Inter_Tight({ subsets: ["latin"], display: "swap", variable: "--ws-sans" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--ws-mono" });
+const sans = Inter_Tight({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--ws-sans" });
+const mono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--ws-mono" });
 
 const title = "Websites by Daniel Jenkins";
-const description = "Custom websites for companies, brands and people. See a few I've built, then message me to chat about yours.";
+const description = "Custom websites for companies and people, designed and built from scratch. See sites I've built, then message me to chat about yours.";
 
 export const metadata: Metadata = {
   title: { absolute: title },

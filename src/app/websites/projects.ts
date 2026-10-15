@@ -1,17 +1,17 @@
-// The websites Daniel has built, shown on /websites. Each one links out to
-// the live site. Media lives in public/media/websites: <key>.mp4 is a short
-// silent scroll-through of the site (each with its own pace), <key>-icon is
-// its favicon.
+// The websites Daniel has built, listed on /websites. Each links out to the
+// live site; `icon` is the site's own favicon (public/media/websites).
+// `color` / `ink` are the site's brand colour and the text colour that
+// sits on it - a row floods with them when you point at it.
 
 export type Project = {
   key: string;
   name: string;
-  kind: string;
-  blurb: string;
+  tags: string[];
   host: string;
   url?: string; // not live yet = no link
-  video: string;
   icon: string;
+  color: string;
+  ink: string;
 };
 
 const M = "/media/websites";
@@ -20,51 +20,51 @@ export const PROJECTS: Project[] = [
   {
     key: "virgin",
     name: "Virgin Estate Agents",
-    kind: "Real estate · Zimbabwe",
-    blurb: "Property for sale and rent across Zimbabwe, with search by area and type and WhatsApp enquiries built in.",
+    tags: ["Real estate", "Zimbabwe"],
     host: "virginestateagentsandpropertyconsultants.co.zw",
     url: "https://virginestateagentsandpropertyconsultants.co.zw/",
-    video: `${M}/virgin.mp4`,
     icon: `${M}/virgin-icon.png`,
-  },
-  {
-    key: "crosscoders",
-    name: "CrossCoders",
-    kind: "Nonprofit · Software",
-    blurb: "A Christian software nonprofit that builds free apps and websites for churches.",
-    host: "crosscoders.co.za",
-    url: "https://www.crosscoders.co.za/",
-    video: `${M}/crosscoders.mp4`,
-    icon: `${M}/crosscoders-icon.png`,
+    color: "#1f4434",
+    ink: "#f4f1ea",
   },
   {
     key: "endgame",
     name: "Endgame Strategy Lab",
-    kind: "Strategy & marketing · Johannesburg",
-    blurb: "A strategy and digital marketing consultancy helping brands across South Africa grow.",
+    tags: ["Marketing", "Johannesburg"],
     host: "endgamestrategylab.co.za",
     url: "https://endgamestrategylab.co.za/",
-    video: `${M}/endgame.mp4`,
     icon: `${M}/endgame-icon.png`,
+    color: "#7de6f5",
+    ink: "#03161b",
+  },
+  {
+    key: "crosscoders",
+    name: "CrossCoders",
+    tags: ["Nonprofit", "Software"],
+    host: "crosscoders.co.za",
+    url: "https://www.crosscoders.co.za/",
+    icon: `${M}/crosscoders-icon.png`,
+    color: "#13b24a",
+    ink: "#ffffff",
   },
   {
     key: "alltheglory",
     name: "All The Glory",
-    kind: "Music & ministry",
-    blurb: "A worship album, a free chronological Bible study and a members' area, all in one place.",
+    tags: ["Music", "Ministry"],
     host: "alltheglory.co.za",
     url: "https://www.alltheglory.co.za/",
-    video: `${M}/alltheglory.mp4`,
     icon: `${M}/alltheglory-icon.png`,
+    color: "#d8b25a",
+    ink: "#141008",
   },
   {
     key: "manuchie",
     name: "Manuchie",
-    kind: "Music producer · Harare",
-    blurb: "An artist site for the producer and music director behind Zimpraise.",
+    tags: ["Music producer", "Harare"],
     host: "manuchie",
-    video: `${M}/manuchie.mp4`,
     icon: `${M}/manuchie-icon.svg`,
+    color: "#ce5018",
+    ink: "#ffffff",
   },
 ];
 
