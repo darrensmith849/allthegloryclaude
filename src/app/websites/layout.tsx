@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { DM_Mono, Instrument_Serif, Inter_Tight } from "next/font/google";
 
-// /websites - Daniel's web design page, a standalone share link on the
-// All The Glory domain with its own look: a light grotesk for the big
-// type, an italic serif to set words apart, and a mono for small labels.
-const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], display: "swap", variable: "--ws-serif" });
-const sans = Inter_Tight({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--ws-sans" });
-const mono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--ws-mono" });
+// /websites - Daniel's web design page. It uses the All The Glory look
+// (the site's own fonts, sky backdrop and panels come from the root
+// layout), but stands alone: the album nav, footer, socials and music
+// player are hidden here (see components/site/*).
 
 const title = "Websites by Daniel Jenkins";
-const description = "Custom websites for companies and people, designed and built from scratch. See sites I've built, then message me to chat about yours.";
+const description =
+  "Beautiful, custom websites for companies, ministries and people - designed with care and built from scratch. See sites I've built and start a project.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -35,5 +33,5 @@ export const metadata: Metadata = {
 };
 
 export default function WebsitesLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${serif.variable} ${sans.variable} ${mono.variable}`}>{children}</div>;
+  return children;
 }

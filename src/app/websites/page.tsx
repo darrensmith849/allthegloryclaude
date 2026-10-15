@@ -1,512 +1,420 @@
-import { CONTACT, PROJECTS } from "./projects";
-import { Clock, CopyEmail, Reveal, Rise } from "./motion";
+import ProcessSteps from "@/components/ui/process-steps";
+import FAQ from "@/components/ui/faq";
+import { CONTACT, PROJECTS, type Project } from "./projects";
+import { CopyEmail, Reveal } from "./motion";
 
-// /websites - Daniel's page for selling the websites he builds. A
-// standalone share link on the All The Glory domain (the album site's nav,
-// footer, socials and player are hidden here - see components/site/*).
+// /websites - Daniel's page for selling the websites he builds. It wears
+// the All The Glory look - the sky backdrop, Fraunces headings, amber
+// accents, glass panels, the same step cards and question list as
+// /commissions - but stands alone as a share link: the album nav, footer,
+// socials and player are hidden here (see components/site/*).
 //
-// Its own look, drawn from studio sites Daniel picked: deep ink with slow
-// aurora colour, big light type mixed with an italic serif, mono labels,
-// a live local clock, a spinning "let's talk" badge, a two-circle diagram
-// and huge closing words on cream. The sites he has built are plain links
-// with their favicons; each row floods with that site's own brand colour
-// when you point at it. No screenshots, no previews, no prices.
+// The sites he has built show as cards with their own logo glowing in the
+// site's brand colour, linking out to the live site. No screenshots or
+// previews, and no prices - pricing is a private conversation.
+
+const SERVICES = [
+  { title: "Business websites", body: "A polished home for your company: who you are, what you offer, and an easy way for customers to reach you." },
+  { title: "Personal & artist sites", body: "For musicians, creatives and professionals who want to be found, heard and remembered." },
+  { title: "Churches & ministries", body: "Share your message, your events and ways to give, in a place that feels like home." },
+  { title: "Property & listings", body: "Searchable listings with photos, prices and enquiry buttons that send leads straight to you." },
+  { title: "Launch pages", body: "One focused, beautiful page for a product, an event or a campaign." },
+  { title: "Website refresh", body: "Already have a site that's showing its age? I'll redesign it and bring it up to date." },
+];
 
 const INCLUDED = [
-  "Designed from scratch, around you",
-  "Looks right on every phone",
+  "Custom design, made just for you",
+  "Looks right on phones, tablets and computers",
   "Set up on your own web address",
-  "WhatsApp and enquiry buttons built in",
-  "Ready to be found on Google",
-  "A message away after launch",
+  "WhatsApp, email and contact buttons",
+  "Ready for Google, with proper titles and descriptions",
+  "Smart link previews on WhatsApp and social media",
+  "Fast and secure as standard",
+  "Help after launch - I'm a message away",
 ];
 
 const STEPS = [
-  { title: "Say hello", body: "Message me on WhatsApp or email. Tell me about you, your business and what you'd love your website to do." },
-  { title: "Design & build", body: "I design it around you and build it from scratch. You see it come together, and we shape it until it feels right." },
-  { title: "Go live", body: "We launch it on your own web address - fast, sharp, and ready for people to find." },
+  { title: "Let's talk", body: "Message me on WhatsApp or email. Tell me about you, your work and what you'd love your website to do." },
+  { title: "Design", body: "I design your site around your story and the people you want to reach, and share it with you as it takes shape." },
+  { title: "Build & refine", body: "I build it from scratch, and we refine it together until it feels exactly right." },
+  { title: "Launch", body: "Your site goes live on your own web address, ready to share with the world." },
 ];
 
-function WhatsAppIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
+const FAQS = [
+  {
+    q: "How much does a website cost?",
+    a: "Every website is different, so pricing is a private conversation. Message me with what you need and I'll give you a clear, honest quote.",
+  },
+  {
+    q: "How long does it take?",
+    a: "It depends on the size of the site. We'll agree on a timeline together before any work begins.",
+  },
+  {
+    q: "Do I need my own web address?",
+    a: "If you don't have one yet, I'll help you choose one and get it set up.",
+  },
+  {
+    q: "What do you need from me to start?",
+    a: "A short chat about you and your work, plus any logo, photos and wording you already have. If you don't have those yet, we'll work it out together.",
+  },
+  {
+    q: "Will it work on phones?",
+    a: "Yes. Every site is designed to look and work beautifully on phones, tablets and computers.",
+  },
+  {
+    q: "Can you help after the site is live?",
+    a: "Yes. If something needs changing after launch, just send me a message.",
+  },
+];
+
+function WhatsAppIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.08.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35M12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.56.93.95-3.47-.22-.36a9.4 9.4 0 0 1-1.44-5.01c0-5.2 4.24-9.43 9.44-9.43 2.52 0 4.89.98 6.67 2.77a9.37 9.37 0 0 1 2.76 6.67c0 5.2-4.24 9.43-9.44 9.43m8.03-17.46A11.27 11.27 0 0 0 12.05.72C5.8.72.7 5.8.7 12.07c0 2 .52 3.95 1.52 5.67L.6 23.65l6.05-1.59a11.3 11.3 0 0 0 5.4 1.38h.01c6.26 0 11.35-5.09 11.36-11.35 0-3.03-1.18-5.89-3.33-8.03" />
     </svg>
   );
 }
 
-function Mail({ size = 18 }: { size?: number }) {
+function Check() {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   );
 }
 
-// A round badge with words running around it, slowly turning.
-function TalkBadge() {
+function SectionHead({ eyebrow, title, accent, body }: { eyebrow: string; title: string; accent?: string; body?: string }) {
   return (
-    <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-badge" aria-label="Let's talk on WhatsApp">
-      <svg viewBox="0 0 120 120" className="ws-badge-ring" aria-hidden="true">
-        <defs>
-          <path id="ws-ring" d="M60,60 m-47,0 a47,47 0 1,1 94,0 a47,47 0 1,1 -94,0" />
-        </defs>
-        <text>
-          <textPath href="#ws-ring" textLength="292" lengthAdjust="spacing">
-            LET&apos;S TALK ✳ WHATSAPP ME ✳ LET&apos;S TALK ✳ WHATSAPP ME ✳
-          </textPath>
-        </text>
-      </svg>
-      <span className="ws-badge-core">
-        <WhatsAppIcon size={22} />
-      </span>
+    <Reveal className="mb-10 text-center md:mb-14">
+      <div className="eyebrow eyebrow-amber">{eyebrow}</div>
+      <h2 className="font-display mt-3 text-3xl font-normal tracking-tight text-white md:text-5xl">
+        {title}
+        {accent && (
+          <>
+            {" "}
+            <span className="italic text-[var(--colour-amber)]">{accent}</span>
+          </>
+        )}
+      </h2>
+      {body && <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/65 md:text-base">{body}</p>}
+    </Reveal>
+  );
+}
+
+function WorkCard({ p, i, big }: { p: Project; i: number; big: boolean }) {
+  const inner = (
+    <>
+      <div className={`ws-plate ${big ? "aspect-[16/8]" : "aspect-[16/10]"}`}>
+        <span className="eyebrow absolute left-5 top-5">{String(i + 1).padStart(2, "0")}</span>
+        <span className="absolute right-5 top-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/60">
+          <span className={`h-1.5 w-1.5 rounded-full ${p.url ? "bg-emerald-400" : "bg-[var(--colour-amber)]"}`} />
+          {p.url ? "Live" : "Coming soon"}
+        </span>
+        <span className={`ws-logo ${big ? "ws-logo-lg" : ""}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.logo} alt={`${p.name} logo`} />
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col p-6 md:p-7">
+        <div className="eyebrow eyebrow-amber">{p.kind}</div>
+        <h3 className="font-display mt-3 text-2xl tracking-tight text-white md:text-[1.75rem]">{p.name}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-white/65 md:text-[15px]">{p.blurb}</p>
+        <div className="mt-auto pt-6">
+          <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
+            <span className="truncate text-xs text-white/40">{p.url ? p.host : "Launching soon"}</span>
+            {p.url && (
+              <span className="ws-visit shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--colour-amber)]">
+                Visit site <span className="inline-block">↗</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+  const style = { "--c": p.color } as React.CSSProperties;
+  return p.url ? (
+    <a href={p.url} target="_blank" rel="noopener noreferrer" className="ws-card panel-scrim panel-flush-mobile" style={style} aria-label={`${p.name} - visit the site (opens in a new tab)`}>
+      {inner}
     </a>
-  );
-}
-
-// Two circles - what it looks like, and how well it works - meeting at you.
-function Venn() {
-  return (
-    <svg viewBox="0 0 600 420" className="ws-venn" role="img" aria-label="Design and build, meeting at you">
-      <circle className="ws-venn-l" cx="235" cy="210" r="160" />
-      <circle className="ws-venn-r" cx="365" cy="210" r="160" />
-      <text x="128" y="214" textAnchor="middle">DESIGN</text>
-      <text x="472" y="214" textAnchor="middle">BUILD</text>
-      <circle className="ws-venn-dot" cx="300" cy="210" r="9" />
-      <text x="300" y="250" textAnchor="middle" className="ws-venn-you">
-        YOU
-      </text>
-    </svg>
+  ) : (
+    <div className="ws-card panel-scrim panel-flush-mobile" style={style}>
+      {inner}
+    </div>
   );
 }
 
 export default function WebsitesPage() {
-  const live = PROJECTS.filter((p) => p.url).length;
   return (
-    <main className="ws relative min-h-screen overflow-x-clip">
+    <main className="relative overflow-x-clip bg-transparent">
       <style>{`
-        .ws {
-          --bg:#07091a; --ink:#eef0ff; --muted:rgba(238,240,255,.62); --faint:rgba(238,240,255,.36); --line:rgba(238,240,255,.12);
-          --mint:#9ff0d4; --blue:#4256ff; --violet:#8f5cff; --wa:#25d366;
-          --cream:#f2ede4; --cink:#0b0c16; --cmuted:rgba(11,12,22,.62); --cline:rgba(11,12,22,.14);
-          --pad: clamp(20px, 4.5vw, 72px);
-          --max: 1400px;
-          --section: clamp(100px, 12vw, 190px);
-          background: var(--bg); color: var(--ink);
-          font-family: var(--ws-sans), system-ui, sans-serif;
-          font-size: clamp(15px, .45vw + 13px, 17px);
-          -webkit-font-smoothing: antialiased;
-        }
-        .ws ::selection { background: var(--mint); color: var(--bg); }
-        .ws-wrap { width:100%; max-width: calc(var(--max) + var(--pad) * 2); margin-inline:auto; padding-inline: var(--pad); }
-        .ws-it { font-family: var(--ws-serif), Georgia, serif; font-style: italic; font-weight:400; letter-spacing:-.02em; }
-        .ws-mono, .ws-label { font-family: var(--ws-mono), ui-monospace, monospace; }
-        .ws-label { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color: var(--faint); }
-
-        /* floating menu bar */
-        .ws-nav { position:fixed; z-index:50; top:14px; left:50%; transform:translateX(-50%); width:min(calc(100% - 24px), 1180px); height:58px;
-          display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 8px 0 10px; border-radius:999px;
-          background: rgba(10,12,32,.82); border:1px solid rgba(238,240,255,.1);
-          backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); }
-        .ws-logo { display:flex; align-items:center; gap:11px; font-size:15px; font-weight:500; letter-spacing:-.01em; }
-        .ws-logo-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:99px; color:#fff; font-size:19px;
-          background: conic-gradient(from 210deg, var(--blue), var(--violet), var(--mint), var(--blue)); }
-        .ws-logo-mark span { margin-top:-2px; }
-        .ws-navlinks a { font-family: var(--ws-mono), monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color: var(--muted); transition: color .2s; }
-        .ws-navlinks a:hover { color: var(--ink); }
-        .ws-cta { display:inline-flex; align-items:center; gap:9px; height:42px; padding:0 18px; border-radius:99px; background: var(--mint); color: var(--bg);
-          font-size:14px; font-weight:500; transition: transform .25s cubic-bezier(.16,1,.3,1), background-color .25s; }
-        .ws-cta:hover { transform: translateY(-1px); background:#c4f7e6; }
-
-        /* hero */
-        .ws-hero { position:relative; min-height: 100svh; display:flex; flex-direction:column; overflow:hidden; isolation:isolate; }
-        .ws-hero::after { content:""; position:absolute; inset:auto 0 0 0; height:30%; background: linear-gradient(to bottom, transparent, var(--bg)); z-index:-1; }
-        .ws-aurora { position:absolute; inset:0; z-index:-2; pointer-events:none; }
-        .ws-aurora i { position:absolute; border-radius:50%; will-change: transform; }
-        .ws-aurora i:nth-child(1) { width:80vmax; height:80vmax; left:-30vmax; top:-38vmax; background: radial-gradient(closest-side, rgba(66,86,255,.62), transparent); animation: ws-a 24s ease-in-out infinite alternate; }
-        .ws-aurora i:nth-child(2) { width:65vmax; height:65vmax; right:-28vmax; top:-18vmax; background: radial-gradient(closest-side, rgba(143,92,255,.5), transparent); animation: ws-b 30s ease-in-out infinite alternate; }
-        .ws-aurora i:nth-child(3) { width:55vmax; height:55vmax; left:18vw; bottom:-38vmax; background: radial-gradient(closest-side, rgba(159,240,212,.32), transparent); animation: ws-c 27s ease-in-out infinite alternate; }
-        .ws-aurora i:nth-child(4) { width:34vmax; height:34vmax; left:46vw; top:12vh; background: radial-gradient(closest-side, rgba(90,110,255,.38), transparent); animation: ws-d 19s ease-in-out infinite alternate; }
-        @keyframes ws-a { to { transform: translate(22vw, 16vh) scale(1.12); } }
-        @keyframes ws-b { to { transform: translate(-18vw, 22vh) scale(.9); } }
-        @keyframes ws-c { to { transform: translate(-14vw, -18vh) scale(1.2); } }
-        @keyframes ws-d { to { transform: translate(-26vw, 20vh) scale(1.3); } }
-        .ws-grain { position:absolute; inset:0; z-index:-1; pointer-events:none; opacity:.16; mix-blend-mode: overlay;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E"); }
-        .ws-h1 { font-weight:300; font-size: clamp(2.6rem, min(9.6vw, 15vh), 11rem); line-height:.9; letter-spacing:-.05em; }
-        .ws-h1 .ws-it { font-size:1.06em; letter-spacing:-.035em; }
-        @media (max-width: 639px) { .ws-h1 { font-size: 12.2vw; } }
-        .ws-intro { max-width:27rem; font-size: clamp(1.02rem, 1.1vw, 1.15rem); line-height:1.6; color: var(--muted); }
-        .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; height:54px; padding:0 24px; border-radius:99px; font-size:15px; font-weight:500; white-space:nowrap;
-          transition: transform .25s cubic-bezier(.16,1,.3,1), background-color .25s, border-color .25s, color .25s; }
-        .ws-btn:hover { transform: translateY(-2px); }
-        .ws-btn-ink { background: var(--ink); color: var(--bg); }
-        .ws-btn-ink:hover { background:#fff; }
-        .ws-btn-ink svg { color: #16a34a; }
-        .ws-btn-ghost { border:1px solid rgba(238,240,255,.28); color: var(--ink); }
-        .ws-btn-ghost:hover { border-color: var(--ink); background: rgba(238,240,255,.06); }
-        .ws-corners { display:flex; justify-content:space-between; align-items:center; gap:16px; padding-block: 22px; border-top:1px solid var(--line); }
-        .ws-dot { width:7px; height:7px; border-radius:99px; background: var(--mint); box-shadow: 0 0 0 0 rgba(159,240,212,.6); animation: ws-ping 2.4s infinite; }
-        @keyframes ws-ping { 70% { box-shadow: 0 0 0 9px rgba(159,240,212,0); } 100% { box-shadow: 0 0 0 0 rgba(159,240,212,0); } }
-
-        .ws-badge { position:relative; display:grid; place-items:center; width: clamp(104px, 9vw, 138px); aspect-ratio:1; flex:none; color: var(--ink); }
-        .ws-badge-ring { position:absolute; inset:0; width:100%; height:100%; animation: ws-spin 18s linear infinite; }
-        .ws-badge-ring text { font-family: var(--ws-mono), monospace; font-size:10.5px; letter-spacing:.06em; fill: currentColor; }
-        .ws-badge-core { display:grid; place-items:center; width:46%; aspect-ratio:1; border-radius:99px; background: var(--mint); color: var(--bg);
-          transition: transform .4s cubic-bezier(.16,1,.3,1); }
-        .ws-badge:hover .ws-badge-core { transform: scale(1.12) rotate(-12deg); }
-        @keyframes ws-spin { to { transform: rotate(360deg); } }
-
-        /* statement */
-        .ws-caps { font-family: var(--ws-serif), Georgia, serif; text-transform:uppercase; font-weight:400; letter-spacing:.01em;
-          font-size: clamp(2.1rem, 5.4vw, 5.2rem); line-height:1.04; text-align:center; }
-        .ws-caps em { display:block; font-style:normal; color: var(--mint); }
-
-        /* work */
-        .ws-h2 { font-weight:300; font-size: clamp(2.8rem, 7vw, 7rem); line-height:.92; letter-spacing:-.05em; }
-        .ws-list { border-bottom:1px solid var(--line); }
-        .ws-row { position:relative; display:block; isolation:isolate; border-top:1px solid var(--line); color: var(--ink); transition: color .45s cubic-bezier(.7,0,.2,1); }
-        .ws-row::before { content:""; position:absolute; inset:0; z-index:-1; background: var(--c); transform: scaleY(0); transform-origin: 50% 100%;
-          transition: transform .55s cubic-bezier(.7,0,.2,1); }
-        a.ws-row:hover, a.ws-row:focus-visible { color: var(--ci); outline:none; }
-        a.ws-row:hover::before, a.ws-row:focus-visible::before { transform: scaleY(1); }
-        .ws-row-in { display:grid; align-items:center; grid-template-columns: 48px minmax(0,1fr) 40px; column-gap: 14px; row-gap: 10px; padding-block: 22px; }
-        .ws-num { font-family: var(--ws-mono), monospace; font-size:12px; opacity:.5; }
-        .ws-tile { grid-row: span 1; display:grid; place-items:center; width:48px; height:48px; border-radius:14px; background: rgba(238,240,255,.07);
-          border:1px solid rgba(238,240,255,.1); transition: background-color .45s, transform .45s cubic-bezier(.16,1,.3,1); }
-        .ws-tile img { width:26px; height:26px; border-radius:6px; object-fit:contain; }
-        a.ws-row:hover .ws-tile { background: rgba(255,255,255,.92); transform: rotate(-8deg) scale(1.06); }
-        .ws-rname { font-weight:300; font-size: clamp(1.75rem, 5.2vw, 5.2rem); line-height:1.12; padding-bottom:.04em; letter-spacing:-.045em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-          transition: transform .55s cubic-bezier(.16,1,.3,1); }
-        a.ws-row:hover .ws-rname { transform: translateX(14px); }
-        .ws-tags { display:flex; flex-wrap:wrap; gap:6px; }
-        .ws-tag { font-family: var(--ws-mono), monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; height:26px; display:inline-flex; align-items:center;
-          padding:0 10px; border-radius:99px; border:1px solid currentColor; opacity:.55; }
-        .ws-go { display:grid; place-items:center; width:40px; height:40px; border-radius:99px; border:1px solid currentColor; font-size:16px; opacity:.7;
-          transition: transform .45s cubic-bezier(.16,1,.3,1), opacity .3s; justify-self:end; }
-        a.ws-row:hover .ws-go { transform: rotate(45deg); opacity:1; }
-        .ws-soon { font-family: var(--ws-mono), monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color: var(--mint); white-space:nowrap; }
-        .ws-row .ws-num { grid-column: 1 / -1; grid-row: 1; }
-        .ws-row .ws-tile { grid-column: 1; grid-row: 2; }
-        .ws-row .ws-rname { grid-column: 2; grid-row: 2; white-space: normal; font-size: clamp(1.75rem, 7.6vw, 2.8rem); }
-        .ws-row .ws-go, .ws-row .ws-soon { grid-column: 3; grid-row: 2; }
-        .ws-row .ws-tags { grid-column: 2 / -1; grid-row: 3; }
-        @media (min-width: 900px) {
-          .ws-row .ws-num, .ws-row .ws-tile, .ws-row .ws-rname, .ws-row .ws-go, .ws-row .ws-soon, .ws-row .ws-tags { grid-row: auto; grid-column: auto; }
-          .ws-row .ws-rname { white-space: nowrap; font-size: clamp(1.75rem, 5.2vw, 5.2rem); }
-          .ws-row-in { grid-template-columns: 56px 64px minmax(0,1fr) auto 56px; column-gap: clamp(16px, 2vw, 32px); padding-block: clamp(24px, 2.6vw, 38px); }
-          .ws-row .ws-tags { justify-content:flex-end; }
-          .ws-tile { width:64px; height:64px; border-radius:18px; }
-          .ws-tile img { width:32px; height:32px; }
-          .ws-go { width:56px; height:56px; font-size:20px; }
-        }
-
-        /* what you get */
-        .ws-venn { width:100%; height:auto; overflow:visible; }
-        .ws-venn circle { fill:none; stroke: rgba(238,240,255,.42); stroke-width:1.2; }
-        .ws-venn-l { animation: ws-l 7s ease-in-out infinite alternate; }
-        .ws-venn-r { animation: ws-r 7s ease-in-out infinite alternate; }
-        @keyframes ws-l { to { transform: translateX(-14px); } }
-        @keyframes ws-r { to { transform: translateX(14px); } }
-        .ws-venn .ws-venn-dot { fill: var(--mint); stroke:none; filter: drop-shadow(0 0 14px rgba(159,240,212,.8)); }
-        .ws-venn text { font-family: var(--ws-mono), monospace; font-size:12px; letter-spacing:.24em; fill: var(--muted); }
-        .ws-venn .ws-venn-you { fill: var(--mint); }
-        .ws-inc li { display:grid; grid-template-columns: 44px minmax(0,1fr); padding-block:16px; border-top:1px solid var(--line); font-size: clamp(1.05rem, 1.3vw, 1.3rem); font-weight:300; }
-        .ws-inc li span { font-family: var(--ws-mono), monospace; font-size:11px; color: var(--mint); padding-top:.45em; }
-
-        /* process */
-        .ws-steps { display:grid; grid-template-columns: minmax(0,1fr); border-top:1px solid var(--line); }
-        .ws-step { padding: 28px 0 8px; border-bottom:1px solid var(--line); }
-        @media (min-width: 768px) {
-          .ws-steps { grid-template-columns: repeat(3, minmax(0,1fr)); border-bottom:1px solid var(--line); }
-          .ws-step { padding: 32px clamp(16px, 2.4vw, 36px) 40px; border-bottom:0; border-left:1px solid var(--line); }
-          .ws-step:first-child { border-left:0; padding-left:0; }
-        }
-
-        /* contact */
-        .ws-cream { background: var(--cream); color: var(--cink); }
-        .ws-cream .ws-label { color: var(--cmuted); }
-        .ws-giant { font-weight:700; text-transform:uppercase; font-size: clamp(4.4rem, 17vw, 18rem); line-height:.8; letter-spacing:-.065em; }
-        .ws-giant .ws-it { text-transform:none; font-weight:400; letter-spacing:-.04em; font-size:1.08em; }
-        .ws-card { display:flex; flex-direction:column; justify-content:space-between; gap:28px; min-height:240px; padding: clamp(22px, 2.6vw, 36px); border-radius:24px; }
-        .ws-card-dark { background: var(--cink); color: var(--cream); }
-        .ws-card-line { border:1px solid rgba(11,12,22,.2); }
-        .ws-card .ws-big { font-weight:300; font-size: clamp(1.7rem, 2.8vw, 2.7rem); letter-spacing:-.035em; line-height:1.05; }
-        .ws-btn-wa { background: var(--wa); color:#052e14; }
-        .ws-btn-wa:hover { background:#3ae07a; }
-        .ws-btn-dark { background: var(--cink); color: var(--cream); }
-        .ws-btn-dark:hover { background:#000; }
-        .ws-copy { height:32px; padding:0 14px; border-radius:99px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; border:1px solid rgba(11,12,22,.25);
-          color: var(--cmuted); transition: color .2s, border-color .2s; }
-        .ws-copy:hover { color: var(--cink); border-color: var(--cink); }
-        .ws-foot { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; padding-block:26px; border-top:1px solid var(--cline);
-          font-family: var(--ws-mono), monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color: var(--cmuted); }
-
-        @media (prefers-reduced-motion: reduce) {
-          .ws-aurora i, .ws-badge-ring, .ws-venn-l, .ws-venn-r, .ws-dot { animation:none; }
-        }
+        .ws-card { display:flex; flex-direction:column; height:100%; overflow:hidden;
+          transition: transform .5s cubic-bezier(.16,1,.3,1), border-color .5s, box-shadow .5s; }
+        a.ws-card:hover { transform: translateY(-6px); border-color: color-mix(in srgb, var(--c) 45%, transparent);
+          box-shadow: 0 40px 90px rgba(0,0,0,.45), 0 30px 90px -30px color-mix(in srgb, var(--c) 60%, transparent); }
+        .ws-plate { position:relative; display:grid; place-items:center; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.08);
+          background:
+            radial-gradient(60% 85% at 50% 100%, color-mix(in srgb, var(--c) 38%, transparent), transparent 72%),
+            radial-gradient(50% 60% at 50% 0%, rgba(241,215,166,.08), transparent 70%),
+            linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.28)); }
+        .ws-plate::before { content:""; position:absolute; inset:-40%; pointer-events:none; opacity:.55;
+          background: repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.05) 0 1px, transparent 1px 46px);
+          -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 55%); mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 55%); }
+        .ws-logo { position:relative; display:grid; place-items:center; width: clamp(88px, 22%, 112px); aspect-ratio:1; border-radius:26px;
+          background: rgba(9,8,14,.6); border:1px solid rgba(255,255,255,.14);
+          box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 70px -6px color-mix(in srgb, var(--c) 55%, transparent);
+          transition: transform .6s cubic-bezier(.16,1,.3,1), box-shadow .6s; }
+        .ws-logo-lg { width: clamp(96px, 20%, 132px); border-radius:30px; }
+        .ws-logo img { width:64%; height:64%; object-fit:contain; border-radius:14px; }
+        .ws-logo img[src*="logo-dove"] { width:92%; height:92%; }
+        a.ws-card:hover .ws-logo { transform: translateY(-4px) scale(1.06); box-shadow: 0 30px 70px rgba(0,0,0,.6), 0 0 110px 0 color-mix(in srgb, var(--c) 60%, transparent); }
+        .ws-visit span { transition: transform .35s cubic-bezier(.16,1,.3,1); }
+        a.ws-card:hover .ws-visit span { transform: translate(3px,-3px); }
+        .ws-service { transition: border-color .4s, transform .5s cubic-bezier(.16,1,.3,1); }
+        .ws-service:hover { border-color: rgba(216,178,90,.35); transform: translateY(-3px); }
+        .ws-wa { display:inline-flex; align-items:center; gap:10px; }
       `}</style>
 
-      {/* ───────── Floating menu ───────── */}
-      <header className="ws-nav">
-        <a href="#top" className="ws-logo" aria-label="Daniel Jenkins - websites, back to top">
-          <span className="ws-logo-mark ws-it">
-            <span>dj</span>
-          </span>
-          <span className="hidden sm:inline">Daniel Jenkins</span>
-        </a>
-        <nav className="ws-navlinks hidden items-center gap-8 md:flex">
-          <a href="#work">Work</a>
-          <a href="#how">Process</a>
-          <a href="#contact">Contact</a>
-        </nav>
-        <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-cta">
-          <WhatsAppIcon size={16} />
-          Let&apos;s talk
-        </a>
+      {/* ───────── Top bar ───────── */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-colour-bg/75 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6" style={{ paddingInline: "var(--page-pad)", height: "var(--header-height)" }}>
+          <a href="#top" className="flex items-baseline gap-3">
+            <span className="font-display text-[18px] tracking-tight text-white/95">Daniel Jenkins</span>
+            <span className="eyebrow hidden sm:inline">Websites</span>
+          </a>
+          <nav className="hidden items-center gap-8 lg:flex">
+            {[
+              ["#work", "Work"],
+              ["#services", "Services"],
+              ["#process", "Process"],
+              ["#about", "About"],
+              ["#faq", "FAQ"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/55 transition-colors hover:text-white/90">
+                {label}
+              </a>
+            ))}
+          </nav>
+          <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-primary !px-4 !py-2.5 !text-[11px]">
+            Start a project
+          </a>
+        </div>
       </header>
 
       {/* ───────── Hero ───────── */}
-      <section id="top" className="ws-hero">
-        <div className="ws-aurora" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="ws-grain" aria-hidden="true" />
-
-        <div className="ws-wrap flex flex-1 flex-col justify-center pb-10 pt-[clamp(110px,15vh,180px)]">
-          <h1 className="ws-h1">
-            <Rise>
-              <span className="ws-it">Websites</span>
-            </Rise>
-            <Rise delay={0.12} className="pl-[5vw] md:pl-[10vw]">
-              for companies
-            </Rise>
-            <Rise delay={0.24} className="pl-[2vw] md:pl-[3vw]">
-              &amp; <span className="ws-it">people.</span>
-            </Rise>
-          </h1>
-          <div className="mt-[clamp(32px,4.5vw,64px)] flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
-            <Reveal delay={0.4}>
-              <p className="ws-intro">
-                Hi, I&apos;m Daniel. I design and build custom websites from scratch - made to fit you, and set up on your
-                own web address.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-ink">
-                  <WhatsAppIcon />
-                  WhatsApp me
-                </a>
-                <a href={CONTACT.emailHref} className="ws-btn ws-btn-ghost">
-                  <Mail />
-                  Email me
-                </a>
-              </div>
-            </Reveal>
-            <Reveal delay={0.55} className="self-end md:self-auto">
-              <TalkBadge />
-            </Reveal>
-          </div>
-        </div>
-
-        <div className="ws-wrap">
-          <div className="ws-corners ws-label">
-            <span className="flex items-center gap-3">
-              <span className="ws-dot" aria-hidden="true" />
-              Taking on new projects
-            </span>
-            <a href="#work" className="hidden transition-colors hover:text-[var(--ink)] sm:inline">
-              Scroll ↓
-            </a>
-            <span>
-              Local time <Clock /> GMT+2
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ───────── Statement ───────── */}
-      <section className="py-[var(--section)]">
-        <div className="ws-wrap">
+      <section id="top" className="relative flex min-h-[100svh] flex-col items-center px-6 pb-12 pt-[calc(var(--header-height)+clamp(56px,11vh,120px))] text-center">
+        <div className="flex flex-1 flex-col items-center justify-center">
           <Reveal>
-            <p className="ws-label text-center">( A thought )</p>
-            <h2 className="ws-caps mx-auto mt-8 max-w-[18ch]">
-              Your website is your first handshake. <em>Let&apos;s make it a good one.</em>
-            </h2>
+            <div className="eyebrow eyebrow-amber">Web design &amp; development</div>
           </Reveal>
-        </div>
-      </section>
-
-      {/* ───────── Work ───────── */}
-      <section id="work" className="pb-[var(--section)]">
-        <div className="ws-wrap">
-          <Reveal>
-            <div className="flex flex-wrap items-end justify-between gap-6 pb-[clamp(36px,4vw,64px)]">
-              <div>
-                <p className="ws-label">( Selected work · {String(PROJECTS.length).padStart(2, "0")} )</p>
-                <h2 className="ws-h2 mt-6">
-                  Sites I&apos;ve <span className="ws-it">built</span>
-                </h2>
-              </div>
-              <p className="ws-label max-w-[16rem] leading-relaxed md:text-right">
-                {live} live, {PROJECTS.length - live} on the way. Tap a site to visit it ↗
-              </p>
+          <Reveal delay={0.08}>
+            <h1 className="font-display mt-6 max-w-[15ch] text-[clamp(2.8rem,7vw,6.4rem)] font-normal leading-[1.02] tracking-tight text-white [text-shadow:0_24px_90px_rgba(0,0,0,0.62)]">
+              Websites that bring your vision <span className="italic text-[var(--colour-amber)]">to light.</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+              I design and build beautiful, custom websites for companies, ministries and people - made from scratch, made
+              for every screen, and launched on your own web address.
+            </p>
+          </Reveal>
+          <Reveal delay={0.24}>
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
+              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-primary ws-wa">
+                <WhatsAppIcon />
+                Start a project →
+              </a>
+              <a href="#work" className="btn btn-ghost">
+                See my work
+              </a>
             </div>
           </Reveal>
         </div>
-        <ul className="ws-list">
-          {PROJECTS.map((p, i) => {
-            const inner = (
-              <div className="ws-wrap ws-row-in">
-                <span className="ws-num">{String(i + 1).padStart(2, "0")}</span>
-                <span className="ws-tile">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.icon} alt="" width={32} height={32} />
-                </span>
-                <span className="ws-rname">{p.name}</span>
-                <span className="ws-tags">
-                  {p.tags.map((t) => (
-                    <span key={t} className="ws-tag">
-                      {t}
-                    </span>
-                  ))}
-                </span>
-                {p.url ? (
-                  <span className="ws-go" aria-hidden="true">
-                    ↗
-                  </span>
-                ) : (
-                  <span className="ws-soon justify-self-end">Soon</span>
-                )}
-              </div>
-            );
-            const style = { "--c": p.color, "--ci": p.ink } as React.CSSProperties;
-            return (
-              <li key={p.key}>
-                {p.url ? (
-                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="ws-row" style={style} aria-label={`${p.name} - visit the site (opens in a new tab)`}>
-                    {inner}
-                  </a>
-                ) : (
-                  <div className="ws-row" style={style} aria-label={`${p.name} - launching soon`}>
-                    {inner}
-                  </div>
-                )}
+
+        <Reveal delay={0.4} className="mt-16 w-full">
+          <div className="eyebrow">Sites I&apos;ve built</div>
+          <ul className="mx-auto mt-5 flex max-w-5xl flex-wrap items-center justify-center gap-x-9 gap-y-4">
+            {PROJECTS.map((p) => (
+              <li key={p.key} className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.logo} alt="" width={28} height={28} className="h-7 w-7 rounded-md object-contain" />
+                <span className="font-display text-[15px] text-white/70">{p.name}</span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        </Reveal>
       </section>
 
-      {/* ───────── What you get ───────── */}
-      <section className="pb-[var(--section)]">
-        <div className="ws-wrap grid grid-cols-1 items-center gap-x-[clamp(32px,6vw,120px)] gap-y-14 md:grid-cols-2">
-          <Reveal>
-            <Venn />
-          </Reveal>
-          <Reveal delay={0.1}>
-            <p className="ws-label">( What you get )</p>
-            <h2 className="ws-h2 mt-6 !text-[clamp(2.4rem,4.6vw,4.6rem)]">
-              Looks right. <span className="ws-it">Works</span> right.
-            </h2>
-            <ul className="ws-inc mt-10">
-              {INCLUDED.map((t, i) => (
-                <li key={t}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
+      {/* ───────── Work ───────── */}
+      <section id="work" className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-16 md:py-24">
+        <SectionHead
+          eyebrow="Selected work"
+          title="Sites I've"
+          accent="built"
+          body="Each one designed from a blank page, around the people it's for. Tap any site to visit it."
+        />
+        <div className="grid gap-5 md:grid-cols-6">
+          {PROJECTS.map((p, i) => (
+            <Reveal key={p.key} delay={(i % 3) * 0.08} className={i < 2 ? "md:col-span-3" : "md:col-span-2"}>
+              <WorkCard p={p} i={i} big={i < 2} />
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────── Services ───────── */}
+      <section id="services" className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-16 md:py-24">
+        <SectionHead
+          eyebrow="What I build"
+          title="A website for every kind of"
+          accent="vision"
+          body="Whether you're a business, a ministry or one person with something to share, your site is shaped around you."
+        />
+        <div className="grid gap-4 md:grid-cols-3">
+          {SERVICES.map((s, i) => (
+            <Reveal key={s.title} delay={(i % 3) * 0.08}>
+              <div className="ws-service panel-scrim panel-flush-mobile h-full p-7">
+                <div className="flex items-center gap-3">
+                  <span aria-hidden="true" className="text-lg text-[var(--colour-amber)]">✦</span>
+                  <span className="h-px flex-1 bg-white/10" />
+                </div>
+                <h3 className="font-display mt-4 text-xl tracking-tight text-white md:text-2xl">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/65">{s.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* Every site includes */}
+        <Reveal className="mt-5">
+          <div className="panel-scrim panel-flush-mobile grid gap-10 p-8 md:grid-cols-[1fr_1.4fr] md:p-12">
+            <div>
+              <div className="eyebrow eyebrow-amber">Every website includes</div>
+              <h3 className="font-display mt-3 text-2xl tracking-tight text-white md:text-4xl">
+                Beautiful on the outside. <span className="italic text-[var(--colour-amber)]">Solid</span> underneath.
+              </h3>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/65 md:text-base">
+                The things that make a website feel professional come as standard - no matter the size of the project.
+              </p>
+            </div>
+            <ul className="grid content-center gap-x-8 gap-y-4 sm:grid-cols-2">
+              {INCLUDED.map((t) => (
+                <li key={t} className="flex items-start gap-3 text-sm leading-relaxed text-white/80 md:text-[15px]">
+                  <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-[rgba(216,178,90,0.4)] text-[var(--colour-amber)]">
+                    <Check />
+                  </span>
                   {t}
                 </li>
               ))}
             </ul>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* ───────── Process ───────── */}
-      <section id="how" className="pb-[var(--section)]">
-        <div className="ws-wrap">
-          <Reveal>
-            <p className="ws-label">( How it works )</p>
-            <h2 className="ws-h2 mt-6">
-              Three steps. <span className="ws-it">No fuss.</span>
-            </h2>
-          </Reveal>
-          <div className="ws-steps mt-[clamp(44px,5vw,80px)]">
-            {STEPS.map((s, i) => (
-              <Reveal key={s.title} delay={i * 0.08} className="ws-step">
-                <p className="ws-label">Step {String(i + 1).padStart(2, "0")}</p>
-                <h3 className="mt-6 text-[clamp(1.8rem,2.6vw,2.4rem)] font-light leading-none tracking-[-.035em]">{s.title}</h3>
-                <p className="mt-4 max-w-[24rem] leading-[1.65] text-[var(--muted)]">{s.body}</p>
-              </Reveal>
-            ))}
+      <div id="process" className="scroll-mt-24">
+        <ProcessSteps eyebrow="How it works" title="From first chat to launch day" steps={STEPS} />
+      </div>
+
+      {/* ───────── About ───────── */}
+      <section id="about" className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-16 md:py-24">
+        <Reveal>
+          <div className="panel-scrim panel-flush-mobile grid items-center gap-10 overflow-hidden p-6 md:grid-cols-[0.9fr_1.1fr] md:gap-14 md:p-10">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[14px] border border-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/media/daniel-cafe.jpg" alt="Daniel Jenkins" className="h-full w-full object-cover object-[50%_30%]" loading="lazy" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            </div>
+            <div>
+              <div className="eyebrow eyebrow-amber">About me</div>
+              <h2 className="font-display mt-3 text-3xl font-normal tracking-tight text-white md:text-5xl">
+                Hi, I&apos;m <span className="italic text-[var(--colour-amber)]">Daniel.</span>
+              </h2>
+              <div className="mt-6 space-y-4 text-sm leading-relaxed text-white/70 md:text-base">
+                <p>
+                  I&apos;m a singer-songwriter from Harare, Zimbabwe - and I build websites. That includes All The Glory, the
+                  home of my own worship album and Bible study, and sites for a property agency, a marketing consultancy, a
+                  Christian nonprofit and a music producer.
+                </p>
+                <p>
+                  I care about the details: how your site looks, how it feels on a phone, and how easily people can reach
+                  you. The aim is simple - a website you&apos;re proud to share.
+                </p>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-primary ws-wa">
+                  <WhatsAppIcon />
+                  Chat with me
+                </a>
+                <a href="#work" className="btn btn-ghost">
+                  See my work
+                </a>
+              </div>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
+      {/* ───────── FAQ ───────── */}
+      <div id="faq" className="scroll-mt-24">
+        <FAQ eyebrow="Frequently asked" title="Questions, answered" items={FAQS} />
+      </div>
+
       {/* ───────── Contact ───────── */}
-      <section id="contact" className="ws-cream pt-[clamp(72px,9vw,140px)]">
-        <div className="ws-wrap">
-          <div className="ws-label flex flex-wrap justify-between gap-4">
-            <span>( Start a project )</span>
-            <span>Pricing is a private conversation</span>
-          </div>
-          <h2 className="ws-giant mt-[clamp(32px,5vw,72px)]">
-            <Rise>Let&apos;s</Rise>
-            <Rise delay={0.1} className="text-right">
-              <span className="ws-it">build</span>
-            </Rise>
-            <Rise delay={0.2} className="pl-[12vw]">
-              yours.
-            </Rise>
-          </h2>
-          <Reveal className="mt-[clamp(40px,5vw,72px)] grid grid-cols-1 gap-4 md:grid-cols-12">
-            <p className="max-w-[26rem] text-[1.12rem] leading-[1.6] text-[var(--cmuted)] md:col-span-4">
-              Every website is different, so I don&apos;t list prices here. Send me a message - tell me about you and what you
-              need, and we&apos;ll take it from there.
+      <section id="contact" className="mx-auto w-full max-w-4xl scroll-mt-24 px-6 pb-20 pt-6 md:pb-28">
+        <Reveal>
+          <div className="panel-scrim panel-flush-mobile p-8 text-center md:p-14">
+            <div className="eyebrow eyebrow-amber">Ready when you are</div>
+            <h2 className="font-display mt-3 text-3xl font-normal tracking-tight text-white md:text-5xl">
+              Let&apos;s build something <span className="italic text-[var(--colour-amber)]">beautiful.</span>
+            </h2>
+            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-white/65 md:text-base">
+              Every website is different, so pricing is a private conversation. Send me a message - tell me about your
+              project and we&apos;ll take it from there.
             </p>
-            <div className="ws-card ws-card-dark md:col-span-4">
-              <div>
-                <p className="ws-label !text-[rgba(242,237,228,.55)]">WhatsApp</p>
-                <p className="ws-big mt-4">{CONTACT.whatsapp}</p>
-              </div>
-              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-wa self-start">
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
+              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-primary ws-wa">
                 <WhatsAppIcon />
                 Chat on WhatsApp
               </a>
+              <a href={CONTACT.emailHref} className="btn btn-ghost">
+                Send an email
+              </a>
             </div>
-            <div className="ws-card ws-card-line md:col-span-4">
-              <div className="min-w-0">
-                <p className="ws-label">Email</p>
-                <p className="ws-big mt-4">
-                  {CONTACT.email.split("@")[0]}@
-                  <wbr />
-                  {CONTACT.email.split("@")[1]}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <a href={CONTACT.emailHref} className="ws-btn ws-btn-dark">
-                  <Mail />
-                  Send an email
+            <div className="mx-auto mt-10 grid max-w-xl gap-6 border-t border-white/10 pt-8 text-left sm:grid-cols-2">
+              <div>
+                <div className="eyebrow">WhatsApp</div>
+                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="font-display mt-2 block text-xl text-white/90 transition-colors hover:text-[var(--colour-amber)]">
+                  {CONTACT.whatsapp}
                 </a>
-                <CopyEmail email={CONTACT.email} />
+              </div>
+              <div className="min-w-0">
+                <div className="eyebrow">Email</div>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <a href={CONTACT.emailHref} className="font-display block break-all text-xl text-white/90 transition-colors hover:text-[var(--colour-amber)]">
+                    {CONTACT.email}
+                  </a>
+                  <CopyEmail email={CONTACT.email} />
+                </div>
               </div>
             </div>
-          </Reveal>
-        </div>
-        <div className="ws-wrap mt-[clamp(72px,9vw,140px)]">
-          <footer className="ws-foot">
-            <span>© {new Date().getFullYear()} Daniel Jenkins</span>
-            <span>
-              Local time <Clock /> GMT+2
-            </span>
-            <a href="#top" className="transition-colors hover:text-[var(--cink)]">
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ───────── Footer ───────── */}
+      <footer className="border-t border-white/5 bg-colour-bg/60 backdrop-blur-xl">
+        <div className="mx-auto max-w-6xl px-6 py-12 text-center">
+          <p className="font-display text-lg italic text-white/75 md:text-xl">&ldquo;Whatever you do, work at it with all your heart.&rdquo;</p>
+          <p className="eyebrow mt-3">Colossians 3:23</p>
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-6 text-xs text-white/40 sm:flex-row">
+            <span>© {new Date().getFullYear()} Daniel Jenkins · Websites</span>
+            <a href="#top" className="uppercase tracking-[0.22em] transition-colors hover:text-white/80">
               Back to top ↑
             </a>
-          </footer>
+          </div>
         </div>
-      </section>
+      </footer>
     </main>
   );
 }
