@@ -1,16 +1,16 @@
+import { Fragment } from "react";
 import { CONTACT, PROJECTS } from "./projects";
-import { CopyEmail, Showreel } from "./screens";
-import { Cases } from "./cases";
-import { Reveal, TintWatcher } from "./motion";
+import { CopyEmail, Preview, Reveal, RiseLines } from "./motion";
 
-// /websites - Daniel's web design showcase: a standalone share link that
-// lives on the All The Glory domain. The album site's nav, footer, socials
-// and music player are hidden here (see components/site/*). Fonts and
-// link-preview details come from ./layout.tsx, the sites from ./projects.ts.
+// /websites - Daniel's web design page: a standalone share link on the
+// All The Glory domain. The album site's nav, footer, socials and music
+// player are hidden here (see components/site/*). Fonts and link-preview
+// details come from ./layout.tsx, the sites from ./projects.ts.
 //
-// The page glow (--tint) takes on the colour of whichever site is on
-// screen, so the page quietly changes character as you move through the
-// work. No prices anywhere - pricing is a private conversation.
+// One look throughout - Daniel's own, the same family as /daniel-jenkins:
+// warm paper, ink, a rust accent, editorial serif. Each site is a row in
+// an index that opens the live site in a new tab, with a small window
+// playing a scroll-through of it. No prices - pricing is a private chat.
 
 const STEPS = [
   {
@@ -19,7 +19,7 @@ const STEPS = [
   },
   {
     title: "Design & build",
-    body: "I design it around you and build it from scratch - no templates. You'll see it come together, and we shape it until it feels right.",
+    body: "I design it around you and build it from scratch. You see it come together, and we shape it until it feels right.",
   },
   {
     title: "Go live",
@@ -27,9 +27,9 @@ const STEPS = [
   },
 ];
 
-function WhatsAppIcon({ size = 18 }: { size?: number }) {
+function WhatsAppIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
       <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.08.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35M12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.56.93.95-3.47-.22-.36a9.4 9.4 0 0 1-1.44-5.01c0-5.2 4.24-9.43 9.44-9.43 2.52 0 4.89.98 6.67 2.77a9.37 9.37 0 0 1 2.76 6.67c0 5.2-4.24 9.43-9.44 9.43m8.03-17.46A11.27 11.27 0 0 0 12.05.72C5.8.72.7 5.8.7 12.07c0 2 .52 3.95 1.52 5.67L.6 23.65l6.05-1.59a11.3 11.3 0 0 0 5.4 1.38h.01c6.26 0 11.35-5.09 11.36-11.35 0-3.03-1.18-5.89-3.33-8.03" />
     </svg>
   );
@@ -45,260 +45,161 @@ function Mail({ size = 18 }: { size?: number }) {
 }
 
 export default function WebsitesPage() {
-  const live = PROJECTS.filter((p) => p.url);
+  const live = PROJECTS.filter((p) => p.url).length;
   return (
     <main className="ws relative min-h-screen overflow-x-clip">
       <style>{`
-        @property --tint { syntax: "<color>"; inherits: true; initial-value: #6fae8f; }
         .ws {
-          --bg:#0c0b0a; --ink:#f2efe9; --muted:#9a958d; --faint:#67625b; --line:rgba(242,239,233,.09);
-          --paper:#eeeae2; --paper-ink:#15130f; --paper-muted:#6b655c; --paper-line:rgba(21,19,15,.13);
-          --wa:#25d366;
-          --pad: clamp(20px, 5vw, 80px);
-          --max: 1240px;
-          --section: clamp(96px, 12vw, 176px);
-          --bar-h: 68px;
+          --bg:#ece5d9; --ink:#181512; --muted:#6f665c; --faint:#998f83; --line:rgba(24,21,18,.14);
+          --dark:#13110f; --paper:#ece5d9; --dmuted:rgba(236,229,217,.6); --dline:rgba(236,229,217,.14);
+          --accent:#9a3220; --accent-l:#d9774f; --wa:#25d366;
+          --pad: clamp(20px, 5vw, 88px);
+          --max: 1320px;
+          --section: clamp(88px, 11vw, 168px);
+          --bar-h: 72px;
           background: var(--bg); color: var(--ink);
           font-family: var(--ws-sans), system-ui, sans-serif;
           font-size: clamp(15px, .5vw + 13px, 17px);
-          transition: --tint 1.4s ease;
           -webkit-font-smoothing: antialiased;
         }
-        .ws ::selection { background: var(--tint); color: #0c0b0a; }
+        .ws ::selection { background: var(--accent); color: #fff; }
         .ws-wrap { width:100%; max-width: calc(var(--max) + var(--pad) * 2); margin-inline:auto; padding-inline: var(--pad); }
         .ws-serif { font-family: var(--ws-serif), Georgia, serif; font-weight:400; letter-spacing:-.015em; }
         .ws-mono { font-family: var(--ws-mono), ui-monospace, monospace; }
         .ws-label { font-family: var(--ws-mono), ui-monospace, monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--muted); }
-        .ws-accent { color: color-mix(in oklab, var(--tint) 78%, #fff); }
 
-        /* glow that takes the colour of the site on screen */
-        .ws-glow { position:fixed; inset:0; pointer-events:none; z-index:0;
-          background:
-            radial-gradient(60% 50% at 50% -8%, color-mix(in oklab, var(--tint) 24%, transparent), transparent 72%),
-            radial-gradient(40% 45% at 100% 105%, color-mix(in oklab, var(--tint) 11%, transparent), transparent 75%),
-            radial-gradient(35% 40% at 0% 60%, color-mix(in oklab, var(--tint) 6%, transparent), transparent 75%);
-        }
-        .ws-grid { position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
-          background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
-          background-size: 88px 88px; background-position: center top;
-          mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 75%);
-          -webkit-mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 75%);
-        }
-
-        /* top bar */
         .ws-bar { position:fixed; inset-inline:0; top:0; z-index:40; height:var(--bar-h);
-          background: color-mix(in oklab, var(--bg) 72%, transparent);
-          backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
-          border-bottom:1px solid var(--line); }
+          background: color-mix(in oklab, var(--bg) 82%, transparent);
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom:1px solid var(--line); }
         .ws-nav a:not(.ws-btn) { color: var(--muted); transition: color .2s; }
         .ws-nav a:not(.ws-btn):hover { color: var(--ink); }
 
-        /* buttons */
-        .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.6em; white-space:nowrap;
-          height:52px; padding:0 26px; border-radius:999px; font-weight:500; font-size:15px; letter-spacing:-.005em;
-          transition: transform .25s cubic-bezier(.16,1,.3,1), background-color .25s, box-shadow .25s, color .25s, border-color .25s; }
+        .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.65em; white-space:nowrap;
+          height:54px; padding:0 26px; border-radius:999px; font-weight:500; font-size:15px;
+          transition: transform .25s cubic-bezier(.16,1,.3,1), background-color .25s, color .25s, border-color .25s; }
         .ws-btn:hover { transform: translateY(-2px); }
-        .ws-btn:active { transform: translateY(0); }
         .ws-btn-sm { height:40px; padding:0 18px; font-size:14px; }
-        .ws-btn-wa { background: var(--wa); color:#04210f; box-shadow: 0 10px 30px -10px rgba(37,211,102,.55); }
-        .ws-btn-wa:hover { background:#2fe274; box-shadow: 0 16px 40px -12px rgba(37,211,102,.7); }
-        .ws-btn-line { border:1px solid rgba(242,239,233,.2); color: var(--ink); }
-        .ws-btn-line:hover { border-color: rgba(242,239,233,.45); background: rgba(242,239,233,.05); }
-        .ws-dot { width:7px; height:7px; border-radius:99px; background: var(--wa); box-shadow:0 0 0 0 rgba(37,211,102,.6); animation: ws-ping 2.4s infinite; }
-        @keyframes ws-ping { 0% { box-shadow:0 0 0 0 rgba(37,211,102,.55);} 70% { box-shadow:0 0 0 9px rgba(37,211,102,0);} 100% { box-shadow:0 0 0 0 rgba(37,211,102,0);} }
+        .ws-btn-ink { background: var(--ink); color: var(--paper); }
+        .ws-btn-ink:hover { background: var(--accent); }
+        .ws-btn svg.wa { color: var(--wa); }
+        .ws-btn-line { border:1px solid rgba(24,21,18,.25); color: var(--ink); }
+        .ws-btn-line:hover { border-color: var(--ink); }
+        .ws-btn-paper { background: var(--paper); color: var(--ink); }
+        .ws-btn-paper:hover { background:#fff; }
+        .ws-btn-dline { border:1px solid rgba(236,229,217,.3); color: var(--paper); }
+        .ws-btn-dline:hover { border-color: var(--paper); }
+        .ws-dot { width:7px; height:7px; border-radius:99px; background: var(--wa); animation: ws-ping 2.4s infinite; }
+        @keyframes ws-ping { 0% { box-shadow:0 0 0 0 rgba(37,211,102,.5);} 70% { box-shadow:0 0 0 8px rgba(37,211,102,0);} 100% { box-shadow:0 0 0 0 rgba(37,211,102,0);} }
 
-        /* hero */
-        .ws-h1 { font-size: clamp(3.1rem, 8.6vw, 8.4rem); line-height:.92; letter-spacing:-.025em; }
-        .ws-lede { font-size: clamp(1.05rem, 1.2vw, 1.25rem); line-height:1.6; color: var(--muted); }
+        .ws-h1 { font-size: clamp(3.3rem, 10.4vw, 10.5rem); line-height:.9; letter-spacing:-.03em; }
+        .ws-h1 em, .ws-h2 em { color: var(--accent); }
+        .ws-h2 { font-size: clamp(2.6rem, 5.6vw, 5rem); line-height:.96; letter-spacing:-.02em; }
+        .ws-lede { font-size: clamp(1.06rem, 1.25vw, 1.25rem); line-height:1.6; color: var(--muted); }
 
-        /* browser window */
-        .ws-reel { position:relative; }
-        .ws-window { position:relative; border-radius:14px; overflow:hidden; background:#161514;
-          border:1px solid rgba(255,255,255,.09);
-          box-shadow: 0 50px 140px -40px color-mix(in oklab, var(--tint) 55%, transparent), 0 30px 70px -25px rgba(0,0,0,.8);
-          transition: box-shadow 1.4s ease; }
-        .ws-chrome { display:flex; align-items:center; gap:14px; height:46px; padding:0 14px; background:#1c1b1a; }
-        .ws-dots { display:flex; gap:7px; flex:none; }
-        .ws-dots i { width:11px; height:11px; border-radius:99px; background:#3a3836; }
-        .ws-dots i:nth-child(1){ background:#ec6a5e; } .ws-dots i:nth-child(2){ background:#f4bf4f; } .ws-dots i:nth-child(3){ background:#61c554; }
-        .ws-tabs { display:flex; gap:4px; min-width:0; flex:1; align-self:stretch; align-items:flex-end; overflow:hidden; }
-        .ws-tab { position:relative; display:flex; align-items:center; gap:8px; min-width:0; height:36px; padding:0 14px;
-          border-radius:9px 9px 0 0; color: var(--faint); font-size:12.5px; transition: background-color .3s, color .3s; flex:1 1 0; max-width:210px; }
-        .ws-tab:hover { color: var(--muted); background: rgba(255,255,255,.03); }
-        .ws-tab[aria-selected="true"] { background:#262524; color: var(--ink); }
-        .ws-tab-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .ws-tab-bar { position:absolute; left:10px; right:10px; bottom:0; height:2px; border-radius:2px; transform-origin:left;
-          background: color-mix(in oklab, var(--tint) 85%, #fff); transition: transform .3s linear; }
-        .ws-fav { width:16px; height:16px; border-radius:4px; flex:none; object-fit:contain; }
-        .ws-tab:not([aria-selected="true"]) .ws-fav { filter: grayscale(1); opacity:.55; }
-        .ws-address { display:flex; align-items:center; gap:12px; height:46px; padding:0 10px 0 14px; background:#262524; border-bottom:1px solid rgba(0,0,0,.4); }
-        .ws-url { display:flex; align-items:center; gap:8px; min-width:0; flex:1; height:30px; padding:0 12px; border-radius:8px;
-          background:#1a1918; color: var(--muted); font-family: var(--ws-mono), ui-monospace, monospace; font-size:12px; }
-        .ws-visit { flex:none; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 14px; border-radius:8px; font-size:12.5px; font-weight:500;
-          background: color-mix(in oklab, var(--tint) 85%, #fff); color:#0c0b0a; transition: background-color 1.4s ease, transform .25s; }
-        .ws-visit:hover { transform: translateY(-1px); }
-        .ws-soon { flex:none; height:30px; display:inline-flex; align-items:center; padding:0 12px; border-radius:8px; font-size:12px; color: var(--muted); border:1px dashed rgba(255,255,255,.18); }
-        .ws-screen-wrap { position:relative; aspect-ratio:16/10; background:#0e0d0c; overflow:hidden; }
-        .ws-layer { position:absolute; inset:0; opacity:0; transition: opacity .8s ease; }
-        .ws-layer.is-on { opacity:1; }
-        .ws-screen { position:absolute; inset:0; overflow:hidden; }
-        .ws-drift img { animation: ws-drift 7s ease-out both; }
-        @keyframes ws-drift { from { transform: scale(1.0); } to { transform: scale(1.06); } }
-
-        .ws-phone { position:absolute; aspect-ratio: 390/844; border-radius: clamp(18px, 2.6vw, 34px); padding: clamp(4px, .5vw, 7px);
-          background:#0a0a0a; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 40px 80px -20px rgba(0,0,0,.85), 0 20px 60px -20px color-mix(in oklab, var(--tint) 40%, transparent); }
-        .ws-phone-screen { position:relative; width:100%; height:100%; border-radius: clamp(14px, 2.1vw, 28px); overflow:hidden; background:#111; }
-        .ws-phone-notch { position:absolute; top: clamp(8px, 1vw, 13px); left:50%; transform:translateX(-50%); width:30%; height: clamp(8px, 1.1vw, 15px); border-radius:99px; background:#0a0a0a; }
-        .ws-reel-phone { width: clamp(92px, 17%, 200px); right: clamp(-28px, -2.5%, -8px); bottom: clamp(30px, 6%, 70px); }
-        .ws-reel-caption { display:flex; justify-content:space-between; gap:16px; margin-top:18px; font-size:12px; color: var(--faint); letter-spacing:.02em; }
-
-        /* marquee */
-        .ws-marquee { display:flex; width:max-content; animation: ws-marquee 45s linear infinite; }
-        .ws-marquee:hover { animation-play-state: paused; }
+        .ws-marquee { display:flex; width:max-content; animation: ws-marquee 60s linear infinite; }
         @keyframes ws-marquee { to { transform: translateX(-50%); } }
 
-        /* work */
-        .ws-h2 { font-size: clamp(2.6rem, 5.4vw, 4.8rem); line-height:.98; letter-spacing:-.02em; }
-        .ws-pname { font-size: clamp(2.3rem, 4.2vw, 3.8rem); line-height:1; letter-spacing:-.02em; }
-        .ws-window-sm { border-radius:12px; }
-        .ws-chrome-sm { height:40px; gap:12px; background:#1f1e1d; border-bottom:1px solid rgba(0,0,0,.4); }
-        .ws-url-sm { height:26px; font-size:11.5px; max-width:420px; margin-inline:auto; justify-content:center; }
-        .ws-chrome-sm::after { content:""; width:47px; flex:none; }
-        .ws-window-light { background:#fbf8f2; border-color: rgba(26,22,18,.1); box-shadow: 0 40px 80px -30px rgba(60,48,30,.35), 0 10px 30px -10px rgba(60,48,30,.15); }
-        .ws-window-light .ws-chrome-sm { background:#efe9de; border-bottom-color: rgba(26,22,18,.08); }
-        .ws-window-light .ws-url { background:#fff; color:#8a8174; }
-        .ws-swatch { width:22px; height:22px; border-radius:99px; }
-        .ws-swatch + .ws-swatch { margin-left:-6px; }
-        .ws-sitebtn { display:inline-flex; align-items:center; gap:10px; height:46px; padding:0 20px; font-size:14px; font-weight:600;
-          transition: transform .25s cubic-bezier(.16,1,.3,1), filter .25s; }
-        .ws-sitebtn:hover { transform: translateY(-2px); filter: brightness(1.08); }
-        .ws-sitebtn img { width:18px; height:18px; border-radius:4px; background:#fff1; }
-        .ws-case { position:relative; padding-block: clamp(72px, 10vw, 160px); }
-
-        /* Virgin: property cards floating over the window */
-        .ws-cards { display:flex; gap:12px; margin-top:20px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:none; }
-        .ws-cards::-webkit-scrollbar { display:none; }
-        .ws-card { position:relative; flex:none; width:58%; aspect-ratio: 367/401; border-radius:14px; overflow:hidden; scroll-snap-align:start;
-          background:#f4f1ea; box-shadow: 0 30px 60px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.06); }
-        @media (min-width: 768px) {
-          .ws-cards { position:absolute; right:0; bottom: clamp(-150px, -9vw, -60px); width:52%; margin:0; overflow:visible; gap: clamp(10px, 1.4vw, 18px); }
-          .ws-card { width:auto; flex:1 1 0; }
+        /* the index of sites */
+        .ws-row { display:grid; grid-template-columns: minmax(0,1fr); gap: 22px; padding-block: clamp(32px, 4.5vw, 56px); border-top:1px solid var(--line); }
+        .ws-index > :last-child .ws-row { border-bottom:1px solid var(--line); }
+        @media (min-width: 900px) {
+          .ws-row { grid-template-columns: minmax(0,1fr) minmax(0, 480px); column-gap: clamp(24px, 4vw, 64px); align-items:center; }
         }
+        .ws-name { font-size: clamp(2.3rem, 4.4vw, 4rem); line-height:1; letter-spacing:-.02em; transition: color .3s; }
+        .ws-fav { width:22px; height:22px; border-radius:5px; object-fit:contain; flex:none; }
+        .ws-open { display:inline-flex; align-items:center; gap:10px; font-family: var(--ws-mono), ui-monospace, monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; }
+        .ws-open .ws-arrow { display:inline-grid; place-items:center; width:34px; height:34px; border-radius:99px; border:1px solid rgba(24,21,18,.25);
+          transition: transform .35s cubic-bezier(.16,1,.3,1), background-color .3s, color .3s, border-color .3s; }
+        a.ws-row:hover .ws-name { color: var(--accent); }
+        a.ws-row:hover .ws-arrow { background: var(--accent); border-color: var(--accent); color:#fff; transform: rotate(45deg); }
+        a.ws-row:hover .ws-prev { transform: translateY(-4px); box-shadow: 0 2px 0 rgba(0,0,0,.03), 0 34px 60px -26px rgba(24,21,18,.55); }
+        a.ws-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
 
-        /* CrossCoders: the section turns light, like their site */
-        .ws-cc { position:relative; overflow:hidden; border-radius: clamp(20px, 3vw, 32px); background:#f7f2e8; color:#1a1612;
-          padding: clamp(48px, 7vw, 104px) clamp(20px, 5vw, 72px) 0; }
-        .ws-cc::before { content:""; position:absolute; inset:0; pointer-events:none;
-          background: radial-gradient(40% 50% at 0% 0%, rgba(240,190,140,.35), transparent 70%), radial-gradient(45% 55% at 100% 0%, rgba(63,209,116,.22), transparent 70%); }
-        .ws-fan { position:relative; margin-top: clamp(48px, 6vw, 88px); height: clamp(220px, 36vw, 520px); }
-        .ws-fan-item { position:absolute; left:50%; top:0; width: min(68%, 760px); margin-left: calc(min(68%, 760px) / -2); transform-origin: 50% 100%; }
-        .ws-fan-phone { width: clamp(78px, 14%, 170px); right: 6%; top: 18%; z-index:3; }
+        /* the small live window */
+        .ws-prev { border-radius:12px; overflow:hidden; background:#1c1a17; border:1px solid rgba(24,21,18,.18);
+          box-shadow: 0 2px 0 rgba(0,0,0,.03), 0 24px 50px -28px rgba(24,21,18,.5); transition: transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s; }
+        .ws-prev-bar { display:flex; align-items:center; gap:10px; height:30px; padding:0 10px; background:#221f1b; }
+        .ws-prev-dots { display:flex; gap:5px; flex:none; }
+        .ws-prev-dots i { width:8px; height:8px; border-radius:99px; background:#4a443d; }
+        .ws-prev-host { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; padding-right:34px;
+          font-family: var(--ws-mono), ui-monospace, monospace; font-size:10.5px; color: rgba(236,229,217,.5); }
+        .ws-prev-screen { position:relative; aspect-ratio:16/10; overflow:hidden; background:#1c1a17; }
+        .ws-prev-wait { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+          font-family: var(--ws-serif), Georgia, serif; font-size:1.4rem; color: rgba(236,229,217,.55); }
+        .ws-prev-wait img { width:28px; height:28px; border-radius:6px; object-fit:contain; }
+        .ws-soon { display:inline-flex; align-items:center; gap:10px; height:34px; padding:0 14px; border-radius:99px; border:1px dashed rgba(24,21,18,.3);
+          font-family: var(--ws-mono), ui-monospace, monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color: var(--muted); }
 
-        /* Endgame: full-width black panel, three phones */
-        .ws-bleed { width:100vw; margin-left: calc(50% - 50vw); }
-        .ws-eg { overflow:hidden; background:#000; margin-block: clamp(24px, 4vw, 64px); }
-        .ws-eg::before { content:""; position:absolute; inset:0; pointer-events:none;
-          background: radial-gradient(45% 40% at 50% 78%, rgba(125,230,245,.28), transparent 70%), radial-gradient(30% 25% at 50% 0%, rgba(125,230,245,.10), transparent 70%); }
-        .ws-eg-name { font-family: var(--ws-sans), system-ui, sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.01em;
-          font-size: clamp(2.2rem, 6.2vw, 5.6rem); line-height:.95; color:#fff; }
-        .ws-eg-name span { color:#7de6f5; text-shadow: 0 0 24px rgba(125,230,245,.65), 0 0 60px rgba(125,230,245,.35); }
-        .ws-eg-phones { --pw: clamp(96px, 19vw, 250px); position:relative; display:flex; justify-content:center; align-items:flex-start; gap: clamp(10px, 3vw, 44px);
-          margin-top: clamp(56px, 7vw, 96px); height: calc(var(--pw) * 2.164 + clamp(40px, 6vw, 90px)); }
-        .ws-eg-phone { position:relative; width: var(--pw); }
-        .ws-eg-phone-mid { z-index:2; box-shadow: 0 0 0 1px rgba(125,230,245,.35), 0 40px 90px -20px rgba(125,230,245,.45), 0 30px 60px -20px #000; }
+        .ws-step { border-top:1px solid var(--line); padding-top:24px; }
 
-        /* All The Glory: cinematic */
-        .ws-glory { position:relative; overflow:hidden; border-radius: clamp(18px, 2.4vw, 28px); aspect-ratio: 4/5; background:#09080e; }
-        @media (min-width: 768px) { .ws-glory { aspect-ratio: 21/9; } }
-        .ws-glory-shade { position:absolute; inset:0; background: linear-gradient(to top, rgba(9,8,14,.85), rgba(9,8,14,0) 55%), linear-gradient(to right, rgba(9,8,14,.55), rgba(9,8,14,0) 50%); }
-        .ws-glory-url { position:absolute; left: clamp(14px, 2vw, 24px); top: clamp(14px, 2vw, 24px); flex:none; width:auto; background: rgba(9,8,14,.55);
-          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
-        .ws-glory-meta { position:absolute; left: clamp(20px, 4vw, 56px); bottom: clamp(20px, 4vw, 52px); }
-        .ws-glory-phone { width: clamp(88px, 13%, 180px); right: clamp(14px, 5%, 64px); bottom: clamp(-60px, -6%, -24px); z-index:2; }
+        .ws-dark { background: var(--dark); color: var(--paper); }
+        .ws-dark .ws-label { color: var(--dmuted); }
+        .ws-h-xl { font-size: clamp(3.4rem, 11vw, 11rem); line-height:.88; letter-spacing:-.03em; }
+        .ws-h-xl em { color: var(--accent-l); }
+        .ws-crow { border-top:1px solid var(--dline); }
+        .ws-copy { height:30px; padding:0 12px; border-radius:99px; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+          border:1px solid var(--dline); color: var(--dmuted); transition: color .2s, border-color .2s; }
+        .ws-copy:hover { color: var(--paper); border-color: var(--paper); }
 
-        /* Manuchie: poster */
-        .ws-poster { position:relative; overflow:hidden; aspect-ratio:4/5; border-radius: clamp(18px, 2.4vw, 28px); background:#120e09;
-          box-shadow: 0 50px 120px -40px rgba(224,112,47,.55), 0 30px 60px -30px #000; }
-        .ws-poster-chip { position:absolute; left:16px; top:16px; height:30px; display:inline-flex; align-items:center; padding:0 12px; border-radius:99px; font-size:11px;
-          letter-spacing:.14em; text-transform:uppercase; color:#fff; background: rgba(10,10,11,.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.18); }
-
-        /* steps */
-        .ws-step { border-top:1px solid var(--line); padding-top:26px; }
-
-        /* contact */
-        .ws-paper { background: var(--paper); color: var(--paper-ink); }
-        .ws-paper .ws-label { color: var(--paper-muted); }
-        .ws-h-xl { font-size: clamp(3.4rem, 10vw, 9.5rem); line-height:.9; letter-spacing:-.03em; }
-        .ws-btn-ink { background: var(--paper-ink); color: var(--paper); }
-        .ws-btn-ink:hover { background:#000; }
-        .ws-copy { height:30px; padding:0 12px; border-radius:99px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; border:1px solid var(--paper-line); color: var(--paper-muted); transition: color .2s, border-color .2s; }
-        .ws-copy:hover { color: var(--paper-ink); border-color: var(--paper-ink); }
-        .ws-contact-row { border-top:1px solid var(--paper-line); }
-
-
-        @media (max-width: 767px) {
-          .ws-tab { padding:0 10px; justify-content:center; flex:1 1 0; }
-          .ws-tab-name { display:none; }
-          .ws-chrome { gap:10px; padding:0 10px; }
-          .ws-dots i { width:9px; height:9px; } .ws-dots { gap:5px; }
-          .ws-address { gap:8px; padding:0 8px 0 10px; height:42px; }
-          .ws-url { font-size:11px; padding:0 9px; }
-          .ws-visit, .ws-soon { padding:0 10px; font-size:11.5px; }
-          .ws-reel-phone { right:-6px; bottom:-18px; width:24%; }
-          .ws-chrome-sm::after { display:none; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .ws-marquee, .ws-dot, .ws-drift img { animation:none; }
-        }
+        @media (prefers-reduced-motion: reduce) { .ws-marquee, .ws-dot { animation:none; } }
       `}</style>
-
-      <TintWatcher />
-      <div className="ws-glow" aria-hidden="true" />
-      <div className="ws-grid" aria-hidden="true" />
 
       {/* ───────── Top bar ───────── */}
       <header className="ws-bar">
         <div className="ws-wrap flex h-full items-center justify-between gap-6">
           <a href="#top" className="flex items-baseline gap-3">
-            <span className="ws-serif text-[1.45rem] leading-none tracking-tight">Daniel Jenkins</span>
+            <span className="ws-serif text-[1.5rem] leading-none tracking-tight">Daniel Jenkins</span>
             <span className="ws-label hidden sm:inline">Websites</span>
           </a>
           <nav className="ws-nav flex items-center gap-7 text-[14px]">
-            <a href="#work" className="hidden md:inline">Work</a>
-            <a href="#how" className="hidden md:inline">How it works</a>
-            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-wa ws-btn-sm">
-              <WhatsAppIcon size={16} />
-              <span>Let&apos;s chat</span>
+            <a href="#work" className="hidden md:inline">
+              Work
+            </a>
+            <a href="#contact" className="hidden md:inline">
+              Contact
+            </a>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-ink ws-btn-sm">
+              <WhatsAppIcon size={16} className="wa" />
+              Let&apos;s chat
             </a>
           </nav>
         </div>
       </header>
 
       {/* ───────── Hero ───────── */}
-      <section id="top" data-tint={PROJECTS[0].tint} className="relative z-10 pt-[calc(var(--bar-h)+clamp(56px,9vw,120px))]">
+      <section id="top" className="pt-[calc(var(--bar-h)+clamp(48px,8vw,112px))]">
         <div className="ws-wrap">
-          <Reveal y={20}>
-            <p className="ws-label flex items-center gap-3">
-              <span className="ws-dot" aria-hidden="true" />
-              Taking on new projects
-            </p>
+          <Reveal y={12}>
+            <div className="ws-label flex flex-wrap items-center justify-between gap-4">
+              <span>Web design &amp; build</span>
+              <span className="flex items-center gap-3">
+                <span className="ws-dot" aria-hidden="true" />
+                Taking on new projects
+              </span>
+            </div>
           </Reveal>
-          <Reveal delay={0.08}>
-            <h1 className="ws-serif ws-h1 mt-7 max-w-[11ch]">
-              Websites that feel like <em className="ws-accent">you.</em>
-            </h1>
-          </Reveal>
-          <div className="mt-9 flex flex-col gap-9 md:flex-row md:items-end md:justify-between">
-            <Reveal delay={0.16} className="max-w-[34rem]">
+          <h1 className="ws-serif ws-h1 mt-[clamp(28px,4vw,56px)]">
+            <RiseLines
+              lines={[
+                <Fragment key="1">
+                  I make <em>websites</em>
+                </Fragment>,
+                "for companies",
+                "& people.",
+              ]}
+            />
+          </h1>
+          <div className="mt-[clamp(36px,5vw,64px)] flex flex-col gap-8 border-t border-[var(--line)] pt-8 md:flex-row md:items-start md:justify-between">
+            <Reveal delay={0.3} className="max-w-[34rem]">
               <p className="ws-lede">
-                I design and build custom websites for companies, brands and people. Here are a few I&apos;ve made -
+                Custom websites, designed around you and built from scratch. Have a look at a few I&apos;ve made below - then
                 let&apos;s talk about yours.
               </p>
             </Reveal>
-            <Reveal delay={0.24}>
+            <Reveal delay={0.4}>
               <div className="flex flex-wrap gap-3">
-                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-wa">
-                  <WhatsAppIcon />
+                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-ink">
+                  <WhatsAppIcon className="wa" />
                   WhatsApp me
                 </a>
                 <a href={CONTACT.emailHref} className="ws-btn ws-btn-line">
@@ -308,24 +209,17 @@ export default function WebsitesPage() {
               </div>
             </Reveal>
           </div>
-
-          <Reveal delay={0.3} y={48} className="mt-[clamp(56px,7vw,96px)]">
-            <Showreel projects={PROJECTS} />
-          </Reveal>
         </div>
 
-        {/* Names of the sites, drifting past */}
-        <div className="mt-[clamp(72px,9vw,128px)] overflow-hidden border-y border-[var(--line)] py-6" aria-hidden="true">
+        {/* The sites' names, drifting past */}
+        <div className="mt-[clamp(64px,8vw,120px)] overflow-hidden border-y border-[var(--line)] py-5" aria-hidden="true">
           <div className="ws-marquee">
             {[0, 1].map((n) => (
               <div key={n} className="flex shrink-0 items-center">
                 {[...PROJECTS, ...PROJECTS].map((p, i) => (
-                  <span key={`${p.key}-${i}`} className="flex items-center gap-4 pr-14">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.icon} alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-[5px] object-contain" />
-                    <span className="ws-serif whitespace-nowrap text-[1.7rem] leading-none text-[var(--ink)]/85">{p.name}</span>
-                    <span className="ws-label whitespace-nowrap">{p.kind}</span>
-                    <span className="pl-10 text-[var(--faint)]">✦</span>
+                  <span key={`${p.key}-${i}`} className="flex items-center gap-10 pr-10">
+                    <span className="ws-serif whitespace-nowrap text-[clamp(1.6rem,2.6vw,2.4rem)] italic leading-none">{p.name}</span>
+                    <span className="text-[var(--accent)]">✦</span>
                   </span>
                 ))}
               </div>
@@ -335,40 +229,93 @@ export default function WebsitesPage() {
       </section>
 
       {/* ───────── Work ───────── */}
-      <section id="work" className="relative z-10 pt-[var(--section)]">
+      <section id="work" className="pt-[var(--section)]">
         <div className="ws-wrap">
           <Reveal>
-            <div className="flex items-end justify-between gap-6 pb-[clamp(40px,5vw,72px)]">
-              <div>
-                <p className="ws-label">Selected work</p>
-                <h2 className="ws-serif ws-h2 mt-5">
-                  Sites I&apos;ve <em className="ws-accent">built</em>
-                </h2>
-              </div>
-              <p className="ws-mono hidden pb-2 text-[12px] text-[var(--faint)] sm:block">
-                {String(live.length).padStart(2, "0")} live · {String(PROJECTS.length - live.length).padStart(2, "0")} coming soon
+            <div className="flex items-end justify-between gap-6 pb-[clamp(32px,4vw,56px)]">
+              <h2 className="ws-serif ws-h2">
+                Sites I&apos;ve <em>built</em>
+              </h2>
+              <p className="ws-label pb-2 text-right">
+                {live} live
+                <br className="sm:hidden" />
+                <span className="hidden sm:inline"> · </span>
+                {PROJECTS.length - live} coming soon
               </p>
             </div>
           </Reveal>
 
-          <Cases projects={PROJECTS} />
+          <div className="ws-index">
+            {PROJECTS.map((p, i) => {
+              const body = (
+                <>
+                  <div className="min-w-0">
+                    <p className="ws-label flex items-center gap-3">
+                      <span className="text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="h-px w-6 bg-[var(--line)]" aria-hidden="true" />
+                      {p.kind}
+                    </p>
+                    <h3 className="ws-serif ws-name mt-4 flex items-center gap-4">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.icon} alt="" width={22} height={22} className="ws-fav" />
+                      {p.name}
+                    </h3>
+                    <p className="mt-4 max-w-[30rem] leading-[1.65] text-[var(--muted)]">{p.blurb}</p>
+                    <div className="mt-6">
+                      {p.url ? (
+                        <span className="ws-open">
+                          <span className="ws-arrow" aria-hidden="true">
+                            ↗
+                          </span>
+                          View site
+                        </span>
+                      ) : (
+                        <span className="ws-soon">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                          Launching soon
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Preview p={p} />
+                </>
+              );
+              return (
+                <Reveal key={p.key} y={20}>
+                  {p.url ? (
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ws-row"
+                      aria-label={`${p.name} - view the live site (opens in a new tab)`}
+                    >
+                      {body}
+                    </a>
+                  ) : (
+                    <div className="ws-row">{body}</div>
+                  )}
+                </Reveal>
+              );
+            })}
+          </div>
         </div>
       </section>
 
       {/* ───────── How it works ───────── */}
-      <section id="how" data-tint="#cfc8bb" className="relative z-10 py-[var(--section)]">
+      <section id="how" className="py-[var(--section)]">
         <div className="ws-wrap">
           <Reveal>
             <p className="ws-label">How it works</p>
             <h2 className="ws-serif ws-h2 mt-5 max-w-[14ch]">
-              Simple, personal, <em className="ws-accent">made for you.</em>
+              Simple, personal, <em>yours.</em>
             </h2>
           </Reveal>
-          <div className="mt-[clamp(48px,6vw,88px)] grid gap-x-[clamp(24px,4vw,64px)] gap-y-12 md:grid-cols-3">
+          <div className="mt-[clamp(44px,5vw,80px)] grid gap-x-[clamp(24px,4vw,64px)] gap-y-12 md:grid-cols-3">
             {STEPS.map((s, i) => (
               <Reveal key={s.title} delay={i * 0.08} className="ws-step">
-                <p className="ws-mono text-[12px] text-[var(--faint)]">{String(i + 1).padStart(2, "0")}</p>
-                <h3 className="ws-serif mt-6 text-[2.1rem] leading-none">{s.title}</h3>
+                <p className="ws-serif text-[2.6rem] italic leading-none text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</p>
+                <h3 className="ws-serif mt-6 text-[2rem] leading-none">{s.title}</h3>
                 <p className="mt-4 max-w-[24rem] leading-[1.7] text-[var(--muted)]">{s.body}</p>
               </Reveal>
             ))}
@@ -377,7 +324,7 @@ export default function WebsitesPage() {
       </section>
 
       {/* ───────── Contact ───────── */}
-      <section id="contact" className="ws-paper relative z-10 py-[var(--section)]">
+      <section id="contact" className="ws-dark pt-[var(--section)]">
         <div className="ws-wrap">
           <Reveal>
             <p className="ws-label">Let&apos;s talk</p>
@@ -387,23 +334,23 @@ export default function WebsitesPage() {
           </Reveal>
           <div className="mt-[clamp(40px,5vw,72px)] grid grid-cols-1 gap-12 md:grid-cols-12 md:items-end">
             <Reveal className="md:col-span-5">
-              <p className="max-w-[28rem] text-[1.1rem] leading-[1.65] text-[var(--paper-muted)]">
+              <p className="max-w-[28rem] text-[1.1rem] leading-[1.65] text-[var(--dmuted)]">
                 Every website is different, so pricing is a private conversation. Send me a message - tell me what you have
                 in mind and we&apos;ll take it from there.
               </p>
             </Reveal>
-            <Reveal delay={0.1} className="md:col-span-7">
-              <div className="ws-contact-row flex flex-col gap-5 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <Reveal delay={0.1} className="min-w-0 md:col-span-7">
+              <div className="ws-crow flex flex-col gap-5 py-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="ws-label">WhatsApp</p>
                   <p className="ws-serif mt-2 text-[1.9rem] leading-none">{CONTACT.whatsapp}</p>
                 </div>
-                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-wa self-start sm:self-auto">
-                  <WhatsAppIcon />
+                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="ws-btn ws-btn-paper self-start sm:self-auto">
+                  <WhatsAppIcon className="wa" />
                   Chat on WhatsApp
                 </a>
               </div>
-              <div className="ws-contact-row flex flex-col gap-5 border-b border-[var(--paper-line)] py-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="ws-crow flex flex-col gap-5 border-b border-[var(--dline)] py-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="ws-label">Email</p>
                   <p className="mt-2 flex flex-wrap items-center gap-3">
@@ -411,7 +358,7 @@ export default function WebsitesPage() {
                     <CopyEmail email={CONTACT.email} />
                   </p>
                 </div>
-                <a href={CONTACT.emailHref} className="ws-btn ws-btn-ink self-start sm:self-auto">
+                <a href={CONTACT.emailHref} className="ws-btn ws-btn-dline self-start sm:self-auto">
                   <Mail />
                   Send an email
                 </a>
@@ -419,14 +366,11 @@ export default function WebsitesPage() {
             </Reveal>
           </div>
         </div>
-      </section>
-
-      <footer className="ws-paper relative z-10 border-t border-[var(--paper-line)]">
-        <div className="ws-wrap ws-mono flex flex-col gap-2 py-8 text-[11px] uppercase tracking-[.14em] text-[var(--paper-muted)] sm:flex-row sm:justify-between">
+        <footer className="ws-wrap ws-mono mt-[var(--section)] flex flex-col gap-2 border-t border-[var(--dline)] py-8 text-[11px] uppercase tracking-[.14em] text-[var(--dmuted)] sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} Daniel Jenkins</span>
-          <span>Websites for companies, brands &amp; people</span>
-        </div>
-      </footer>
+          <span>Websites for companies &amp; people</span>
+        </footer>
+      </section>
     </main>
   );
 }
