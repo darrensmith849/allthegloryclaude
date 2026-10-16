@@ -16,6 +16,8 @@ export function WxClicks() {
       let label: string;
       if (href.includes("wa.me") || href.includes("whatsapp")) label = "WhatsApp";
       else if (href.startsWith("mailto:")) label = "Email";
+      else if (href.includes("linkedin.com")) label = "LinkedIn";
+      else if (href.includes("instagram.com")) label = "Instagram";
       else if (href.startsWith("tel:")) label = "Phone call";
       else if (href.startsWith("#")) label = `Button · ${text || href}`;
       else if (/^https?:/.test(href)) {

@@ -11,6 +11,14 @@ import { useTucked } from "./use-tucked";
  *  so the dock and the footer read as the same iconography rather than
  *  two different visual vocabularies. */
 const Icons: Record<string, ReactNode> = {
+  LinkedIn: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="4" ry="4" />
+      <line x1="7.5" y1="10.5" x2="7.5" y2="17" />
+      <circle cx="7.5" cy="7.2" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M11.5 17v-6.5M11.5 13.2c0-1.6 1.1-2.7 2.6-2.7s2.4 1 2.4 2.7V17" />
+    </svg>
+  ),
   Instagram: (
     <svg
       width="20"
@@ -147,8 +155,9 @@ export default function SocialDock() {
           after the hero settles. */}
       <Item href={appleMusicHref} label="Apple Music" delay={0.6} />
       <Item href={site.socials.instagram} label="Instagram" delay={0.78} />
-      <Item href={site.socials.youtube} label="YouTube" delay={0.96} />
-      <Item href={site.socials.spotify} label="Spotify" delay={1.14} />
+      <Item href={site.socials.linkedin} label="LinkedIn" delay={0.96} />
+      <Item href={site.socials.youtube} label="YouTube" delay={1.14} />
+      <Item href={site.socials.spotify} label="Spotify" delay={1.32} />
     </div>
   );
 }

@@ -80,4 +80,8 @@ export const CONTACT = {
   emailHref: `mailto:daniel@alltheglory.co.za?subject=${encodeURIComponent("Website enquiry")}`,
   whatsapp: "+27 84 665 1423",
   whatsappHref: `https://wa.me/27846651423?text=${encodeURIComponent(WA_TEXT)}`,
+  instagram: "@allthe_glory",
+  instagramHref: "https://www.instagram.com/allthe_glory",
+  linkedin: "Daniel Jenkins",
+  linkedinHref: "https://www.linkedin.com/in/danieljenkinsofficial/",
 };

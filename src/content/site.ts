@@ -6,6 +6,7 @@ export const site = {
     "Worship music woven through Scripture - the album From Darkness To Light - and The Study, a free Bible study reading the Bible in the order it happened.",
   socials: {
     instagram: "https://www.instagram.com/allthe_glory",
+    linkedin: "https://www.linkedin.com/in/danieljenkinsofficial/",
     youtube: "https://www.youtube.com/@Allthe_glory",
     spotify: "https://open.spotify.com/artist/31qIQqqntN5cVt0NGK8uUa",
     appleMusic: "https://music.apple.com/za/album/from-darkness-to-light/6781827636",

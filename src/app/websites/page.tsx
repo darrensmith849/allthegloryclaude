@@ -199,6 +199,18 @@ export default function WebsitesPage() {
               <span>
                 Email <a href={CONTACT.emailHref}>{CONTACT.email}</a>
               </span>
+              <span>
+                Instagram{" "}
+                <a href={CONTACT.instagramHref} target="_blank" rel="noopener noreferrer">
+                  {CONTACT.instagram}
+                </a>
+              </span>
+              <span>
+                LinkedIn{" "}
+                <a href={CONTACT.linkedinHref} target="_blank" rel="noopener noreferrer">
+                  {CONTACT.linkedin}
+                </a>
+              </span>
             </div>
             <p className="wx-sign">© {new Date().getFullYear()} Daniel Jenkins · Websites for businesses, brands &amp; people</p>
           </div>

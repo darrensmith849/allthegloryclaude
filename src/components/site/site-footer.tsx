@@ -235,6 +235,22 @@ export default function SiteFooter() {
                   <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
                 </svg>
               </a>
+              <a
+                href={site.socials.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="hover:opacity-100 transition-opacity"
+                style={{ color: "var(--colour-ink)", opacity: 0.45 }}
+                onClick={() => fireLinkClick("LinkedIn", site.socials.linkedin)}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="4" ry="4" />
+                  <line x1="7.5" y1="10.5" x2="7.5" y2="17" />
+                  <circle cx="7.5" cy="7.2" r="1.1" fill="currentColor" stroke="none" />
+                  <path d="M11.5 17v-6.5M11.5 13.2c0-1.6 1.1-2.7 2.6-2.7s2.4 1 2.4 2.7V17" />
+                </svg>
+              </a>
             </div>
 
             {/* Nav links */}
