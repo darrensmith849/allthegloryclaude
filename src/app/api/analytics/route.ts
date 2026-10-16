@@ -273,6 +273,28 @@ export interface AnalyticsPayload {
   raisedToday: number;
   raisedCurrency: string;
   recentDonations: DonationRow[];
+  websitesPage: WebsitesPageAnalytics;
+}
+
+/** /websites (Daniel's web design page), split out from the album site. */
+export interface WebsitesPageAnalytics {
+  views: number;
+  visitors: number;
+  clicks: number;
+  enquiries: number;
+  totals: { today: WebsitesTotals; week: WebsitesTotals; month: WebsitesTotals; allTime: WebsitesTotals };
+  series: { key: string; label: string; views: number; visitors: number }[];
+  sources: { label: string; visitors: number }[];
+  devices: Count[];
+  countries: Count[];
+  cities: Count[];
+  clicksByLabel: Count[];
+  recent: { ts: number; type: string; label: string; country: string; city: string | null; device: string | null }[];
+}
+interface WebsitesTotals {
+  views: number;
+  visitors: number;
+  clicks: number;
 }
 
 type SourceKey = TrafficSourceClass["key"];
@@ -1117,6 +1139,98 @@ function compactTrackCounts(rows: TrackMetricRow[]): Count[] {
     .map((row) => ({ label: row.title, count: row.playClicks }));
 }
 
+const WEBSITES_WHERE = "(path='/websites' OR path LIKE '/websites/%' OR path LIKE '/websites?%' OR path LIKE '/websites#%')";
+
+async function websitesTotals(db: D1Db, start: number, end: number): Promise<WebsitesTotals> {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(CASE WHEN type='view' THEN 1 END) AS views, " +
+        "COUNT(DISTINCT CASE WHEN type='view' AND sid<>'' THEN sid END) AS visitors, " +
+        "COUNT(CASE WHEN type='link' THEN 1 END) AS clicks " +
+        `FROM events WHERE ts>=?1 AND ts<?2 AND ${WEBSITES_WHERE}`,
+    )
+    .bind(start, end)
+    .first<{ views: number; visitors: number; clicks: number }>();
+  return { views: Number(row?.views ?? 0), visitors: Number(row?.visitors ?? 0), clicks: Number(row?.clicks ?? 0) };
+}
+
+async function websitesCounts(db: D1Db, start: number, end: number, column: string, type = "view"): Promise<Count[]> {
+  const rows = await db
+    .prepare(
+      `SELECT COALESCE(${column},'Unknown') AS label, COUNT(${type === "view" ? "DISTINCT CASE WHEN sid<>'' THEN sid END" : "*"}) AS count ` +
+        `FROM events WHERE type='${type}' AND ts>=?1 AND ts<?2 AND ${WEBSITES_WHERE} ` +
+        "GROUP BY label ORDER BY count DESC LIMIT 12",
+    )
+    .bind(start, end)
+    .all<{ label: string; count: number }>();
+  return (rows.results ?? []).map((r) => ({ label: String(r.label), count: Number(r.count) }));
+}
+
+async function getWebsitesPage(db: D1Db, range: AnalyticsRange, now: number): Promise<WebsitesPageAnalytics> {
+  const todayStart = startOfDashboardDayMs(now);
+  const buckets = buildTimeBuckets(range.start, range.end, range.granularity).map((b) => ({ key: b.key, label: b.label, views: 0, visitors: 0 }));
+  const byKey = new Map(buckets.map((b) => [b.key, b]));
+  const [current, today, week, month, allTime, seriesRows, sourceRows, devices, countries, cities, clicksByLabel, recentRows] =
+    await Promise.all([
+      websitesTotals(db, range.start, range.end),
+      websitesTotals(db, todayStart, now),
+      websitesTotals(db, todayStart - 6 * DAY_MS, now),
+      websitesTotals(db, todayStart - 29 * DAY_MS, now),
+      websitesTotals(db, 0, now),
+      db
+        .prepare(
+          `SELECT ${sqliteBucketExpression(range.granularity)} AS bucket, COUNT(*) AS views, ` +
+            "COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS visitors " +
+            `FROM events WHERE type='view' AND ts>=?1 AND ts<?2 AND ${WEBSITES_WHERE} GROUP BY bucket`,
+        )
+        .bind(range.start, range.end)
+        .all<{ bucket: string; views: number; visitors: number }>(),
+      db
+        .prepare(
+          "SELECT COALESCE(ref,'unknown') AS ref, COUNT(DISTINCT CASE WHEN sid<>'' THEN sid END) AS visitors, COUNT(*) AS views " +
+            `FROM events WHERE type='view' AND ts>=?1 AND ts<?2 AND COALESCE(ref,'')<>'internal' AND ${WEBSITES_WHERE} ` +
+            "GROUP BY COALESCE(ref,'unknown')",
+        )
+        .bind(range.start, range.end)
+        .all<{ ref: string | null; visitors: number; views: number }>(),
+      websitesCounts(db, range.start, range.end, "device"),
+      websitesCounts(db, range.start, range.end, "country"),
+      websitesCounts(db, range.start, range.end, "city"),
+      websitesCounts(db, range.start, range.end, "file", "link"),
+      db
+        .prepare(
+          "SELECT ts, type, COALESCE(file,'') AS label, country, city, device FROM events " +
+            `WHERE type IN ('view','link') AND ${WEBSITES_WHERE} ORDER BY ts DESC LIMIT 25`,
+        )
+        .all<{ ts: number; type: string; label: string; country: string; city: string | null; device: string | null }>(),
+    ]);
+  for (const row of seriesRows.results ?? []) {
+    const b = byKey.get(row.bucket);
+    if (b) {
+      b.views = Number(row.views);
+      b.visitors = Number(row.visitors);
+    }
+  }
+  const sources = aggregateSources(sourceRows.results ?? [], [], false)
+    .filter((s) => s.visitors > 0)
+    .map((s) => ({ label: s.topDomain ? `${s.label} (${s.topDomain})` : s.label, visitors: s.visitors }));
+  const enquiries = clicksByLabel.filter((c) => c.label === "Websites enquiry sent").reduce((n, c) => n + c.count, 0);
+  return {
+    views: current.views,
+    visitors: current.visitors,
+    clicks: current.clicks - enquiries,
+    enquiries,
+    totals: { today, week, month, allTime },
+    series: buckets,
+    sources,
+    devices: devices.map((d) => ({ ...d, label: cleanBreakdownLabel(d.label, "device") })),
+    countries,
+    cities: cities.filter((c) => c.label !== "Unknown"),
+    clicksByLabel,
+    recent: (recentRows.results ?? []).map((r) => ({ ...r, ts: Number(r.ts) })),
+  };
+}
+
 export async function GET(req: Request) {
   const db = await getDb();
   if (!db) return Response.json({ setupNeeded: true });
@@ -1233,6 +1347,7 @@ export async function GET(req: Request) {
     const legacyDownloadCountries = await getDownloadCountries(db, 0, now);
     const legacyMusic = await getTrackMetrics(db, 0, now, null, lifetimeSummary);
     const recentDownloads = await getRecentDownloads(db, 0, now);
+    const websitesPage = await getWebsitesPage(db, range, now);
 
     const payload: AnalyticsPayload = {
       fetchedAt: now,
@@ -1301,6 +1416,7 @@ export async function GET(req: Request) {
       raisedToday: donationSummary.raisedToday,
       raisedCurrency: donationSummary.raisedCurrency,
       recentDonations: donationSummary.recentDonations,
+      websitesPage,
     };
 
     return Response.json(payload, { headers: { "cache-control": "no-store" } });

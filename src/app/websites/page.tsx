@@ -1,5 +1,5 @@
 import { CONTACT, PROJECTS } from "./projects";
-import { BigSentence, EnquiryForm, HeroLayer, Venn, WordReveal, WorkOrbit, WxNav, WxReveal } from "./parts";
+import { BigSentence, EnquiryForm, HeroLayer, Venn, WordReveal, WorkOrbit, WxClicks, WxNav, WxReveal } from "./parts";
 
 // /websites - Daniel's page for selling the websites he builds, modelled on
 // weareheroes.one and made his own: deep blue-black, plain light type, his
@@ -27,6 +27,7 @@ export default function WebsitesPage() {
   return (
     <div className="wx">
       <WxReveal />
+      <WxClicks />
       <WxNav />
 
       <main id="top">

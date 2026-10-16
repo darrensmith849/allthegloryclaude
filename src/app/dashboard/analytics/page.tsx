@@ -12,7 +12,7 @@ type RangeKey = "7d" | "30d" | "90d" | "ytd" | "all";
 type CompareKey = "previous" | "year" | "none";
 type ChartMetric = "visitors" | "pageViews" | "musicPlays" | "primaryCtaClicks" | "linkClicks";
 type PageSort = "views" | "uniqueVisitors" | "path";
-type AnalyticsSection = "overview" | "traffic" | "content" | "music" | "tracking";
+type AnalyticsSection = "overview" | "traffic" | "content" | "music" | "websites" | "tracking";
 type Change = AnalyticsPayload["changes"]["pageViews"];
 
 const SETUP_ACTIONS = [
@@ -52,6 +52,7 @@ const ANALYTICS_SECTIONS: { key: AnalyticsSection; label: string; detail: string
   { key: "traffic", label: "Traffic", detail: "Where visits come from" },
   { key: "content", label: "Content", detail: "Pages and funnel" },
   { key: "music", label: "Music", detail: "Songs and clicks" },
+  { key: "websites", label: "Websites", detail: "/websites page" },
   { key: "tracking", label: "Tracking", detail: "Health and logs" },
 ];
 
@@ -610,6 +611,8 @@ function AnalyticsPageInner() {
               <MusicEngagement data={data} />
             </div>
           )}
+
+          {activeSection === "websites" && <WebsitesPageSection data={data.websitesPage} />}
 
           {activeSection === "tracking" && (
             <>
@@ -2339,6 +2342,133 @@ function TrackingAudit({ rows }: { rows: AnalyticsPayload["trackingAudit"] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/* ───────── /websites (web design page) ───────── */
+type WebsitesData = AnalyticsPayload["websitesPage"];
+
+function WebsitesPageSection({ data }: { data: WebsitesData | undefined }) {
+  if (!data) {
+    return (
+      <div className="dash-col-12">
+        <EmptyState>Websites page numbers will show here after the next update.</EmptyState>
+      </div>
+    );
+  }
+  const max = Math.max(1, ...data.series.map((b) => b.views));
+  const list = (rows: { label: string; count: number }[], empty: string, flags = false) =>
+    rows.length === 0 ? (
+      <EmptyState>{empty}</EmptyState>
+    ) : (
+      <div className="flex flex-col gap-2">
+        {rows.map((row) => {
+          const top = Math.max(1, rows[0].count);
+          return (
+            <div key={row.label}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="truncate text-[12.5px] text-[var(--colour-ink-soft)]">
+                  {flags && row.label !== "Unknown" ? `${flagFromCode(row.label)} ` : ""}
+                  {row.label}
+                </span>
+                <span className="font-display text-[14px] text-[var(--colour-glow)]">{n(row.count)}</span>
+              </div>
+              <div className="mt-1 h-1 rounded-full bg-white/5">
+                <div className="h-full rounded-full bg-[var(--colour-amber)]/75" style={{ width: `${Math.max(5, (row.count / top) * 100)}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  const t = data.totals;
+  return (
+    <>
+      <div className="dash-col-12">
+        <Panel eyebrow="alltheglory.co.za/websites" title="Websites page">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <MicroStat label="Visitors" value={n(data.visitors)} />
+            <MicroStat label="Page views" value={n(data.views)} />
+            <MicroStat label="Clicks" value={n(data.clicks)} />
+            <MicroStat label="Enquiries sent" value={n(data.enquiries)} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <MicroStat label="Today" value={`${n(t.today.visitors)} visitors`} />
+            <MicroStat label="Last 7 days" value={`${n(t.week.visitors)} visitors`} />
+            <MicroStat label="Last 30 days" value={`${n(t.month.visitors)} visitors`} />
+            <MicroStat label="All time" value={`${n(t.allTime.visitors)} visitors`} />
+          </div>
+          <div className="analytics-subhead mt-5">Views over this range</div>
+          {data.views === 0 ? (
+            <EmptyState>No visits to /websites in this range yet.</EmptyState>
+          ) : (
+            <div className="flex h-32 items-end gap-[3px]" aria-label="Websites page views over time">
+              {data.series.map((b) => (
+                <div
+                  key={b.key}
+                  className="flex-1 rounded-t bg-[var(--colour-amber)]/70"
+                  style={{ height: `${b.views ? Math.max(4, (b.views / max) * 100) : 1}%` }}
+                  title={`${b.label}: ${b.views} views, ${b.visitors} visitors`}
+                />
+              ))}
+            </div>
+          )}
+        </Panel>
+      </div>
+      <div className="dash-col-6">
+        <Panel eyebrow="What people tapped" title="Clicks on the page">
+          {list(data.clicksByLabel, "No clicks yet. Visit site, WhatsApp, email and enquiry clicks will appear here.")}
+        </Panel>
+      </div>
+      <div className="dash-col-6">
+        <Panel eyebrow="How they found it" title="Traffic sources">
+          {list(
+            data.sources.map((s) => ({ label: s.label, count: s.visitors })),
+            "No sources yet in this range.",
+          )}
+        </Panel>
+      </div>
+      <div className="dash-col-12">
+        <Panel eyebrow="Who" title="Audience">
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div>
+              <div className="analytics-subhead">Countries</div>
+              {list(data.countries, "No countries yet.", true)}
+            </div>
+            <div>
+              <div className="analytics-subhead">Cities</div>
+              {list(data.cities, "No cities yet.")}
+            </div>
+            <div>
+              <div className="analytics-subhead">Devices</div>
+              {list(data.devices, "No devices yet.")}
+            </div>
+          </div>
+        </Panel>
+      </div>
+      <div className="dash-col-12">
+        <Panel eyebrow="Latest" title="Recent visits and clicks">
+          {data.recent.length === 0 ? (
+            <EmptyState>No activity on /websites yet.</EmptyState>
+          ) : (
+            <div className="flex flex-col divide-y divide-white/5">
+              {data.recent.map((r, i) => (
+                <div key={`${r.ts}-${i}`} className="flex items-baseline justify-between gap-3 py-2 text-[12.5px]">
+                  <span className="text-[var(--colour-ink-soft)]">
+                    {r.type === "view" ? "Visited the page" : r.label}
+                    <span className="ml-2 text-[var(--colour-ink-quiet)]">
+                      {r.country && r.country !== "??" ? `${flagFromCode(r.country)} ` : ""}
+                      {[r.city, r.device].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[11px] text-[var(--colour-ink-quiet)]">{timeAgo(r.ts)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+      </div>
+    </>
   );
 }
 

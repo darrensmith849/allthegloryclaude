@@ -2,7 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { fireLinkClick } from "@/lib/track-event";
 import { CONTACT, type Project } from "./projects";
+
+/* ───────── Click tracking: one listener logs every button/link for the dashboard ───────── */
+export function WxClicks() {
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a) return;
+      const href = a.getAttribute("href") ?? "";
+      const text = (a.textContent ?? "").replace(/[↗→]/g, "").trim();
+      let label: string;
+      if (href.includes("wa.me") || href.includes("whatsapp")) label = "WhatsApp";
+      else if (href.startsWith("mailto:")) label = "Email";
+      else if (href.startsWith("tel:")) label = "Phone call";
+      else if (href.startsWith("#")) label = `Button · ${text || href}`;
+      else if (/^https?:/.test(href)) {
+        const name = a.closest(".wx-wo-cap")?.querySelector("h3")?.textContent;
+        label = `Visit site · ${name || new URL(href).hostname.replace(/^www\./, "")}`;
+      } else label = `Link · ${text || href}`;
+      fireLinkClick(label.slice(0, 150), href);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+  return null;
+}
 
 /* ───────── Top bar: clear over the hero, frosted once you scroll ───────── */
 export function WxNav() {
@@ -350,6 +376,7 @@ export function EnquiryForm() {
           const out = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
           if (res.ok && out.success) {
             form.reset();
+            fireLinkClick("Websites enquiry sent", "/api/contact");
             setState("ok");
             setMsg("Thank you - I'll be in touch soon.");
           } else {
