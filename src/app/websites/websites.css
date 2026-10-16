@@ -212,9 +212,12 @@ a.wx-oc.on:hover { border-color: rgba(241, 215, 166, 0.5); }
 .wx-status { min-height: 1.2em; text-align: center; font-size: 0.9rem; color: var(--muted); }
 .wx-status.ok { color: var(--gold-2); }
 .wx-status.err { color: #e59a74; }
-.wx-direct { margin-top: 2.2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem 2rem; font-size: 0.92rem; color: var(--muted); }
-.wx-direct a { color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: border-color 0.2s, color 0.2s; }
-.wx-direct a:hover { color: var(--gold-2); border-color: var(--gold); }
+.wx-direct { margin-top: 2.4rem; display: flex; justify-content: center; gap: 0.9rem; }
+.wx-direct a { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); color: var(--ink); opacity: 0.85; transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s var(--ease), opacity 0.25s; }
+.wx-direct a:hover, .wx-direct a:focus-visible { color: var(--gold-2); border-color: var(--gold); background: rgba(216, 178, 90, 0.08); opacity: 1; transform: translateY(-2px); }
+.wx-direct svg { width: 19px; height: 19px; fill: currentColor; }
+.wx-direct svg.line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.wx-direct svg.line .dot { fill: currentColor; stroke: none; }
 
 .wx-sign { margin-top: clamp(4rem, 8vw, 6rem); padding-top: 1.6rem; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--faint); }
 
