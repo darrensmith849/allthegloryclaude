@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/analytics/store";
 import { sendEmail } from "@/lib/email/send";
+import { sendWebsitesAutoReply } from "@/lib/email/websites-autoreply";
 import { noteEmail } from "@/lib/study/mail";
 import { subscribeStmt } from "@/lib/study/members";
 
@@ -131,6 +132,13 @@ export async function POST(req: Request) {
       },
       { status: unconfigured ? 500 : 502 },
     );
+  }
+
+  // Websites enquiries also get an instant "thanks, I've got it" from Daniel.
+  // Best effort: the enquiry already reached him, so this never fails the form.
+  if (kind === "contact" && fromWebsites) {
+    const reply = await sendWebsitesAutoReply(await getDb(), { email, name }, message).catch(() => null);
+    if (reply) await noteEmail("To them: websites enquiry auto-reply", reply);
   }
 
   return NextResponse.json({ success: true });
