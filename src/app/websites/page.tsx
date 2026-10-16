@@ -39,7 +39,7 @@ export default function WebsitesPage() {
                 <div key={c} className="wx-wall-col">
                   {[...col, ...col].map((n, k) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={k} src={`${W}/wall-${n}.webp`} alt="" />
+                    <img key={k} src={`${W}/wall-${n}.webp`} alt="" decoding="async" />
                   ))}
                 </div>
               ))}
@@ -51,7 +51,7 @@ export default function WebsitesPage() {
           <HeroLayer className="wx-feature-holder" speed={120} fade={0.5}>
             <div className="wx-feature">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`${W}/manuchie-shot.webp`} alt="" />
+              <img src={`${W}/manuchie-shot.webp`} alt="" fetchPriority="high" />
             </div>
           </HeroLayer>
 
@@ -181,7 +181,7 @@ export default function WebsitesPage() {
           <div className="wx-wrap">
             <div className="wx-call wx-reveal" aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/media/logo-dove-440.webp" alt="" />
+              <img src="/media/logo-dove-440.webp" alt="" loading="lazy" decoding="async" />
             </div>
             <h2 className="wx-h2 wx-reveal">Let&apos;s build yours.</h2>
             <p className="wx-body wx-contact-sub wx-reveal">

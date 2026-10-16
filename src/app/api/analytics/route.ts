@@ -1282,10 +1282,10 @@ export async function GET(req: Request) {
     const todayStart = startOfDashboardDayMs(now);
     const weekStart = todayStart - 6 * DAY_MS;
     const previousWeekStart = todayStart - 13 * DAY_MS;
-    const summary = await getSummary(db, range.start, range.end);
-    const previousSummary = comparisonForQuery
-      ? await getSummary(db, comparisonForQuery.start, comparisonForQuery.end)
-      : null;
+    const [summary, previousSummary] = await Promise.all([
+      getSummary(db, range.start, range.end),
+      comparisonForQuery ? getSummary(db, comparisonForQuery.start, comparisonForQuery.end) : Promise.resolve(null),
+    ]);
 
     const [
       activeNow,
@@ -1337,17 +1337,32 @@ export async function GET(req: Request) {
 
     const changes = buildChanges(summary, previousSummary);
     const trafficSources = aggregateSources(currentSourceRows, previousSourceRows, Boolean(comparisonForQuery));
-    const recentActivity = await getRecentActivity(db, now, donationSummary.recentDonations);
     const insights = buildInsights(summary, changes, trafficSources, music, devices, comparisonForQuery);
-    const legacyTopPages = await getTopPageRows(db, 0, now, null);
-    const legacyCountries = await getBreakdown(db, 0, now, null, "country");
-    const legacyDevices = await getBreakdown(db, 0, now, null, "device");
-    const legacySources = aggregateSources(await getSourceRows(db, 0, now), [], false);
-    const legacyDownloads = await getTopDownloads(db, 0, now);
-    const legacyDownloadCountries = await getDownloadCountries(db, 0, now);
-    const legacyMusic = await getTrackMetrics(db, 0, now, null, lifetimeSummary);
-    const recentDownloads = await getRecentDownloads(db, 0, now);
-    const websitesPage = await getWebsitesPage(db, range, now);
+    // Independent reads - run them together rather than one round trip at a time.
+    const [
+      recentActivity,
+      legacyTopPages,
+      legacyCountries,
+      legacyDevices,
+      legacySourceRows,
+      legacyDownloads,
+      legacyDownloadCountries,
+      legacyMusic,
+      recentDownloads,
+      websitesPage,
+    ] = await Promise.all([
+      getRecentActivity(db, now, donationSummary.recentDonations),
+      getTopPageRows(db, 0, now, null),
+      getBreakdown(db, 0, now, null, "country"),
+      getBreakdown(db, 0, now, null, "device"),
+      getSourceRows(db, 0, now),
+      getTopDownloads(db, 0, now),
+      getDownloadCountries(db, 0, now),
+      getTrackMetrics(db, 0, now, null, lifetimeSummary),
+      getRecentDownloads(db, 0, now),
+      getWebsitesPage(db, range, now),
+    ]);
+    const legacySources = aggregateSources(legacySourceRows, [], false);
 
     const payload: AnalyticsPayload = {
       fetchedAt: now,

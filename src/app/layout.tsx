@@ -19,7 +19,8 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
-  axes: ["opsz", "SOFT"],
+  // opsz only: the SOFT axis was never used and nearly doubled the file.
+  axes: ["opsz"],
 });
 
 // Clean modern sans for body copy.

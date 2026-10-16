@@ -220,7 +220,7 @@ function OrbitCard({ p, i, step, depth, rot, active }: { p: Project; i: number; 
   const inner = (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={p.shot} alt={`The ${p.name} website`} />
+      <img src={p.shot} alt={`The ${p.name} website`} loading="lazy" decoding="async" width={1600} height={1000} />
       <span className="wx-oc-no">{String(i + 1).padStart(2, "0")}</span>
       {!p.url && <span className="wx-oc-soon">Coming soon</span>}
       <motion.span className="wx-oc-shade" style={{ opacity: shade }} />
