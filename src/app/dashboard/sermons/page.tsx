@@ -3,18 +3,23 @@
 // Sermons - Daniel's own sermon notes (owner only: not the team, never
 // members). Each sermon keeps its YouTube link (played right here), its name,
 // who preached it and when he listened, his notes, and the verses and words
-// he looked up and saved while listening. Saved to D1 as he types
+// he looked up and saved while listening. Notes are saved one by one like
+// Study Notes (not tied to reading days); details save to D1 as he types
 // (/api/sermons); nothing is ever removed - a deleted sermon waits in
 // "Recently deleted" and earlier versions are kept.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FoldPanel } from "@/components/dashboard/fold-panel";
+import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { Panel } from "@/components/dashboard/panel";
 import { BibleLookup } from "@/components/study/bible-lookup";
+import { DayVideo } from "@/components/study/day-video";
 import { DictionaryMeaning } from "@/components/study/dictionary-meaning";
-import { youtubeId, youtubeStart, type Sermon, type SermonItem } from "@/lib/dashboard/sermons";
+import type { Sermon, SermonItem, SermonNote } from "@/lib/dashboard/sermons";
+import { parseYouTube, watchUrl } from "@/lib/study/youtube";
 import type { LanguageFill, WordFill } from "@/lib/dashboard/words";
 
-type Draft = Pick<Sermon, "title" | "preacher" | "url" | "listenedOn" | "notes">;
+type Draft = Pick<Sermon, "title" | "preacher" | "url" | "listenedOn">;
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const uid = () => `i_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -74,7 +79,12 @@ export default function SermonsPage() {
     const q = query.trim().toLowerCase();
     if (!q) return live;
     return live.filter((s) =>
-      [s.title, s.preacher, s.notes, ...s.items.map((i) => `${i.ref ?? ""} ${i.word ?? ""} ${i.text ?? ""}`)]
+      [
+        s.title,
+        s.preacher,
+        ...s.noteList.filter((n) => !n.deletedAt).map((n) => n.text),
+        ...s.items.map((i) => `${i.ref ?? ""} ${i.word ?? ""} ${i.text ?? ""}`),
+      ]
         .join(" ")
         .toLowerCase()
         .includes(q),
@@ -125,6 +135,10 @@ export default function SermonsPage() {
                   <span className="sermon-row-title">{s.title || "Untitled sermon"}</span>
                   <span className="sermon-row-meta">
                     {[s.preacher, niceDate(s.listenedOn)].filter(Boolean).join(" · ")}
+                    {(() => {
+                      const n = s.noteList.filter((x) => !x.deletedAt).length;
+                      return n ? ` · ${n} ${n === 1 ? "note" : "notes"}` : "";
+                    })()}
                     {s.items.length > 0 && ` · ${s.items.length} saved`}
                   </span>
                 </button>
@@ -204,12 +218,22 @@ function SermonEditor({
     preacher: sermon.preacher,
     url: sermon.url,
     listenedOn: sermon.listenedOn,
-    notes: sermon.notes,
   });
   const [items, setItems] = useState<SermonItem[]>(sermon.items);
   const [state, setState] = useState<SaveState>("idle");
+  const [small, setSmall] = useState(false);
   const pending = useRef<Partial<Draft>>({});
   const timer = useRef<number | null>(null);
+  const latest = useRef(sermon);
+  latest.current = sermon;
+
+  useEffect(() => {
+    try {
+      setSmall(localStorage.getItem("atg:sermon-video-small") === "1");
+    } catch {
+      /* storage blocked */
+    }
+  }, []);
 
   const flush = useCallback(async () => {
     if (timer.current) window.clearTimeout(timer.current);
@@ -260,8 +284,7 @@ function SermonEditor({
   const addItem = (item: Omit<SermonItem, "id" | "addedAt">) =>
     saveItems([...items, { ...item, id: uid(), addedAt: Date.now() }]);
 
-  const vid = youtubeId(draft.url);
-  const start = youtubeStart(draft.url);
+  const video = parseYouTube(draft.url);
   const verses = items.filter((i) => i.kind === "verse");
   const words = items.filter((i) => i.kind === "word");
 
@@ -321,32 +344,48 @@ function SermonEditor({
             onChange={(e) => set("url", e.target.value.trim())}
           />
         </label>
-        {draft.url && !vid && <p className="dash-word-hint mt-2">That doesn&apos;t look like a YouTube link yet.</p>}
-        {vid && (
-          <div className="sermon-video">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${vid}${start ? `?start=${start}` : ""}`}
-              title={draft.title || "Sermon video"}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-            />
+        {draft.url && !video && <p className="dash-word-hint mt-2">That doesn&apos;t look like a YouTube link yet.</p>}
+      </Panel>
+
+      {/* Playing, the video stays at the top of the page while the notes
+          scroll up beneath it, so you can watch and write at once. */}
+      {video && (
+        <div className={`sermon-dock ${small ? "is-small" : ""}`}>
+          <DayVideo url={draft.url} label="Play the sermon" links={false} />
+          <div className="sermon-dock-tools">
+            <button
+              type="button"
+              className="dash-word-link"
+              onClick={() => {
+                const next = !small;
+                setSmall(next);
+                try {
+                  localStorage.setItem("atg:sermon-video-small", next ? "1" : "0");
+                } catch {
+                  /* storage blocked */
+                }
+              }}
+            >
+              {small ? "Bigger video" : "Smaller video"}
+            </button>
+            <a className="dash-word-link" href={watchUrl(video)} target="_blank" rel="noreferrer">
+              Open in YouTube ↗
+            </a>
           </div>
-        )}
-      </Panel>
+        </div>
+      )}
 
-      <Panel title="My notes" eyebrow="Saved as you type">
-        <textarea
-          className="dash-textarea sermon-notes"
-          placeholder="What stood out, what God spoke to you, what to do about it…"
-          value={draft.notes}
-          onChange={(e) => set("notes", e.target.value)}
-          onBlur={() => void flush()}
-          aria-label="Your notes on this sermon"
-        />
-      </Panel>
+      <SermonNotes
+        sermonId={sermon.id}
+        initial={sermon.noteList}
+        onChange={(noteList) => onSaved({ ...latest.current, noteList })}
+      />
 
-      <Panel title="Saved from this sermon" eyebrow={`${verses.length} ${verses.length === 1 ? "verse" : "verses"} · ${words.length} ${words.length === 1 ? "word" : "words"}`}>
+      <FoldPanel
+        id="sermon-saved"
+        title="Saved from this sermon"
+        eyebrow={`${verses.length} ${verses.length === 1 ? "verse" : "verses"} · ${words.length} ${words.length === 1 ? "word" : "words"}`}
+      >
         {items.length === 0 && (
           <p className="dash-word-hint">Verses and words you save below show up here, kept with this sermon.</p>
         )}
@@ -386,21 +425,252 @@ function SermonEditor({
             ))}
           </div>
         )}
-      </Panel>
+      </FoldPanel>
 
       <div className="dash-grid">
         <div className="dash-col-6">
-          <Panel title="Look up a verse" eyebrow="Bible">
-            <BibleLookup addLabel="this sermon" onAdd={(ref, text) => void addItem({ kind: "verse", ref, text })} />
-          </Panel>
+          <FoldPanel id="sermon-verse" title="Look up a verse" eyebrow="Bible">
+            <BibleLookup addLabel="this sermon" planNote={false} onAdd={(ref, text) => void addItem({ kind: "verse", ref, text })} />
+          </FoldPanel>
         </div>
         <div className="dash-col-6">
-          <Panel title="Look up a word" eyebrow="Hebrew · Greek · English">
+          <FoldPanel id="sermon-word" title="Look up a word" eyebrow="Hebrew · Greek · English">
             <WordLookup onSave={(w) => void addItem({ kind: "word", ...w })} />
-          </Panel>
+          </FoldPanel>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ───────── A sermon's notes: saved one by one, like Study Notes ───────── */
+function SermonNotes({
+  sermonId,
+  initial,
+  onChange,
+}: {
+  sermonId: string;
+  initial: SermonNote[];
+  onChange: (notes: SermonNote[]) => void;
+}) {
+  const draftKey = `atg:sermon-draft:${sermonId}`;
+  const [notes, setNotes] = useState<SermonNote[]>(initial);
+  const [draft, setDraftText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [closed, setClosed] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const writeBox = useRef<HTMLTextAreaElement>(null);
+
+  // A half-written note survives a reload or switching sermons (this device).
+  useEffect(() => {
+    try {
+      setDraftText(localStorage.getItem(draftKey) ?? "");
+    } catch {
+      /* storage blocked */
+    }
+  }, [draftKey]);
+  function setDraft(text: string) {
+    setDraftText(text);
+    if (error) setError(null);
+    try {
+      if (text) localStorage.setItem(draftKey, text);
+      else localStorage.removeItem(draftKey);
+    } catch {
+      /* storage blocked */
+    }
+  }
+
+  function update(next: SermonNote[]) {
+    setNotes(next);
+    onChange(next);
+  }
+  const put = (n: SermonNote) => update(notes.some((x) => x.id === n.id) ? notes.map((x) => (x.id === n.id ? n : x)) : [...notes, n]);
+
+  async function call(method: string, body?: unknown, query = ""): Promise<SermonNote> {
+    const r = await fetch(`/api/sermon-notes${query}`, {
+      method,
+      headers: body ? { "content-type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = (await r.json().catch(() => ({}))) as { note?: SermonNote; error?: string };
+    if (!r.ok || !data.note) throw new Error(data.error ?? "Couldn't save that.");
+    return data.note;
+  }
+
+  async function saveNew() {
+    const text = draft.trim();
+    if (!text || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const note = await call("POST", { sermonId, text });
+      put(note);
+      setDraft("");
+      setFlash(note.id);
+      window.setTimeout(() => setFlash(null), 2500);
+      writeBox.current?.focus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save that note.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    try {
+      put(await call("PATCH", { id: editing.id, text: editing.text }));
+      setEditing(null);
+    } catch (e) {
+      alertLater(e);
+    }
+  }
+
+  const live = notes.filter((n) => !n.deletedAt);
+  const deleted = notes.filter((n) => n.deletedAt);
+  const time = (ms: number) =>
+    new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <FoldPanel id="sermon-notes" title="My notes" eyebrow={`${live.length} ${live.length === 1 ? "note" : "notes"}`} forceOpen={Boolean(editing)}>
+      {live.length > 0 && (
+        <div className="dash-note-list">
+          {live.map((n, i) => {
+            const open = editing?.id === n.id || !closed.has(n.id);
+            const preview = n.text.replace(/\s+/g, " ").trim();
+            return (
+              <article key={n.id} className={`dash-note ${open ? "is-open" : ""} ${flash === n.id ? "is-new" : ""}`}>
+                <button
+                  type="button"
+                  className="dash-note-head"
+                  aria-expanded={open}
+                  onClick={() =>
+                    editing?.id !== n.id &&
+                    setClosed((c) => {
+                      const next = new Set(c);
+                      if (next.has(n.id)) next.delete(n.id);
+                      else next.add(n.id);
+                      return next;
+                    })
+                  }
+                >
+                  <span className="dash-note-head-ref">Note {i + 1}</span>
+                  <span className="dash-note-head-text">{open ? time(n.createdAt) : preview}</span>
+                  <span className="dash-note-chev" aria-hidden>
+                    ›
+                  </span>
+                </button>
+                {open && (
+                  <div className="dash-note-open">
+                    {editing?.id === n.id ? (
+                      <div className="flex flex-col gap-2">
+                        <GrowingTextarea
+                          className="dash-textarea dash-word-field"
+                          minRows={4}
+                          value={editing.text}
+                          autoFocus
+                          onChange={(e) => setEditing({ id: n.id, text: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void saveEdit();
+                            if (e.key === "Escape") setEditing(null);
+                          }}
+                          aria-label={`Edit note ${i + 1}`}
+                        />
+                        <div className="flex items-center gap-3">
+                          <button type="button" className="dash-btn dash-btn-primary" onClick={() => void saveEdit()} disabled={!editing.text.trim()}>
+                            Save
+                          </button>
+                          <button type="button" className="dash-word-link" onClick={() => setEditing(null)}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="sermon-note-text">{n.text}</div>
+                        <div className="dash-note-actions">
+                          <button type="button" className="dash-word-link" onClick={() => setEditing({ id: n.id, text: n.text })}>
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="dash-word-link is-danger"
+                            onClick={async () => {
+                              try {
+                                put(await call("DELETE", undefined, `?id=${encodeURIComponent(n.id)}`));
+                              } catch (e) {
+                                alertLater(e);
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <div className={`dash-note-write ${live.length ? "mt-4" : ""}`}>
+        <label className="dash-label" htmlFor={`sermon-write-${sermonId}`}>
+          {live.length ? "New note" : "Write your first note"}
+        </label>
+        <GrowingTextarea
+          id={`sermon-write-${sermonId}`}
+          ref={writeBox}
+          className="dash-textarea dash-word-field"
+          minRows={5}
+          placeholder="What stood out, what God spoke to you, what to do about it…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void saveNew();
+          }}
+        />
+        <div className="flex items-center gap-3 flex-wrap mt-3">
+          <button type="button" className="dash-btn dash-btn-primary" onClick={() => void saveNew()} disabled={busy || !draft.trim()}>
+            {busy ? "Saving…" : "Save note"}
+          </button>
+          <span className="dash-word-hint">⌘ + Enter saves · a fresh box opens for the next note</span>
+        </div>
+        {error && <p className="dash-word-hint mt-2">{error}</p>}
+      </div>
+
+      {deleted.length > 0 && (
+        <div className="mt-4">
+          <button type="button" className="dash-word-link" onClick={() => setShowDeleted((v) => !v)}>
+            {showDeleted ? "Hide" : "Show"} recently deleted notes · {deleted.length}
+          </button>
+          {showDeleted &&
+            deleted.map((n) => (
+              <div key={n.id} className="sermon-deleted">
+                <span className="truncate">{n.text.replace(/\s+/g, " ").slice(0, 90)}</span>
+                <button
+                  type="button"
+                  className="dash-word-link"
+                  onClick={async () => {
+                    try {
+                      put(await call("PATCH", { id: n.id, restore: true }));
+                    } catch (e) {
+                      alertLater(e);
+                    }
+                  }}
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
+        </div>
+      )}
+    </FoldPanel>
   );
 }
 

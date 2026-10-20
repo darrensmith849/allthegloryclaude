@@ -41,12 +41,14 @@ export function Marked({ text }: { text: string }) {
 export function BibleLookup({
   onAdd,
   addLabel = "my notes",
+  planNote = true,
   plan,
   planName = "your notes",
   onOpenDay,
 }: {
   onAdd?: (ref: string, text: string) => void; // text: the verse as shown (Berean Standard Bible)
   addLabel?: string; // "+ Add to <addLabel>"
+  planNote?: boolean; // false: leave out where the chapter sits in the reading plan (e.g. on Sermons)
   plan?: PlanIndex; // days already studied that include each chapter
   planName?: string; // e.g. "Daniel's notes"
   onOpenDay?: (day: string) => void;
@@ -111,7 +113,7 @@ export function BibleLookup({
             const partial = res.results.length < 2 || res.label.includes(":");
             return (
               <div className="dash-bible-context">
-                {days.length > 0 ? (
+                {!planNote ? null : days.length > 0 ? (
                   <span>
                     📅 In the chronological order, {chapterName} is read on{" "}
                     {days.map((d, i) => (
