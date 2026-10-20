@@ -508,3 +508,29 @@ CREATE TABLE IF NOT EXISTS word_fill_cache (
   json       TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+
+-- Sermons (/dashboard/sermons): the owner's private sermon notes - a
+-- YouTube link, the sermon's name, notes, and verses / words saved from it
+-- (items = JSON array). Never hard-deleted: deleted_at moves one to
+-- "Recently deleted". Earlier versions are kept in sermon_versions (at most
+-- one every 15 minutes while typing, so autosave doesn't flood it).
+CREATE TABLE IF NOT EXISTS sermons (
+  id          TEXT PRIMARY KEY,
+  title       TEXT NOT NULL DEFAULT '',
+  preacher    TEXT NOT NULL DEFAULT '',
+  url         TEXT NOT NULL DEFAULT '',
+  listened_on TEXT,                 -- YYYY-MM-DD
+  notes       TEXT NOT NULL DEFAULT '',
+  items       TEXT NOT NULL DEFAULT '[]',
+  created_at  INTEGER NOT NULL,     -- epoch ms
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_sermons_updated ON sermons(updated_at);
+CREATE TABLE IF NOT EXISTS sermon_versions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  sermon_id  TEXT NOT NULL,
+  json       TEXT NOT NULL,         -- the sermon as it was before an edit
+  saved_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_versions ON sermon_versions(sermon_id, saved_at);

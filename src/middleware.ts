@@ -54,6 +54,7 @@ export const config = {
     "/api/owner-reminders",
     "/api/owner-videos",
     "/api/word-fill",
+    "/api/sermons",
     "/api/analytics",
     "/api/members",
     "/api/members/:path*",

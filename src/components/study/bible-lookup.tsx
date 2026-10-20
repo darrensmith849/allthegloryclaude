@@ -40,11 +40,13 @@ export function Marked({ text }: { text: string }) {
 
 export function BibleLookup({
   onAdd,
+  addLabel = "my notes",
   plan,
   planName = "your notes",
   onOpenDay,
 }: {
-  onAdd?: (ref: string) => void;
+  onAdd?: (ref: string, text: string) => void; // text: the verse as shown (Berean Standard Bible)
+  addLabel?: string; // "+ Add to <addLabel>"
   plan?: PlanIndex; // days already studied that include each chapter
   planName?: string; // e.g. "Daniel's notes"
   onOpenDay?: (day: string) => void;
@@ -147,11 +149,11 @@ export function BibleLookup({
                     type="button"
                     className="dash-word-link"
                     onClick={() => {
-                      onAdd(v.ref);
+                      onAdd(v.ref, v.text.replace(/<\/?mark>/g, ""));
                       setAdded(v.ref);
                     }}
                   >
-                    {added === v.ref ? "✓ Added to your notes" : "+ Add to my notes"}
+                    {added === v.ref ? `✓ Added to ${addLabel.replace(/^my /, "your ")}` : `+ Add to ${addLabel}`}
                   </button>
                 )}
                 <a className="dash-word-link" href={bibleAppVerse(v.book, v.chapter, v.verse)} target="_blank" rel="noreferrer">

@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard?show=1", label: "Who am I?", glyph: "✶" }, // ?show: even when it's set not to open every time
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
+  { href: "/dashboard/sermons", label: "Sermons", glyph: "▶\uFE0E" },
   { href: "/dashboard/notes?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
   { href: "/dashboard/members", label: "Members", glyph: "☍" },
   { href: "/dashboard/community", label: "Community", glyph: "❧" },
