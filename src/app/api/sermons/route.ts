@@ -1,4 +1,5 @@
-// The owner's sermon notes (tables sermons + sermon_versions, see
+// The owner's sermons (tables sermons + sermon_versions; each sermon's
+// saved notes in sermon_notes, changed through /api/sermon-notes - see
 // db/schema.sql). The dashboard middleware requires the admin session, so
 // only Daniel reaches this - never the team or members.
 //
@@ -6,7 +7,7 @@
 // restorable with PATCH { restore: true }), and edits keep the earlier
 // version in sermon_versions.
 import { getDb, type D1Db } from "@/lib/analytics/store";
-import type { Sermon, SermonItem } from "@/lib/dashboard/sermons";
+import { toNote, type NoteRow, type Sermon, type SermonItem, type SermonNote } from "@/lib/dashboard/sermons";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ interface Row {
   deleted_at: number | null;
 }
 
-function toSermon(r: Row): Sermon {
+function toSermon(r: Row, noteList: SermonNote[] = []): Sermon {
   let items: SermonItem[] = [];
   try {
     const parsed = JSON.parse(r.items || "[]");
@@ -42,6 +43,7 @@ function toSermon(r: Row): Sermon {
     url: r.url,
     listenedOn: r.listened_on,
     notes: r.notes,
+    noteList,
     items,
     createdAt: Number(r.created_at),
     updatedAt: Number(r.updated_at),
@@ -62,7 +64,7 @@ function cleanItems(v: unknown): SermonItem[] | undefined {
         id: i.id.slice(0, 40),
         kind: i.kind,
         ref: str(i.ref, 120),
-        text: str(i.text, 4000),
+        text: str(i.text, 20000), // a whole passage can be long
         word: str(i.word, 80),
         original: str(i.original, 160),
         strongs: str(i.strongs, 12),
@@ -82,12 +84,53 @@ async function fetchOne(db: D1Db, id: string): Promise<Row | null> {
   return db.prepare("SELECT * FROM sermons WHERE id = ?").bind(id).first<Row>();
 }
 
+/** One sermon with its notes, for the response after a change. */
+async function full(db: D1Db, id: string): Promise<Sermon | null> {
+  const row = await fetchOne(db, id);
+  if (!row) return null;
+  const notes = await db.prepare("SELECT * FROM sermon_notes WHERE sermon_id = ? ORDER BY position, created_at").bind(id).all<NoteRow>();
+  return toSermon(row, (notes.results ?? []).map(toNote));
+}
+
+// The first version had one notes box per sermon. Move what's in it into a
+// saved note (keeping a copy in sermon_versions), so it reads like the rest.
+async function moveOldNotes(db: D1Db, rows: Row[], noteRows: NoteRow[]): Promise<boolean> {
+  const has = new Set(noteRows.map((n) => n.sermon_id));
+  const old = rows.filter((r) => r.notes.trim() && !has.has(r.id));
+  if (!old.length) return false;
+  const now = Date.now();
+  await db.batch(
+    old.flatMap((r) => [
+      db.prepare("INSERT INTO sermon_versions (sermon_id, json, saved_at) VALUES (?, ?, ?)").bind(r.id, JSON.stringify(r), now),
+      db
+        .prepare("INSERT INTO sermon_notes (id, sermon_id, text, position, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)")
+        .bind(`n_${r.id}_first`, r.id, r.notes.trim(), r.updated_at, now),
+      db.prepare("UPDATE sermons SET notes = '' WHERE id = ?").bind(r.id),
+    ]),
+  );
+  return true;
+}
+
 export async function GET() {
   const db = await open();
   if (db instanceof Response) return db;
   try {
-    const rows = await db.prepare("SELECT * FROM sermons ORDER BY COALESCE(listened_on, '') DESC, created_at DESC").all<Row>();
-    return Response.json({ sermons: (rows.results ?? []).map(toSermon) }, { headers: { "cache-control": "no-store" } });
+    const order = "SELECT * FROM sermons ORDER BY COALESCE(listened_on, '') DESC, created_at DESC";
+    const allNotes = "SELECT * FROM sermon_notes ORDER BY position, created_at";
+    let [rows, notes] = await Promise.all([db.prepare(order).all<Row>(), db.prepare(allNotes).all<NoteRow>()]);
+    if (await moveOldNotes(db, rows.results ?? [], notes.results ?? [])) {
+      [rows, notes] = await Promise.all([db.prepare(order).all<Row>(), db.prepare(allNotes).all<NoteRow>()]);
+    }
+    const bySermon = new Map<string, SermonNote[]>();
+    for (const n of notes.results ?? []) {
+      const list = bySermon.get(n.sermon_id) ?? [];
+      list.push(toNote(n));
+      bySermon.set(n.sermon_id, list);
+    }
+    return Response.json(
+      { sermons: (rows.results ?? []).map((r) => toSermon(r, bySermon.get(r.id))) },
+      { headers: { "cache-control": "no-store" } },
+    );
   } catch (e) {
     console.error("sermons GET:", e);
     return Response.json({ error: "Couldn't load your sermons." }, { status: 500 });
@@ -117,8 +160,7 @@ export async function POST(req: Request) {
         now,
       )
       .run();
-    const row = await fetchOne(db, id);
-    return Response.json({ sermon: row ? toSermon(row) : null });
+    return Response.json({ sermon: await full(db, id) });
   } catch (e) {
     console.error("sermons POST:", e);
     return Response.json({ error: "Couldn't add that sermon." }, { status: 500 });
@@ -170,8 +212,7 @@ export async function PATCH(req: Request) {
       stmts.push(db.prepare(`UPDATE sermons SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).bind(...args, now, id));
       await db.batch(stmts);
     }
-    const row = await fetchOne(db, id);
-    return Response.json({ sermon: row ? toSermon(row) : null });
+    return Response.json({ sermon: await full(db, id) });
   } catch (e) {
     console.error("sermons PATCH:", e);
     return Response.json({ error: "Couldn't save that." }, { status: 500 });
@@ -186,8 +227,7 @@ export async function DELETE(req: Request) {
   const now = Date.now();
   try {
     await db.prepare("UPDATE sermons SET deleted_at = ?, updated_at = ? WHERE id = ?").bind(now, now, id).run();
-    const row = await fetchOne(db, id);
-    return Response.json({ sermon: row ? toSermon(row) : null });
+    return Response.json({ sermon: await full(db, id) });
   } catch (e) {
     console.error("sermons DELETE:", e);
     return Response.json({ error: "Couldn't move that to Recently deleted." }, { status: 500 });

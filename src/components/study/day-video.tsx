@@ -13,7 +13,15 @@ import { embedUrl, parseYouTube, subscribeUrl, watchUrl } from "@/lib/study/yout
 
 const PLAYER_ORIGIN = "https://www.youtube-nocookie.com";
 
-export function DayVideo({ url, label = "Watch the session" }: { url: string | null | undefined; label?: string }) {
+export function DayVideo({
+  url,
+  label = "Watch the session",
+  links = true,
+}: {
+  url: string | null | undefined;
+  label?: string;
+  links?: boolean; // false: no "Subscribe" / "Open in YouTube" row (e.g. someone else's sermon)
+}) {
   const v = parseYouTube(url);
   const [playing, setPlaying] = useState(false);
   const [load, setLoad] = useState(false); // the player is in the page (hidden until playing)
@@ -113,7 +121,7 @@ export function DayVideo({ url, label = "Watch the session" }: { url: string | n
           </span>
         </button>
       )}
-      <div className="day-video-links">
+      {links && <div className="day-video-links">
         <a className="day-video-subscribe" href={subscribeUrl} target="_blank" rel="noreferrer">
           <svg viewBox="0 0 68 48" aria-hidden>
             <path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3.3 34 .3 34 .3s-21.3 0-26.6 1.4c-2.9.8-5.1 3.1-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 47.7 34 47.7 34 47.7s21.3 0 26.6-1.4c2.9-.8 5.1-3.1 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#f00" />
@@ -124,7 +132,7 @@ export function DayVideo({ url, label = "Watch the session" }: { url: string | n
         <a className="dash-word-link day-video-link" href={watchUrl(v)} target="_blank" rel="noreferrer">
           Open in YouTube ↗
         </a>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -534,3 +534,24 @@ CREATE TABLE IF NOT EXISTS sermon_versions (
   saved_at   INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sermon_versions ON sermon_versions(sermon_id, saved_at);
+
+-- A sermon's notes, one row per saved note (like study_notes, but by sermon
+-- rather than reading day). Never hard-deleted (deleted_at); every edit
+-- keeps the earlier text in sermon_note_versions.
+CREATE TABLE IF NOT EXISTS sermon_notes (
+  id         TEXT PRIMARY KEY,
+  sermon_id  TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  position   REAL NOT NULL,         -- order within the sermon
+  created_at INTEGER NOT NULL,      -- epoch ms
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_notes ON sermon_notes(sermon_id, position);
+CREATE TABLE IF NOT EXISTS sermon_note_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id  TEXT NOT NULL,
+  text     TEXT NOT NULL,           -- the note as it was before an edit
+  saved_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_note_versions ON sermon_note_versions(note_id, saved_at);

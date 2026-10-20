@@ -55,6 +55,7 @@ export const config = {
     "/api/owner-videos",
     "/api/word-fill",
     "/api/sermons",
+    "/api/sermon-notes",
     "/api/analytics",
     "/api/members",
     "/api/members/:path*",

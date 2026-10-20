@@ -12,32 +12,49 @@ export interface SermonItem {
   addedAt: number;
 }
 
+export interface SermonNote {
+  id: string;
+  sermonId: string;
+  text: string;
+  position: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 export interface Sermon {
   id: string;
   title: string;
   preacher: string;
   url: string;
   listenedOn: string | null; // YYYY-MM-DD
-  notes: string;
+  notes: string; // the first version's single notes box - moved into noteList on load
+  noteList: SermonNote[]; // saved notes, in order (deleted ones too, with deletedAt)
   items: SermonItem[];
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
 }
 
-/** The YouTube video id from any usual link (watch, youtu.be, shorts, live, embed). */
-export function youtubeId(url: string): string | null {
-  const u = url.trim();
-  if (!u) return null;
-  const m =
-    u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/) ??
-    u.match(/^([A-Za-z0-9_-]{11})$/);
-  return m ? m[1] : null;
+// A sermon_notes row as D1 returns it.
+export interface NoteRow {
+  id: string;
+  sermon_id: string;
+  text: string;
+  position: number;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
 }
 
-/** Where a time link like ?t=754 or &t=12m34s starts, in seconds. */
-export function youtubeStart(url: string): number {
-  const m = url.match(/[?&](?:t|start)=(\d+h)?(\d+m)?(\d+)s?/);
-  if (!m) return 0;
-  return (parseInt(m[1] ?? "0") || 0) * 3600 + (parseInt(m[2] ?? "0") || 0) * 60 + (parseInt(m[3] ?? "0") || 0);
+export function toNote(r: NoteRow): SermonNote {
+  return {
+    id: r.id,
+    sermonId: r.sermon_id,
+    text: r.text,
+    position: Number(r.position),
+    createdAt: Number(r.created_at),
+    updatedAt: Number(r.updated_at),
+    deletedAt: r.deleted_at == null ? null : Number(r.deleted_at),
+  };
 }

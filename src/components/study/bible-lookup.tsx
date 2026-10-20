@@ -1,6 +1,7 @@
 "use client";
 
-// "Look up a verse": a reference (John 3:16) or a few words (living water),
+// "Look up a verse": a reference (John 3:16), or the words of a verse as you
+// remember them (any translation - the closest verse comes first),
 // with each verse ready to add to today's notes or open in the NIV. For a
 // chapter that's part of the chronological reading, it says which day of
 // the plan it belongs to, so it's read in its place in the story.
@@ -86,7 +87,7 @@ export function BibleLookup({
         <input
           className="dash-input"
           type="search"
-          placeholder="John 3:16 · Psalm 23 · living water"
+          placeholder="John 3:16 · Psalm 23 · or type the words you remember"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           aria-label="Look up a verse or words"
@@ -100,8 +101,7 @@ export function BibleLookup({
         <div className="dash-bible-results">
           <div className="dash-bible-head">
             <span>
-              {res.label}
-              {res.kind === "words" && ` · ${res.total} ${res.total === 1 ? "verse" : "verses"}`}
+              {res.kind === "words" ? `${res.total} ${res.total === 1 ? "verse" : "verses"} with those words · best match first` : res.label}
             </span>
             <span className="dash-bible-version">Berean Standard Bible</span>
           </div>
@@ -140,8 +140,32 @@ export function BibleLookup({
               </div>
             );
           })()}
-          {res.results.map((v) => (
-            <div key={v.ref} className="dash-bible-verse">
+          {res.kind === "passage" && onAdd && res.results.length > 1 && (() => {
+            // The whole passage as one entry: "Hebrews 13:20-21" with both verses' text.
+            const first = res.results[0];
+            const last = res.results[res.results.length - 1];
+            const book = first.ref.replace(/\s+\d+:\d+$/, "");
+            const ref =
+              first.chapter === last.chapter
+                ? `${book} ${first.chapter}:${first.verse}-${last.verse}`
+                : `${book} ${first.chapter}:${first.verse}-${last.chapter}:${last.verse}`;
+            const text = res.results.map((v) => `${v.verse} ${v.text.replace(/<\/?mark>/g, "")}`).join(" ");
+            return (
+              <button
+                type="button"
+                className="dash-btn dash-bible-addall"
+                onClick={() => {
+                  onAdd(ref, text);
+                  setAdded(ref);
+                }}
+              >
+                {added === ref ? `✓ ${ref} added to ${addLabel.replace(/^my /, "your ")}` : `+ Add ${ref} to ${addLabel}`}
+              </button>
+            );
+          })()}
+          {res.results.map((v, i) => (
+            <div key={v.ref} className={`dash-bible-verse ${res.kind === "words" && i === 0 ? "is-best" : ""}`}>
+              {res.kind === "words" && i === 0 && <span className="dash-bible-best">Best match</span>}
               <p>
                 <strong>{res.kind === "passage" ? v.verse : v.ref}</strong> <Marked text={v.text} />
               </p>
