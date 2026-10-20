@@ -129,11 +129,11 @@ export default function SermonsPage() {
 
       {loadError && <p className="dash-word-hint">{loadError}</p>}
 
-      <div className="dash-grid">
-        <div className="dash-col-4">
-          <Panel title="Your sermons" eyebrow={sermons ? `${live.length} saved` : "Loading"}>
+      <div className="flex flex-col gap-[18px]">
+        <div>
+          <FoldPanel id="sermon-list" title="Your sermons" eyebrow={sermons ? `${live.length} saved` : "Loading"}>
             <input
-              className="dash-input"
+              className="dash-input sermon-search"
               type="search"
               placeholder="Search names, notes, verses…"
               value={query}
@@ -192,10 +192,10 @@ export default function SermonsPage() {
                   ))}
               </div>
             )}
-          </Panel>
+          </FoldPanel>
         </div>
 
-        <div className="dash-col-8">
+        <div>
           {open && !open.deletedAt ? (
             <SermonEditor
               key={open.id}
@@ -209,7 +209,7 @@ export default function SermonsPage() {
           ) : (
             <Panel>
               <p className="dash-word-hint">
-                {sermons ? "Pick a sermon on the left, or add a new one." : "Loading your sermons…"}
+                {sermons ? "Pick a sermon above, or add a new one." : "Loading your sermons…"}
               </p>
             </Panel>
           )}
@@ -241,19 +241,10 @@ function SermonEditor({
   });
   const [items, setItems] = useState<SermonItem[]>(sermon.items);
   const [state, setState] = useState<SaveState>("idle");
-  const [small, setSmall] = useState(false);
   const pending = useRef<Partial<Draft>>({});
   const timer = useRef<number | null>(null);
   const latest = useRef(sermon);
   latest.current = sermon;
-
-  useEffect(() => {
-    try {
-      setSmall(localStorage.getItem("atg:sermon-video-small") === "1");
-    } catch {
-      /* storage blocked */
-    }
-  }, []);
 
   const flush = useCallback(async () => {
     if (timer.current) window.clearTimeout(timer.current);
@@ -309,155 +300,137 @@ function SermonEditor({
   const words = items.filter((i) => i.kind === "word");
 
   return (
-    <div className="flex flex-col gap-[18px]">
-      <Panel
-        eyebrow={state === "saving" ? "Saving…" : state === "saved" ? "Saved" : state === "error" ? "Not saved - retrying on your next change" : "Sermon"}
-        action={
-          <button
-            type="button"
-            className="dash-word-link is-danger"
-            onClick={async () => {
-              await flush();
-              try {
-                const { sermon: s } = await api<{ sermon: Sermon }>("DELETE", undefined, `?id=${encodeURIComponent(sermon.id)}`);
-                onDeleted(s);
-              } catch (e) {
-                alertLater(e);
-              }
-            }}
-          >
-            Move to recently deleted
-          </button>
-        }
-      >
-        <input
-          id="sermon-title"
-          className="sermon-title-input"
-          placeholder="Sermon name"
-          value={draft.title}
-          onChange={(e) => set("title", e.target.value)}
-          aria-label="Sermon name"
-        />
-        <div className="sermon-fields">
-          <label className="sermon-field">
-            <span className="dash-label">Preacher</span>
-            <input className="dash-input" placeholder="Who preached it" value={draft.preacher} onChange={(e) => set("preacher", e.target.value)} />
-          </label>
-          <label className="sermon-field">
-            <span className="dash-label">Listened on</span>
-            <input
-              className="dash-input"
-              type="date"
-              value={draft.listenedOn ?? ""}
-              onChange={(e) => set("listenedOn", e.target.value || null)}
-            />
-          </label>
-        </div>
-        <label className="sermon-field mt-3">
-          <span className="dash-label">YouTube link</span>
-          <input
-            className="dash-input"
-            type="url"
-            inputMode="url"
-            placeholder="https://www.youtube.com/watch?v=…"
-            value={draft.url}
-            onChange={(e) => set("url", e.target.value.trim())}
-          />
-        </label>
-        {draft.url && !video && <p className="dash-word-hint mt-2">That doesn&apos;t look like a YouTube link yet.</p>}
-      </Panel>
-
-      {/* Playing, the video stays at the top of the page while the notes
-          scroll up beneath it, so you can watch and write at once. */}
-      {video && (
-        <div className={`sermon-dock ${small ? "is-small" : ""}`}>
-          <DayVideo url={draft.url} label="Play the sermon" links={false} resumeKey={`sermon:${sermon.id}`} />
-          <div className="sermon-dock-tools">
+    <div className="sermon-layout">
+      {/* Left: the sermon and its video, staying put while the notes on the right scroll. */}
+      <div className="sermon-left">
+        <Panel
+          eyebrow={state === "saving" ? "Saving…" : state === "saved" ? "Saved" : state === "error" ? "Not saved - retrying on your next change" : "Sermon"}
+          action={
             <button
               type="button"
-              className="dash-word-link"
-              onClick={() => {
-                const next = !small;
-                setSmall(next);
+              className="dash-word-link is-danger"
+              onClick={async () => {
+                await flush();
                 try {
-                  localStorage.setItem("atg:sermon-video-small", next ? "1" : "0");
-                } catch {
-                  /* storage blocked */
+                  const { sermon: s } = await api<{ sermon: Sermon }>("DELETE", undefined, `?id=${encodeURIComponent(sermon.id)}`);
+                  onDeleted(s);
+                } catch (e) {
+                  alertLater(e);
                 }
               }}
             >
-              {small ? "Bigger video" : "Smaller video"}
+              Move to recently deleted
             </button>
-            <a className="dash-word-link" href={watchUrl(video)} target="_blank" rel="noreferrer">
-              Open in YouTube ↗
-            </a>
-          </div>
-        </div>
-      )}
-
-      <SermonNotes
-        sermonId={sermon.id}
-        initial={sermon.noteList}
-        onChange={(noteList) => onSaved({ ...latest.current, noteList })}
-      />
-
-      <FoldPanel
-        id="sermon-saved"
-        title="Saved from this sermon"
-        eyebrow={`${verses.length} ${verses.length === 1 ? "verse" : "verses"} · ${words.length} ${words.length === 1 ? "word" : "words"}`}
-      >
-        {items.length === 0 && (
-          <p className="dash-word-hint">Verses and words you save below show up here, kept with this sermon.</p>
-        )}
-        {verses.length > 0 && (
-          <div className="sermon-items">
-            {verses.map((v) => (
-              <div key={v.id} className="sermon-item">
-                <div>
-                  <strong>{v.ref}</strong>
-                  {v.text && <p>{v.text}</p>}
-                </div>
-                <button type="button" className="dash-word-link is-danger" onClick={() => saveItems(items.filter((x) => x.id !== v.id))} aria-label={`Remove ${v.ref}`}>
-                  Remove
-                </button>
+          }
+        >
+          <input
+            id="sermon-title"
+            className="sermon-title-input"
+            placeholder="Sermon name"
+            value={draft.title}
+            onChange={(e) => set("title", e.target.value)}
+            aria-label="Sermon name"
+          />
+          {video && (
+            <div className="sermon-video-wrap">
+              <DayVideo url={draft.url} label="Play the sermon" links={false} resumeKey={`sermon:${sermon.id}`} />
+              <div className="sermon-dock-tools">
+                <a className="dash-word-link" href={watchUrl(video)} target="_blank" rel="noreferrer">
+                  Open in YouTube ↗
+                </a>
               </div>
-            ))}
+            </div>
+          )}
+          <div className="sermon-fields">
+            <label className="sermon-field">
+              <span className="dash-label">Preacher</span>
+              <input className="dash-input" placeholder="Who preached it" value={draft.preacher} onChange={(e) => set("preacher", e.target.value)} />
+            </label>
+            <label className="sermon-field">
+              <span className="dash-label">Listened on</span>
+              <input
+                className="dash-input"
+                type="date"
+                value={draft.listenedOn ?? ""}
+                onChange={(e) => set("listenedOn", e.target.value || null)}
+              />
+            </label>
           </div>
-        )}
-        {words.length > 0 && (
-          <div className="sermon-items">
-            {words.map((w) => (
-              <div key={w.id} className="sermon-item">
-                <div>
-                  <strong>{w.word}</strong>
-                  {(w.original || w.strongs) && (
-                    <span className="sermon-item-meta">
-                      {" "}
-                      · {[w.original, w.strongs].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                  {w.text && <p>{w.text}</p>}
-                </div>
-                <button type="button" className="dash-word-link is-danger" onClick={() => saveItems(items.filter((x) => x.id !== w.id))} aria-label={`Remove ${w.word}`}>
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </FoldPanel>
+          <label className="sermon-field mt-3">
+            <span className="dash-label">YouTube link</span>
+            <input
+              className="dash-input"
+              type="url"
+              inputMode="url"
+              placeholder="https://www.youtube.com/watch?v=…"
+              value={draft.url}
+              onChange={(e) => set("url", e.target.value.trim())}
+            />
+          </label>
+          {draft.url && !video && <p className="dash-word-hint mt-2">That doesn&apos;t look like a YouTube link yet.</p>}
+        </Panel>
+      </div>
 
-      <div className="dash-grid">
-        <div className="dash-col-6">
+      {/* Right: notes, what's been saved, and the lookups - these scroll. */}
+      <div className="sermon-right">
+          <SermonNotes
+            sermonId={sermon.id}
+            initial={sermon.noteList}
+            onChange={(noteList) => onSaved({ ...latest.current, noteList })}
+          />
+
+          <FoldPanel
+            id="sermon-saved"
+            title="Saved from this sermon"
+            eyebrow={`${verses.length} ${verses.length === 1 ? "verse" : "verses"} · ${words.length} ${words.length === 1 ? "word" : "words"}`}
+          >
+            {items.length === 0 && (
+              <p className="dash-word-hint">Verses and words you save below show up here, kept with this sermon.</p>
+            )}
+            {verses.length > 0 && (
+              <div className="sermon-items">
+                {verses.map((v) => (
+                  <div key={v.id} className="sermon-item">
+                    <div>
+                      <strong>{v.ref}</strong>
+                      {v.text && <p>{v.text}</p>}
+                    </div>
+                    <button type="button" className="dash-word-link is-danger" onClick={() => saveItems(items.filter((x) => x.id !== v.id))} aria-label={`Remove ${v.ref}`}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {words.length > 0 && (
+              <div className="sermon-items">
+                {words.map((w) => (
+                  <div key={w.id} className="sermon-item">
+                    <div>
+                      <strong>{w.word}</strong>
+                      {(w.original || w.strongs) && (
+                        <span className="sermon-item-meta">
+                          {" "}
+                          · {[w.original, w.strongs].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                      {w.text && <p>{w.text}</p>}
+                    </div>
+                    <button type="button" className="dash-word-link is-danger" onClick={() => saveItems(items.filter((x) => x.id !== w.id))} aria-label={`Remove ${w.word}`}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </FoldPanel>
+
           <FoldPanel id="sermon-verse" title="Look up a verse" eyebrow="Bible">
-            <BibleLookup addLabel="this sermon" planNote={false} onAdd={(ref, text) => void addItem({ kind: "verse", ref, text })} />
+                <BibleLookup addLabel="this sermon" planNote={false} onAdd={(ref, text) => void addItem({ kind: "verse", ref, text })} />
           </FoldPanel>
-        </div>
-        <div className="dash-col-6">
           <FoldPanel id="sermon-word" title="Look up a word" eyebrow="Hebrew · Greek · English">
-            <WordLookup onSave={(w) => void addItem({ kind: "word", ...w })} />
+                <WordLookup onSave={(w) => void addItem({ kind: "word", ...w })} />
           </FoldPanel>
-        </div>
       </div>
     </div>
   );

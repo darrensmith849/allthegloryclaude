@@ -66,12 +66,31 @@ export function DayVideo({
     setResumeAt(at);
   }, [storeKey]);
 
-  // While it plays, the player reports the time; keep it every few seconds.
+  // While it plays, the player reports the time; keep it every few seconds,
+  // and once more as the page is left or refreshed.
   useEffect(() => {
     if (!storeKey || !load) return;
     let last = 0;
+    let latest = 0;
+    let heard = false;
+    // The player only reports once it's been asked, and it ignores the ask
+    // until it's ready - so keep asking until it answers.
+    const ask = () => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), PLAYER_ORIGIN);
+    let tries = 0;
+    const asking = window.setInterval(() => {
+      if (heard || ++tries > 60) return window.clearInterval(asking);
+      ask();
+    }, 500);
+    const keep = () => {
+      try {
+        if (latest >= 5) localStorage.setItem(storeKey, String(Math.floor(latest)));
+      } catch {
+        /* storage blocked */
+      }
+    };
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== PLAYER_ORIGIN || e.source !== frame.current?.contentWindow) return;
+      heard = true;
       let data: { info?: { currentTime?: unknown; playerState?: unknown } } | null = null;
       try {
         data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
@@ -83,7 +102,9 @@ export function DayVideo({
       try {
         if (info.playerState === 0) return localStorage.removeItem(storeKey); // finished: next time from the start
         const t = info.currentTime;
-        if (typeof t !== "number" || t < 5 || Date.now() - last < 3000) return;
+        if (typeof t !== "number" || t < 5) return;
+        latest = t;
+        if (Date.now() - last < 2000) return;
         last = Date.now();
         localStorage.setItem(storeKey, String(Math.floor(t)));
       } catch {
@@ -91,8 +112,14 @@ export function DayVideo({
       }
     };
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [storeKey, load]);
+    window.addEventListener("pagehide", keep);
+    return () => {
+      window.clearInterval(asking);
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener("pagehide", keep);
+      keep();
+    };
+  }, [storeKey, load, resumeAt, autoplay]); // the player reloads when these change: ask again
 
   // Get the player ready once the video is on screen.
   useEffect(() => {
@@ -146,10 +173,6 @@ export function DayVideo({
             allowFullScreen
             onLoad={() => {
               setReady(true);
-              // Ask the player to report its time (for picking up where you left off).
-              if (storeKey) {
-                frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), PLAYER_ORIGIN);
-              }
               if (wantPlay.current) {
                 wantPlay.current = false;
                 startIt();
