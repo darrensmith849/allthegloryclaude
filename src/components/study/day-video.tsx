@@ -7,22 +7,34 @@
 // loads on the tap.) Once it's playing it stays put at the top of the day's
 // box while the notes and the writing box scroll up beneath it
 // (dashboard.css), so you can watch the talk and write at the same time.
+// With resumeKey it also remembers where you got to (on this device) and
+// picks up from there next time - a refresh doesn't lose your place.
 
 import { useEffect, useRef, useState } from "react";
 import { embedUrl, parseYouTube, subscribeUrl, watchUrl } from "@/lib/study/youtube";
 
 const PLAYER_ORIGIN = "https://www.youtube-nocookie.com";
 
+const clock = (sec: number) => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return `${h ? `${h}:` : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(sec % 60).padStart(2, "0")}`;
+};
+
 export function DayVideo({
   url,
   label = "Watch the session",
   links = true,
+  resumeKey,
 }: {
   url: string | null | undefined;
   label?: string;
   links?: boolean; // false: no "Subscribe" / "Open in YouTube" row (e.g. someone else's sermon)
+  resumeKey?: string; // remember the place in the video under this name (this device)
 }) {
   const v = parseYouTube(url);
+  const storeKey = resumeKey && v ? `atg:video-pos:${resumeKey}:${v.id}` : null;
+  const [resumeAt, setResumeAt] = useState(0); // seconds to pick up from (0 = the link's own start)
   const [playing, setPlaying] = useState(false);
   const [load, setLoad] = useState(false); // the player is in the page (hidden until playing)
   const [autoplay, setAutoplay] = useState(false); // loaded by the tap itself
@@ -39,6 +51,48 @@ export function DayVideo({
     setReady(false);
     wantPlay.current = false;
   }, [v?.id]);
+
+  // Where this video got to last time.
+  useEffect(() => {
+    let at = 0;
+    if (storeKey) {
+      try {
+        const n = Number(localStorage.getItem(storeKey));
+        if (Number.isFinite(n) && n > 5) at = Math.floor(n);
+      } catch {
+        /* storage blocked */
+      }
+    }
+    setResumeAt(at);
+  }, [storeKey]);
+
+  // While it plays, the player reports the time; keep it every few seconds.
+  useEffect(() => {
+    if (!storeKey || !load) return;
+    let last = 0;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== PLAYER_ORIGIN || e.source !== frame.current?.contentWindow) return;
+      let data: { info?: { currentTime?: unknown; playerState?: unknown } } | null = null;
+      try {
+        data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      } catch {
+        return;
+      }
+      const info = data?.info;
+      if (!info) return;
+      try {
+        if (info.playerState === 0) return localStorage.removeItem(storeKey); // finished: next time from the start
+        const t = info.currentTime;
+        if (typeof t !== "number" || t < 5 || Date.now() - last < 3000) return;
+        last = Date.now();
+        localStorage.setItem(storeKey, String(Math.floor(t)));
+      } catch {
+        /* storage blocked */
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [storeKey, load]);
 
   // Get the player ready once the video is on screen.
   useEffect(() => {
@@ -76,7 +130,7 @@ export function DayVideo({
 
   if (!v) return null;
   const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
-  const src = `${embedUrl(v)}&enablejsapi=1&playsinline=1${origin}${autoplay ? "&autoplay=1" : ""}`;
+  const src = `${embedUrl(resumeAt ? { ...v, start: resumeAt } : v)}&enablejsapi=1&playsinline=1${origin}${autoplay ? "&autoplay=1" : ""}`;
 
   return (
     <div className="day-video" ref={box}>
@@ -92,6 +146,10 @@ export function DayVideo({
             allowFullScreen
             onLoad={() => {
               setReady(true);
+              // Ask the player to report its time (for picking up where you left off).
+              if (storeKey) {
+                frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), PLAYER_ORIGIN);
+              }
               if (wantPlay.current) {
                 wantPlay.current = false;
                 startIt();
@@ -116,9 +174,24 @@ export function DayVideo({
             </svg>
           </span>
           <span className="day-video-label">
-            ▶ {label}
-            {v.start ? ` · from ${Math.floor(v.start / 3600) ? `${Math.floor(v.start / 3600)}:` : ""}${String(Math.floor((v.start % 3600) / 60)).padStart(Math.floor(v.start / 3600) ? 2 : 1, "0")}:${String(v.start % 60).padStart(2, "0")}` : ""}
+            {resumeAt ? `▶ Pick up where you left off · ${clock(resumeAt)}` : `▶ ${label}${v.start ? ` · from ${clock(v.start)}` : ""}`}
           </span>
+        </button>
+      )}
+      {resumeAt > 0 && !playing && (
+        <button
+          type="button"
+          className="dash-word-link day-video-link"
+          onClick={() => {
+            try {
+              if (storeKey) localStorage.removeItem(storeKey);
+            } catch {
+              /* storage blocked */
+            }
+            setResumeAt(0);
+          }}
+        >
+          Start from the beginning
         </button>
       )}
       {links && <div className="day-video-links">

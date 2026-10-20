@@ -50,11 +50,31 @@ export default function SermonsPage() {
     api<{ sermons: Sermon[] }>("GET")
       .then((d) => {
         setSermons(d.sermons);
-        const first = d.sermons.find((s) => !s.deletedAt);
-        if (first) setOpenId(first.id);
+        // Reopen the sermon you were on (?s= in the address, or last time on this device).
+        let want: string | null = null;
+        try {
+          want = new URLSearchParams(window.location.search).get("s") ?? localStorage.getItem("atg:sermon-open");
+        } catch {
+          /* storage blocked */
+        }
+        const pick = d.sermons.find((s) => s.id === want && !s.deletedAt) ?? d.sermons.find((s) => !s.deletedAt);
+        if (pick) setOpenId(pick.id);
       })
       .catch((e: Error) => setLoadError(e.message));
   }, []);
+
+  // Remember the open sermon, so a refresh comes back to it.
+  useEffect(() => {
+    if (!openId) return;
+    try {
+      localStorage.setItem("atg:sermon-open", openId);
+      const url = new URL(window.location.href);
+      url.searchParams.set("s", openId);
+      window.history.replaceState(window.history.state, "", url);
+    } catch {
+      /* storage blocked */
+    }
+  }, [openId]);
 
   const replace = useCallback((s: Sermon) => setSermons((list) => (list ?? []).map((x) => (x.id === s.id ? s : x))), []);
 
@@ -351,7 +371,7 @@ function SermonEditor({
           scroll up beneath it, so you can watch and write at once. */}
       {video && (
         <div className={`sermon-dock ${small ? "is-small" : ""}`}>
-          <DayVideo url={draft.url} label="Play the sermon" links={false} />
+          <DayVideo url={draft.url} label="Play the sermon" links={false} resumeKey={`sermon:${sermon.id}`} />
           <div className="sermon-dock-tools">
             <button
               type="button"
