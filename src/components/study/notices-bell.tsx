@@ -1,23 +1,17 @@
 "use client";
 
 // Members' bell, beside "The Study" at the top of the menu: lights up when
-// Daniel posts a video from a call (one call can cover several days), and
-// lists what's new with a link to the day. Phones with notifications on
-// get an alert too (src/lib/study/notices.ts).
+// Daniel posts a video from a call (one call can cover several days) or a
+// note to everyone, and lists what's new - a video with a link to its day.
+// Phones with notifications on get an alert too (src/lib/study/notices.ts).
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-interface Notice {
-  id: string;
-  kind: "video";
-  day: string;
-  from: number;
-  to: number | null;
-  title: string;
-  at: number;
-}
+type Notice =
+  | { id: string; kind: "video"; day: string; from: number; to: number | null; title: string; at: number }
+  | { id: string; kind: "message"; text: string; at: number };
 
 function ago(at: number): string {
   const mins = Math.round((Date.now() - at) / 60_000);
@@ -134,7 +128,16 @@ export function NoticesBell() {
           <div className="eyebrow eyebrow-amber">What&apos;s new</div>
           {notices.length ? (
             <ul className="study-bell-list">
-              {notices.map((n) => (
+              {notices.map((n) =>
+                n.kind === "message" ? (
+                  <li key={n.id}>
+                    <div className="study-bell-item is-message">
+                      <strong>A note from Daniel</strong>
+                      <p>{n.text}</p>
+                      <span>{ago(n.at)}</span>
+                    </div>
+                  </li>
+                ) : (
                 <li key={n.id}>
                   <Link href={`/study/journal?day=${n.day}`} className="study-bell-item" onClick={() => setOpen(false)}>
                     <strong>▶ New video · {n.to ? `Days ${n.from}-${n.to}` : `Day ${n.from}`}</strong>
@@ -144,7 +147,8 @@ export function NoticesBell() {
                     <em>Watch it on Day {n.from} →</em>
                   </Link>
                 </li>
-              ))}
+                ),
+              )}
             </ul>
           ) : (
             <p className="study-bell-empty">

@@ -1,7 +1,8 @@
 // "Something new" for members' bell: a row for each session video Daniel
-// posts (one call can cover several days), and a phone alert to everyone
-// who turned on notifications for The Study. The push carries no message -
-// the service worker asks /api/study/notices?latest=1 what's new.
+// posts (one call can cover several days) or note he writes to everyone,
+// and a phone alert to everyone who turned on notifications for The Study.
+// The push carries no message - the service worker asks
+// /api/study/notices?latest=2 what's new.
 
 import { sendPush } from "./push";
 
@@ -16,6 +17,14 @@ export async function addVideoNotice(db: D1Like, n: { day: string; dayTo: string
   await db
     .prepare("INSERT INTO study_notices (id, kind, day, day_to, video, created_at) VALUES (?1, 'video', ?2, ?3, ?4, ?5)")
     .bind(crypto.randomUUID(), n.day, n.dayTo, n.video, Date.now())
+    .run();
+}
+
+/** A note from Daniel to everyone, e.g. "no video this week". */
+export async function addMessageNotice(db: D1Like, message: string, day: string): Promise<void> {
+  await db
+    .prepare("INSERT INTO study_notices (id, kind, day, message, created_at) VALUES (?1, 'message', ?2, ?3, ?4)")
+    .bind(crypto.randomUUID(), day, message, Date.now())
     .run();
 }
 

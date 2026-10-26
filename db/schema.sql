@@ -489,14 +489,16 @@ CREATE TABLE IF NOT EXISTS member_suggestions (
 CREATE INDEX IF NOT EXISTS member_suggestions_member ON member_suggestions (member_id, created_at);
 
 -- What's new, for members' bell: each session video Daniel posts (one call
--- can cover several days: day .. day_to). Members' phones with notifications
--- on get an alert too (src/lib/study/notices.ts).
+-- can cover several days: day .. day_to), and notes Daniel writes to
+-- everyone from the Members page. Members' phones with notifications on get
+-- an alert too (src/lib/study/notices.ts).
 CREATE TABLE IF NOT EXISTS study_notices (
   id         TEXT PRIMARY KEY,
-  kind       TEXT NOT NULL,          -- 'video'
-  day        TEXT NOT NULL,          -- the first day it's on, YYYY-MM-DD
+  kind       TEXT NOT NULL,          -- 'video' | 'message'
+  day        TEXT NOT NULL,          -- the first day it's on, YYYY-MM-DD (a message: the day it was posted)
   day_to     TEXT,                   -- the last day the call covered
   video      TEXT,
+  message    TEXT,                   -- a message's words (ALTER TABLE study_notices ADD COLUMN message TEXT)
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_study_notices_created ON study_notices(created_at);

@@ -121,6 +121,32 @@ export default function MembersPage() {
   const [backups, setBackups] = useState<{ count: number; list: Backup[]; last: { at: number; rows: number } | null } | null>(null);
   const [backingUp, setBackingUp] = useState(false);
   const [showBackups, setShowBackups] = useState(false);
+  const [note, setNote] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [noteSent, setNoteSent] = useState("");
+
+  async function postNote() {
+    if (!note.trim() || !confirm("Send this to everyone in The Study?")) return;
+    setPosting(true);
+    setNoteSent("");
+    try {
+      const r = await fetch("/api/owner-notices", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: note }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { devices?: number; error?: string };
+      if (!r.ok) throw new Error(d.error || "Couldn't send that.");
+      setNote("");
+      setNoteSent(
+        `Sent. It's in everyone's bell now${d.devices ? `, and ${d.devices} ${d.devices === 1 ? "phone gets" : "phones get"} an alert` : ""}.`,
+      );
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Couldn't send that.");
+    } finally {
+      setPosting(false);
+    }
+  }
 
   function loadBackups() {
     fetch("/api/members/backup", { cache: "no-store" })
@@ -307,6 +333,34 @@ export default function MembersPage() {
       {error && <div className="dash-word-note mb-4">{error}</div>}
 
       <div className="dash-grid">
+        {isOwner && (
+          <div className="dash-col-12">
+            <FoldPanel id="members-tell" eyebrow="Everyone in The Study" title="Tell members">
+              <p className="dash-word-hint mb-3">
+                A note in everyone&apos;s bell, and an alert on phones with notifications on - e.g. when there&apos;s no
+                video this week.
+              </p>
+              <GrowingTextarea
+                className="dash-textarea dash-word-field"
+                value={note}
+                maxLength={600}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. No call this week - we'll post the next video as soon as we can."
+              />
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <button
+                  type="button"
+                  className="dash-btn dash-btn-primary"
+                  disabled={posting || !note.trim()}
+                  onClick={postNote}
+                >
+                  {posting ? "Sending…" : "Send to everyone"}
+                </button>
+                {noteSent && <span className="dash-word-hint">{noteSent}</span>}
+              </div>
+            </FoldPanel>
+          </div>
+        )}
         <div className="dash-col-12">
           <FoldPanel id="members-share" eyebrow="Your link" title="Share The Study">
             {settings?.signup === "closed" ? (

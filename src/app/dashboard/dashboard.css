@@ -3511,6 +3511,8 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .study-bell-item strong { font-size: 14px; color: var(--colour-ink-strong); }
 .study-bell-item span { font-size: 12.5px; color: var(--colour-ink-soft); }
 .study-bell-item em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--colour-amber); }
+.study-bell-item p { margin: 2px 0; font-size: 13.5px; line-height: 1.45; color: var(--colour-ink-strong); white-space: pre-line; }
+.study-bell-item.is-message:hover { border-color: rgb(var(--gold-rgb) / 0.2); }
 .study-bell-empty { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--colour-ink-soft); }
 .study-bell-foot { margin-top: 10px; font-size: 12.5px; color: var(--colour-ink-quiet); }
 .study-bell-foot a { color: var(--colour-amber); font-weight: 600; }

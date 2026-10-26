@@ -1,8 +1,9 @@
 // The Study's service worker - only for notifications. It never caches
 // pages or touches page loads. A push carries no message; this asks the
-// site what it's for: a new video from Daniel and Reggie's call (posted in
-// the last few hours and not shown yet), else the daily reminder - with
-// the day the member is up to (everyone goes at their own pace).
+// site what it's for: a new video from Daniel and Reggie's call or a note
+// from Daniel (posted in the last few hours and not shown yet), else the
+// daily reminder - with the day the member is up to (everyone goes at their
+// own pace).
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
@@ -25,13 +26,22 @@ self.addEventListener("push", (event) => {
     (async () => {
       let info = null;
       try {
-        const r = await fetch("/api/study/notices?latest=1", { credentials: "same-origin", cache: "no-store" });
+        const r = await fetch("/api/study/notices?latest=2", { credentials: "same-origin", cache: "no-store" });
         if (r.ok) info = await r.json();
       } catch {
         // offline - a plain reminder below
       }
       const n = info && info.notice;
-      if (n && !(await shownBefore(n.id))) {
+      if (n && n.kind === "message" && !(await shownBefore(n.id))) {
+        return self.registration.showNotification("A note from Daniel", {
+          body: n.text,
+          icon: "/study/icon-192.png",
+          badge: "/study/favicon.png",
+          tag: `the-study-note-${n.id}`,
+          data: { url: "/study" },
+        });
+      }
+      if (n && n.kind !== "message" && !(await shownBefore(n.id))) {
         const days = n.to ? `Days ${n.from}-${n.to}` : `Day ${n.from}`;
         return self.registration.showNotification(`New video · ${days}`, {
           body: `Daniel and Reggie's call is up${n.title ? ` - ${n.title}` : ""}. Tap to watch it in your journal.`,

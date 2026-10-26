@@ -53,6 +53,7 @@ export const config = {
     "/api/study-bin",
     "/api/owner-reminders",
     "/api/owner-videos",
+    "/api/owner-notices",
     "/api/word-fill",
     "/api/sermons",
     "/api/sermon-notes",
