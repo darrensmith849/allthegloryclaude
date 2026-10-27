@@ -557,3 +557,58 @@ CREATE TABLE IF NOT EXISTS sermon_note_versions (
   saved_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sermon_note_versions ON sermon_note_versions(note_id, saved_at);
+
+-- Reading (/dashboard/reading): the owner's private book notes. A book has
+-- chapters (each with its headings, a key takeaway and a "read" tick) and
+-- notes saved one by one, each tied to a chapter (or the whole book) and
+-- optionally one of the chapter's headings. Never hard-deleted (deleted_at);
+-- edits keep the earlier text in book_note_versions / book_chapter_versions.
+CREATE TABLE IF NOT EXISTS books (
+  id          TEXT PRIMARY KEY,
+  title       TEXT NOT NULL DEFAULT '',
+  author      TEXT NOT NULL DEFAULT '',
+  subtitle    TEXT NOT NULL DEFAULT '',
+  started_on  TEXT,                 -- YYYY-MM-DD
+  finished_on TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE TABLE IF NOT EXISTS book_chapters (
+  id         TEXT PRIMARY KEY,
+  book_id    TEXT NOT NULL,
+  position   REAL NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'chapter', -- 'front' (note to the reader, introduction) or 'chapter'
+  title      TEXT NOT NULL,
+  headings   TEXT NOT NULL DEFAULT '[]',      -- JSON array of the chapter's headings
+  takeaway   TEXT NOT NULL DEFAULT '',        -- the owner's one-line summary of the chapter
+  read_at    INTEGER,                         -- ticked as read
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_book_chapters ON book_chapters(book_id, position);
+CREATE TABLE IF NOT EXISTS book_chapter_versions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  chapter_id TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  saved_at   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS book_notes (
+  id         TEXT PRIMARY KEY,
+  book_id    TEXT NOT NULL,
+  chapter_id TEXT,                  -- NULL = about the whole book
+  heading    TEXT,                  -- one of the chapter's headings (optional)
+  text       TEXT NOT NULL,
+  position   REAL NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_book_notes ON book_notes(book_id, chapter_id, position);
+CREATE TABLE IF NOT EXISTS book_note_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id  TEXT NOT NULL,
+  text     TEXT NOT NULL,
+  heading  TEXT,
+  saved_at INTEGER NOT NULL
+);
