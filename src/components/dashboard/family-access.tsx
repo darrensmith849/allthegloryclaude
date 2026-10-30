@@ -9,6 +9,7 @@ import { Panel } from "@/components/dashboard/panel";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const MIN_PASSWORD = 10;
+const LINK = "https://alltheglory.co.za/dashboard/login?family=1"; // opens straight on her (Family) login
 type Family = { id: string; name: string; createdAt: number; lastSeen: number | null; disabled: boolean } | null;
 
 const when = (ms: number | null) =>
@@ -19,6 +20,7 @@ export function FamilyAccess() {
   const [form, setForm] = useState<{ name: string; password: string; confirm: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/family", { cache: "no-store" })
@@ -63,9 +65,35 @@ export function FamilyAccess() {
       <div className="family-access">
         <p className="dash-word-hint">
           Her own private dashboard: her own Study Notes and Word Journal (with your study to read alongside), Names of God,
-          her own Money and a To do list. She logs in at alltheglory.co.za/dashboard - tapping <strong>Family</strong> -
-          with the password you set here. She never sees your things, and her money and list are hers alone.
+          her own Money (in rand) and a To do list. She logs in at alltheglory.co.za/dashboard - tapping{" "}
+          <strong>Family</strong> - with the password you set here. She never sees your things, and her money and list
+          are hers alone.
         </p>
+        {member && (
+          <div className="family-access-status">
+            <span>
+              Her link: <strong>{LINK.replace("https://", "")}</strong>
+            </span>
+            <button
+              type="button"
+              className="dash-btn dash-btn-ghost dash-note-nav"
+              onClick={() =>
+                navigator.clipboard
+                  ?.writeText(LINK)
+                  .then(() => setCopied(true))
+                  .catch(() => {})
+              }
+            >
+              {copied ? "Copied ✓" : "Copy link"}
+            </button>
+          </div>
+        )}
+        {member && (
+          <p className="dash-word-hint">
+            To see her side yourself, open her link in a private window - on this browser you&apos;re logged in as you, and
+            logging in there as her logs you out.
+          </p>
+        )}
         {member === undefined ? (
           <p className="dash-word-hint">Loading…</p>
         ) : member ? (

@@ -9,7 +9,7 @@
  * More than MAX_FAILURES wrong passwords from one address within
  * LOCKOUT_MS locks that address out until the window passes.
  */
-import { checkPasswordAnyDevice, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
+import { checkPasswordAnyDevice, clearedSessionCookie, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
 import { getDb, type D1Db } from "@/lib/analytics/store";
 import { createMemberSession, memberCookie } from "@/lib/study/members";
 import { clearedWhoCookie, whoCookie } from "@/lib/team";
@@ -67,6 +67,8 @@ export async function POST(req: Request) {
     const headers = new Headers({ "cache-control": "no-store" });
     headers.append("set-cookie", memberCookie(await createMemberSession(db, familyId)));
     headers.append("set-cookie", whoCookie(`member:${familyId}`));
+    // One person per device: Daniel's own login here ends, so this device shows hers.
+    headers.append("set-cookie", clearedSessionCookie());
     return Response.json({ ok: true, family: true }, { headers });
   }
   const headers = new Headers({ "cache-control": "no-store" });

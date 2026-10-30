@@ -24,6 +24,9 @@ export default function AdminLoginPage() {
   // Family (his sister) with the one password he set for her in Settings.
   const [team, setTeam] = useState(false);
   const [family, setFamily] = useState(false);
+  // Her link (?family=1) opened where Daniel is logged in: show her login
+  // anyway (not his dashboard) - logging in as family logs him out here.
+  const [danielHere, setDanielHere] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -61,7 +64,10 @@ export default function AdminLoginPage() {
     fetch("/api/admin/status", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: { configured?: boolean; signedIn?: boolean; role?: string | null }) => {
-        if (s.signedIn) goIn();
+        if (s.signedIn && q.get("family")) {
+          setDanielHere(true);
+          setMode("login");
+        } else if (s.signedIn) goIn();
         else if (s.role === "team") window.location.assign("/dashboard/community");
         else if (s.role === "personal") goIn();
         else setMode(s.configured ? "login" : "setup");
@@ -169,6 +175,12 @@ export default function AdminLoginPage() {
                   ? "Your own dashboard - the password Daniel gave you."
                   : "Daniel's password only."}
         </p>
+        {danielHere && family && (
+          <p className="dash-login-note">
+            Daniel is logged in on this device. Logging in here as family logs him out on it - to see her side and stay
+            logged in yourself, open the link in a private window.
+          </p>
+        )}
 
         {mode !== "loading" && team && (
           <>

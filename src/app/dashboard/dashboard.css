@@ -4129,6 +4129,7 @@ a.study-weekly:hover { border-color: var(--colour-amber); }
 .dash-weekly-panel { margin-top: 14px; }
 .dash-weekly-panel .dash-community-body { font-size: 16px; }
 .dash-login-team { display: block; margin-top: 18px; text-align: center; font-size: 13.5px; font-weight: 600; color: var(--colour-glow); }
+.dash-login-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px dashed rgb(var(--gold-rgb) / 0.55); background: rgb(var(--gold-rgb) / 0.08); font-size: 13px; line-height: 1.5; color: var(--colour-ink-soft); }
 .dash-login-who { display: flex; width: 100%; margin-top: 16px; }
 .dash-login-who button { flex: 1; padding: 11px 10px; font-size: 13px; letter-spacing: 0.04em; text-transform: none; }
 .dash-nav-add { color: var(--colour-glow); }

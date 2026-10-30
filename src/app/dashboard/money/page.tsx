@@ -28,6 +28,7 @@ import {
   daysIn,
   cashBalance,
   colourFor,
+  currencySymbol,
   dollars,
   dueDate,
   dueDebits,
@@ -43,6 +44,7 @@ import {
   monthSummary,
   newSub,
   nextDue,
+  setCurrency,
   notesFor,
   parseKm,
   shiftMonth,
@@ -521,6 +523,8 @@ export default function MoneyPage() {
   }
   if (!ready || !money || !summary || !thisMonth) return <p className="dash-word-hint">Opening…</p>;
 
+  // Dollars for Daniel, rand for family - before any figure is written out.
+  setCurrency(money.currency ?? (user?.role === "personal" ? "ZAR" : "USD"));
   const bal = balance(money);
   const cashNow = cashBalance(money);
   const comingTotal = coming.reduce((t, c) => t + c.sub.amount, 0);
@@ -654,7 +658,7 @@ export default function MoneyPage() {
         <form className={`money-tile is-editing ${cash ? "is-cash" : ""}`} onSubmit={saveBalance}>
           <span className="money-label">{label}</span>
           <label className="money-amount">
-            <span aria-hidden>$</span>
+            <span aria-hidden>{currencySymbol()}</span>
             <input
               ref={balanceRef}
               className="dash-input"
@@ -738,7 +742,7 @@ export default function MoneyPage() {
       )}
       <div className="money-amount-row">
         <label className="money-amount is-big">
-          <span aria-hidden>$</span>
+          <span aria-hidden>{currencySymbol()}</span>
           <input
             ref={amountRef}
             className="dash-input"
@@ -747,7 +751,7 @@ export default function MoneyPage() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && closeSheet()}
-            aria-label="Amount in dollars"
+            aria-label="Amount"
           />
         </label>
         {form.mode === "spend" && usualAmounts(money, form.category).length > 0 && (
@@ -897,7 +901,7 @@ export default function MoneyPage() {
                         title={`Open ${monthName(ym)}`}
                       >
                         <span>{monthName(ym).split(" ")[0].slice(0, 3)}</span>
-                        {spent > 0 && <span className="money-year-spent">${Math.round(spent)}</span>}
+                        {spent > 0 && <span className="money-year-spent">{shortDollars(Math.round(spent))}</span>}
                       </button>
                       <div className="money-year-days">
                         {Array.from({ length: lead }, (_, x) => (
@@ -962,7 +966,7 @@ export default function MoneyPage() {
                       aria-pressed={d === day}
                     >
                       <span className="money-cal-num">{Number(d.slice(8))}</span>
-                      {t && t.spent > 0 && <span className="money-cal-spent">${Math.round(t.spent)}</span>}
+                      {t && t.spent > 0 && <span className="money-cal-spent">{shortDollars(Math.round(t.spent))}</span>}
                       {t && t.in > 0 && <i className="money-cal-in" aria-hidden />}
                     </button>
                   );
@@ -1128,7 +1132,7 @@ export default function MoneyPage() {
                     <input className="dash-input" placeholder="e.g. Netflix" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} />
                   </label>
                   <label className="money-field">
-                    <span className="money-field-label">Amount ($)</span>
+                    <span className="money-field-label">Amount ({currencySymbol()})</span>
                     <input className="dash-input" inputMode="decimal" placeholder="0.00" value={subForm.amount} onChange={(e) => setSubForm({ ...subForm, amount: e.target.value })} />
                   </label>
                   <label className="money-field">
@@ -1275,7 +1279,7 @@ export default function MoneyPage() {
                           <span className="money-form-what">Expected</span>
                         </div>
                         <label className="money-amount">
-                          <span aria-hidden>$</span>
+                          <span aria-hidden>{currencySymbol()}</span>
                           <input
                             className="dash-input"
                             inputMode="decimal"

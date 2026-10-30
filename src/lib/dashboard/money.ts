@@ -42,10 +42,23 @@ export function colourFor(m: MoneyState, category: string): string {
   return PALETTE[h % PALETTE.length];
 }
 
-export const dollars = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.round(n * 100) / 100);
+// The currency the Money page shows: Daniel's in dollars, family's (his
+// sister's own dashboard) in rand - MoneyState.currency. Set by the page as it
+// draws, before any figure is written out (one Money page at a time).
+let symbol = "$";
+export function setCurrency(c: MoneyState["currency"]) {
+  symbol = c === "ZAR" ? "R" : "$";
+}
+export const currencySymbol = () => symbol;
+
+const twoPlaces = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// "$1,234.56" / "-$12.50" (or "R1,234.56").
+export const dollars = (n: number) => {
+  const v = Math.round(n * 100) / 100;
+  return `${v < 0 ? "-" : ""}${symbol}${twoPlaces.format(Math.abs(v))}`;
+};
 // "$4" for whole amounts, "$4.50" otherwise - for buttons.
-export const shortDollars = (n: number) => (Number.isInteger(n) ? `$${n}` : dollars(n));
+export const shortDollars = (n: number) => (Number.isInteger(n) ? `${n < 0 ? "-" : ""}${symbol}${Math.abs(n)}` : dollars(n));
 
 export const kmText = (n: number) => `${new Intl.NumberFormat("en-US").format(Math.round(n))} km`;
 export const parseKm = (v: string) => {
@@ -304,10 +317,10 @@ export function toCsv(m: MoneyState): string {
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
-// First time for family (her own dashboard): nothing yet - she taps her
-// balance to set it, and adds her own regular debits.
+// First time for family (her own dashboard): nothing yet, in rand - she taps
+// her balance to set it, and adds her own regular debits.
 export function blankMoney(): MoneyState {
-  return { start: { amount: 0, at: new Date().toISOString() }, entries: [], subs: [] };
+  return { start: { amount: 0, at: new Date().toISOString() }, entries: [], subs: [], currency: "ZAR" };
 }
 
 // First time: the balance Daniel gave, and the debits from his bank statement

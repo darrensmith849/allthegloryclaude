@@ -443,6 +443,7 @@ export interface MoneyState {
   subs: MoneySub[];
   categories?: string[]; // his own kinds of spending, besides the built-in ones
   expected?: MoneyExpected[]; // income still to come in - not in any balance
+  currency?: "USD" | "ZAR"; // shown in dollars (Daniel's, the default) or rand (family's)
 }
 
 // A simple to-do list (family's own dashboard - /dashboard/todo): things to

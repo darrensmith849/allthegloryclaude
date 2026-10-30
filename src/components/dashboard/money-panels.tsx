@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import type { MoneyEntry, MoneyState } from "@/lib/dashboard/types";
-import { allCategories, dollars, FUEL, fuelLog, GYM, kindLog, kmText, monthName, monthOf, parseKm } from "@/lib/dashboard/money";
+import { allCategories, currencySymbol, dollars, FUEL, fuelLog, GYM, kindLog, kmText, monthName, monthOf, parseKm } from "@/lib/dashboard/money";
 
 export type Editing = { id: string; amount: string; category: string; note: string; date: string; km: string; cash: boolean; where: string };
 
@@ -89,7 +89,7 @@ export function EntryEdit({
         </span>
       </div>
       <label className="money-amount">
-        <span aria-hidden>$</span>
+        <span aria-hidden>{currencySymbol()}</span>
         <input
           className="dash-input"
           inputMode="decimal"
@@ -217,7 +217,7 @@ export function KindTab({
             </div>
             <div>
               <span>Per km</span>
-              <strong>{flog.perKm != null ? `$${flog.perKm.toFixed(2)}` : "-"}</strong>
+              <strong>{flog.perKm != null ? `${currencySymbol()}${flog.perKm.toFixed(2)}` : "-"}</strong>
             </div>
             <div>
               <span>On the clock</span>
@@ -250,7 +250,7 @@ export function KindTab({
             </span>
           </div>
           <label className="money-amount">
-            <span aria-hidden>$</span>
+            <span aria-hidden>{currencySymbol()}</span>
             <input
               className="dash-input"
               inputMode="decimal"
@@ -259,7 +259,7 @@ export function KindTab({
               value={adding.amount}
               onChange={(e) => setAdding({ ...adding, amount: e.target.value })}
               onKeyDown={(e) => e.key === "Escape" && setAdding(null)}
-              aria-label="Amount in dollars"
+              aria-label="Amount"
             />
           </label>
           <div className="money-form-fields">
