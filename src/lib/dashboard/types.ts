@@ -424,11 +424,25 @@ export interface MoneySub {
   lastPaid: string; // YYYY-MM it was last taken off
   removedAt?: string; // removed from the list (kept, never wiped)
 }
+// Income he expects to come in (a salary, an invoice) - kept to one side:
+// no balance changes until he marks it as in, which adds a normal "add" entry.
+export interface MoneyExpected {
+  id: string;
+  amount: number; // dollars
+  note?: string; // where from
+  date: ISODate; // when he expects it
+  cash?: boolean; // into cash in hand, not the account
+  at: string; // when it was noted (ISO)
+  receivedAt?: string; // marked as come in
+  entry?: string; // the "add" entry it became
+  deletedAt?: string; // removed (kept, never wiped)
+}
 export interface MoneyState {
   start: { amount: number; at: string };
   entries: MoneyEntry[];
   subs: MoneySub[];
   categories?: string[]; // his own kinds of spending, besides the built-in ones
+  expected?: MoneyExpected[]; // income still to come in - not in any balance
 }
 
 export interface DashboardState {

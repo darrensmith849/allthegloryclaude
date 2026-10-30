@@ -9,12 +9,14 @@
 // the calendar, day by day (each day keeps its own entries, with the balance
 // it started with and ended with), and a tabbed card for the regular debits
 // that come off by themselves (and what's still to come), Fuel (with the
-// car's mileage) and Gym fees. Saved with the rest of the dashboard.
+// car's mileage) and Gym fees. Income he's expecting is kept to one side -
+// a "Projected" line under the total, changing no balance until he taps
+// "It's in". Saved with the rest of the dashboard.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DeleteButton, EntryEdit, editingFor, Figure, KindTab, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
-import type { MoneyEntry } from "@/lib/dashboard/types";
+import type { MoneyEntry, MoneyExpected } from "@/lib/dashboard/types";
 import {
   allCategories,
   balance,
@@ -27,6 +29,7 @@ import {
   dollars,
   dueDate,
   dueDebits,
+  expectedIncome,
   FUEL,
   fuelLog,
   GYM,
@@ -76,7 +79,8 @@ const shiftDay = (d: string, by: number) => {
 const CAL_HEAD = ["M", "T", "W", "T", "F", "S", "S"];
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
 
-type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean } | { mode: "move" } | null;
+type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean; expected?: boolean } | { mode: "move" } | null;
+type Sheet = "income" | "expense" | "expected";
 type Tool = "recurring" | "fuel" | "gym";
 
 // A small remembered choice on this device (which calendar view, which tab).
@@ -126,8 +130,9 @@ export default function MoneyPage() {
   }, [money, synced, today, update]);
 
   // ── Adding ─────────────────────────────────────────────────────
-  // The sheet under Add income / Add expense; for an expense, a kind is picked first.
-  const [sheet, setSheet] = useState<"income" | "expense" | null>(null);
+  // The sheet under Add income / Add expense (for an expense, a kind is picked
+  // first), or the list of income still expected.
+  const [sheet, setSheet] = useState<Sheet | null>(null);
   const [form, setForm] = useState<Form>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -196,8 +201,9 @@ export default function MoneyPage() {
     showSheet();
   }
 
-  function openSheet(s: "income" | "expense") {
+  function openSheet(s: Sheet) {
     setBalanceEdit(null);
+    setExpEdit(null);
     if (sheet === s) return closeSheet(); // the same button again closes it
     setSheet(s);
     setNewCat(null);
@@ -211,6 +217,7 @@ export default function MoneyPage() {
     setSheet(null);
     setForm(null);
     setNewCat(null);
+    setExpEdit(null);
   }
 
   function addEntry(e: Omit<MoneyEntry, "id" | "at">) {
@@ -236,6 +243,10 @@ export default function MoneyPage() {
     if (!form) return;
     const n = quick ?? parseAmount(amount);
     if (n == null) return amountRef.current?.focus();
+    if (form.mode === "add" && form.expected) {
+      addExpected({ amount: n, note: note.trim() || undefined, date, ...(form.cash ? { cash: true } : {}) });
+      return closeSheet();
+    }
     const reading = form.mode === "spend" && form.category === FUEL ? parseKm(km) : null;
     addEntry({
       kind: form.mode,
@@ -247,6 +258,76 @@ export default function MoneyPage() {
       ...(form.mode !== "move" && form.cash ? { cash: true } : {}),
     });
     closeSheet();
+  }
+
+  // ── Income still to come in (kept to one side) ──────────────────
+  const [expEdit, setExpEdit] = useState<{ id: string; amount: string; note: string; date: string; cash: boolean } | null>(null);
+  function addExpected(x: Omit<MoneyExpected, "id" | "at">) {
+    const item: MoneyExpected = { ...x, id: uid(), at: new Date().toISOString() };
+    update((d) => {
+      if (d.money) d.money.expected = [...(d.money.expected ?? []), item];
+    });
+    say(`${dollars(item.amount)} expected ${item.date === today ? "today" : `on ${shortDate(item.date)}`} - your balance stays as it is`, () =>
+      update((d) => {
+        const y = d.money?.expected?.find((z) => z.id === item.id);
+        if (y) y.deletedAt = new Date().toISOString();
+      }),
+    );
+  }
+  // It came in: now it's an ordinary money-in entry, on the day open in the calendar.
+  function receiveExpected(id: string) {
+    const x = money?.expected?.find((y) => y.id === id);
+    if (!x) return;
+    const now = new Date().toISOString();
+    const entry: MoneyEntry = { id: uid(), kind: "add", amount: x.amount, category: "Money in", note: x.note, date: day, at: now, ...(x.cash ? { cash: true } : {}) };
+    update((d) => {
+      if (!d.money) return;
+      d.money.entries.push(entry);
+      const y = d.money.expected?.find((z) => z.id === id);
+      if (y) Object.assign(y, { receivedAt: now, entry: entry.id });
+    });
+    setMonth(monthOf(entry.date));
+    setExpEdit(null);
+    say(`${dollars(x.amount)} in${x.note ? ` from ${x.note}` : ""} - added to your ${x.cash ? "cash" : "balance"}`, () =>
+      update((d) => {
+        const e = d.money?.entries.find((y) => y.id === entry.id);
+        if (e) e.deletedAt = new Date().toISOString();
+        const y = d.money?.expected?.find((z) => z.id === id);
+        if (y) {
+          delete y.receivedAt;
+          delete y.entry;
+        }
+      }),
+    );
+  }
+  function saveExpectedEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!expEdit) return;
+    const n = parseAmount(expEdit.amount);
+    if (n == null || !expEdit.date) return;
+    update((d) => {
+      const y = d.money?.expected?.find((z) => z.id === expEdit.id);
+      if (!y) return;
+      y.amount = n;
+      y.date = expEdit.date;
+      y.note = expEdit.note.trim() || undefined;
+      if (expEdit.cash) y.cash = true;
+      else delete y.cash;
+    });
+    setExpEdit(null);
+  }
+  function removeExpected(id: string) {
+    update((d) => {
+      const y = d.money?.expected?.find((z) => z.id === id);
+      if (y) y.deletedAt = new Date().toISOString();
+    });
+    setExpEdit(null);
+    say("Taken off what you're expecting", () =>
+      update((d) => {
+        const y = d.money?.expected?.find((z) => z.id === id);
+        if (y) delete y.deletedAt;
+      }),
+    );
   }
 
   // ── The balance, changed in place ───────────────────────────────
@@ -427,6 +508,7 @@ export default function MoneyPage() {
     return [...by.entries()].map(([from, amount]) => ({ from, amount })).sort((a, b) => b.amount - a.amount);
   }, [money, month]);
   const coming = useMemo(() => (money ? stillToCome(money, today) : []), [money, today]);
+  const expected = useMemo(() => (money ? expectedIncome(money) : []), [money]);
   const buys = useMemo(() => (money ? usualBuys(money) : []), [money]);
 
   if (synced === false && !money) {
@@ -445,6 +527,12 @@ export default function MoneyPage() {
   const fuelNow = fuelLog(money, monthOf(today));
   const gymNow = kindLog(money, GYM, monthOf(today));
   const left = summary.in - summary.total;
+  const expectedTotal = expected.reduce((t, x) => t + x.amount, 0);
+  const expectedInMonth = expected.filter((x) => monthOf(x.date) === month).reduce((t, x) => t + x.amount, 0);
+  const whenText = (d: string) => {
+    const n = Math.round((new Date(`${d}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86400000);
+    return n === 0 ? "today" : n === 1 ? "tomorrow" : n > 1 ? `in ${n} days` : `was due ${shortDate(d)}`;
+  };
 
   // One entry as a transaction row: tap to change it, ✕ to delete it.
   const entryRow = (e: MoneyEntry, where: string) => {
@@ -607,6 +695,24 @@ export default function MoneyPage() {
 
   const formBox = form && (
     <form className="money-form" onSubmit={save}>
+      {form.mode === "add" && (
+        <div className="money-seg money-when" role="group" aria-label="Has it come in yet?">
+          <button
+            type="button"
+            className={form.expected ? "" : "is-on"}
+            aria-pressed={!form.expected}
+            onClick={() => {
+              setForm({ ...form, expected: false });
+              if (date > today) setDate(day);
+            }}
+          >
+            Came in
+          </button>
+          <button type="button" className={form.expected ? "is-on" : ""} aria-pressed={!!form.expected} onClick={() => setForm({ ...form, expected: true })}>
+            Expected
+          </button>
+        </div>
+      )}
       {(form.mode !== "add" || date !== today) && (
         <div className="money-form-top">
           {form.mode !== "add" && (
@@ -618,7 +724,11 @@ export default function MoneyPage() {
               </button>
             </span>
           )}
-          {date !== today && <em className="money-form-day">for {fullDay(date)}</em>}
+          {date !== today && (
+            <em className="money-form-day">
+              {form.mode === "add" && form.expected ? "expected" : "for"} {fullDay(date)}
+            </em>
+          )}
         </div>
       )}
       <div className="money-amount-row">
@@ -662,8 +772,14 @@ export default function MoneyPage() {
           </label>
         )}
         <label className="money-field">
-          <span className="money-field-label">Date</span>
-          <input type="date" className="dash-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
+          <span className="money-field-label">{form.mode === "add" && form.expected ? "When do you expect it?" : "Date"}</span>
+          <input
+            type="date"
+            className="dash-input"
+            value={date}
+            max={form.mode === "add" && form.expected ? undefined : today}
+            onChange={(e) => setDate(e.target.value || today)}
+          />
         </label>
         <label className="money-field is-wide">
           <span className="money-field-label">{form.mode === "add" ? "Where from?" : form.mode === "move" ? "Where?" : "Where / what?"}</span>
@@ -675,9 +791,12 @@ export default function MoneyPage() {
           ))}
         </datalist>
       </div>
+      {form.mode === "add" && form.expected && (
+        <p className="money-hint">Kept to one side - your balance doesn&apos;t change until you tap “It&apos;s in” when it arrives.</p>
+      )}
       <div className="money-form-actions">
         <button type="submit" className="money-btn is-primary">
-          {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : "Add it"}
+          {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : form.expected ? "Add to expected" : "Add it"}
         </button>
         <button type="button" className="money-btn" onClick={closeSheet}>
           Cancel
@@ -1063,6 +1182,22 @@ export default function MoneyPage() {
             <span className="money-label">Total balance</span>
             <Figure n={bal + cashNow} className={`money-total-amount ${bal + cashNow < 0 ? "is-low" : ""}`} />
             <span className="money-total-sub">Account and cash on hand together</span>
+            {expected.length > 0 && (
+              <button
+                type="button"
+                className={`money-projected ${sheet === "expected" ? "is-on" : ""}`}
+                onClick={() => openSheet("expected")}
+                aria-expanded={sheet === "expected"}
+                title="Not in your balance - tap to see what's expected"
+              >
+                <span className="money-projected-label">Projected</span>
+                <strong>{dollars(bal + cashNow + expectedTotal)}</strong>
+                <span className="money-projected-sub">with {dollars(expectedTotal)} expected</span>
+                <span className="money-projected-more" aria-hidden>
+                  ›
+                </span>
+              </button>
+            )}
           </div>
           <dl className="money-stats">
             <div>
@@ -1114,11 +1249,92 @@ export default function MoneyPage() {
         {sheet && (
           <div className="money-sheet" ref={sheetRef}>
             <div className="money-sheet-head">
-              <h2>{sheet === "income" ? "Add income" : "Add expense"}</h2>
+              <h2>{sheet === "income" ? "Add income" : sheet === "expense" ? "Add expense" : "Expected income"}</h2>
               <button type="button" className="money-sheet-close" onClick={closeSheet} aria-label="Close">
                 ✕
               </button>
             </div>
+            {sheet === "expected" && (
+              <>
+                <p className="money-sheet-ask">Not in your balance yet. Tap “It&apos;s in” when it arrives and it&apos;s added then.</p>
+                <div className="money-exp-list">
+                  {expected.map((x) =>
+                    expEdit?.id === x.id ? (
+                      <form key={x.id} className="money-edit" onSubmit={saveExpectedEdit}>
+                        <div className="money-form-top">
+                          <span className="money-form-what">Expected</span>
+                        </div>
+                        <label className="money-amount">
+                          <span aria-hidden>$</span>
+                          <input
+                            className="dash-input"
+                            inputMode="decimal"
+                            autoFocus
+                            value={expEdit.amount}
+                            onChange={(e) => setExpEdit({ ...expEdit, amount: e.target.value })}
+                            onKeyDown={(e) => e.key === "Escape" && setExpEdit(null)}
+                            aria-label="Amount"
+                          />
+                        </label>
+                        <div className="money-form-fields">
+                          <WalletToggle cash={expEdit.cash} onChange={(cash) => setExpEdit({ ...expEdit, cash })} label="Into" />
+                          <label className="money-field">
+                            <span className="money-field-label">When do you expect it?</span>
+                            <input type="date" className="dash-input" value={expEdit.date} onChange={(e) => setExpEdit({ ...expEdit, date: e.target.value })} />
+                          </label>
+                          <label className="money-field is-wide">
+                            <span className="money-field-label">Where from?</span>
+                            <input className="dash-input" placeholder="Optional" value={expEdit.note} onChange={(e) => setExpEdit({ ...expEdit, note: e.target.value })} />
+                          </label>
+                        </div>
+                        <div className="money-form-actions">
+                          <button type="submit" className="money-btn is-primary">
+                            Save
+                          </button>
+                          <button type="button" className="money-btn" onClick={() => setExpEdit(null)}>
+                            Cancel
+                          </button>
+                          <button type="button" className="money-link is-danger money-edit-remove" onClick={() => removeExpected(x.id)}>
+                            Remove
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div key={x.id} className="money-tx-line money-exp-line">
+                        <button
+                          type="button"
+                          className="money-tx is-compact is-expected"
+                          onClick={() => setExpEdit({ id: x.id, amount: String(x.amount), note: x.note ?? "", date: x.date, cash: x.cash === true })}
+                        >
+                          <span className="money-tx-date">{shortDate(x.date)}</span>
+                          <span className="money-tx-main">
+                            <span className="money-tx-name">{x.note || "Money in"}</span>
+                            <span className={`money-tx-meta ${x.date < today ? "is-late" : ""}`}>
+                              {x.cash ? "Cash" : "Account"} · {whenText(x.date)}
+                            </span>
+                          </span>
+                          <span className="money-tx-amount">+{dollars(x.amount)}</span>
+                        </button>
+                        <button type="button" className="money-btn money-exp-in" onClick={() => receiveExpected(x.id)}>
+                          It&apos;s in
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="money-add-line"
+                  onClick={() => {
+                    setExpEdit(null);
+                    setSheet("income");
+                    openForm({ mode: "add", cash: false, expected: true });
+                  }}
+                >
+                  <span aria-hidden>+</span> Add expected income
+                </button>
+              </>
+            )}
             {sheet === "expense" && !form && (
               <>
                 <p className="money-sheet-ask">What was it for?</p>
@@ -1204,6 +1420,7 @@ export default function MoneyPage() {
           >
             <span>Money in</span>
             <strong className="is-in">{dollars(summary.in)}</strong>
+            {expectedInMonth > 0 && <em className="is-expected">+{dollars(expectedInMonth)} expected</em>}
           </button>
           <button
             type="button"

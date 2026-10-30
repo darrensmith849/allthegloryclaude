@@ -5094,6 +5094,36 @@ button.money-tile:hover .money-tile-edit { color: var(--colour-amber); }
 .money-usual-btn strong { font-weight: 700; font-variant-numeric: tabular-nums; }
 .money-usual-btn em { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--colour-ink-quiet); }
 
+/* Income still expected - kept to one side, never in a balance (dashed = not in yet) */
+.money-projected {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 12px;
+  padding: 8px 14px 8px 16px;
+  border-radius: 999px;
+  border: 1px dashed rgb(var(--gold-rgb) / 0.6);
+  background: rgb(var(--paper-rgb) / 0.55);
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.money-projected:hover, .money-projected.is-on { background: var(--paper-solid); border-color: rgb(var(--gold-rgb) / 0.9); }
+.money-projected-label { font-size: 11px; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--colour-amber); }
+.money-projected strong { font-family: var(--font-read), Georgia, serif; font-size: 18px; font-weight: 500; color: var(--colour-ink-strong); font-variant-numeric: tabular-nums lining-nums; }
+.money-projected-sub { font-size: 13px; color: var(--colour-ink-quiet); font-variant-numeric: tabular-nums; }
+.money-projected-more { font-size: 17px; line-height: 1; color: var(--colour-amber); }
+.money-when { display: flex; width: fit-content; margin-bottom: 16px; }
+.money-exp-list { margin-top: 2px; }
+.money-exp-line { gap: 10px; }
+.money-tx.is-expected .money-tx-amount { color: rgb(var(--ok-rgb) / 0.85); }
+.money-tx-meta.is-late { color: var(--warm-text); }
+.money-exp-in { flex: none; min-height: 36px; padding: 0 14px; font-size: 13.5px; border-color: rgb(var(--ok-rgb) / 0.4); color: rgb(var(--ok-rgb)); }
+.money-exp-in:hover { border-color: rgb(var(--ok-rgb) / 0.8); background: rgb(var(--ok-rgb) / 0.06); color: rgb(var(--ok-rgb)); }
+.money-figure em.is-expected { color: var(--colour-amber); }
+
 /* The month */
 .money-monthbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 40px; margin: 46px 0 18px; }
 .money-monthbar-title { display: flex; flex-direction: column; gap: 6px; }
@@ -5358,6 +5388,11 @@ button.money-tile:hover .money-tile-edit { color: var(--colour-amber); }
   .money-action { min-height: 54px; padding: 0 10px; font-size: 15px; gap: 8px; white-space: nowrap; }
   .money-action-sign { width: 22px; height: 22px; font-size: 17px; }
   .money-sheet { margin: 12px -8px 0; padding: 18px 16px; }
+  .money-when { width: 100%; }
+  .money-when button { flex: 1; }
+  .money-projected { padding: 7px 12px 7px 14px; gap: 2px 8px; }
+  .money-projected strong { font-size: 17px; }
+  .money-exp-in { padding: 0 11px; }
   .money-kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .money-kind { padding: 10px 12px; font-size: 14px; }
   .money-usual { margin: 18px -18px 0; }

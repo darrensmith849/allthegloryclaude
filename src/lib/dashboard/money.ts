@@ -2,7 +2,7 @@
 // re-use of what he usually buys, and the regular debits that come off by
 // themselves. Plain dollars, his account.
 
-import type { MoneyEntry, MoneyState, MoneySub } from "./types";
+import type { MoneyEntry, MoneyExpected, MoneyState, MoneySub } from "./types";
 
 export const SPEND_CATEGORIES = [
   "Coffee",
@@ -224,6 +224,14 @@ export function notesFor(m: MoneyState, category: string, max = 8): string[] {
     if (out.length >= max) break;
   }
   return out;
+}
+
+// Income he expects but hasn't had yet, soonest first. Never counted in a
+// balance - only once he marks it as in (then it's an ordinary "add" entry).
+export function expectedIncome(m: MoneyState): MoneyExpected[] {
+  return (m.expected ?? [])
+    .filter((x) => !x.deletedAt && !x.receivedAt)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at));
 }
 
 // Regular debits still to come off this month.
