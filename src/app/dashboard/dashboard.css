@@ -5443,6 +5443,71 @@ button.money-tile:hover .money-tile-edit { color: var(--colour-amber); }
   .money-tile, .money-action { transition: none; }
 }
 
+/* ── To do (family's own dashboard) - built on the Money page's pieces ── */
+.todo { max-width: 760px; }
+.todo-card + .todo-card { margin-top: 18px; }
+.todo-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
+.todo-head h2 { margin-top: 4px; font-size: 24px; font-weight: 500; line-height: 1.15; color: var(--colour-ink-strong); }
+.todo-progress { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 140px; }
+.todo-progress strong { font-family: var(--font-read), Georgia, serif; font-size: 26px; font-weight: 500; line-height: 1; color: var(--colour-ink-strong); font-variant-numeric: tabular-nums lining-nums; }
+.todo-progress strong span { font-size: 15px; color: var(--colour-ink-quiet); }
+.todo-progress-bar { display: block; width: 100%; height: 6px; border-radius: 999px; background: rgb(var(--tint-rgb) / calc(0.08 * var(--tint-k))); overflow: hidden; }
+.todo-progress-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--colour-amber); transition: width 240ms ease; }
+.todo-add { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px; border-radius: 18px; border: 1px solid rgb(var(--gold-rgb) / 0.28); background: rgb(var(--gold-rgb) / 0.05); }
+.todo-add .dash-input { flex: 1 1 220px; width: auto; min-height: 44px; border-radius: 12px; font-size: 15px; }
+.todo-group + .todo-group { margin-top: 18px; }
+.todo-row { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+.todo-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1.5px solid rgb(var(--gold-rgb) / 0.6);
+  background: var(--field);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-gold);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+.todo-check:hover { border-color: var(--colour-amber); }
+.todo-check:active { transform: scale(0.92); }
+.todo-row.is-done .todo-check { background: var(--colour-amber); border-color: var(--colour-amber); }
+.todo-title { flex: 1; min-width: 0; padding: 12px 0; text-align: left; font-size: 15.5px; font-weight: 550; line-height: 1.35; color: var(--colour-ink-strong); cursor: text; overflow-wrap: anywhere; }
+.todo-title em { font-style: normal; font-weight: 500; font-size: 13px; color: var(--colour-ink-quiet); }
+.todo-row.is-done .todo-title { color: var(--colour-ink-quiet); text-decoration: line-through; text-decoration-color: rgb(var(--gold-rgb) / 0.6); }
+.todo-row.is-editing { gap: 8px; padding: 8px 0; flex-wrap: wrap; }
+.todo-row.is-editing .dash-input { flex: 1 1 200px; width: auto; min-height: 44px; border-radius: 12px; font-size: 15px; }
+.todo-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.todo-week-day { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 12px; border-radius: 14px; background: rgb(var(--tint-rgb) / calc(0.045 * var(--tint-k))); }
+.todo-week-day > span { font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--colour-ink-quiet); }
+.todo-week-day strong { font-size: 14px; font-weight: 650; color: var(--colour-ink-strong); font-variant-numeric: tabular-nums; }
+.todo-week-day i { position: relative; display: block; width: 10px; height: 44px; border-radius: 999px; background: rgb(var(--tint-rgb) / calc(0.08 * var(--tint-k))); overflow: hidden; }
+.todo-week-day i b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 999px; background: rgb(var(--gold-rgb) / 0.75); }
+.todo-week-day.is-today { box-shadow: inset 0 0 0 1.5px rgb(var(--gold-rgb) / 0.6); background: var(--paper-solid); }
+.todo-week-day.is-full i b { background: var(--colour-amber); }
+@media (max-width: 640px) {
+  .todo-card { margin: 0 -6px; }
+  .todo-progress { width: 100%; align-items: flex-start; }
+  .todo-add { padding: 10px; }
+  .todo-add .money-seg { flex: 1; }
+  .todo-add .money-seg button { flex: 1; }
+  .todo-week { gap: 4px; }
+  .todo-week-day { padding: 8px 2px 10px; }
+  .todo-week-day > span { font-size: 10px; letter-spacing: 0.04em; }
+  .todo-week-day strong { font-size: 12.5px; }
+}
+
+/* ── Family dashboard: set up by Daniel in Settings ── */
+.family-access { display: grid; gap: 12px; }
+.family-access-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 14px; color: var(--colour-ink-soft); }
+.family-access-status strong { color: var(--colour-ink-strong); }
+.family-access-off { color: rgb(var(--bad-rgb)); font-weight: 600; }
+.family-access-form { display: grid; gap: 10px; max-width: 460px; }
+.dash-family-badge { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; background: rgb(var(--ok-rgb) / 0.12); color: rgb(var(--ok-rgb)); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
 /* ───────── Sermons (/dashboard/sermons) ───────── */
 .sermon-list { margin-top: 12px; overflow-y: auto; }
 .sermon-row { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-soft); transition: background 0.2s, border-color 0.2s; }

@@ -2,12 +2,17 @@
  * Admin login for the private dashboard.
  *
  *   POST { password } -> 200 + session cookie | 401 | 429 | 503
+ *   POST { password, as: "family" } -> the same for family (Daniel's sister):
+ *     her one password, set by Daniel in Settings, opens her own dashboard
+ *     (a Study session for her 'personal' member account).
  *
  * More than MAX_FAILURES wrong passwords from one address within
  * LOCKOUT_MS locks that address out until the window passes.
  */
 import { checkPasswordAnyDevice, createSession, getAdminRecord, sessionCookie } from "@/lib/admin-auth";
-import { getDb } from "@/lib/analytics/store";
+import { getDb, type D1Db } from "@/lib/analytics/store";
+import { createMemberSession, memberCookie } from "@/lib/study/members";
+import { clearedWhoCookie, whoCookie } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +25,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "No password has been set yet.", setup: true }, { status: 409 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { password?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { password?: unknown; as?: unknown };
   const attempt = String(body.password ?? "").slice(0, 200);
+  const family = body.as === "family";
   const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
   const db = await getDb();
   const now = Date.now();
@@ -40,7 +46,8 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!attempt || !(await checkPasswordAnyDevice(attempt, rec))) {
+  const familyId = family && db && attempt ? await familyMember(db, attempt) : null;
+  if (!attempt || (family ? !familyId : !(await checkPasswordAnyDevice(attempt, rec)))) {
     if (db) {
       await db
         .batch([
@@ -56,8 +63,24 @@ export async function POST(req: Request) {
   if (db) {
     await db.prepare("DELETE FROM login_attempts WHERE ip=?1").bind(ip).run().catch(() => {});
   }
-  return Response.json(
-    { ok: true },
-    { headers: { "set-cookie": sessionCookie(await createSession(rec)), "cache-control": "no-store" } },
-  );
+  if (familyId && db) {
+    const headers = new Headers({ "cache-control": "no-store" });
+    headers.append("set-cookie", memberCookie(await createMemberSession(db, familyId)));
+    headers.append("set-cookie", whoCookie(`member:${familyId}`));
+    return Response.json({ ok: true, family: true }, { headers });
+  }
+  const headers = new Headers({ "cache-control": "no-store" });
+  headers.append("set-cookie", sessionCookie(await createSession(rec)));
+  headers.append("set-cookie", clearedWhoCookie());
+  return Response.json({ ok: true }, { headers });
+}
+
+// The family account (members.role 'personal') this password opens, if any.
+async function familyMember(db: D1Db, password: string): Promise<string | null> {
+  const { results } = await db
+    .prepare("SELECT id, hash, salt, iterations FROM members WHERE role = 'personal' AND disabled_at IS NULL")
+    .all<{ id: string; hash: string; salt: string; iterations: number }>()
+    .catch(() => ({ results: [] as { id: string; hash: string; salt: string; iterations: number }[] }));
+  for (const m of results) if (await checkPasswordAnyDevice(password, m)) return m.id;
+  return null;
 }

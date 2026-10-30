@@ -1,7 +1,7 @@
 // Private-dashboard gate: every /dashboard page and the dashboard's own
 // APIs need a valid admin session cookie (see src/lib/admin-auth.ts) - or,
-// for the owner's team, their Study session, and only for their part
-// (src/lib/team.ts).
+// for the owner's team and his family, their Study session, and only for
+// their part (src/lib/team.ts).
 // Pages without one go to /dashboard/login - which asks for a new password
 // the first time - and APIs answer 401.
 //
@@ -12,7 +12,8 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { isSignedIn } from "@/lib/admin-auth";
-import { getTeamMember, teamAllowed } from "@/lib/team";
+import { getMember } from "@/lib/study/members";
+import { PERSONAL_HOME, personalAllowed, teamAllowed } from "@/lib/team";
 
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
@@ -20,13 +21,15 @@ export async function middleware(req: NextRequest) {
   if (await isSignedIn(req.headers.get("cookie"))) return NextResponse.next();
 
   // The owner's team (signed in with their Study account): only their part.
-  if (await getTeamMember(req)) {
-    if (teamAllowed(pathname)) return NextResponse.next();
+  // Family (his sister): only her own dashboard.
+  const member = await getMember(req).catch(() => null);
+  if (member?.team || member?.personal) {
+    if (member.team ? teamAllowed(pathname) : personalAllowed(pathname)) return NextResponse.next();
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "That part of the dashboard is just for Daniel." }, { status: 403 });
     }
     const home = req.nextUrl.clone();
-    home.pathname = "/dashboard/community";
+    home.pathname = member.team ? "/dashboard/community" : PERSONAL_HOME;
     home.search = "";
     return NextResponse.redirect(home);
   }

@@ -445,8 +445,25 @@ export interface MoneyState {
   expected?: MoneyExpected[]; // income still to come in - not in any balance
 }
 
+// A simple to-do list (family's own dashboard - /dashboard/todo): things to
+// do once, and things done every day, ticked afresh each morning (each day's
+// ticks are kept). Removed items are kept, never wiped.
+export interface TodoItem {
+  id: string;
+  title: string;
+  daily: boolean; // every day - ticked again each morning
+  at: string; // added (ISO)
+  doneAt?: string; // a one-off thing, ticked off (ISO)
+  deletedAt?: string; // removed (kept, never wiped)
+}
+export interface TodoState {
+  items: TodoItem[];
+  days: Record<ISODate, string[]>; // the every-day things ticked on each day
+}
+
 export interface DashboardState {
   money?: MoneyState;
+  todo?: TodoState;
   tasks: Task[];
   habits: Record<ISODate, DayHabits>;
   // Per-day "is this schedule row done?" checks, keyed by row id.

@@ -16,10 +16,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DeleteButton, EntryEdit, editingFor, Figure, KindTab, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
+import { useDashUser } from "@/lib/dashboard/who";
 import type { MoneyEntry, MoneyExpected } from "@/lib/dashboard/types";
 import {
   allCategories,
   balance,
+  blankMoney,
   CASH_OUT,
   dayBalances,
   daySums,
@@ -111,11 +113,14 @@ export default function MoneyPage() {
   const money = state.money;
   const today = localDate();
 
-  // First visit: start from the balance Daniel gave, with his regular debits -
+  // First visit: start from the balance Daniel gave, with his regular debits
+  // (family, on her own dashboard, starts empty - she sets her own balance) -
   // only once the saved copy has loaded, so it never replaces one from another device.
+  const user = useDashUser();
   useEffect(() => {
-    if (ready && synced && !state.money) update((d) => void (d.money = startingMoney(STARTING_BALANCE)));
-  }, [ready, synced, state.money, update]);
+    if (ready && synced && !state.money && user !== undefined)
+      update((d) => void (d.money = user?.role === "personal" ? blankMoney() : startingMoney(STARTING_BALANCE)));
+  }, [ready, synced, state.money, update, user]);
 
   // Regular debits that have come due come off by themselves (on the latest copy, once).
   useEffect(() => {

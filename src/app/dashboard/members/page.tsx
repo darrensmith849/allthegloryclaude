@@ -35,6 +35,7 @@ interface MemberRow {
   emailUpdates: boolean;
   helper: boolean;
   team?: boolean;
+  personal?: boolean; // family: her own dashboard (Settings) - her things stay hers
   invitedVia: string | null;
 }
 interface Backup {
@@ -714,9 +715,21 @@ export default function MembersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="dash-members-name">
                       {m.name} {m.emailUpdates && <span className="dash-email-badge">✉ Email updates</span>}{" "}
-                      {m.team ? <span className="dash-team-badge">Team</span> : m.helper && <span className="dash-helper-badge">Helper</span>}{" "}
+                      {m.personal ? (
+                        <span className="dash-family-badge">Family</span>
+                      ) : m.team ? (
+                        <span className="dash-team-badge">Team</span>
+                      ) : (
+                        m.helper && <span className="dash-helper-badge">Helper</span>
+                      )}{" "}
                       {m.disabled && <span className="dash-word-hint">· paused</span>}
                     </div>
+                    {m.personal ? (
+                      <div className="dash-word-hint">
+                        Her own dashboard (Family login) · set up {when(m.createdAt)} · last here {when(m.lastSeen)} · managed in Settings
+                      </div>
+                    ) : (
+                    <>
                     <div className="dash-word-hint">
                       {m.email} · joined {when(m.createdAt)} · last here {when(m.lastSeen)}
                     </div>
@@ -732,7 +745,10 @@ export default function MembersPage() {
                         <CopyLink url={resetLinks[m.id]} />
                       </div>
                     )}
+                    </>
+                    )}
                   </div>
+                  {!m.personal && (
                   <div className="flex gap-1 flex-wrap justify-end">
                     {isOwner && (
                       <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => setTeam(m, !m.team)}>
@@ -755,6 +771,7 @@ export default function MembersPage() {
                       {m.disabled ? "Un-pause" : "Pause"}
                     </button>
                   </div>
+                  )}
                 </div>
               ))}
             </div>

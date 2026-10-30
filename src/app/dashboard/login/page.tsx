@@ -21,7 +21,9 @@ export default function AdminLoginPage() {
   const [mode, setMode] = useState<Mode>("loading");
   // Daniel's team log in here with their Study email and password - so the
   // dashboard's Home Screen app (scope /dashboard) works for them too.
+  // Family (his sister) with the one password he set for her in Settings.
   const [team, setTeam] = useState(false);
+  const [family, setFamily] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -33,13 +35,14 @@ export default function AdminLoginPage() {
     // A full page load, so the new session cookie goes with it.
     window.location.assign(safeNext(new URLSearchParams(window.location.search).get("next")));
 
-  // Daniel's password, or a team member's Study email and password.
-  function chooseTeam(on: boolean) {
-    setTeam(on);
+  // Daniel's password, a team member's Study email and password, or family's password.
+  function choose(who: "daniel" | "team" | "family") {
+    setTeam(who === "team");
+    setFamily(who === "family");
     setError(null);
     setPassword("");
     try {
-      window.localStorage.setItem(WHO_KEY, on ? "team" : "daniel");
+      window.localStorage.setItem(WHO_KEY, who);
     } catch {
       // private window
     }
@@ -52,12 +55,15 @@ export default function AdminLoginPage() {
     } catch {
       // private window
     }
-    if (new URLSearchParams(window.location.search).get("team") || saved === "team") setTeam(true);
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("team") || (saved === "team" && !q.get("family"))) setTeam(true);
+    else if (q.get("family") || saved === "family") setFamily(true);
     fetch("/api/admin/status", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: { configured?: boolean; signedIn?: boolean; role?: string | null }) => {
         if (s.signedIn) goIn();
         else if (s.role === "team") window.location.assign("/dashboard/community");
+        else if (s.role === "personal") goIn();
         else setMode(s.configured ? "login" : "setup");
       })
       .catch(() => {
@@ -68,7 +74,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (mode !== "loading") input.current?.focus();
-  }, [mode, team]);
+  }, [mode, team, family]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -110,14 +116,16 @@ export default function AdminLoginPage() {
       const r = await fetch(mode === "setup" ? "/api/admin/setup" : "/api/admin/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(family ? { password, as: "family" } : { password }),
       });
       if (r.ok) return goIn();
       const data = (await r.json().catch(() => ({}))) as { error?: string; setup?: boolean };
       if (r.status === 409) setMode(data.setup ? "setup" : "login");
       setError(
         r.status === 401 && mode === "login"
-          ? "That isn't Daniel's password. On Daniel's team? Tap “Team member” above and log in with your Study email and password."
+          ? family
+            ? "That password isn't right. Check it with Daniel - he can set a new one for you."
+            : "That isn't Daniel's password. On Daniel's team? Tap “Team member” above and log in with your Study email and password."
           : (data.error ?? "Couldn't log in. Try again."),
       );
       setPassword("");
@@ -136,13 +144,16 @@ export default function AdminLoginPage() {
     <div className="dash-login">
       <form className="dash-login-card" onSubmit={submit}>
         <div className="eyebrow eyebrow-amber">All The Glory</div>
-        <h1 className="dash-title mt-1">{team ? "Team login" : setup ? "Create your password" : "Admin login"}</h1>
+        <h1 className="dash-title mt-1">{team ? "Team login" : family && !setup ? "Family login" : setup ? "Create your password" : "Admin login"}</h1>
         {mode === "login" && (
           <div className="dash-toggle dash-login-who" role="group" aria-label="Who is logging in">
-            <button type="button" className={!team ? "is-on" : ""} onClick={() => chooseTeam(false)}>
+            <button type="button" className={!team && !family ? "is-on" : ""} onClick={() => choose("daniel")}>
               Daniel
             </button>
-            <button type="button" className={team ? "is-on" : ""} onClick={() => chooseTeam(true)}>
+            <button type="button" className={family ? "is-on" : ""} onClick={() => choose("family")}>
+              Family
+            </button>
+            <button type="button" className={team ? "is-on" : ""} onClick={() => choose("team")}>
               Team member
             </button>
           </div>
@@ -154,7 +165,9 @@ export default function AdminLoginPage() {
               ? "For Daniel's team - your Study email and password (the same as on The Study)."
               : setup
                 ? "Choose the password that will protect your private dashboard. You'll use it to log in on any device."
-                : "Daniel's password only."}
+                : family
+                  ? "Your own dashboard - the password Daniel gave you."
+                  : "Daniel's password only."}
         </p>
 
         {mode !== "loading" && team && (
@@ -203,7 +216,7 @@ export default function AdminLoginPage() {
         {mode !== "loading" && !team && (
           <>
             {/* Lets password managers save and fill this login. */}
-            <input type="text" name="username" autoComplete="username" value="admin" readOnly hidden />
+            <input type="text" name="username" autoComplete="username" value={family ? "family" : "admin"} readOnly hidden />
 
             <label className="dash-label mt-6" htmlFor="admin-password">
               {setup ? "New password" : "Password"}

@@ -137,6 +137,7 @@ export async function GET(req: Request) {
           invitedVia: m.invite_label,
           helper: m.role === "helper" || m.role === "team",
           team: m.role === "team",
+          personal: m.role === "personal", // family: her own dashboard, set up in Settings
           notes: Number(notes.find((x) => x.member_id === m.id)?.n ?? 0),
           days: Number(notes.find((x) => x.member_id === m.id)?.days ?? 0),
           words: Number(words.find((x) => x.member_id === m.id)?.n ?? 0),
@@ -190,12 +191,13 @@ export async function PATCH(req: Request) {
       }
     }
     if (typeof body.member === "string" && typeof role.team === "boolean") {
-      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1").bind(body.member, role.team ? "team" : null).run();
+      // Family's account keeps its role (her own dashboard) - it's changed only in Settings.
+      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1 AND role IS NOT 'personal'").bind(body.member, role.team ? "team" : null).run();
       return Response.json({ ok: true });
     }
     if (typeof body.member === "string" && typeof (body as { helper?: unknown }).helper === "boolean") {
       const helper = (body as { helper: boolean }).helper;
-      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1").bind(body.member, helper ? "helper" : null).run();
+      await db.prepare("UPDATE members SET role = ?2 WHERE id = ?1 AND role IS NOT 'personal'").bind(body.member, helper ? "helper" : null).run();
       return Response.json({ ok: true });
     }
     if (typeof body.member === "string" && typeof body.disabled === "boolean") {

@@ -22,6 +22,7 @@ export interface Member {
   createdAt: number;
   helper?: boolean; // may answer members' questions
   team?: boolean; // on the owner's team: Study Notes (their own), Members and Community in the dashboard
+  personal?: boolean; // family (Daniel's sister): her own private dashboard - see src/lib/team.ts
 }
 
 export type SignupMode = "invite" | "open" | "closed";
@@ -207,6 +208,7 @@ export async function getMember(req: Request, db?: D1Db | null): Promise<Member 
     createdAt: row.created_at,
     helper: row.role === "helper" || row.role === "team",
     team: row.role === "team",
+    personal: row.role === "personal",
   };
 }
 

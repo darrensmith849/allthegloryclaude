@@ -14,6 +14,7 @@ import {
   TaskTag,
 } from "@/lib/dashboard/types";
 import { PasswordInput } from "@/components/ui/password-input";
+import { FamilyAccess } from "@/components/dashboard/family-access";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -507,6 +508,11 @@ export default function SettingsPage() {
               </div>
             </form>
           </Panel>
+        </div>
+
+        {/* ── Your sister's own dashboard ─────────── */}
+        <div className="dash-col-12" id="family">
+          <FamilyAccess />
         </div>
 
         {/* ── Backup + restore ────────────────────── */}

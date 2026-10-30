@@ -28,22 +28,34 @@ const NAV = [
   { href: "/dashboard/settings", label: "Settings", glyph: "⚙" },
 ];
 
+// Family (Daniel's sister): her own dashboard - the study first, then money and her to-do list.
+const PERSONAL_NAV: NavItem[] = [
+  { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
+  { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
+  { href: "/dashboard/names", label: "Names of God", glyph: "א" },
+  { href: "/dashboard/money", label: "Money", glyph: "$" },
+  { href: "/dashboard/todo", label: "To do", glyph: "☑\uFE0E" },
+  { href: "/dashboard/notes?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },
+];
+
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  // The owner sees everything; a team member only their part.
+  // The owner sees everything; a team member only their part; family her own.
   const user = useDashUser();
   const team = user?.role === "team";
-  const nav = team ? NAV.filter((item) => TEAM_NAV.includes(item.href)) : user === undefined ? [] : NAV;
+  const personal = user?.role === "personal";
+  const nav = team ? NAV.filter((item) => TEAM_NAV.includes(item.href)) : personal ? PERSONAL_NAV : user === undefined ? [] : NAV;
   // Things waiting in Community (shared posts to approve, new check-in replies).
   const [waiting, setWaiting] = useState(0);
   useEffect(() => {
+    if (user === undefined || personal) return;
     fetch("/api/members/community?count=1", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { pending?: number; unread?: number; reported?: number } | null) =>
         setWaiting((d?.pending ?? 0) + (d?.unread ?? 0) + (d?.reported ?? 0)),
       )
       .catch(() => {});
-  }, [pathname]);
+  }, [pathname, user, personal]);
   // Phones: the menu folds away behind a Menu button so each page starts at
   // the top of the screen; it closes again once you pick a page.
   const [open, setOpen] = useState(false);
@@ -59,7 +71,7 @@ export default function DashboardSidebar() {
           <div className="min-w-0">
             <div className="eyebrow eyebrow-amber">All The Glory</div>
             <div className="font-display text-[20px] tracking-tight mt-1">
-              <span className="dash-brand-title">{user === undefined ? "\u00a0" : team ? `Team · ${user.name}` : "Private dashboard"}</span>
+              <span className="dash-brand-title">{user === undefined ? "\u00a0" : team ? `Team · ${user.name}` : personal ? `${user.name}'s dashboard` : "Private dashboard"}</span>
               {here && <span className="dash-brand-here">{here.label}</span>}
             </div>
           </div>
@@ -105,11 +117,12 @@ export default function DashboardSidebar() {
           type="button"
           className="dash-nav-link dash-nav-foot text-left"
           onClick={async () => {
-            if (team) {
-              // Back to the dashboard login (which has the team login), so a
-              // Home Screen app stays inside the app.
+            if (team || personal) {
+              // Back to the dashboard login (which has the team and family
+              // logins), so a Home Screen app stays inside the app.
               await fetch("/api/study/logout", { method: "POST" }).catch(() => {});
-              window.location.assign("/dashboard/login?team=1");
+              if (personal) await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+              window.location.assign(personal ? "/dashboard/login?family=1" : "/dashboard/login?team=1");
               return;
             }
             await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});

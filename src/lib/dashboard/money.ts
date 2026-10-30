@@ -304,6 +304,12 @@ export function toCsv(m: MoneyState): string {
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
+// First time for family (her own dashboard): nothing yet - she taps her
+// balance to set it, and adds her own regular debits.
+export function blankMoney(): MoneyState {
+  return { start: { amount: 0, at: new Date().toISOString() }, entries: [], subs: [] };
+}
+
 // First time: the balance Daniel gave, and the debits from his bank statement
 // (amounts as they came off in October 2026 - he can change them).
 export function startingMoney(amount: number, today = localDate()): MoneyState {

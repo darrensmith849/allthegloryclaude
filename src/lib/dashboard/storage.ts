@@ -3,9 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { DashboardState, emptyState, recommendedDaysFor } from "./types";
 
-const KEY = "atg:dashboard:v1";
-const TS_KEY = "atg:dashboard:v1:ts"; // last-modified epoch ms (for last-write-wins)
 const API = "/api/dashboard-state"; // durable D1-backed sync
+
+// Whose dashboard this device is keeping: the owner's (no cookie - the keys
+// as they always were), or family's own (cookie atg-who = "member:<id>", set
+// when she logs in - src/lib/team.ts). The server decides whose data it
+// sends from the session and says so; if that's someone else, the page
+// switches keys and reloads before anything is read or sent.
+function who(): string {
+  if (typeof document === "undefined") return "owner";
+  const m = document.cookie.match(/(?:^|;\s*)atg-who=([A-Za-z0-9:_-]+)/);
+  return m ? m[1] : "owner";
+}
+const keyFor = (w: string) => (w === "owner" ? "atg:dashboard:v1" : `atg:dashboard:v1:${w}`);
+let KEY = keyFor(who());
+let TS_KEY = `${KEY}:ts`; // last-modified epoch ms (for last-write-wins)
+let switching = false; // a different person's copy is on its way in - send nothing
 
 // Lazy reader so we don't blow up during SSR / build.
 function read(): DashboardState {
@@ -102,14 +115,14 @@ function schedulePush() {
   }, 1500);
 }
 function pushNow() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || switching) return;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (raw === null) return;
     fetch(API, {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ json: raw, updatedAt: localTs() }),
+      body: JSON.stringify({ json: raw, updatedAt: localTs(), who: who() }),
       keepalive: true,
     }).catch(() => {});
   } catch {
@@ -128,7 +141,17 @@ async function hydrateFromD1(apply: (s: DashboardState) => void): Promise<boolea
   try {
     const res = await fetch(API, { cache: "no-store" });
     if (!res.ok) return false;
-    const data = (await res.json()) as { json?: string | null; updatedAt?: number };
+    const data = (await res.json()) as { json?: string | null; updatedAt?: number; who?: string };
+    // Someone else's dashboard on this device (e.g. family logged in where
+    // the owner was): keep theirs under their own key, then start again.
+    if (data?.who && data.who !== who()) {
+      switching = true;
+      document.cookie = `atg-who=${data.who === "owner" ? "" : data.who}; Path=/; Secure; SameSite=Lax; Max-Age=${data.who === "owner" ? 0 : 90 * 86_400}`;
+      KEY = keyFor(data.who);
+      TS_KEY = `${KEY}:ts`;
+      window.location.reload();
+      return false;
+    }
     const remoteTs = Number(data?.updatedAt ?? 0) || 0;
     const lTs = localTs();
 
