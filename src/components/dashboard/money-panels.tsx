@@ -1,10 +1,9 @@
 "use client";
 
-// Pieces of the Money page: changing one entry, and the Fuel and Gym fees
-// tabs - each tallied in its heading, so the totals show even folded away.
+// Pieces of the Money page: a balance in big type, account or cash, changing
+// one entry, and the Fuel and Gym fees tabs (their totals show on the tabs).
 
 import { useState } from "react";
-import { FoldPanel } from "@/components/dashboard/fold-panel";
 import type { MoneyEntry, MoneyState } from "@/lib/dashboard/types";
 import { allCategories, dollars, FUEL, fuelLog, GYM, kindLog, kmText, monthName, monthOf, parseKm } from "@/lib/dashboard/money";
 
@@ -21,18 +20,32 @@ export const editingFor = (e: MoneyEntry, where: string): Editing => ({
   where,
 });
 
+// "$2,142" in full, ".00" smaller beside it - the way a banking app shows a balance.
+export function Figure({ n, className = "" }: { n: number; className?: string }) {
+  const s = dollars(n);
+  const dot = s.lastIndexOf(".");
+  return (
+    <span className={className}>
+      {s.slice(0, dot)}
+      <span className="money-cents">{s.slice(dot)}</span>
+    </span>
+  );
+}
+
 // Account or cash - for spending ("Paid with") and money coming in ("Into").
 export function WalletToggle({ cash, onChange, label }: { cash: boolean; onChange: (cash: boolean) => void; label: string }) {
   return (
-    <span className="money-wallet" role="group" aria-label={label}>
-      <span className="money-wallet-label">{label}</span>
-      <button type="button" className={cash ? "" : "is-on"} aria-pressed={!cash} onClick={() => onChange(false)}>
-        Account
-      </button>
-      <button type="button" className={cash ? "is-on" : ""} aria-pressed={cash} onClick={() => onChange(true)}>
-        Cash
-      </button>
-    </span>
+    <div className="money-field">
+      <span className="money-field-label">{label}</span>
+      <span className="money-wallet" role="group" aria-label={label}>
+        <button type="button" className={cash ? "" : "is-on"} aria-pressed={!cash} onClick={() => onChange(false)}>
+          Account
+        </button>
+        <button type="button" className={cash ? "is-on" : ""} aria-pressed={cash} onClick={() => onChange(true)}>
+          Cash
+        </button>
+      </span>
+    </div>
   );
 }
 
@@ -62,17 +75,19 @@ export function EntryEdit({
 }) {
   return (
     <form className="money-edit" onSubmit={onSave}>
-      <span className="money-form-what">
-        {entry.kind === "set"
-          ? entry.cash
-            ? "Cash set to"
-            : "Balance set to"
-          : entry.kind === "move"
-            ? "Cash out - from your account into cash"
-            : entry.kind === "add"
-              ? "Money in"
-              : "Spent"}
-      </span>
+      <div className="money-form-top">
+        <span className="money-form-what">
+          {entry.kind === "set"
+            ? entry.cash
+              ? "Cash set to"
+              : "Balance set to"
+            : entry.kind === "move"
+              ? "Cash out - from your account into cash"
+              : entry.kind === "add"
+                ? "Money in"
+                : "Spent"}
+        </span>
+      </div>
       <label className="money-amount">
         <span aria-hidden>$</span>
         <input
@@ -85,44 +100,50 @@ export function EntryEdit({
           aria-label="Amount"
         />
       </label>
-      {entry.kind === "spend" && (
-        <select className="dash-input money-edit-cat" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} aria-label="Kind">
-          {[...new Set([...allCategories(money), editing.category])].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      )}
-      {(entry.kind === "spend" || entry.kind === "add") && (
-        <WalletToggle cash={editing.cash} onChange={(cash) => setEditing({ ...editing, cash })} label={entry.kind === "add" ? "Into" : "Paid with"} />
-      )}
-      {entry.kind === "spend" && editing.category === FUEL && (
-        <label className="money-km">
-          <input
-            className="dash-input"
-            inputMode="numeric"
-            placeholder="Mileage"
-            value={editing.km}
-            onChange={(e) => setEditing({ ...editing, km: e.target.value })}
-            aria-label="Mileage (km on the clock)"
-          />
-          <span>km</span>
-        </label>
-      )}
-      {entry.kind !== "set" && (
-        <>
-          <input className="dash-input money-note" placeholder="Where / what?" value={editing.note} onChange={(e) => setEditing({ ...editing, note: e.target.value })} />
-          <input type="date" className="dash-input money-date" value={editing.date} max={today} onChange={(e) => setEditing({ ...editing, date: e.target.value })} aria-label="Date" />
-        </>
-      )}
-      <button type="submit" className="dash-btn dash-btn-primary dash-note-nav">
-        Save
-      </button>
-      <button type="button" className="dash-word-link" onClick={() => setEditing(null)}>
-        Cancel
-      </button>
-      <button type="button" className="dash-word-link money-edit-remove" onClick={onRemove}>
-        Remove
-      </button>
+      <div className="money-form-fields">
+        {entry.kind === "spend" && (
+          <label className="money-field">
+            <span className="money-field-label">Kind</span>
+            <select className="dash-input" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
+              {[...new Set([...allCategories(money), editing.category])].map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        {(entry.kind === "spend" || entry.kind === "add") && (
+          <WalletToggle cash={editing.cash} onChange={(cash) => setEditing({ ...editing, cash })} label={entry.kind === "add" ? "Into" : "Paid with"} />
+        )}
+        {entry.kind === "spend" && editing.category === FUEL && (
+          <label className="money-field">
+            <span className="money-field-label">Mileage (km on the clock)</span>
+            <input className="dash-input" inputMode="numeric" placeholder="Mileage" value={editing.km} onChange={(e) => setEditing({ ...editing, km: e.target.value })} />
+          </label>
+        )}
+        {entry.kind !== "set" && (
+          <>
+            <label className="money-field">
+              <span className="money-field-label">Date</span>
+              <input type="date" className="dash-input" value={editing.date} max={today} onChange={(e) => setEditing({ ...editing, date: e.target.value })} />
+            </label>
+            <label className="money-field is-wide">
+              <span className="money-field-label">Where / what?</span>
+              <input className="dash-input" placeholder="Where / what?" value={editing.note} onChange={(e) => setEditing({ ...editing, note: e.target.value })} />
+            </label>
+          </>
+        )}
+      </div>
+      <div className="money-form-actions">
+        <button type="submit" className="money-btn is-primary">
+          Save
+        </button>
+        <button type="button" className="money-btn" onClick={() => setEditing(null)}>
+          Cancel
+        </button>
+        <button type="button" className="money-link is-danger money-edit-remove" onClick={onRemove}>
+          Remove
+        </button>
+      </div>
     </form>
   );
 }
@@ -139,7 +160,7 @@ export function DeleteButton({ onClick }: { onClick: () => void }) {
 const SHOW = 5; // payments listed before "Show all"
 
 // The Fuel tab (with mileage) or the Gym fees tab.
-export function KindPanel({
+export function KindTab({
   kind,
   money,
   today,
@@ -179,13 +200,10 @@ export function KindPanel({
     setAdding(null);
   }
 
-  const title = fuel
-    ? `${dollars(log.month)}${flog?.km ? ` · ${kmText(flog.km)}` : ""}`
-    : `${dollars(log.month)} · ${dollars(log.year)} this year`;
   const shown = all ? log.all : log.all.slice(0, SHOW);
 
   return (
-    <FoldPanel id={`money-${kind}`} eyebrow={`${fuel ? "Fuel & mileage" : "Gym fees"} · ${thisMonth}`} title={title}>
+    <div className="money-kindtab">
       <div className="money-kind-figures">
         <div>
           <span>{thisMonth}</span>
@@ -220,15 +238,17 @@ export function KindPanel({
         )}
       </div>
       {fuel && (flog?.lastKm == null || flog.perKm == null) && (
-        <p className="dash-word-hint mt-2">Put in the mileage each time you fill up - it works out the km you drive and what the car costs a km.</p>
+        <p className="money-hint">Put in the mileage each time you fill up - it works out the km you drive and what the car costs a km.</p>
       )}
 
       {adding ? (
         <form className="money-form money-kind-form" onSubmit={add}>
-          <span className="money-form-what">
-            <i style={{ background: colour }} aria-hidden />
-            {fuel ? "Filled up" : "Gym fee"}
-          </span>
+          <div className="money-form-top">
+            <span className="money-form-what">
+              <i style={{ background: colour }} aria-hidden />
+              {fuel ? "Filled up" : "Gym fee"}
+            </span>
+          </div>
           <label className="money-amount">
             <span aria-hidden>$</span>
             <input
@@ -242,37 +262,46 @@ export function KindPanel({
               aria-label="Amount in dollars"
             />
           </label>
-          {fuel && (
-            <label className="money-km">
+          <div className="money-form-fields">
+            {fuel && (
+              <label className="money-field">
+                <span className="money-field-label">Mileage (km on the clock)</span>
+                <input
+                  className="dash-input"
+                  inputMode="numeric"
+                  placeholder={flog?.lastKm != null ? `Last ${flog.lastKm}` : "Mileage"}
+                  value={adding.km}
+                  onChange={(e) => setAdding({ ...adding, km: e.target.value })}
+                />
+              </label>
+            )}
+            <label className="money-field">
+              <span className="money-field-label">Date</span>
+              <input type="date" className="dash-input" value={adding.date} max={today} onChange={(e) => setAdding({ ...adding, date: e.target.value || today })} />
+            </label>
+            <label className="money-field is-wide">
+              <span className="money-field-label">{fuel ? "Where?" : "Which gym?"}</span>
               <input
                 className="dash-input"
-                inputMode="numeric"
-                placeholder={flog?.lastKm != null ? `Last ${flog.lastKm}` : "Mileage"}
-                value={adding.km}
-                onChange={(e) => setAdding({ ...adding, km: e.target.value })}
-                aria-label="Mileage (km on the clock)"
+                placeholder="Optional"
+                value={adding.note}
+                onChange={(e) => setAdding({ ...adding, note: e.target.value })}
               />
-              <span>km</span>
             </label>
-          )}
-          <input type="date" className="dash-input money-date" value={adding.date} max={today} onChange={(e) => setAdding({ ...adding, date: e.target.value || today })} aria-label="Date" />
-          <input
-            className="dash-input money-note"
-            placeholder={fuel ? "Where? (optional)" : "Which gym? (optional)"}
-            value={adding.note}
-            onChange={(e) => setAdding({ ...adding, note: e.target.value })}
-          />
-          <button type="submit" className="dash-btn dash-btn-primary">
-            Take it off
-          </button>
-          <button type="button" className="dash-word-link" onClick={() => setAdding(null)}>
-            Cancel
-          </button>
+          </div>
+          <div className="money-form-actions">
+            <button type="submit" className="money-btn is-primary">
+              Take it off
+            </button>
+            <button type="button" className="money-btn" onClick={() => setAdding(null)}>
+              Cancel
+            </button>
+          </div>
         </form>
       ) : (
         <button
           type="button"
-          className="dash-btn dash-btn-ghost dash-note-nav mt-3"
+          className="money-add-line"
           onClick={() =>
             setAdding({
               amount: !fuel && log.all[0] ? String(log.all[0].amount) : "",
@@ -282,7 +311,7 @@ export function KindPanel({
             })
           }
         >
-          {fuel ? "+ Add a fill-up" : "+ Add a gym fee"}
+          <span aria-hidden>+</span> {fuel ? "Add a fill-up" : "Add a gym fee"}
         </button>
       )}
 
@@ -301,27 +330,30 @@ export function KindPanel({
                 today={today}
               />
             ) : (
-              <div key={e.id} className="money-row-line">
-                <button type="button" className="money-kind-row" onClick={() => setEditing(editingFor(e, kind))}>
-                  <span className="money-kind-date">{shortDate(e.date)}</span>
-                  <span className="money-kind-what">
-                    {fuel ? (e.km != null ? kmText(e.km) : <em>no mileage</em>) : e.note || "Gym"}
-                    {fuel && flog?.since.get(e.id) != null && <em> · +{kmText(flog.since.get(e.id)!)}</em>}
-                    {fuel && e.note && <em> · {e.note}</em>}
+              <div key={e.id} className="money-tx-line">
+                <button type="button" className="money-tx is-compact" onClick={() => setEditing(editingFor(e, kind))}>
+                  <span className="money-tx-date">{shortDate(e.date)}</span>
+                  <span className="money-tx-main">
+                    <span className="money-tx-name">{fuel ? (e.km != null ? kmText(e.km) : <em>No mileage</em>) : e.note || "Gym"}</span>
+                    {fuel && (flog?.since.get(e.id) != null || e.note) && (
+                      <span className="money-tx-meta">
+                        {[flog?.since.get(e.id) != null ? `+${kmText(flog.since.get(e.id)!)}` : null, e.note].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
                   </span>
-                  <span className="money-row-amount">{dollars(e.amount)}</span>
+                  <span className="money-tx-amount">{dollars(e.amount)}</span>
                 </button>
                 <DeleteButton onClick={() => onRemove(e.id)} />
               </div>
             ),
           )}
           {log.all.length > SHOW && (
-            <button type="button" className="dash-word-link mt-2" onClick={() => setAll(!all)}>
+            <button type="button" className="money-link money-more" onClick={() => setAll(!all)}>
               {all ? "Show fewer" : `Show all ${log.all.length}`}
             </button>
           )}
         </div>
       )}
-    </FoldPanel>
+    </div>
   );
 }

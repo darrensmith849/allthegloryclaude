@@ -1,19 +1,18 @@
 "use client";
 
 // Money - Daniel's own spending tracker (not for the team, never members).
-// A calendar, day by day: each day keeps its own entries, with the balance
-// it started with (carried over) and ended with; tomorrow starts empty.
-// The balance up top and the cash in hand beside it (tap either to change
-// it); spending paid from either; one tap on what he usually buys,
-// or a kind of spending then the price; every entry editable. Each month
-// broken down by kind, with how it compares to last month; Fuel (with the
-// car's mileage) and Gym fees each in a tab of their own; the regular
-// debits that come off by themselves, and what's still to come. Saved with
-// the rest of the dashboard.
+// Laid out like a private-banking app, most important first: his money (the
+// total, the account and the cash in hand - tap either to change it - and
+// Add income / Add expense, with one tap on what he usually buys), then the
+// month's activity (every entry editable), then where the money went - each
+// kind of spending, and how the month compares to last month. Around them:
+// the calendar, day by day (each day keeps its own entries, with the balance
+// it started with and ended with), and a tabbed card for the regular debits
+// that come off by themselves (and what's still to come), Fuel (with the
+// car's mileage) and Gym fees. Saved with the rest of the dashboard.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FoldPanel } from "@/components/dashboard/fold-panel";
-import { DeleteButton, EntryEdit, editingFor, KindPanel, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
+import { DeleteButton, EntryEdit, editingFor, Figure, KindTab, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
 import { useDashboard } from "@/lib/dashboard/storage";
 import type { MoneyEntry } from "@/lib/dashboard/types";
 import {
@@ -29,7 +28,9 @@ import {
   dueDate,
   dueDebits,
   FUEL,
+  fuelLog,
   GYM,
+  kindLog,
   kmText,
   localDate,
   monthName,
@@ -52,6 +53,7 @@ import {
 
 const STARTING_BALANCE = 1912; // what Daniel had in the account when this began
 const MONEY_IN = ["Salary", "Transfer", "Gift", "Other"];
+const RECENT = 10; // entries in Recent activity before "Show all"
 
 const parseAmount = (v: string) => {
   const n = Number(String(v).replace(/[^0-9.]/g, ""));
@@ -75,6 +77,30 @@ const CAL_HEAD = ["M", "T", "W", "T", "F", "S", "S"];
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
 
 type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean } | { mode: "move" } | null;
+type Tool = "recurring" | "fuel" | "gym";
+
+// A small remembered choice on this device (which calendar view, which tab).
+function useRemembered<T extends string>(key: string, initial: T, allowed: readonly T[]): [T, (v: T) => void] {
+  const [value, setValue] = useState<T>(initial);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(key) as T | null;
+      if (v && allowed.includes(v)) setValue(v);
+    } catch {
+      // no storage - the default
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  const set = (v: T) => {
+    setValue(v);
+    try {
+      localStorage.setItem(key, v);
+    } catch {
+      // not remembered - fine
+    }
+  };
+  return [value, set];
+}
 
 export default function MoneyPage() {
   const { state, update, ready, synced } = useDashboard();
@@ -100,36 +126,27 @@ export default function MoneyPage() {
   }, [money, synced, today, update]);
 
   // ── Adding ─────────────────────────────────────────────────────
+  // The sheet under Add income / Add expense; for an expense, a kind is picked first.
+  const [sheet, setSheet] = useState<"income" | "expense" | null>(null);
   const [form, setForm] = useState<Form>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [km, setKm] = useState("");
   const [date, setDate] = useState(today);
   const amountRef = useRef<HTMLInputElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const activityRef = useRef<HTMLElement>(null);
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<number | null>(null);
   const [month, setMonth] = useState(monthOf(today));
   const [only, setOnly] = useState<string | null>(null); // the month's list, one kind only
   const [view, setView] = useState<"all" | "in" | "out">("all"); // the month: everything, money in, or spending
+  const [showAll, setShowAll] = useState(false);
   // The day open in the calendar - what's added goes on this day (today unless another is picked).
   const [day, setDay] = useState(today);
   const [calMonth, setCalMonth] = useState(monthOf(today));
-  const [calView, setCalViewState] = useState<"month" | "year">("month");
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("atg:money:calView") === "year") setCalViewState("year");
-    } catch {
-      // no storage - month view
-    }
-  }, []);
-  const setCalView = (v: "month" | "year") => {
-    setCalViewState(v);
-    try {
-      localStorage.setItem("atg:money:calView", v);
-    } catch {
-      // not remembered - fine
-    }
-  };
+  const [calView, setCalView] = useRemembered("atg:money:calView", "month", ["month", "year"] as const);
+  const [tool, setTool] = useRemembered<Tool>("atg:money:tool", "recurring", ["recurring", "fuel", "gym"] as const);
   const pickDay = (d: string) => {
     const next = d > today ? today : d;
     setDay(next);
@@ -149,6 +166,16 @@ export default function MoneyPage() {
     toastTimer.current = window.setTimeout(() => setToast(null), 8000);
   }
 
+  // The sheet comes into view on a phone, where it opens below the fold.
+  function showSheet() {
+    window.setTimeout(() => {
+      const el = sheetRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.bottom > window.innerHeight || r.top < 0) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 40);
+  }
+
   function openForm(f: Form) {
     const same =
       f &&
@@ -166,6 +193,24 @@ export default function MoneyPage() {
     setKm("");
     setDate(day);
     window.setTimeout(() => amountRef.current?.focus(), 30);
+    showSheet();
+  }
+
+  function openSheet(s: "income" | "expense") {
+    setBalanceEdit(null);
+    if (sheet === s) return closeSheet(); // the same button again closes it
+    setSheet(s);
+    setNewCat(null);
+    if (s === "income") openForm({ mode: "add", cash: false });
+    else {
+      setForm(null);
+      showSheet();
+    }
+  }
+  function closeSheet() {
+    setSheet(null);
+    setForm(null);
+    setNewCat(null);
   }
 
   function addEntry(e: Omit<MoneyEntry, "id" | "at">) {
@@ -201,7 +246,7 @@ export default function MoneyPage() {
       ...(reading != null ? { km: reading } : {}),
       ...(form.mode !== "move" && form.cash ? { cash: true } : {}),
     });
-    setForm(null);
+    closeSheet();
   }
 
   // ── The balance, changed in place ───────────────────────────────
@@ -209,7 +254,7 @@ export default function MoneyPage() {
   const balanceRef = useRef<HTMLInputElement>(null);
   function startBalanceEdit(cash = false) {
     if (!money) return;
-    setForm(null);
+    closeSheet();
     setBalanceEdit({ cash, value: (cash ? cashBalance(money) : balance(money)).toFixed(2) });
     window.setTimeout(() => {
       balanceRef.current?.focus();
@@ -300,6 +345,7 @@ export default function MoneyPage() {
 
   // ── Regular debits ──────────────────────────────────────────────
   const [subForm, setSubForm] = useState<{ id?: string; name: string; amount: string; day: string; category: string } | null>(null);
+  const [subOpen, setSubOpen] = useState<string | null>(null); // the debit tapped open: Change / Pause / Remove
   function saveSub(e: React.FormEvent) {
     e.preventDefault();
     if (!subForm) return;
@@ -396,38 +442,52 @@ export default function MoneyPage() {
   const fuelLast = money.entries
     .filter((e) => !e.deletedAt && e.category === FUEL && e.km != null)
     .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at))[0]?.km;
-  // One entry: tap to change it, ✕ to delete it.
-  const entryRow = (e: MoneyEntry, where: string) =>
-    editing?.id === e.id && editing.where === where ? (
-      <EntryEdit
-        key={e.id}
-        money={money}
-        entry={e}
-        editing={editing}
-        setEditing={setEditing}
-        onSave={saveEdit}
-        onRemove={() => removeEntry(e.id)}
-        today={today}
-      />
-    ) : (
-      <div key={e.id} className="money-row-line">
-        <button type="button" className={`money-row is-${e.kind}`} onClick={() => setEditing(editingFor(e, where))}>
-          <i style={{ background: e.kind === "spend" ? colourFor(money, e.category) : "transparent" }} aria-hidden />
-          <span className="money-row-what">
-            {e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || (e.kind === "add" && e.cash ? "Cash in" : e.category)}
-            {e.kind !== "set" && e.note && <em> · {e.kind === "add" && e.cash ? "Cash in" : e.category}</em>}
-            {e.kind === "move" && <em> · account → cash</em>}
-            {e.kind === "spend" && e.cash && <em> · cash</em>}
-            {e.km != null && <em> · {kmText(e.km)}</em>}
-            {e.sub && <em> · comes off by itself</em>}
+  const fuelNow = fuelLog(money, monthOf(today));
+  const gymNow = kindLog(money, GYM, monthOf(today));
+  const left = summary.in - summary.total;
+
+  // One entry as a transaction row: tap to change it, ✕ to delete it.
+  const entryRow = (e: MoneyEntry, where: string) => {
+    if (editing?.id === e.id && editing.where === where)
+      return (
+        <EntryEdit
+          key={e.id}
+          money={money}
+          entry={e}
+          editing={editing}
+          setEditing={setEditing}
+          onSave={saveEdit}
+          onRemove={() => removeEntry(e.id)}
+          today={today}
+        />
+      );
+    const kindName = e.kind === "add" ? (e.cash ? "Cash in" : "Money in") : e.category;
+    const name = e.kind === "set" ? (e.cash ? "Cash set" : "Balance set") : e.note || kindName;
+    const meta = [
+      e.kind !== "set" && e.note ? kindName : null,
+      e.kind === "move" ? "Account → cash" : e.cash ? "Cash" : "Account",
+      e.km != null ? kmText(e.km) : null,
+      e.sub ? "Recurring" : null,
+    ].filter(Boolean);
+    const colour = e.kind === "spend" ? colourFor(money, e.category) : e.kind === "add" ? "rgb(var(--ok-rgb))" : "var(--colour-amber)";
+    return (
+      <div key={e.id} className="money-tx-line">
+        <button type="button" className={`money-tx is-${e.kind}`} onClick={() => setEditing(editingFor(e, where))}>
+          <span className="money-tx-mark" style={{ "--c": colour } as React.CSSProperties} aria-hidden>
+            {e.kind === "add" ? "+" : e.kind === "set" ? "=" : e.kind === "move" ? "⇄" : (e.category[0] ?? "·").toUpperCase()}
           </span>
-          <span className="money-row-amount">
-            {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "-"}${dollars(e.amount)}`}
+          <span className="money-tx-main">
+            <span className="money-tx-name">{name}</span>
+            <span className="money-tx-meta">{meta.join(" · ")}</span>
+          </span>
+          <span className="money-tx-amount">
+            {e.kind === "set" || e.kind === "move" ? dollars(e.amount) : `${e.kind === "add" ? "+" : "−"}${dollars(e.amount)}`}
           </span>
         </button>
         <DeleteButton onClick={() => removeEntry(e.id)} />
       </div>
     );
+  };
 
   // The calendar: the open day's entries and balances, and each day of its month.
   const dayEntries = money.entries.filter((e) => !e.deletedAt && e.date === day).sort((a, b) => a.at.localeCompare(b.at));
@@ -458,6 +518,30 @@ export default function MoneyPage() {
     setCalMonth(ym > monthOf(today) ? monthOf(today) : ym);
   };
 
+  // Recent activity: the newest entries first, the rest behind "Show all".
+  const rowCount = days.reduce((t, g) => t + g.items.length, 0);
+  let room = showAll ? Infinity : RECENT;
+  const shownDays: typeof days = [];
+  for (const g of days) {
+    if (room <= 0) break;
+    shownDays.push({ ...g, items: g.items.slice(0, room) });
+    room -= g.items.length;
+  }
+  const pickMonth = (ym: string) => {
+    setMonth(ym);
+    setOnly(null);
+    setShowAll(false);
+  };
+  // A kind in the breakdown shows only that kind in the activity (scrolled to on a phone).
+  const pickKind = (c: string) => {
+    setOnly(only === c ? null : c);
+    setView("out");
+    setShowAll(false);
+    const el = activityRef.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const partMax = Math.max(1, ...(view === "in" ? inParts.map((p) => p.amount) : summary.parts.map((p) => p.amount)));
+
   const kindProps = {
     money,
     today,
@@ -468,86 +552,77 @@ export default function MoneyPage() {
     onRemove: removeEntry,
   };
 
-  // "In your account" / "Cash": the figure (tap to change it), or the box to change it in.
-  const balanceBlock = (cash: boolean) => {
+  // Account balance / Cash on hand: the figure (tap to change it), or the box to change it in.
+  const walletTile = (cash: boolean) => {
     const value = cash ? cashNow : bal;
-    return (
-      <div className={`money-balance ${cash ? "is-cash" : ""}`}>
-        <span className="eyebrow">{cash ? "Cash" : "In your account"}</span>
-        {balanceEdit?.cash !== cash ? (
-          <button
-            type="button"
-            className={`money-balance-amount ${value < 0 ? "is-low" : ""}`}
-            onClick={() => startBalanceEdit(cash)}
-            title="Tap to change it"
-          >
-            {dollars(value)}
-            <span className="money-balance-edit" aria-hidden>
-              ✎
-            </span>
-          </button>
-        ) : (
-          <form className="money-balance-form" onSubmit={saveBalance}>
-            <label className={`money-amount ${cash ? "" : "is-big"}`}>
-              <span aria-hidden>$</span>
-              <input
-                ref={balanceRef}
-                className="dash-input"
-                inputMode="decimal"
-                value={balanceEdit.value}
-                onChange={(e) => setBalanceEdit({ cash, value: e.target.value })}
-                onKeyDown={(e) => e.key === "Escape" && setBalanceEdit(null)}
-                aria-label={cash ? "The cash you have" : "Your balance at the bank"}
-              />
-            </label>
-            <button type="submit" className="dash-btn dash-btn-primary">
+    const label = cash ? "Cash on hand" : "Account balance";
+    if (balanceEdit?.cash === cash)
+      return (
+        <form className={`money-tile is-editing ${cash ? "is-cash" : ""}`} onSubmit={saveBalance}>
+          <span className="money-label">{label}</span>
+          <label className="money-amount">
+            <span aria-hidden>$</span>
+            <input
+              ref={balanceRef}
+              className="dash-input"
+              inputMode="decimal"
+              value={balanceEdit.value}
+              onChange={(e) => setBalanceEdit({ cash, value: e.target.value })}
+              onKeyDown={(e) => e.key === "Escape" && setBalanceEdit(null)}
+              aria-label={cash ? "The cash you have" : "Your balance at the bank"}
+            />
+          </label>
+          <p className="money-hint">{cash ? "Count what's in your wallet - it carries on from there." : "Type what your bank says - it carries on from there."}</p>
+          <div className="money-form-actions">
+            <button type="submit" className="money-btn is-primary">
               Save
             </button>
-            <button type="button" className="dash-word-link" onClick={() => setBalanceEdit(null)}>
+            <button type="button" className="money-btn" onClick={() => setBalanceEdit(null)}>
               Cancel
             </button>
-            <p className="dash-word-hint money-form-hint">
-              {cash ? "Count what's in your wallet - it carries on from there." : "Type what your bank says - it carries on from there."}
-            </p>
-          </form>
-        )}
-        {balanceEdit?.cash !== cash && (
-          <div className="money-balance-actions">
-            <button
-              type="button"
-              className={`dash-btn dash-note-nav ${form?.mode === "add" && form.cash === cash ? "dash-btn-primary" : "dash-btn-ghost"}`}
-              onClick={() => openForm({ mode: "add", cash })}
-            >
-              {cash ? "+ Add cash" : "+ Add money"}
-            </button>
-            <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => startBalanceEdit(cash)}>
-              {cash ? "Set cash" : "Set balance"}
-            </button>
           </div>
-        )}
-        {!cash && coming.length > 0 && balanceEdit?.cash !== false && (
-          <span className="money-balance-sub">
-            {dollars(bal - comingTotal)} after the {dollars(comingTotal)} still to come off this month
-          </span>
-        )}
-      </div>
+        </form>
+      );
+    return (
+      <button type="button" className={`money-tile ${cash ? "is-cash" : ""}`} onClick={() => startBalanceEdit(cash)} title="Tap to change it">
+        <span className="money-label">{label}</span>
+        <span className="money-tile-edit" aria-hidden>
+          ✎
+        </span>
+        <Figure n={value} className={`money-tile-amount ${value < 0 ? "is-low" : ""}`} />
+        <span className="money-tile-foot">
+          {!cash && coming.length > 0 ? (
+            <>
+              <strong>{dollars(bal - comingTotal)}</strong> after the {dollars(comingTotal)} still to come off this month
+            </>
+          ) : cash ? (
+            "In your wallet - tap to count it"
+          ) : (
+            "At the bank - tap to match it"
+          )}
+        </span>
+      </button>
     );
   };
 
   const formBox = form && (
-      <form className="money-form" onSubmit={save}>
-        <span className="money-form-what">
-          {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
-          {form.mode === "spend"
-            ? form.category
-            : form.mode === "move"
-              ? "Cash out - from your account into cash"
-              : form.cash
-                ? "Cash in"
-                : "Money in"}
+    <form className="money-form" onSubmit={save}>
+      {(form.mode !== "add" || date !== today) && (
+        <div className="money-form-top">
+          {form.mode !== "add" && (
+            <span className="money-form-what">
+              {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
+              {form.mode === "spend" ? form.category : "Cash out - from your account into cash"}
+              <button type="button" className="money-link" onClick={() => setForm(null)}>
+                Change
+              </button>
+            </span>
+          )}
           {date !== today && <em className="money-form-day">for {fullDay(date)}</em>}
-        </span>
-        <label className="money-amount">
+        </div>
+      )}
+      <div className="money-amount-row">
+        <label className="money-amount is-big">
           <span aria-hidden>$</span>
           <input
             ref={amountRef}
@@ -556,628 +631,743 @@ export default function MoneyPage() {
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setForm(null)}
+            onKeyDown={(e) => e.key === "Escape" && closeSheet()}
             aria-label="Amount in dollars"
           />
         </label>
-        {form.mode === "spend" &&
-          usualAmounts(money, form.category).map((a) => (
-            <button key={a} type="button" className="money-quick" onClick={() => save(undefined, a)} title={`Take off ${dollars(a)}`}>
-              {shortDollars(a)}
-            </button>
-          ))}
+        {form.mode === "spend" && usualAmounts(money, form.category).length > 0 && (
+          <div className="money-quicks" role="group" aria-label="Usual prices - one tap takes it off">
+            {usualAmounts(money, form.category).map((a) => (
+              <button key={a} type="button" className="money-quick" onClick={() => save(undefined, a)} title={`Take off ${dollars(a)}`}>
+                {shortDollars(a)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="money-form-fields">
+        {form.mode !== "move" && (
+          <WalletToggle cash={form.cash} onChange={(cash) => setForm({ ...form, cash })} label={form.mode === "add" ? "Into" : "Paid with"} />
+        )}
         {form.mode === "spend" && form.category === FUEL && (
-          <label className="money-km">
+          <label className="money-field">
+            <span className="money-field-label">Mileage (km on the clock)</span>
             <input
               className="dash-input"
               inputMode="numeric"
               placeholder={fuelLast != null ? `Last ${fuelLast}` : "Mileage"}
               value={km}
               onChange={(e) => setKm(e.target.value)}
-              aria-label="Mileage (km on the clock)"
             />
-            <span>km</span>
           </label>
         )}
-        {form.mode !== "move" && (
-          <WalletToggle
-            cash={form.cash}
-            onChange={(cash) => setForm({ ...form, cash })}
-            label={form.mode === "add" ? "Into" : "Paid with"}
-          />
-        )}
-        <input
-          className="dash-input money-note"
-          list="money-notes"
-          placeholder={form.mode === "add" ? "Where from? (optional)" : form.mode === "move" ? "Where? (optional)" : "Where / what? (optional)"}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
+        <label className="money-field">
+          <span className="money-field-label">Date</span>
+          <input type="date" className="dash-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
+        </label>
+        <label className="money-field is-wide">
+          <span className="money-field-label">{form.mode === "add" ? "Where from?" : form.mode === "move" ? "Where?" : "Where / what?"}</span>
+          <input className="dash-input" list="money-notes" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />
+        </label>
         <datalist id="money-notes">
           {(form.mode === "add" ? [...notesFor(money, "Money in"), ...MONEY_IN] : notesFor(money, form.mode === "move" ? CASH_OUT : form.category)).map((n) => (
             <option key={n} value={n} />
           ))}
         </datalist>
-        <input type="date" className="dash-input money-date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />
-        <button type="submit" className="dash-btn dash-btn-primary">
+      </div>
+      <div className="money-form-actions">
+        <button type="submit" className="money-btn is-primary">
           {form.mode === "spend" ? "Take it off" : form.mode === "move" ? "Move it" : "Add it"}
         </button>
-        <button type="button" className="dash-word-link" onClick={() => setForm(null)}>
+        <button type="button" className="money-btn" onClick={closeSheet}>
           Cancel
         </button>
-      </form>
-    );
+      </div>
+    </form>
+  );
 
   const toastBox = toast && (
-      <div className="money-toast" role="status">
-        <span>✓ {toast.text}</span>
-        {toast.undo && (
-          <button
-            type="button"
-            className="dash-word-link"
-            onClick={() => {
-              toast.undo?.();
-              setToast(null);
-            }}
-          >
-            Undo
-          </button>
-        )}
-      </div>
-    );
-
-  return (
-    <>
-      <div className="dash-pagehead">
-        <div>
-          <div className="eyebrow eyebrow-amber">Private to you</div>
-          <h1 className="dash-title mt-1">Money</h1>
-          <div className="dash-subtitle">Tap what you spent on and the price - it comes off your balance.</div>
-        </div>
-        <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={downloadCsv}>
-          Download (spreadsheet)
+    <div className="money-toast" role="status">
+      <span>✓ {toast.text}</span>
+      {toast.undo && (
+        <button
+          type="button"
+          className="money-toast-undo"
+          onClick={() => {
+            toast.undo?.();
+            setToast(null);
+          }}
+        >
+          Undo
         </button>
-      </div>
+      )}
+    </div>
+  );
 
-      <div className="dash-grid">
-        {/* ── Balance + adding ───────────────────────────────── */}
-        <div className="dash-col-12">
-          <section className="dash-panel money-top">
-            <div className="money-head">
-              <div className="money-balances">
-                {balanceBlock(false)}
-                {balanceBlock(true)}
-                {cashNow !== 0 && (
-                  <div className="money-balance is-cash is-total">
-                    <span className="eyebrow">Total</span>
-                    <span className="money-balance-amount is-static">{dollars(bal + cashNow)}</span>
-                    <span className="money-balance-sub">account + cash</span>
-                  </div>
-                )}
-              </div>
-              <div className="money-stats">
-                <div>
-                  <span>Today</span>
-                  <strong>{dollars(spentOn(money, today))}</strong>
-                </div>
-                <div>
-                  <span>{monthName(monthOf(today)).split(" ")[0]}</span>
-                  <strong>{dollars(thisMonth.total)}</strong>
-                </div>
-                <div>
-                  <span>Per day</span>
-                  <strong>{dollars(thisMonth.perDay)}</strong>
-                </div>
-              </div>
-            </div>
+  const tools: { id: Tool; label: string; sub: string }[] = [
+    { id: "recurring", label: "Recurring", sub: `${dollars(monthlySubs)} a month` },
+    { id: "fuel", label: "Fuel", sub: `${dollars(fuelNow.month)}${fuelNow.km ? ` · ${kmText(fuelNow.km)}` : ""}` },
+    { id: "gym", label: "Gym fees", sub: `${dollars(gymNow.month)} in ${monthName(monthOf(today)).split(" ")[0].slice(0, 3)}` },
+  ];
 
-            {day !== today && (
-              <div className="money-dayflag">
+  // Day by day: the calendar, and the open day.
+  const calendarCard = (
+    <section className="money-card money-calendar" aria-labelledby="money-calendar-title">
+      <header className="money-card-head">
+        <div>
+          <h2 id="money-calendar-title" className="money-card-title">
+            Day by day
+          </h2>
+          <p className="money-card-sub">Each day keeps its own entries and balance</p>
+        </div>
+        <div className="money-seg" role="group" aria-label="Calendar">
+          {(
+            [
+              ["month", "Month"],
+              ["year", "Year"],
+            ] as const
+          ).map(([v, label]) => (
+            <button key={v} type="button" className={calView === v ? "is-on" : ""} aria-pressed={calView === v} onClick={() => setCalView(v)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </header>
+      <div className={`money-days ${calView === "year" ? "is-year" : ""}`}>
+        <div className="money-cal">
+          {calView === "year" ? (
+            <div className="money-year">
+              <div className="money-cal-head">
+                <button type="button" onClick={() => goYear(-1)} aria-label="Year before">
+                  ‹
+                </button>
                 <span>
-                  Adding to <strong>{fullDay(day)}</strong>
+                  {calYear} · spent {dollars(yearTotal.spent)}
+                  {yearTotal.in > 0 && <span className="money-year-in"> · in {dollars(yearTotal.in)}</span>}
                 </span>
-                <button type="button" className="dash-word-link" onClick={() => pickDay(today)}>
-                  Back to today
+                <button type="button" onClick={() => goYear(1)} disabled={calYear >= today.slice(0, 4)} aria-label="Year after">
+                  ›
                 </button>
               </div>
-            )}
-            {form?.mode === "add" && formBox}
-            {toastBox}
-
-            {buys.length > 0 && (
-              <div className="money-again" role="group" aria-label="Log it again">
-                <span className="money-again-label">Again:</span>
-                {buys.map((b) => (
-                  <button
-                    key={`${b.category}|${b.amount}|${b.note ?? ""}|${b.cash ? "cash" : ""}`}
-                    type="button"
-                    className="money-again-btn"
-                    onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: day, ...(b.cash ? { cash: true } : {}) })}
-                  >
-                    <i style={{ background: colourFor(money, b.category) }} aria-hidden />
-                    {b.note || b.category} {shortDollars(b.amount)}
-                    {b.cash && <em className="money-again-cash">cash</em>}
-                  </button>
-                ))}
+              <div className="money-year-grid">
+                {yearMonths.map((ym, k) => {
+                  const m = yearSums[k];
+                  const spent = [...m.values()].reduce((t, v) => t + v.spent, 0);
+                  const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;
+                  const later = ym > monthOf(today);
+                  return (
+                    <div key={ym} className={`money-year-month ${later ? "is-later" : ""}`}>
+                      <button
+                        type="button"
+                        className="money-year-name"
+                        onClick={() => {
+                          setCalMonth(ym);
+                          setCalView("month");
+                        }}
+                        disabled={later}
+                        title={`Open ${monthName(ym)}`}
+                      >
+                        <span>{monthName(ym).split(" ")[0].slice(0, 3)}</span>
+                        {spent > 0 && <span className="money-year-spent">${Math.round(spent)}</span>}
+                      </button>
+                      <div className="money-year-days">
+                        {Array.from({ length: lead }, (_, x) => (
+                          <span key={`x${x}`} />
+                        ))}
+                        {Array.from({ length: daysIn(ym) }, (_, x) => {
+                          const d = `${ym}-${String(x + 1).padStart(2, "0")}`;
+                          const t = m.get(d);
+                          const heat = t && t.spent > 0 ? 0.18 + 0.72 * Math.min(1, t.spent / yearMax) : 0;
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              className={`money-year-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
+                              style={heat ? { background: `rgb(var(--gold-rgb) / ${heat.toFixed(2)})` } : undefined}
+                              onClick={() => pickDay(d)}
+                              disabled={d > today}
+                              title={`${fullDay(d)}${t ? ` · spent ${dollars(t.spent)}${t.in ? ` · in ${dollars(t.in)}` : ""}` : ""}`}
+                              aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}` : ""}`}
+                            >
+                              {t && t.in > 0 && <i aria-hidden />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-
-            <div className="money-cats" role="group" aria-label="What did you spend on?">
-              {cats.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`money-cat ${(form?.mode === "spend" && form.category === c) || (form?.mode === "move" && c === CASH_OUT) ? "is-on" : ""}`}
-                  onClick={() => openForm(c === CASH_OUT ? { mode: "move" } : { mode: "spend", category: c, cash: false })}
-                >
-                  <i style={{ background: colourFor(money, c) }} aria-hidden />
-                  {c}
-                </button>
-              ))}
-              {newCat == null ? (
-                <button type="button" className="money-cat is-new" onClick={() => setNewCat("")}>
-                  + New kind
-                </button>
-              ) : (
-                <form className="money-newcat" onSubmit={addCategory}>
-                  <input className="dash-input" autoFocus placeholder="e.g. Church giving" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
-                  <button type="submit" className="dash-btn dash-btn-primary dash-note-nav">
-                    Add
-                  </button>
-                  <button type="button" className="dash-word-link" onClick={() => setNewCat(null)}>
-                    Cancel
-                  </button>
-                </form>
-              )}
+              <p className="money-hint">Darker = more spent that day · green dot = money in. Tap a day to open it, or a month to see it bigger.</p>
             </div>
-            {form && form.mode !== "add" && formBox}
-          </section>
+          ) : (
+            <>
+              <div className="money-cal-head">
+                <button type="button" onClick={() => setCalMonth(shiftMonth(calMonth, -1))} aria-label="Month before">
+                  ‹
+                </button>
+                <span>{monthName(calMonth)}</span>
+                <button type="button" onClick={() => setCalMonth(shiftMonth(calMonth, 1))} disabled={calMonth >= monthOf(today)} aria-label="Month after">
+                  ›
+                </button>
+              </div>
+              <div className="money-cal-grid">
+                {CAL_HEAD.map((h, k) => (
+                  <span key={k} className="money-cal-dow">
+                    {h}
+                  </span>
+                ))}
+                {Array.from({ length: calLead }, (_, k) => (
+                  <span key={`x${k}`} />
+                ))}
+                {calDays.map((d) => {
+                  const t = sums.get(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`money-cal-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
+                      onClick={() => pickDay(d)}
+                      disabled={d > today}
+                      aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}${t.in ? `, in ${dollars(t.in)}` : ""}` : ""}`}
+                      aria-pressed={d === day}
+                    >
+                      <span className="money-cal-num">{Number(d.slice(8))}</span>
+                      {t && t.spent > 0 && <span className="money-cal-spent">${Math.round(t.spent)}</span>}
+                      {t && t.in > 0 && <i className="money-cal-in" aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* ── The month ─────────────────────────────────────── */}
-        <div className="dash-col-7 money-side">
-          <FoldPanel
-            id="money-days"
-            eyebrow="Day by day"
-            title={day === today ? `Today · ${fullDay(day)}` : fullDay(day)}
-            action={
-              <div className="flex gap-1">
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => pickDay(shiftDay(day, -1))} aria-label="Day before">
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-ghost dash-note-nav"
-                  onClick={() => pickDay(shiftDay(day, 1))}
-                  disabled={day >= today}
-                  aria-label="Day after"
-                >
-                  ›
-                </button>
-              </div>
-            }
-          >
-            <div className={`money-days ${calView === "year" ? "is-year" : ""}`}>
-              <div className="money-cal">
-                <div className="money-view money-cal-switch" role="group" aria-label="Calendar">
-                  {(
-                    [
-                      ["month", "Month"],
-                      ["year", "Year"],
-                    ] as const
-                  ).map(([v, label]) => (
-                    <button key={v} type="button" className={calView === v ? "is-on" : ""} aria-pressed={calView === v} onClick={() => setCalView(v)}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {calView === "year" ? (
-                  <div className="money-year">
-                    <div className="money-cal-head">
-                      <button type="button" className="dash-word-link" onClick={() => goYear(-1)} aria-label="Year before">
-                        ‹
-                      </button>
-                      <span>
-                        {calYear} · spent {dollars(yearTotal.spent)}
-                        {yearTotal.in > 0 && <span className="money-year-in"> · in {dollars(yearTotal.in)}</span>}
-                      </span>
-                      <button type="button" className="dash-word-link" onClick={() => goYear(1)} disabled={calYear >= today.slice(0, 4)} aria-label="Year after">
-                        ›
-                      </button>
-                    </div>
-                    <div className="money-year-grid">
-                      {yearMonths.map((ym, k) => {
-                        const m = yearSums[k];
-                        const spent = [...m.values()].reduce((t, v) => t + v.spent, 0);
-                        const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;
-                        const later = ym > monthOf(today);
-                        return (
-                          <div key={ym} className={`money-year-month ${later ? "is-later" : ""}`}>
-                            <button
-                              type="button"
-                              className="money-year-name"
-                              onClick={() => {
-                                setCalMonth(ym);
-                                setCalView("month");
-                              }}
-                              disabled={later}
-                              title={`Open ${monthName(ym)}`}
-                            >
-                              <span>{monthName(ym).split(" ")[0].slice(0, 3)}</span>
-                              {spent > 0 && <span className="money-year-spent">${Math.round(spent)}</span>}
-                            </button>
-                            <div className="money-year-days">
-                              {Array.from({ length: lead }, (_, x) => (
-                                <span key={`x${x}`} />
-                              ))}
-                              {Array.from({ length: daysIn(ym) }, (_, x) => {
-                                const d = `${ym}-${String(x + 1).padStart(2, "0")}`;
-                                const t = m.get(d);
-                                const heat = t && t.spent > 0 ? 0.18 + 0.72 * Math.min(1, t.spent / yearMax) : 0;
-                                return (
-                                  <button
-                                    key={d}
-                                    type="button"
-                                    className={`money-year-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
-                                    style={heat ? { background: `rgb(var(--gold-rgb) / ${heat.toFixed(2)})` } : undefined}
-                                    onClick={() => pickDay(d)}
-                                    disabled={d > today}
-                                    title={`${fullDay(d)}${t ? ` · spent ${dollars(t.spent)}${t.in ? ` · in ${dollars(t.in)}` : ""}` : ""}`}
-                                    aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}` : ""}`}
-                                  >
-                                    {t && t.in > 0 && <i aria-hidden />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="dash-word-hint mt-2">Darker = more spent that day · green dot = money in. Tap a day to open it, or a month to see it bigger.</p>
-                  </div>
-                ) : (
-                  <>
-                <div className="money-cal-head">
-                  <button type="button" className="dash-word-link" onClick={() => setCalMonth(shiftMonth(calMonth, -1))} aria-label="Month before">
-                    ‹
-                  </button>
-                  <span>{monthName(calMonth)}</span>
-                  <button
-                    type="button"
-                    className="dash-word-link"
-                    onClick={() => setCalMonth(shiftMonth(calMonth, 1))}
-                    disabled={calMonth >= monthOf(today)}
-                    aria-label="Month after"
-                  >
-                    ›
-                  </button>
-                </div>
-                <div className="money-cal-grid">
-                  {CAL_HEAD.map((h, k) => (
-                    <span key={k} className="money-cal-dow">
-                      {h}
-                    </span>
-                  ))}
-                  {Array.from({ length: calLead }, (_, k) => (
-                    <span key={`x${k}`} />
-                  ))}
-                  {calDays.map((d) => {
-                    const t = sums.get(d);
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        className={`money-cal-day ${d === day ? "is-on" : ""} ${d === today ? "is-today" : ""}`}
-                        onClick={() => pickDay(d)}
-                        disabled={d > today}
-                        aria-label={`${fullDay(d)}${t ? `: spent ${dollars(t.spent)}${t.in ? `, in ${dollars(t.in)}` : ""}` : ""}`}
-                        aria-pressed={d === day}
-                      >
-                        <span className="money-cal-num">{Number(d.slice(8))}</span>
-                        {t && t.spent > 0 && <span className="money-cal-spent">${Math.round(t.spent)}</span>}
-                        {t && t.in > 0 && <i className="money-cal-in" aria-hidden />}
-                      </button>
-                    );
-                  })}
-                </div>
-                  </>
-                )}
-              </div>
-
-              <div className="money-daycard">
-                <div className="money-daycard-bal">
-                  <div>
-                    <span>Started the day</span>
-                    <strong>{dollars(dayBal.open.acct)}</strong>
-                  </div>
-                  <div>
-                    <span>{day === today ? "Now" : "Ended the day"}</span>
-                    <strong>{dollars(dayBal.close.acct)}</strong>
-                  </div>
-                  {showCash && (
-                    <div>
-                      <span>Cash</span>
-                      <strong>
-                        {dollars(dayBal.open.cash)} → {dollars(dayBal.close.cash)}
-                      </strong>
-                    </div>
-                  )}
-                </div>
-                <div className="money-daycard-sums">
-                  <span>
-                    Spent <strong>{dollars(daySum.spent)}</strong>
-                  </span>
-                  <span>
-                    In <strong className="is-in">{dollars(daySum.in)}</strong>
-                  </span>
-                </div>
-                {dayEntries.length ? (
-                  <div className="money-daycard-list">{dayEntries.map((e) => entryRow(e, "day"))}</div>
-                ) : (
-                  <p className="dash-word-hint mt-3">
-                    {day === today ? "Nothing logged today yet - tap what you spent at the top, or + Add money." : "Nothing was logged on this day."}
-                  </p>
-                )}
-                {day !== today ? (
-                  <p className="dash-word-hint mt-3">
-                    Anything you add at the top now goes on this day.{" "}
-                    <button type="button" className="dash-word-link" onClick={() => pickDay(today)}>
-                      Back to today
-                    </button>
-                  </p>
-                ) : null}
-              </div>
+        <div className="money-daycard">
+          <div className="money-daycard-head">
+            <div>
+              <span className="money-label">{day === today ? "Today" : dayHeading(day, today) === "Yesterday" ? "Yesterday" : "The day"}</span>
+              <h3>{fullDay(day)}</h3>
             </div>
-          </FoldPanel>
-
-          <FoldPanel
-            id="money-month"
-            eyebrow="Money in and out"
-            title={monthName(month)}
-            action={
-              <div className="flex gap-1">
-                <button type="button" className="dash-btn dash-btn-ghost dash-note-nav" onClick={() => (setMonth(shiftMonth(month, -1)), setOnly(null))} aria-label="Month before">
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  className="dash-btn dash-btn-ghost dash-note-nav"
-                  onClick={() => (setMonth(shiftMonth(month, 1)), setOnly(null))}
-                  disabled={month >= monthOf(today)}
-                  aria-label="Month after"
-                >
-                  ›
-                </button>
-              </div>
-            }
-          >
-            <div className="money-month-figures">
-              <button
-                type="button"
-                className={`money-figure ${view === "in" ? "is-on" : ""}`}
-                onClick={() => (setView(view === "in" ? "all" : "in"), setOnly(null))}
-                aria-pressed={view === "in"}
-              >
-                <span>Money in</span>
-                <strong className="is-in">{dollars(summary.in)}</strong>
+            <div className="money-nav">
+              <button type="button" onClick={() => pickDay(shiftDay(day, -1))} aria-label="Day before">
+                ‹
               </button>
-              <button
-                type="button"
-                className={`money-figure ${view === "out" ? "is-on" : ""}`}
-                onClick={() => (setView(view === "out" ? "all" : "out"), setOnly(null))}
-                aria-pressed={view === "out"}
-              >
-                <span>Spent</span>
-                <strong>{dollars(summary.total)}</strong>
-                {summary.change != null && (
-                  <em className={summary.change > 0 ? "is-up" : "is-down"}>
-                    {summary.change > 0 ? "▲" : "▼"} {Math.abs(Math.round(summary.change))}% {summary.soFar ? "on this time in" : "on"} {monthName(shiftMonth(month, -1)).split(" ")[0]}
-                  </em>
-                )}
+              <button type="button" onClick={() => pickDay(shiftDay(day, 1))} disabled={day >= today} aria-label="Day after">
+                ›
               </button>
+            </div>
+          </div>
+          <div className="money-daycard-bal">
+            <div>
+              <span>Started the day</span>
+              <strong>{dollars(dayBal.open.acct)}</strong>
+            </div>
+            <div>
+              <span>{day === today ? "Now" : "Ended the day"}</span>
+              <strong>{dollars(dayBal.close.acct)}</strong>
+            </div>
+            {showCash && (
               <div>
-                <span>Left over</span>
-                <strong className={summary.in - summary.total < 0 ? "is-low" : ""}>
-                  {summary.in - summary.total < 0 ? "-" : ""}
-                  {dollars(Math.abs(summary.in - summary.total))}
+                <span>Cash</span>
+                <strong>
+                  {dollars(dayBal.open.cash)} → {dollars(dayBal.close.cash)}
                 </strong>
               </div>
-              <div>
-                <span>Spent a day</span>
-                <strong>{dollars(summary.perDay)}</strong>
-              </div>
-            </div>
-
-            <div className="money-view" role="group" aria-label="Show">
-              {(
-                [
-                  ["all", "Everything"],
-                  ["in", "Money in"],
-                  ["out", "Spent"],
-                ] as const
-              ).map(([v, label]) => (
-                <button key={v} type="button" className={view === v ? "is-on" : ""} aria-pressed={view === v} onClick={() => (setView(v), setOnly(null))}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {view === "in" ? (
-              inParts.length === 0 ? (
-                <p className="dash-word-hint mt-3">No money in this month yet - tap + Add money or + Add cash at the top.</p>
-              ) : (
-                <ul className="money-parts">
-                  {inParts.map((p) => (
-                    <li key={p.from}>
-                      <span className="money-part is-static">
-                        <i style={{ background: "rgb(var(--ok-rgb))" }} aria-hidden />
-                        <span className="money-part-name">{p.from}</span>
-                        <span className="money-part-pct">{summary.in ? Math.round((p.amount / summary.in) * 100) : 0}%</span>
-                        <span className="money-part-amount">{dollars(p.amount)}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )
-            ) : summary.parts.length === 0 ? (
-              <p className="dash-word-hint mt-3">Nothing spent this month yet.</p>
-            ) : (
-              <>
-                <div className="money-split" aria-hidden>
-                  {summary.parts.map((p) => (
-                    <span key={p.category} style={{ width: `${p.pct}%`, background: colourFor(money, p.category) }} title={`${p.category} ${Math.round(p.pct)}%`} />
-                  ))}
-                </div>
-                <ul className="money-parts">
-                  {summary.parts.map((p) => (
-                    <li key={p.category}>
-                      <button
-                        type="button"
-                        className={`money-part ${only === p.category ? "is-on" : ""}`}
-                        onClick={() => {
-                          setOnly(only === p.category ? null : p.category);
-                          setView("out");
-                        }}
-                      >
-                        <i style={{ background: colourFor(money, p.category) }} aria-hidden />
-                        <span className="money-part-name">{p.category}</span>
-                        <span className="money-part-pct">{Math.round(p.pct)}%</span>
-                        <span className="money-part-amount">{dollars(p.amount)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
             )}
-
-            {days.length > 0 && (
-              <div className="money-list">
-                <div className="money-list-head">
-                  <span className="eyebrow">{only ? `${only} only` : view === "in" ? "Money in" : view === "out" ? "Spending" : "Every entry"}</span>
-                  {only || view !== "all" ? (
-                    <button type="button" className="dash-word-link" onClick={() => (setOnly(null), setView("all"))}>
-                      Show everything
-                    </button>
-                  ) : (
-                    <span className="dash-word-hint">Tap one to change it</span>
-                  )}
-                </div>
-                {days.map((g) => (
-                  <div key={g.date} className="money-day-group">
-                    <div className="money-day-head">
-                      <span>{dayHeading(g.date, today)}</span>
-                      <span className="money-day-sums">
-                        {g.in > 0 && <span className="is-in">+{dollars(g.in)}</span>}
-                        {g.spent > 0 && <span>-{dollars(g.spent)}</span>}
-                      </span>
-                    </div>
-                    {g.items.map((e) => entryRow(e, "list"))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </FoldPanel>
-        </div>
-
-        {/* ── Coming up + regular debits ───────────────────────── */}
-        <div className="dash-col-5 money-side">
-          <KindPanel kind="fuel" colour={colourFor(money, FUEL)} {...kindProps} />
-          <KindPanel kind="gym" colour={colourFor(money, GYM)} {...kindProps} />
-          {coming.length > 0 && (
-            <FoldPanel id="money-coming" eyebrow="Still to come this month" title={dollars(comingTotal)}>
-              <div className="money-subs">
-                {coming.map((c) => (
-                  <div key={c.sub.id} className="money-sub">
-                    <span className="money-sub-what">
-                      <strong>{c.sub.name}</strong>
-                      <em>{shortDate(c.date)}</em>
-                    </span>
-                    <span className="money-sub-amount">{dollars(c.sub.amount)}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="dash-word-hint mt-3">
-                After these you&apos;ll have <strong>{dollars(bal - comingTotal)}</strong>.
-              </p>
-            </FoldPanel>
+          </div>
+          <div className="money-daycard-sums">
+            <span>
+              Spent <strong>{dollars(daySum.spent)}</strong>
+            </span>
+            <span>
+              In <strong className="is-in">{dollars(daySum.in)}</strong>
+            </span>
+          </div>
+          {dayEntries.length ? (
+            <div className="money-daycard-list">{dayEntries.map((e) => entryRow(e, "day"))}</div>
+          ) : (
+            <p className="money-empty">{day === today ? "Nothing logged today yet - tap Add expense or Add income at the top." : "Nothing was logged on this day."}</p>
           )}
+          {day !== today ? (
+            <p className="money-hint">
+              Anything you add at the top now goes on this day.{" "}
+              <button type="button" className="money-link" onClick={() => pickDay(today)}>
+                Back to today
+              </button>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
 
-          <FoldPanel id="money-subs" eyebrow={`${dollars(monthlySubs)} a month`} title="Comes off by itself">
-            <p className="dash-word-hint mb-3">Taken off on its day each month - no need to add these.</p>
+  // Recurring payments, Fuel and Gym fees - one card, three tabs.
+  const toolsCard = (
+    <section className="money-card money-tools" aria-label="Recurring payments, fuel and gym fees">
+      <div className="money-tabs" role="tablist" aria-label="Recurring payments, fuel and gym fees">
+        {tools.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`money-tab-${t.id}`}
+            aria-selected={tool === t.id}
+            aria-controls="money-tool-panel"
+            className={`money-tab ${tool === t.id ? "is-on" : ""}`}
+            onClick={() => setTool(t.id)}
+          >
+            <span>{t.label}</span>
+            <em>{t.sub}</em>
+          </button>
+        ))}
+      </div>
+      <div className="money-tool" role="tabpanel" id="money-tool-panel" aria-labelledby={`money-tab-${tool}`}>
+        {tool === "recurring" ? (
+          <>
+            {coming.length > 0 && (
+              <div className="money-coming">
+                <div className="money-subhead">
+                  <span>Still to come this month</span>
+                  <strong>{dollars(comingTotal)}</strong>
+                </div>
+                <div className="money-subs">
+                  {coming.map((c) => (
+                    <div key={c.sub.id} className="money-sub is-coming">
+                      <span className="money-sub-date">{shortDate(c.date)}</span>
+                      <span className="money-sub-what">
+                        <strong>{c.sub.name}</strong>
+                      </span>
+                      <span className="money-sub-amount">{dollars(c.sub.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="money-hint">
+                  After these you&apos;ll have <strong>{dollars(bal - comingTotal)}</strong>.
+                </p>
+              </div>
+            )}
+
+            <div className="money-subhead">
+              <span>Comes off by itself</span>
+              <strong>{dollars(monthlySubs)} a month</strong>
+            </div>
+            <p className="money-hint">Taken off on its day each month - no need to add these.</p>
             <div className="money-subs">
               {money.subs.filter((s) => !s.removedAt).map((s) =>
                 subForm?.id === s.id ? null : (
-                  <div key={s.id} className={`money-sub ${s.active ? "" : "is-paused"}`}>
-                    <span className="money-sub-what">
-                      <strong>{s.name}</strong>
-                      <em>
-                        {dollars(s.amount)} on the {ordinal(s.day)}
-                        {s.active ? ` · next ${shortDate(nextDue(s, today))}` : " · paused"}
-                      </em>
-                    </span>
+                  <div key={s.id} className={`money-sub ${s.active ? "" : "is-paused"} ${subOpen === s.id ? "is-open" : ""}`}>
+                    <button type="button" className="money-sub-row" onClick={() => setSubOpen(subOpen === s.id ? null : s.id)} aria-expanded={subOpen === s.id}>
+                      <span className="money-sub-what">
+                        <strong>{s.name}</strong>
+                        <em>
+                          On the {ordinal(s.day)}
+                          {s.active ? ` · next ${shortDate(nextDue(s, today))}` : " · paused"}
+                        </em>
+                      </span>
+                      <span className="money-sub-amount">{dollars(s.amount)}</span>
+                    </button>
+                    {subOpen === s.id && (
                     <span className="money-sub-tools">
                       <button
                         type="button"
-                        className="dash-word-link"
+                        className="money-link"
                         onClick={() => setSubForm({ id: s.id, name: s.name, amount: String(s.amount), day: String(s.day), category: s.category })}
                       >
                         Change
                       </button>
-                      <button type="button" className="dash-word-link" onClick={() => toggleSub(s.id)}>
+                      <button type="button" className="money-link" onClick={() => toggleSub(s.id)}>
                         {s.active ? "Pause" : "Start again"}
                       </button>
-                      <button type="button" className="dash-word-link money-sub-remove" onClick={() => removeSub(s.id)}>
+                      <button type="button" className="money-link is-danger" onClick={() => removeSub(s.id)}>
                         Remove
                       </button>
                     </span>
+                    )}
                   </div>
                 ),
               )}
             </div>
             {subForm ? (
-              <form className="money-sub-form" onSubmit={saveSub}>
-                <span className="money-form-what">{subForm.id ? `Change ${subForm.name || "this debit"}` : "A new regular debit"}</span>
-                <input className="dash-input" placeholder="Name, e.g. Netflix" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} />
-                <div className="money-sub-form-row">
-                  <label className="money-amount">
-                    <span aria-hidden>$</span>
-                    <input className="dash-input" inputMode="decimal" placeholder="0.00" value={subForm.amount} onChange={(e) => setSubForm({ ...subForm, amount: e.target.value })} aria-label="Amount" />
+              <form className="money-form money-sub-form" onSubmit={saveSub}>
+                <div className="money-form-top">
+                  <span className="money-form-what">{subForm.id ? `Change ${subForm.name || "this debit"}` : "A new regular debit"}</span>
+                </div>
+                <div className="money-form-fields">
+                  <label className="money-field is-wide">
+                    <span className="money-field-label">Name</span>
+                    <input className="dash-input" placeholder="e.g. Netflix" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} />
                   </label>
-                  <label className="money-day">
-                    <span>on the</span>
+                  <label className="money-field">
+                    <span className="money-field-label">Amount ($)</span>
+                    <input className="dash-input" inputMode="decimal" placeholder="0.00" value={subForm.amount} onChange={(e) => setSubForm({ ...subForm, amount: e.target.value })} />
+                  </label>
+                  <label className="money-field">
+                    <span className="money-field-label">On the (day of the month)</span>
                     <input
                       className="dash-input"
                       inputMode="numeric"
                       placeholder="12"
                       value={subForm.day}
                       onChange={(e) => setSubForm({ ...subForm, day: e.target.value.replace(/\D/g, "").slice(0, 2) })}
-                      aria-label="Day of the month"
                     />
                   </label>
+                  <label className="money-field">
+                    <span className="money-field-label">Kind</span>
+                    <select className="dash-input" value={subForm.category} onChange={(e) => setSubForm({ ...subForm, category: e.target.value })}>
+                      {cats.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
-                <select className="dash-input" value={subForm.category} onChange={(e) => setSubForm({ ...subForm, category: e.target.value })} aria-label="Kind">
-                  {cats.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-                <div className="flex gap-2 items-center">
-                  <button type="submit" className="dash-btn dash-btn-primary">
+                <div className="money-form-actions">
+                  <button type="submit" className="money-btn is-primary">
                     {subForm.id ? "Save" : "Add it"}
                   </button>
-                  <button type="button" className="dash-word-link" onClick={() => setSubForm(null)}>
+                  <button type="button" className="money-btn" onClick={() => setSubForm(null)}>
                     Cancel
                   </button>
                 </div>
               </form>
             ) : (
-              <button type="button" className="dash-btn dash-btn-ghost dash-note-nav mt-3" onClick={() => setSubForm({ name: "", amount: "", day: "", category: "Subscriptions" })}>
-                + Add a regular debit
+              <button type="button" className="money-add-line" onClick={() => setSubForm({ name: "", amount: "", day: "", category: "Subscriptions" })}>
+                <span aria-hidden>+</span> Add a regular debit
               </button>
             )}
-          </FoldPanel>
+          </>
+        ) : (
+          <KindTab key={tool} kind={tool} colour={colourFor(money, tool === "fuel" ? FUEL : GYM)} {...kindProps} />
+        )}
+      </div>
+    </section>
+  );
+
+  return (
+    <div className="money">
+      <header className="money-pagehead">
+        <div>
+          <div className="eyebrow eyebrow-amber">Private to you</div>
+          <h1 className="dash-title money-title">Money</h1>
+          <p className="money-tagline">Your finances, beautifully organized.</p>
+        </div>
+        <button type="button" className="money-btn money-export" onClick={downloadCsv} title="Every entry, as a spreadsheet">
+          <span aria-hidden>↓</span> Export CSV
+        </button>
+      </header>
+
+      {/* ── 1. Your money ─────────────────────────────────────── */}
+      <section className="money-hero" aria-label="Your money">
+        <div className="money-hero-top">
+          <div className="money-total">
+            <span className="money-label">Total balance</span>
+            <Figure n={bal + cashNow} className={`money-total-amount ${bal + cashNow < 0 ? "is-low" : ""}`} />
+            <span className="money-total-sub">Account and cash on hand together</span>
+          </div>
+          <dl className="money-stats">
+            <div>
+              <dt>Spent today</dt>
+              <dd>{dollars(spentOn(money, today))}</dd>
+            </div>
+            <div>
+              <dt>This month</dt>
+              <dd>{dollars(thisMonth.total)}</dd>
+            </div>
+            <div>
+              <dt>Daily average</dt>
+              <dd>{dollars(thisMonth.perDay)}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="money-tiles">
+          {walletTile(false)}
+          {walletTile(true)}
+        </div>
+
+        {day !== today && (
+          <div className="money-dayflag">
+            <span>
+              Adding to <strong>{fullDay(day)}</strong>
+            </span>
+            <button type="button" className="money-link" onClick={() => pickDay(today)}>
+              Back to today
+            </button>
+          </div>
+        )}
+
+        <div className="money-actions">
+          <button type="button" className={`money-action is-income ${sheet === "income" ? "is-on" : ""}`} onClick={() => openSheet("income")} aria-expanded={sheet === "income"}>
+            <span className="money-action-sign" aria-hidden>
+              +
+            </span>
+            Add income
+          </button>
+          <button type="button" className={`money-action is-expense ${sheet === "expense" ? "is-on" : ""}`} onClick={() => openSheet("expense")} aria-expanded={sheet === "expense"}>
+            <span className="money-action-sign" aria-hidden>
+              −
+            </span>
+            Add expense
+          </button>
+        </div>
+
+        {sheet && (
+          <div className="money-sheet" ref={sheetRef}>
+            <div className="money-sheet-head">
+              <h2>{sheet === "income" ? "Add income" : "Add expense"}</h2>
+              <button type="button" className="money-sheet-close" onClick={closeSheet} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            {sheet === "expense" && !form && (
+              <>
+                <p className="money-sheet-ask">What was it for?</p>
+                <div className="money-kinds" role="group" aria-label="What did you spend on?">
+                  {cats.map((c) => (
+                    <button key={c} type="button" className="money-kind" onClick={() => openForm(c === CASH_OUT ? { mode: "move" } : { mode: "spend", category: c, cash: false })}>
+                      <i style={{ background: colourFor(money, c) }} aria-hidden />
+                      <span>
+                        {c}
+                        {c === CASH_OUT && <em>account → cash</em>}
+                      </span>
+                    </button>
+                  ))}
+                  {newCat == null ? (
+                    <button type="button" className="money-kind is-new" onClick={() => setNewCat("")}>
+                      <span>+ New kind</span>
+                    </button>
+                  ) : (
+                    <form className="money-newcat" onSubmit={addCategory}>
+                      <input className="dash-input" autoFocus placeholder="e.g. Church giving" value={newCat} onChange={(e) => setNewCat(e.target.value)} aria-label="The new kind of spending" />
+                      <button type="submit" className="money-btn is-primary">
+                        Add
+                      </button>
+                      <button type="button" className="money-btn" onClick={() => setNewCat(null)}>
+                        Cancel
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
+            {formBox}
+          </div>
+        )}
+
+        {buys.length > 0 && (
+          <div className="money-usual" role="group" aria-label="Log it again">
+            <span className="money-label">Usual buys - one tap logs it</span>
+            <div className="money-usual-row">
+              {buys.map((b) => (
+                <button
+                  key={`${b.category}|${b.amount}|${b.note ?? ""}|${b.cash ? "cash" : ""}`}
+                  type="button"
+                  className="money-usual-btn"
+                  onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: day, ...(b.cash ? { cash: true } : {}) })}
+                >
+                  <i style={{ background: colourFor(money, b.category) }} aria-hidden />
+                  <span>{b.note || b.category}</span>
+                  <strong>{shortDollars(b.amount)}</strong>
+                  {b.cash && <em>cash</em>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+      {toastBox}
+
+      {/* ── 2 & 3. The month: activity, and where it went ─────── */}
+      {/* Two columns on a wide screen (activity + calendar | where it went + the tools);
+          one on a phone, in order of importance. */}
+      <div className="money-monthbar">
+        <div className="money-monthbar-title">
+          <span className="money-label">The month</span>
+          <div className="money-monthbar-name">
+            <h2>{monthName(month)}</h2>
+            <div className="money-nav">
+              <button type="button" onClick={() => pickMonth(shiftMonth(month, -1))} aria-label="Month before">
+                ‹
+              </button>
+              <button type="button" onClick={() => pickMonth(shiftMonth(month, 1))} disabled={month >= monthOf(today)} aria-label="Month after">
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="money-figures">
+          <button
+            type="button"
+            className={`money-figure ${view === "in" ? "is-on" : ""}`}
+            onClick={() => (setView(view === "in" ? "all" : "in"), setOnly(null))}
+            aria-pressed={view === "in"}
+          >
+            <span>Money in</span>
+            <strong className="is-in">{dollars(summary.in)}</strong>
+          </button>
+          <button
+            type="button"
+            className={`money-figure ${view === "out" ? "is-on" : ""}`}
+            onClick={() => (setView(view === "out" ? "all" : "out"), setOnly(null))}
+            aria-pressed={view === "out"}
+          >
+            <span>Spent</span>
+            <strong>{dollars(summary.total)}</strong>
+            {summary.change != null && (
+              <em className={summary.change > 0 ? "is-up" : "is-down"}>
+                {summary.change > 0 ? "▲" : "▼"} {Math.abs(Math.round(summary.change))}% {summary.soFar ? "on this time in" : "on"} {monthName(shiftMonth(month, -1)).split(" ")[0]}
+              </em>
+            )}
+          </button>
+          <div className="money-figure is-static">
+            <span>{left < 0 ? "Short" : "Surplus"}</span>
+            <strong className={left < 0 ? "is-low" : ""}>
+              {left < 0 ? "-" : ""}
+              {dollars(Math.abs(left))}
+            </strong>
+          </div>
+          <div className="money-figure is-static">
+            <span>Spent a day</span>
+            <strong>{dollars(summary.perDay)}</strong>
+          </div>
         </div>
       </div>
-    </>
+
+      <div className="money-grid">
+        <div className="money-col">
+          <section className="money-card money-activity" ref={activityRef} aria-labelledby="money-activity-title">
+            <header className="money-card-head">
+              <div>
+                <h2 id="money-activity-title" className="money-card-title">
+                  Recent activity
+                </h2>
+                <p className="money-card-sub">{only ? `${only} only` : view === "in" ? "Money in" : view === "out" ? "Spending" : "Tap one to change it"}</p>
+              </div>
+              <div className="money-seg" role="group" aria-label="Show">
+                {(
+                  [
+                    ["all", "All"],
+                    ["in", "Money in"],
+                    ["out", "Spent"],
+                  ] as const
+                ).map(([v, label]) => (
+                  <button key={v} type="button" className={view === v && (v !== "all" || !only) ? "is-on" : ""} aria-pressed={view === v} onClick={() => (setView(v), setOnly(null))}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </header>
+            {only && (
+              <div className="money-only">
+                <i style={{ background: colourFor(money, only) }} aria-hidden />
+                <span>
+                  Only <strong>{only}</strong>
+                </span>
+                <button type="button" className="money-link" onClick={() => (setOnly(null), setView("all"))}>
+                  Show everything
+                </button>
+              </div>
+            )}
+            {days.length === 0 ? (
+              <p className="money-empty">
+                {view === "in" ? "No money in this month yet - tap Add income at the top." : `Nothing logged in ${monthName(month).split(" ")[0]} yet.`}
+              </p>
+            ) : (
+              <div className="money-list">
+                {shownDays.map((g) => (
+                  <div key={g.date} className="money-day-group">
+                    <div className="money-day-head">
+                      <span>{dayHeading(g.date, today)}</span>
+                      <span className="money-day-sums">
+                        {g.in > 0 && <span className="is-in">+{dollars(g.in)}</span>}
+                        {g.spent > 0 && <span>−{dollars(g.spent)}</span>}
+                      </span>
+                    </div>
+                    {g.items.map((e) => entryRow(e, "list"))}
+                  </div>
+                ))}
+                {rowCount > RECENT && (
+                  <button type="button" className="money-link money-more" onClick={() => setShowAll(!showAll)}>
+                    {showAll ? "Show fewer" : `Show all ${rowCount} in ${monthName(month).split(" ")[0]}`}
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+          {calendarCard}
+        </div>
+
+        <div className="money-col">
+          <section className="money-card money-breakdown" aria-labelledby="money-breakdown-title">
+            <header className="money-card-head">
+              <div>
+                <h2 id="money-breakdown-title" className="money-card-title">
+                  {view === "in" ? "Where it came from" : "Where it went"}
+                </h2>
+                <p className="money-card-sub">
+                  {monthName(month)} · {view === "in" ? `In ${dollars(summary.in)}` : `Spent ${dollars(summary.total)}`} · {left < 0 ? "Short" : "Surplus"} {dollars(Math.abs(left))}
+                </p>
+              </div>
+            </header>
+            {view === "in" ? (
+              inParts.length === 0 ? (
+                <p className="money-empty">No money in this month yet.</p>
+              ) : (
+                <ul className="money-bars">
+                  {inParts.map((p) => (
+                    <li key={p.from}>
+                      <div className="money-bar is-static">
+                        <span className="money-bar-name">
+                          <i style={{ background: "rgb(var(--ok-rgb))" }} aria-hidden />
+                          {p.from}
+                        </span>
+                        <span className="money-bar-amount">
+                          {dollars(p.amount)}
+                          <em>{summary.in ? Math.round((p.amount / summary.in) * 100) : 0}%</em>
+                        </span>
+                        <span className="money-bar-track" aria-hidden>
+                          <span style={{ width: `${(p.amount / partMax) * 100}%`, background: "rgb(var(--ok-rgb))" }} />
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : summary.parts.length === 0 ? (
+              <p className="money-empty">Nothing spent this month yet.</p>
+            ) : (
+              <>
+                <div className="money-split" role="img" aria-label={summary.parts.map((p) => `${p.category} ${Math.round(p.pct)}%`).join(", ")}>
+                  {summary.parts.map((p) => (
+                    <span key={p.category} style={{ flexGrow: p.amount, background: colourFor(money, p.category) }} title={`${p.category} · ${dollars(p.amount)} · ${Math.round(p.pct)}%`} />
+                  ))}
+                </div>
+                <ul className="money-bars">
+                  {summary.parts.map((p) => (
+                    <li key={p.category}>
+                      <button type="button" className={`money-bar ${only === p.category ? "is-on" : ""}`} onClick={() => pickKind(p.category)} aria-pressed={only === p.category}>
+                        <span className="money-bar-name">
+                          <i style={{ background: colourFor(money, p.category) }} aria-hidden />
+                          {p.category}
+                        </span>
+                        <span className="money-bar-amount">
+                          {dollars(p.amount)}
+                          <em>{Math.round(p.pct)}%</em>
+                        </span>
+                        <span className="money-bar-track" aria-hidden>
+                          <span style={{ width: `${(p.amount / partMax) * 100}%`, background: colourFor(money, p.category) }} />
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className="money-hint">Tap a kind to see only those in Recent activity.</p>
+              </>
+            )}
+          </section>
+          {toolsCard}
+        </div>
+      </div>
+    </div>
   );
 }
