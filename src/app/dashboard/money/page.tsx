@@ -777,8 +777,13 @@ export default function MoneyPage() {
             type="date"
             className="dash-input"
             value={date}
-            max={form.mode === "add" && form.expected ? undefined : today}
-            onChange={(e) => setDate(e.target.value || today)}
+            max={form.mode === "add" ? undefined : today}
+            onChange={(e) => {
+              const d = e.target.value || today;
+              setDate(d);
+              // Income on a later date hasn't come in yet - it's expected.
+              if (form.mode === "add" && d > today && !form.expected) setForm({ ...form, expected: true });
+            }}
           />
         </label>
         <label className="money-field is-wide">
