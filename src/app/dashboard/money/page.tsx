@@ -1180,7 +1180,10 @@ export default function MoneyPage() {
     <div className="money">
       <header className="money-pagehead">
         <div>
-          <div className="eyebrow eyebrow-amber">Private to you</div>
+          {/* Whose money this is, so Daniel's and his sister's can't be mistaken for each other. */}
+          <div className="eyebrow eyebrow-amber">
+            {user === undefined ? "Private to you" : `${user?.role === "personal" ? `${user.name}'s` : "Daniel's"} money · private to you`}
+          </div>
           <h1 className="dash-title money-title">Money</h1>
           <p className="money-tagline">Your finances, beautifully organized.</p>
         </div>
