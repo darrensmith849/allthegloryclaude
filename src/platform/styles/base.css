@@ -1,0 +1,130 @@
+/* Reset, document defaults and accessibility primitives shared by the public
+   site and the demonstrations. */
+
+.ngoma *,
+.ngoma *::before,
+.ngoma *::after {
+  box-sizing: border-box;
+}
+
+:root:has(.ngoma) {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+.ngoma {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  font-weight: 400;
+  line-height: 1.6;
+  font-feature-settings: "kern", "liga", "calt", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+.ngoma h1, .ngoma h2, .ngoma h3, .ngoma h4, .ngoma h5, .ngoma h6, .ngoma p, .ngoma figure, .ngoma blockquote, .ngoma dl, .ngoma dd, .ngoma ul, .ngoma ol {
+  margin: 0;
+}
+
+.ngoma ul[role="list"], .ngoma ol[role="list"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ngoma img, .ngoma svg, .ngoma video, .ngoma canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.ngoma img, .ngoma video {
+  height: auto;
+}
+
+.ngoma input, .ngoma button, .ngoma textarea, .ngoma select {
+  font: inherit;
+  color: inherit;
+}
+
+.ngoma button {
+  cursor: pointer;
+}
+
+.ngoma a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.ngoma table {
+  border-collapse: collapse;
+}
+
+.ngoma :where(h1, h2, h3, h4) {
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.ngoma p {
+  text-wrap: pretty;
+}
+
+.ngoma ::selection {
+  background: var(--gold);
+  color: var(--paper);
+}
+
+.ngoma :focus-visible {
+  outline: 2px solid var(--gold-2);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.ngoma .visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ngoma .skip-link {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 100;
+  padding: 12px 18px;
+  background: var(--gold-2);
+  color: var(--paper);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ngoma .skip-link:focus {
+  top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngoma *,
+  .ngoma *::before,
+  .ngoma *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

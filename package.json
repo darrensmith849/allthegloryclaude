@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "preview:cloudflare": "opennextjs-cloudflare build && wrangler dev",
-    "deploy:cloudflare": "opennextjs-cloudflare build && wrangler deploy"
+    "deploy:cloudflare": "opennextjs-cloudflare build && wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test:agency": "vitest run",
+    "build:agency-e2e": "NEXT_PUBLIC_AGENCY_SUBMISSIONS=open next build",
+    "test:agency:e2e": "playwright test",
+    "agency:screenshots": "SCREENSHOTS=1 playwright test tests/agency/e2e/screenshots.spec.ts",
+    "agency:scope-css": "node scripts/agency/scope-css.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.1",
@@ -18,9 +24,14 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.12.4",
-    "stripe": "^20.4.1"
+    "server-only": "^0.0.1",
+    "stripe": "^20.4.1",
+    "ulid": "^3.0.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20.11.30",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
@@ -28,6 +39,7 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.5",
+    "vitest": "^4.1.12",
     "wrangler": "^4.107.0"
   }
 }
