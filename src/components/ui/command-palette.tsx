@@ -36,8 +36,9 @@ export default function CommandPalette() {
   // able to ⌘K their way into the rest of the site from there.
   const isPress = pathname?.startsWith("/press") ?? false;
   // The private dashboard has its own ⌘K palette - stand down there so the
-  // two don't open on top of each other and fight over focus.
-  const isDashboard = pathname?.startsWith("/dashboard") ?? false;
+  // two don't open on top of each other and fight over focus. The /agency
+  // platform is a separate product, so the album site's palette stays out.
+  const isDashboard = (pathname?.startsWith("/dashboard") || pathname?.startsWith("/agency")) ?? false;
 
   // All navigable targets, deduped by href.
   const items = useMemo<Item[]>(() => {

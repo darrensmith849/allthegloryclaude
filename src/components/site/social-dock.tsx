@@ -131,7 +131,8 @@ export default function SocialDock() {
     pathname?.startsWith("/album") ||
     pathname?.startsWith("/press") ||
     pathname?.startsWith("/daniel-jenkins") ||
-    pathname?.startsWith("/websites")
+    pathname?.startsWith("/websites") ||
+    pathname?.startsWith("/agency")
   ) {
     return null;
   }

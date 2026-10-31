@@ -7,9 +7,10 @@
  * AnimatePresence-on-exit fiddly, and a calm fade-in is enough to give
  * navigation a premium feel without the complexity.
  *
- * The Study and the dashboard are apps with their own persistent shells
- * (The Study's album player keeps playing between pages), so each keeps
- * one key for all its pages instead of remounting on every route.
+ * The Study, the dashboard and the /agency platform are apps with their own
+ * persistent shells (The Study's album player and the platform's audio player
+ * keep playing between pages), so each keeps one key for all its pages
+ * instead of remounting on every route.
  */
 
 import { usePathname } from "next/navigation";
@@ -22,7 +23,7 @@ export default function PageTransition({
 }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
-  const key = pathname?.startsWith("/study") ? "/study" : pathname?.startsWith("/dashboard") ? "/dashboard" : pathname;
+  const key = pathname?.startsWith("/study") ? "/study" : pathname?.startsWith("/dashboard") ? "/dashboard" : pathname?.startsWith("/agency") ? "/agency" : pathname;
 
   return (
     <motion.div
