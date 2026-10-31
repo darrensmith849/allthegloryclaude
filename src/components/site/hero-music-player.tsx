@@ -42,7 +42,7 @@ export default function HeroMusicPlayer() {
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false); // hides the "tap me" pulse once it has ever played
 
-  const hidden = !!pathname && (pathname.startsWith("/dashboard") || pathname.startsWith("/study") || pathname.startsWith("/daniel-jenkins") || pathname.startsWith("/websites"));
+  const hidden = !!pathname && (pathname.startsWith("/dashboard") || pathname.startsWith("/study") || pathname.startsWith("/daniel-jenkins") || pathname.startsWith("/websites") || pathname.startsWith("/agency"));
   // Phones: tucked away once scrolled - unless the song is playing, so it
   // can always be paused.
   const tucked = useTucked() && !playing;

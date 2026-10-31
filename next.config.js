@@ -47,6 +47,24 @@ const nextConfig = {
           },
         ],
       },
+      // /agency platform: demonstrations, sample profiles and proposals are
+      // never indexed whatever the page metadata says; its APIs never cache.
+      {
+        source: '/agency/demo/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/agency/roster/:slug',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/agency/partners/proposed-collaboration',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/agency/api/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
       {
         source: '/media/:path*',
         headers: [

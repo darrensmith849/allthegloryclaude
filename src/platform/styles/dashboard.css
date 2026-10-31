@@ -1,0 +1,1347 @@
+/* Dashboard demonstrations (/demo). Loaded only by the demo layout, so the
+   public website never ships these styles. The All the Glory /websites
+   language on a working surface: deep blue-black, light Inter, translucent
+   bordered panels, gold for what is active, soft radial glows. Colours come
+   only from tokens.css; tenant workspaces override --accent, --accent-2,
+   --accent-ink, --accent-soft and --canvas (src/config/theme.ts). */
+
+.ngoma .micro {
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+/* ── Demonstration banner ───────────────────────────────────────────── */
+
+.ngoma .demo-banner {
+  position: relative;
+  z-index: 30;
+  background: color-mix(in srgb, var(--night) 92%, transparent);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: var(--step--1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ngoma .demo-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1.25rem;
+  padding: 0.35rem var(--gutter);
+}
+
+.ngoma .demo-banner__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  min-height: 44px;
+  color: var(--ink-quiet);
+}
+
+.ngoma .demo-banner__label strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.ngoma .demo-banner__flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35em 0.85em;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--gold-2) 32%, transparent);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  color: var(--gold-2);
+  box-shadow: 0 0 24px 2px color-mix(in srgb, var(--gold) 18%, transparent);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ngoma .demo-banner__nav {
+  min-width: 0;
+}
+
+.ngoma .demo-banner__nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ngoma .demo-banner__nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 44px;
+  padding: 0 0.8rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  color: var(--ink-quiet);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.ngoma .demo-banner__nav a:hover {
+  color: var(--ink);
+  background: var(--glass-strong);
+}
+
+.ngoma .demo-banner__nav a[aria-current="page"] {
+  color: var(--gold-2);
+  border-color: color-mix(in srgb, var(--gold-2) 32%, transparent);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+
+.ngoma .demo-banner__back svg {
+  width: 14px;
+  height: 14px;
+  transform: rotate(180deg);
+}
+
+@media (max-width: 767px) {
+  /* One scrollable row instead of three wrapped rows on phones. */
+  .ngoma .demo-banner__nav {
+    width: 100%;
+  }
+
+  .ngoma .demo-banner__nav ul {
+    flex-wrap: nowrap;
+    width: calc(100% + var(--gutter) * 2);
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* ── Shell ──────────────────────────────────────────────────────────── */
+
+.ngoma .dash {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  background:
+    radial-gradient(42% 32% at 88% 0%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 70%),
+    radial-gradient(30% 30% at 0% 100%, color-mix(in srgb, var(--info) 5%, transparent), transparent 70%),
+    var(--canvas);
+  color: var(--ink);
+  isolation: isolate;
+}
+
+.ngoma .dash__side {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem var(--gutter) 0;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
+  min-width: 0;
+}
+
+.ngoma .dash__workspace {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ngoma .dash__workspace-kicker {
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.ngoma .dash__workspace-name {
+  font-size: var(--step-2);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.ngoma .dash__workspace-sub {
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+}
+
+.ngoma .dash__nav {
+  min-width: 0;
+}
+
+.ngoma .dash__nav ul {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter) 0.75rem;
+}
+
+.ngoma .dash__nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--step--1);
+  font-weight: 400;
+  color: var(--ink-quiet);
+  text-decoration: none;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.ngoma .dash__nav a svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  opacity: 0.8;
+}
+
+.ngoma .dash__nav a:hover {
+  background: var(--glass-strong);
+  color: var(--ink);
+}
+
+.ngoma .dash__nav a[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  color: var(--accent-2);
+  box-shadow: 0 0 28px 0 color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.ngoma .dash__nav a[aria-current="page"] svg {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.ngoma .dash__side-foot {
+  display: none;
+}
+
+.ngoma .dash__main {
+  min-width: 0;
+  padding: clamp(1.75rem, 3.5vw, 3rem) var(--gutter) clamp(3rem, 6vw, 5rem);
+}
+
+.ngoma .dash__main:focus {
+  outline: none;
+}
+
+.ngoma .dash__content {
+  max-width: 1280px;
+}
+
+@media (min-width: 1024px) {
+  .ngoma .dash {
+    grid-template-columns: 276px minmax(0, 1fr);
+  }
+
+  .ngoma .dash__side {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    align-content: start;
+    gap: 1.75rem;
+    padding: 2rem 1.25rem 1.5rem;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .ngoma .dash__nav ul {
+    flex-direction: column;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ngoma .dash__nav a {
+    display: flex;
+    white-space: normal;
+  }
+
+  .ngoma .dash__side-foot {
+    display: grid;
+    gap: 0.6rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    font-size: var(--step--1);
+    line-height: 1.55;
+    color: var(--ink-quiet);
+  }
+
+  .ngoma .dash__side-foot strong {
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  .ngoma .dash__main {
+    padding-inline: clamp(2rem, 3.5vw, 3.5rem);
+  }
+}
+
+/* ── Page header ────────────────────────────────────────────────────── */
+
+.ngoma .dash-head {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+
+.ngoma .dash-head__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.ngoma .dash-head h1 {
+  font-size: var(--step-4);
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.ngoma .dash-head__desc {
+  max-width: 68ch;
+  color: var(--ink-quiet);
+}
+
+.ngoma .dash-head__slot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Tenant switcher */
+
+.ngoma .tenant-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+}
+
+.ngoma .tenant-switch__label {
+  padding: 0 0.7rem;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.ngoma .tenant-switch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.ngoma .tenant-switch a:hover {
+  background: var(--glass-strong);
+}
+
+.ngoma .tenant-switch a[aria-current="true"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  color: var(--accent-2);
+}
+
+.ngoma .tenant-switch__swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* ── Layout grid ────────────────────────────────────────────────────── */
+
+.ngoma .dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.ngoma .dash-grid + .dash-grid,
+.ngoma .stat-grid + .dash-grid {
+  margin-top: clamp(1rem, 2vw, 1.5rem);
+}
+
+@media (min-width: 768px) {
+  .ngoma .dash-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .ngoma .dash-grid > * {
+    grid-column: span 12;
+  }
+  .ngoma .dash-grid > .span-4,
+  .ngoma .dash-grid > .span-5,
+  .ngoma .dash-grid > .span-6,
+  .ngoma .dash-grid > .span-7 {
+    grid-column: span 6;
+  }
+}
+
+@media (min-width: 1200px) {
+  .ngoma .dash-grid > .span-4 { grid-column: span 4; }
+  .ngoma .dash-grid > .span-5 { grid-column: span 5; }
+  .ngoma .dash-grid > .span-6 { grid-column: span 6; }
+  .ngoma .dash-grid > .span-7 { grid-column: span 7; }
+  .ngoma .dash-grid > .span-8 { grid-column: span 8; }
+}
+
+/* ── Panel ──────────────────────────────────────────────────────────── */
+
+.ngoma .panel {
+  display: grid;
+  align-content: start;
+  gap: 1.2rem;
+  min-width: 0;
+  padding: clamp(1.15rem, 2.2vw, 1.75rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ngoma .panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.ngoma .panel__head h2 {
+  font-size: var(--step-2);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.ngoma .panel__desc {
+  margin-top: 0.35rem;
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+  max-width: 62ch;
+}
+
+.ngoma .panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ngoma .panel--accent {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent-2) 26%, transparent);
+  background:
+    radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    var(--accent-soft);
+}
+
+.ngoma .panel--accent .panel__head h2 {
+  color: var(--accent-2);
+}
+
+.ngoma .panel--night {
+  background: var(--night);
+  border-color: var(--line);
+}
+
+/* Thin line-art rings, the decoration language of the brand. */
+.ngoma .panel--rings {
+  position: relative;
+  overflow: hidden;
+}
+
+.ngoma .panel--rings::before,
+.ngoma .panel--rings::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  top: -90px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+
+.ngoma .panel--rings::after {
+  right: -60px;
+  top: -60px;
+  width: 200px;
+  height: 200px;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent-2) 26%, transparent);
+}
+
+/* ── Stats ──────────────────────────────────────────────────────────── */
+
+.ngoma .stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Each tile draws its own 1px rule into the gap, so a short last row leaves
+   clean canvas instead of a grey empty cell. */
+.ngoma .stat {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 1.2rem 1.3rem 1.3rem;
+  background: var(--canvas);
+  outline: 1px solid var(--line);
+}
+
+.ngoma .stat dt {
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.ngoma .stat__value {
+  margin: 0;
+  font-size: clamp(2rem, 1.6rem + 1.4vw, 2.9rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
+}
+
+.ngoma .stat__value--long {
+  font-size: clamp(1.45rem, 1.2rem + 0.8vw, 1.9rem);
+  letter-spacing: -0.02em;
+  padding-block: 0.2em 0.15em;
+}
+
+.ngoma .stat__note {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+}
+
+.ngoma .stat__note--up { color: var(--success); }
+.ngoma .stat__note--down { color: var(--danger); }
+
+.ngoma .stat--accent {
+  background:
+    radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+    var(--canvas);
+}
+
+.ngoma .stat--accent .stat__value {
+  color: var(--accent-2);
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+
+.ngoma .dtable-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--canvas) 60%, transparent);
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.ngoma .dtable-wrap:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.ngoma .dtable {
+  width: 100%;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+
+.ngoma .dtable caption {
+  padding: 0.95rem 1rem 0.35rem;
+  text-align: left;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.ngoma .dtable th,
+.ngoma .dtable td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+
+.ngoma .dtable td {
+  color: var(--ink-soft);
+}
+
+.ngoma .dtable thead th {
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+  white-space: nowrap;
+}
+
+.ngoma .dtable tbody th {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ngoma .dtable tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.ngoma .dtable tbody tr:hover > * {
+  background: var(--glass);
+}
+
+.ngoma .dtable .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ngoma .dtable .nowrap {
+  white-space: nowrap;
+}
+
+.ngoma .dtable tfoot th,
+.ngoma .dtable tfoot td {
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 0;
+  font-weight: 500;
+  color: var(--accent-2);
+}
+
+.ngoma .cell-sub {
+  display: block;
+  font-size: var(--step--2);
+  font-weight: 400;
+  color: var(--ink-quiet);
+}
+
+.ngoma .matrix-yes {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.ngoma .matrix-no {
+  color: var(--ink-quiet);
+}
+
+/* ── Charts ─────────────────────────────────────────────────────────── */
+
+.ngoma .chart {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ngoma .chart__plot {
+  position: relative;
+  height: var(--chart-h, 200px);
+  border-bottom: 1px solid var(--line-strong);
+  background-image: linear-gradient(to top, var(--line) 1px, transparent 1px);
+  background-size: 100% 25%;
+}
+
+.ngoma .chart__plot svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ngoma .chart__axis {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--ink-quiet);
+  text-align: center;
+}
+
+.ngoma .chart__axis span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ngoma .chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+}
+
+.ngoma .chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ngoma .chart__legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Horizontal bar list (top pages, funnels) */
+
+.ngoma .hbars {
+  display: grid;
+  gap: 0.95rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ngoma .hbar {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ngoma .hbar__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.ngoma .hbar__label span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.ngoma .hbar__track {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--glass-strong);
+  overflow: hidden;
+}
+
+.ngoma .hbar__fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Progress */
+
+.ngoma .progress {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ngoma .progress__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.ngoma .progress__label span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-quiet);
+}
+
+.ngoma .progress__track {
+  height: 5px;
+  border-radius: 5px;
+  background: var(--glass-strong);
+  overflow: hidden;
+}
+
+.ngoma .progress__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 5px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* ── Board ──────────────────────────────────────────────────────────── */
+
+.ngoma .board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 0.85rem;
+}
+
+.ngoma .board__col {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--canvas) 70%, transparent);
+  min-width: 0;
+}
+
+.ngoma .board__col h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.ngoma .board__card {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  font-size: var(--step--1);
+}
+
+.ngoma .board__card strong {
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.ngoma .board__card span {
+  color: var(--ink-quiet);
+  font-size: var(--step--2);
+}
+
+/* ── Timeline ───────────────────────────────────────────────────────── */
+
+.ngoma .timeline {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ngoma .timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  padding: 0 0 1.2rem;
+}
+
+.ngoma .timeline li::before {
+  content: "";
+  position: absolute;
+  left: calc(5.25rem + 1rem + 4px);
+  top: 0.55rem;
+  bottom: -0.2rem;
+  width: 1px;
+  background: var(--line-strong);
+}
+
+.ngoma .timeline li:last-child::before {
+  display: none;
+}
+
+.ngoma .timeline__date {
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+  padding-top: 0.2rem;
+}
+
+.ngoma .timeline__body {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.5rem;
+  font-size: var(--step--1);
+}
+
+.ngoma .timeline__body::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--canvas);
+  border: 1.5px solid var(--accent-2);
+}
+
+.ngoma .timeline__body[data-done="true"]::before {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.ngoma .timeline__title {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ngoma .timeline__detail {
+  color: var(--ink-quiet);
+}
+
+/* ── Lists and misc ─────────────────────────────────────────────────── */
+
+.ngoma .kv-list {
+  display: grid;
+  margin: 0;
+}
+
+.ngoma .kv-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--step--1);
+}
+
+.ngoma .kv-list > div:last-child {
+  border-bottom: 0;
+}
+
+.ngoma .kv-list dt {
+  color: var(--ink-quiet);
+}
+
+.ngoma .kv-list dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.ngoma .item-list {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ngoma .item-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--step--1);
+}
+
+.ngoma .item-list li:last-child {
+  border-bottom: 0;
+}
+
+.ngoma .item-list__main {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ngoma .item-list__main strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ngoma .item-list__main span {
+  color: var(--ink-quiet);
+  font-size: var(--step--2);
+}
+
+.ngoma .callout {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.95rem 1.05rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 22%, transparent);
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.55;
+}
+
+.ngoma .callout svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--accent-2);
+}
+
+.ngoma .callout strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.ngoma .callout--warn {
+  border-color: color-mix(in srgb, var(--sample) 30%, transparent);
+  background: var(--sample-soft);
+}
+
+.ngoma .callout--warn svg {
+  color: var(--sample);
+}
+
+.ngoma .figure-big {
+  font-size: clamp(2.6rem, 1.8rem + 3vw, 4.4rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--accent-2);
+}
+
+.ngoma .thread {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.ngoma .message {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  max-width: 62ch;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.ngoma .message--own {
+  margin-left: auto;
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-2) 22%, transparent);
+}
+
+.ngoma .message__meta {
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+/* Availability calendar */
+
+.ngoma .calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.ngoma .calendar__dow {
+  padding-bottom: 0.3rem;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink-quiet);
+}
+
+.ngoma .calendar__day {
+  display: grid;
+  align-content: space-between;
+  min-height: 54px;
+  padding: 0.35rem 0.45rem;
+  border-radius: 10px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.ngoma .calendar__day[data-state="booked"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ngoma .calendar__day[data-state="hold"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
+  color: var(--accent-2);
+}
+
+.ngoma .calendar__day[data-state="off"] {
+  background: repeating-linear-gradient(135deg, var(--glass-strong) 0 4px, transparent 4px 8px);
+  color: var(--ink-quiet);
+}
+
+.ngoma .calendar__day[data-state="pad"] {
+  visibility: hidden;
+}
+
+.ngoma .calendar__state {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ngoma .legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  font-size: var(--step--2);
+  color: var(--ink-quiet);
+}
+
+.ngoma .legend-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ngoma .legend-row i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+}
+
+/* ── Hub ────────────────────────────────────────────────────────────── */
+
+.ngoma .demo-hub {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 100vh;
+  padding-block: clamp(3rem, 8vw, 7rem);
+  background:
+    radial-gradient(38% 46% at 80% 18%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%),
+    radial-gradient(30% 40% at 6% 92%, color-mix(in srgb, var(--info) 7%, transparent), transparent 70%),
+    var(--paper);
+}
+
+.ngoma .demo-hub__rings {
+  position: absolute;
+  right: clamp(-260px, -12vw, -80px);
+  top: clamp(40px, 8vw, 120px);
+  z-index: -1;
+  width: min(62vw, 620px);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.ngoma .demo-hub__rings span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+
+.ngoma .demo-hub__rings span:nth-child(2) {
+  inset: 9%;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--gold-2) 28%, transparent);
+}
+
+.ngoma .demo-hub__rings span:nth-child(3) {
+  inset: 22%;
+  border-color: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.ngoma .demo-hub__head {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 820px;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+.ngoma .demo-hub h1 {
+  font-size: var(--step-5);
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  line-height: 1.03;
+}
+
+.ngoma .demo-hub h1 em {
+  font-style: normal;
+  color: var(--gold-2);
+}
+
+.ngoma .demo-hub__lede {
+  font-size: var(--step-1);
+  color: var(--ink-quiet);
+  max-width: 60ch;
+}
+
+.ngoma .demo-hub__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.ngoma .demo-tile {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: 1.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.ngoma .demo-tile:hover {
+  border-color: color-mix(in srgb, var(--gold-2) 40%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--gold) 12%, transparent) inset;
+}
+
+.ngoma .demo-tile__no {
+  font-size: var(--step--2);
+  letter-spacing: 0.3em;
+  color: var(--gold);
+}
+
+.ngoma .demo-tile h2 {
+  font-size: var(--step-3);
+  font-weight: 300;
+}
+
+.ngoma .demo-tile h2 a {
+  text-decoration: none;
+}
+
+.ngoma .demo-tile h2 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.ngoma .demo-tile p {
+  color: var(--ink-quiet);
+  font-size: var(--step--1);
+}
+
+.ngoma .demo-tile .demo-tile__who {
+  padding-left: 0.75rem;
+  border-left: 1px solid color-mix(in srgb, var(--gold-2) 40%, transparent);
+  color: var(--ink-soft);
+}
+
+.ngoma .demo-tile ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ngoma .demo-tile li {
+  padding: 0.25em 0.7em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+}
+
+.ngoma .demo-tile__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--step--1);
+  color: var(--gold-2);
+}
+
+.ngoma .demo-tile__go svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ngoma .demo-hub__notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.ngoma .demo-hub__notes h2 {
+  font-size: var(--step-2);
+  font-weight: 300;
+}
+
+.ngoma .demo-hub__notes p,
+.ngoma .demo-hub__notes li {
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+}
+
+.ngoma .demo-hub__notes ul {
+  display: grid;
+  gap: 0.45rem;
+  padding-left: 1.1rem;
+  margin: 0;
+}

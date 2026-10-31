@@ -1,0 +1,564 @@
+/* Shared primitives used by both the public site and the demonstrations,
+   in the All the Glory /websites language: glowing pills, wide-tracked
+   micro labels, translucent bordered cards and thin line-art. */
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+
+.ngoma .container {
+  width: 100%;
+  max-width: calc(var(--max) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.ngoma .container--narrow {
+  max-width: calc(880px + var(--gutter) * 2);
+}
+
+.ngoma .stack > * + * {
+  margin-top: var(--stack-gap, 1rem);
+}
+
+.ngoma .cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cluster-gap, 0.8rem);
+  align-items: center;
+}
+
+/* ── Type helpers ───────────────────────────────────────────────────── */
+
+.ngoma .eyebrow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  color: var(--ink-quiet);
+}
+
+.ngoma .eyebrow__index {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.ngoma .lede {
+  font-size: var(--step-1);
+  line-height: 1.65;
+  color: var(--ink-quiet);
+  max-width: 56ch;
+}
+
+.ngoma .muted {
+  color: var(--ink-quiet);
+}
+
+.ngoma .gold {
+  color: var(--accent-2);
+}
+
+.ngoma .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Pills (buttons) ────────────────────────────────────────────────── */
+
+.ngoma .btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0.85rem 1.6rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgb(238 242 243 / 0.12);
+  background: rgb(238 242 243 / 0.08);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 0 34px 2px rgb(238 242 243 / 0.07);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur), background var(--dur), border-color var(--dur), color var(--dur);
+}
+
+.ngoma .btn:hover {
+  transform: translateY(-2px);
+  background: rgb(238 242 243 / 0.13);
+  box-shadow: 0 0 44px 6px rgb(238 242 243 / 0.12);
+}
+
+.ngoma .btn:active {
+  transform: translateY(0);
+}
+
+.ngoma .btn[disabled],
+.ngoma .btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+
+.ngoma .btn--accent,
+.ngoma .btn--light {
+  background: rgb(216 178 90 / 0.16);
+  border-color: rgb(241 215 166 / 0.32);
+  color: var(--gold-2);
+  box-shadow: 0 0 44px 4px rgb(216 178 90 / 0.24);
+}
+
+.ngoma .btn--accent:hover,
+.ngoma .btn--light:hover {
+  background: rgb(216 178 90 / 0.26);
+  box-shadow: 0 0 60px 10px rgb(216 178 90 / 0.32);
+}
+
+.ngoma .btn--solid {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 0 40px 4px rgb(238 242 243 / 0.18);
+}
+
+.ngoma .btn--solid:hover {
+  background: #fff;
+}
+
+.ngoma .btn--ghost,
+.ngoma .btn--ghost-light {
+  background: transparent;
+  box-shadow: none;
+}
+
+.ngoma .btn--sm {
+  min-height: 44px;
+  padding: 0.6rem 1.15rem;
+  font-size: 0.84rem;
+}
+
+.ngoma .btn__icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+}
+
+.ngoma .link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 44px;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-soft);
+  transition: color var(--dur);
+}
+
+.ngoma .link-arrow:hover {
+  color: var(--gold-2);
+}
+
+.ngoma .link-arrow svg {
+  transition: transform var(--dur) var(--ease);
+}
+
+.ngoma .link-arrow:hover svg {
+  transform: translateX(4px);
+}
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+
+.ngoma .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.38em 0.85em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  background: rgb(12 20 26 / 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.ngoma .badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.ngoma .badge--plain::before {
+  display: none;
+}
+
+.ngoma .badge--sample {
+  color: var(--sample);
+  border-color: rgb(232 169 130 / 0.38);
+}
+
+.ngoma .badge--proposed {
+  color: var(--gold-2);
+  border-color: rgb(241 215 166 / 0.38);
+}
+
+.ngoma .badge--demo {
+  color: var(--info);
+  border-color: rgb(156 195 224 / 0.38);
+}
+
+/* ── Notices ────────────────────────────────────────────────────────── */
+
+.ngoma .notice {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--ink-quiet);
+}
+
+.ngoma .notice strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ngoma .notice__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--sample);
+}
+
+.ngoma .notice--proposed .notice__icon {
+  color: var(--gold-2);
+}
+
+.ngoma .notice--demo .notice__icon {
+  color: var(--info);
+}
+
+/* ── Line-art figures ───────────────────────────────────────────────── */
+
+.ngoma .artwork {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(60% 60% at 50% 45%, rgb(216 178 90 / 0.1), transparent 70%), var(--paper-raised);
+  border: 1px solid var(--line);
+  isolation: isolate;
+}
+
+.ngoma .artwork svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ngoma .artwork__monogram {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  font-weight: 200;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.ngoma .artwork--wide {
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+  border: 0;
+}
+
+.ngoma .artwork--bare {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+/* ── Forms ──────────────────────────────────────────────────────────── */
+
+.ngoma .field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ngoma .field__label {
+  font-size: var(--step--1);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ngoma .field__optional {
+  font-weight: 400;
+  color: var(--ink-quiet);
+}
+
+.ngoma .field__hint {
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+  line-height: 1.5;
+}
+
+.ngoma .field__error {
+  display: flex;
+  gap: 0.45em;
+  align-items: flex-start;
+  font-size: var(--step--1);
+  color: var(--danger);
+  line-height: 1.45;
+}
+
+.ngoma .input,
+.ngoma .select,
+.ngoma .textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 0.95rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(238 242 243 / 0.03);
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.4;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+}
+
+.ngoma .input::placeholder,
+.ngoma .textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.ngoma .textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.ngoma .select {
+  appearance: none;
+  padding-right: 2.8rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2394a1a8' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.1rem center;
+}
+
+.ngoma .select option {
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.ngoma .input:hover,
+.ngoma .select:hover,
+.ngoma .textarea:hover {
+  border-color: var(--line-strong);
+}
+
+.ngoma .input:focus-visible,
+.ngoma .select:focus-visible,
+.ngoma .textarea:focus-visible {
+  outline: none;
+  border-color: rgb(241 215 166 / 0.55);
+  background: rgb(238 242 243 / 0.05);
+  box-shadow: 0 0 0 4px rgb(216 178 90 / 0.12);
+}
+
+.ngoma [aria-invalid="true"].input,
+.ngoma [aria-invalid="true"].select,
+.ngoma [aria-invalid="true"].textarea {
+  border-color: var(--danger);
+}
+
+.ngoma .check {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 0.8rem;
+  align-items: start;
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.ngoma .check input {
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.ngoma .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.ngoma .chip {
+  position: relative;
+  display: inline-flex;
+}
+
+.ngoma .chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.ngoma .chip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 44px;
+  padding: 0.55em 1.1em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: rgb(238 242 243 / 0.03);
+  font-size: var(--step--1);
+  line-height: 1.2;
+  color: var(--ink-soft);
+  transition: background 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+.ngoma .chip input:checked + span {
+  background: rgb(216 178 90 / 0.16);
+  border-color: rgb(241 215 166 / 0.4);
+  color: var(--gold-2);
+  box-shadow: 0 0 26px rgb(216 178 90 / 0.18);
+}
+
+.ngoma .chip input:checked + span::before {
+  content: "";
+  width: 0.45em;
+  height: 0.8em;
+  margin-top: -0.2em;
+  border: solid currentColor;
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg);
+}
+
+.ngoma .chip input:focus-visible + span {
+  outline: 2px solid var(--gold-2);
+  outline-offset: 3px;
+}
+
+.ngoma .chip input:hover:not(:checked) + span {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ── Status pills (dashboards and forms) ───────────────────────────── */
+
+.ngoma .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.25em 0.75em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  font-size: var(--step--2);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  background: rgb(238 242 243 / 0.04);
+  color: var(--ink-soft);
+}
+
+.ngoma .pill--good { color: var(--success); background: var(--success-soft); border-color: rgb(143 211 168 / 0.28); }
+.ngoma .pill--warn { color: var(--warning); background: var(--warning-soft); border-color: rgb(241 215 166 / 0.28); }
+.ngoma .pill--bad { color: var(--danger); background: var(--danger-soft); border-color: rgb(240 162 142 / 0.28); }
+.ngoma .pill--info { color: var(--info); background: var(--info-soft); border-color: rgb(156 195 224 / 0.28); }
+.ngoma .pill--accent { color: var(--accent-2); background: var(--accent-soft); border-color: rgb(241 215 166 / 0.28); }
+
+/* ── Scroll reveal (progressive: content is visible without JS) ─────── */
+
+.js .ngoma .reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+  transition-delay: calc(var(--d, 0) * 90ms);
+}
+
+.js .ngoma .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .ngoma .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── All the Glory compatibility ──────────────────────────────────────
+   The host site styles .btn and .chip globally and Tailwind's preflight
+   removes list markers and link underlines. Neutralise what leaks in. */
+
+.ngoma .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.ngoma .chip,
+.ngoma .chip:hover {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  transition: none;
+}
+
+.ngoma .prose ul {
+  list-style: disc;
+}
+
+.ngoma .prose ol {
+  list-style: decimal;
+}
+
+.ngoma .prose a,
+.ngoma .notice a,
+.ngoma .check a,
+.ngoma .form-status a,
+.ngoma .aside-card a,
+.ngoma nav[aria-label="Breadcrumb"] a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

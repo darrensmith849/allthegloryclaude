@@ -1,0 +1,91 @@
+/* Design tokens — the All the Glory /websites language: deep blue-black,
+   plain light Inter type, a warm gold accent, glowing pills and thin
+   line-art circles. Token names describe roles (paper = page surface,
+   ink = text), so a future brand pass changes values here only.
+   Tenant workspaces override --accent, --accent-2, --accent-ink,
+   --accent-soft and --canvas (src/config/theme.ts). */
+
+.ngoma {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --paper: #0c141a;
+  --paper-raised: #111b22;
+  --paper-sunk: #091015;
+  --glass: rgb(238 242 243 / 0.035);
+  --glass-strong: rgb(238 242 243 / 0.07);
+
+  /* Text */
+  --ink: #eef2f3;
+  --ink-soft: #c4ccd0;
+  --ink-quiet: #94a1a8;
+  --ink-faint: #5f6d74; /* decorative only — fails text contrast */
+
+  /* Rules */
+  --line: rgb(238 242 243 / 0.13);
+  --line-strong: rgb(238 242 243 / 0.24);
+
+  /* Accent: gold */
+  --gold: #d8b25a;
+  --gold-2: #f1d7a6;
+  --sand: #d9cfbb;
+  --accent: var(--gold);
+  --accent-2: var(--gold-2);
+  --accent-ink: #0c141a;
+  --accent-soft: rgb(216 178 90 / 0.14);
+  --accent-glow: rgb(216 178 90 / 0.24);
+  --canvas: var(--paper);
+
+  /* Deeper bands */
+  --night: #070c10;
+  --night-raised: #0e171d;
+  --night-ink: #eef2f3;
+  --night-soft: #c4ccd0;
+  --night-quiet: #94a1a8;
+  --night-line: rgb(238 242 243 / 0.13);
+
+  /* States (tuned for the dark surface) */
+  --success: #8fd3a8;
+  --success-soft: rgb(143 211 168 / 0.12);
+  --info: #9cc3e0;
+  --info-soft: rgb(156 195 224 / 0.12);
+  --warning: #f1d7a6;
+  --warning-soft: rgb(241 215 166 / 0.12);
+  --danger: #f0a28e;
+  --danger-soft: rgb(240 162 142 / 0.12);
+  --sample: #e8a982;
+  --sample-soft: rgb(232 169 130 / 0.12);
+
+  /* Typography */
+  /* --font-sans is All the Glory's self-hosted Inter, inherited from the root layout. */
+  --font-display: var(--font-sans);
+
+  --step--2: 0.72rem;
+  --step--1: clamp(0.84rem, 0.82rem + 0.08vw, 0.9rem);
+  --step-0: clamp(0.98rem, 0.95rem + 0.12vw, 1.04rem);
+  --step-1: clamp(1.08rem, 1.02rem + 0.28vw, 1.22rem);
+  --step-2: clamp(1.25rem, 1.12rem + 0.55vw, 1.6rem);
+  --step-3: clamp(1.6rem, 1.3rem + 1.3vw, 2.4rem);
+  --step-4: clamp(2.2rem, 1.5rem + 2.6vw, 4rem);
+  --step-5: clamp(2.6rem, 1.6rem + 4vw, 5.4rem);
+  --step-6: clamp(3rem, 1.4rem + 6.4vw, 7.2rem);
+
+  /* Space and layout */
+  --gutter: clamp(1.25rem, 5vw, 5rem);
+  --space-section: clamp(5rem, 12vw, 10rem);
+  --space-block: clamp(2.5rem, 5vw, 4rem);
+  --measure: 64ch;
+  --max: 1320px;
+  --header-h: 76px;
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 50px 100px -40px rgb(0 0 0 / 0.9);
+  --shadow-float: 0 60px 120px -30px rgb(0 0 0 / 0.85);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 350ms;
+}

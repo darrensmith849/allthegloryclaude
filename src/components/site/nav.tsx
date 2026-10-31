@@ -25,7 +25,7 @@ export default function Nav() {
   // press-kit landing meant to read as a standalone share link, not a
   // gateway into the rest of the site. Neither shows the public nav.
   if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study")) return null;
-  if (pathname?.startsWith("/press") || pathname?.startsWith("/daniel-jenkins") || pathname?.startsWith("/websites")) return null;
+  if (pathname?.startsWith("/press") || pathname?.startsWith("/daniel-jenkins") || pathname?.startsWith("/websites") || pathname?.startsWith("/agency")) return null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-colour-bg/75 backdrop-blur-xl border-b border-white/5">

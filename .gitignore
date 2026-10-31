@@ -40,3 +40,9 @@ cloudflare-env.d.ts
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# /agency platform: local development store, test output and screenshots
+.data/
+test-results/
+playwright-report/
+screenshots/
