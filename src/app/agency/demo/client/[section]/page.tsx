@@ -5,7 +5,6 @@ import { clientSections, findSection } from "@/platform/components/dashboard/nav
 import { clientViews } from "@/platform/components/dashboard/views/client";
 import { clientName, projectName } from "@/platform/demo-data/dashboards/client";
 
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return clientSections.map((s) => ({ section: s.slug }));

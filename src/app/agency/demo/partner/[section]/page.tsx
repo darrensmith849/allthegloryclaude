@@ -6,7 +6,6 @@ import { Callout } from "@/platform/components/dashboard/primitives";
 import { partnerViews } from "@/platform/components/dashboard/views/partner";
 import { partnerName } from "@/platform/demo-data/dashboards/partner";
 
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return partnerSections.map((s) => ({ section: s.slug }));

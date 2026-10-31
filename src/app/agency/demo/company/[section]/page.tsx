@@ -4,7 +4,6 @@ import { DashboardShell } from "@/platform/components/dashboard/Shell";
 import { companySections, findSection } from "@/platform/components/dashboard/nav";
 import { companyViews } from "@/platform/components/dashboard/views/company";
 
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return companySections.map((s) => ({ section: s.slug }));

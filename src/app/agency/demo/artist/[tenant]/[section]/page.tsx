@@ -8,7 +8,6 @@ import { themeToStyle } from "@/platform/config/theme";
 import { artistTenantSlugs, artistWorkspace, isArtistTenant, tenantThemes } from "@/platform/demo-data/dashboards/artist";
 import { findSampleProfile } from "@/platform/demo-data/roster";
 
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return artistTenantSlugs.flatMap((tenant) => artistSections.map((s) => ({ tenant, section: s.slug })));
