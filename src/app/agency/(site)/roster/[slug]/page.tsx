@@ -9,6 +9,7 @@ import { Orbit } from "@/platform/components/site/scenes";
 import { Icon } from "@/platform/components/ui/Icon";
 import { Badge, ButtonLink, Eyebrow, Notice } from "@/platform/components/ui/primitives";
 
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return sampleRoster.map((p) => ({ slug: p.slug }));

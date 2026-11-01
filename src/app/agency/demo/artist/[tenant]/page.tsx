@@ -2,6 +2,7 @@ import { withRoute } from "@/platform/config/client-env";
 import { notFound, redirect } from "next/navigation";
 import { artistTenantSlugs, isArtistTenant } from "@/platform/demo-data/dashboards/artist";
 
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return artistTenantSlugs.map((tenant) => ({ tenant }));
