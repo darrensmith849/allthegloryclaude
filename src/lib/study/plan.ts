@@ -53,7 +53,7 @@ export const WHY_NIV =
 // Kept true: no page shows a member's journal to anyone else, and Daniel's
 // backup download leaves members' journals out (src/lib/study/backup-core.ts).
 export const PRIVATE_NOTE =
-  "Your journal is private. Only you can see your notes, words and prayers - not Daniel, not the team, not other members. All we keep about you is your name and email address, and your password is scrambled so no one can read it.";
+  "Your journal is private. Daniel and the team have no page, button or download that shows your notes, words or prayers, and other members can't see them unless you choose to share a note with your group. All we keep about you besides that is your name and email address, and your password is scrambled so no one can read it.";
 
 export const CALLS_NOTE =
   "Daniel and Reggie meet on a call once or twice a week and go through as much of the reading as they can - so the videos come weekly, not daily.";

@@ -31,4 +31,18 @@ export async function eraseMemberBin(db: D1Like): Promise<void> {
       db.prepare(`DELETE FROM member_prayers WHERE ${gone("member_prayers")}`),
     ])
     .catch((e) => console.error("erase member bin:", e));
+  // Shared notes: removed notes and closed groups go after 30 days, and a
+  // group nobody is left in closes (everyone may have deleted their account).
+  const closed = `SELECT id FROM shared_groups WHERE deleted_at IS NOT NULL AND deleted_at < ${cutoff}`;
+  await db
+    .batch([
+      db.prepare(
+        `UPDATE shared_groups SET deleted_at = ${Date.now()} WHERE deleted_at IS NULL AND NOT EXISTS ` +
+          `(SELECT 1 FROM shared_group_members p WHERE p.group_id = shared_groups.id AND p.left_at IS NULL AND p.removed_at IS NULL)`,
+      ),
+      db.prepare(`DELETE FROM shared_group_notes WHERE (deleted_at IS NOT NULL AND deleted_at < ${cutoff}) OR group_id IN (${closed})`),
+      db.prepare(`DELETE FROM shared_group_members WHERE group_id IN (${closed})`),
+      db.prepare(`DELETE FROM shared_groups WHERE deleted_at IS NOT NULL AND deleted_at < ${cutoff}`),
+    ])
+    .catch((e) => console.error("erase shared notes:", e));
 }

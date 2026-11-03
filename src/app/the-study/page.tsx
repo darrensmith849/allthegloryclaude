@@ -59,6 +59,7 @@ export default function TheStudyPage() {
   const [resetToken, setResetToken] = useState("");
   const [sent, setSent] = useState(false);
   const [invite, setInvite] = useState("");
+  const [groupInvite, setGroupInvite] = useState(false); // arrived from a Shared notes link
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLElement>(null);
@@ -71,7 +72,8 @@ export default function TheStudyPage() {
       setResetToken(q.get("reset") ?? "");
     }
     setInvite(q.get("invite") ?? "");
-    if (q.get("login") || q.get("invite") || q.get("reset") || window.location.hash === "#join") {
+    setGroupInvite(Boolean(q.get("group")));
+    if (q.get("login") || q.get("group") || q.get("invite") || q.get("reset") || window.location.hash === "#join") {
       window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
     }
     fetch("/api/study/me", { cache: "no-store" })
@@ -79,7 +81,7 @@ export default function TheStudyPage() {
       .then((d: Me | null) => {
         if (!d) return;
         // Already logged in and sent here to log in: go straight on.
-        if (d.member && q.get("login") && !q.get("reset")) {
+        if (d.member && (q.get("login") || q.get("group")) && !q.get("reset")) {
           window.location.replace(safeNext(q.get("next")));
           return;
         }
@@ -173,7 +175,10 @@ export default function TheStudyPage() {
       }
       // Daniel's team invite: straight to the team dashboard.
       if (data.team) window.location.assign("/dashboard/community");
-      else window.location.assign(tab === "join" ? "/study/journal" : safeNext(new URLSearchParams(window.location.search).get("next")));
+      else {
+        const next = new URLSearchParams(window.location.search).get("next");
+        window.location.assign(tab === "join" && !next ? "/study/journal" : safeNext(next));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong - try again.");
       setBusy(false);
@@ -331,6 +336,12 @@ export default function TheStudyPage() {
         <section className="w-full py-10 md:py-16 scroll-mt-28" id="join" ref={formRef}>
           <div className="max-w-md mx-auto px-6">
             <div className="panel-scrim p-6 md:p-8">
+              {groupInvite && (
+                <p className="mb-5 text-sm text-white/80 leading-relaxed">
+                  🔒 <strong className="text-white">You&apos;ve been invited to a private group.</strong> Join free, or log in if you
+                  already have an account, and your group opens straight away.
+                </p>
+              )}
               {tab === "forgot" || tab === "reset" ? (
                 <div className="mb-6">
                   <div className="eyebrow eyebrow-amber mb-2">{tab === "forgot" ? "Forgotten your password?" : "New password"}</div>

@@ -33,6 +33,7 @@ const PERSONAL_NAV: NavItem[] = [
   { href: "/dashboard/notes", label: "Study Notes", glyph: "✎" },
   { href: "/dashboard/word-study", label: "Word Journal", glyph: "α" },
   { href: "/dashboard/names", label: "Names of God", glyph: "א" },
+  { href: "/dashboard/shared", label: "Shared notes", glyph: "❖" },
   { href: "/dashboard/money", label: "Money", glyph: "$" },
   { href: "/dashboard/todo", label: "To do", glyph: "☑\uFE0E" },
   { href: "/dashboard/notes?day=deleted", label: "Recycle bin", glyph: "🗑\uFE0E" },

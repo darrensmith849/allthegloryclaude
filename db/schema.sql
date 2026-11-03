@@ -612,3 +612,46 @@ CREATE TABLE IF NOT EXISTS book_note_versions (
   heading  TEXT,
   saved_at INTEGER NOT NULL
 );
+
+-- Shared notes (/study/shared): small private groups of friends who share
+-- notes and compare them. Everything people write here is locked in their
+-- browser before it's sent (src/lib/study/shared-groups.ts) with a key that
+-- lives in the group's link, after the "#" - the part of a link browsers never
+-- send to a server. So every sealed_* column holds scrambled text the site
+-- can't read. All the server knows is that a group exists, who's in it, how
+-- many notes it has and when they were written.
+CREATE TABLE IF NOT EXISTS shared_groups (
+  id          TEXT PRIMARY KEY,
+  sealed_name TEXT NOT NULL,
+  sealed_link TEXT NOT NULL,          -- the join code, so members can show the link again
+  link_hash   TEXT NOT NULL,          -- SHA-256 of the join code
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER                 -- closed; erased after 30 days
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_shared_groups_link ON shared_groups(link_hash);
+
+-- The group's leader is whoever has been in it longest (so a group never
+-- loses its leader when someone leaves or deletes their account).
+CREATE TABLE IF NOT EXISTS shared_group_members (
+  group_id    TEXT NOT NULL,
+  member_id   TEXT NOT NULL,
+  sealed_name TEXT NOT NULL,          -- what they're called in this group
+  joined_at   INTEGER NOT NULL,
+  left_at     INTEGER,
+  removed_at  INTEGER,                -- taken out by the leader: can't come back
+  PRIMARY KEY (group_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_shared_group_members_member ON shared_group_members(member_id);
+
+CREATE TABLE IF NOT EXISTS shared_group_notes (
+  id         TEXT PRIMARY KEY,
+  group_id   TEXT NOT NULL,
+  member_id  TEXT NOT NULL,
+  sealed     TEXT NOT NULL,           -- the note, its day and its passage
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER                  -- erased after 30 days
+);
+CREATE INDEX IF NOT EXISTS idx_shared_group_notes_group ON shared_group_notes(group_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_shared_group_notes_member ON shared_group_notes(member_id);

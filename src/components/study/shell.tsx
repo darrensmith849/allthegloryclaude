@@ -119,6 +119,7 @@ export function StudyShell({ children }: { children: React.ReactNode }) {
         { href: "/study/words", label: "All words", glyph: "α" },
         { href: "/study/names", label: "Names of God", glyph: "א" },
         { href: "/study/prayers", label: "Prayer list", glyph: "♡" },
+        { href: "/study/shared", label: "Shared notes", glyph: "❖" },
         { href: "/study/community", label: "Community", glyph: "❧" },
         { href: "/study/account", label: "Account", glyph: "⚙" },
         { href: "/study#invite", label: "Invite a friend", glyph: "✉" },
@@ -213,6 +214,7 @@ const PAGE: Record<string, { name: string; parent: string }> = {
   "/study/community": { name: "Community", parent: "/study" },
   "/study/words": { name: "All words", parent: "/study/journal" },
   "/study/names": { name: "Names of God", parent: "/study" },
+  "/study/shared": { name: "Shared notes", parent: "/study" },
 };
 
 function BackBar() {

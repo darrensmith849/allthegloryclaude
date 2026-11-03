@@ -297,7 +297,9 @@ export default function StudyHome() {
             .
           </p>
           <WhyNiv className="mt-1" />
-          <p className="study-how-private">🔒 {PRIVATE_NOTE}</p>
+          <p className="study-how-private">
+            🔒 {PRIVATE_NOTE} <Link href="/study/shared#privacy">Who can read what</Link>
+          </p>
         </section>
       )}
 

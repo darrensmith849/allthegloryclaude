@@ -12,6 +12,7 @@ import { GrowingTextarea } from "@/components/dashboard/growing-textarea";
 import { NoteText } from "@/components/dashboard/note-text";
 import { StudyPeek } from "@/components/study/study-peek";
 import { NoteStarter } from "@/components/study/note-starter";
+import { ShareNote } from "@/components/study/share-note";
 import { ReflectionBody, reflectionDay, type Reflection } from "@/components/study/reflection";
 import { BibleLookup, type PlanIndex } from "@/components/study/bible-lookup";
 import { QuickWord } from "@/components/dashboard/quick-word";
@@ -1952,6 +1953,7 @@ export function StudyNotes() {
                                   >
                                     {n.starredAt ? "★ Starred" : "☆ Star"}
                                   </button>
+                                  {client.memberId && <ShareNote note={n} memberId={client.memberId} />}
                                   {client.sharing && (
                                     <button
                                       type="button"

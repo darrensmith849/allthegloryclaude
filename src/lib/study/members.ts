@@ -293,6 +293,8 @@ export const MEMBER_TABLES = [
   "member_reminders",
   "member_names",
   "member_suggestions",
+  "shared_group_members",
+  "shared_group_notes",
 ] as const;
 
 // ── The owner's email list (table email_list) ────────────────────

@@ -12,7 +12,7 @@ import { getMember, type Member } from "@/lib/study/members";
 // dashboard, set up by Daniel in Settings and logged into with one password.
 // Her own Study Notes, Word Journal, Names of God, Money and To do - each
 // kept in her own rows, never the owner's - and nothing else of his.
-const PERSONAL_PAGES = ["/dashboard/notes", "/dashboard/word-study", "/dashboard/names", "/dashboard/money", "/dashboard/todo"];
+const PERSONAL_PAGES = ["/dashboard/notes", "/dashboard/word-study", "/dashboard/names", "/dashboard/shared", "/dashboard/money", "/dashboard/todo"];
 export const PERSONAL_HOME = "/dashboard/notes";
 
 export function personalAllowed(pathname: string): boolean {

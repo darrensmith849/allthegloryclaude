@@ -21,6 +21,7 @@ export type CacheName =
 
 export interface StudyClient {
   kind: "owner" | "member";
+  memberId?: string; // member: whose journal this is
   notesApi: string;
   daysApi: string;
   wordsApi: string;
@@ -78,6 +79,7 @@ export function memberClient(
   const author = opts.author && opts.author !== "All The Glory" ? opts.author : undefined;
   return {
     kind: "member",
+    memberId,
     notesApi: "/api/study/notes",
     daysApi: "/api/study/days",
     namesApi: "/api/study/day-names",

@@ -50,6 +50,9 @@ export const BACKUP_TABLES = [
   "study_names",
   "member_names",
   "member_suggestions",
+  "shared_groups",
+  "shared_group_members",
+  "shared_group_notes",
   "study_settings",
   "email_list",
   "community_posts",
@@ -72,6 +75,9 @@ export const MEMBER_PRIVATE_TABLES = [
   "member_prayers",
   "member_memory",
   "member_names",
+  "shared_groups",
+  "shared_group_members",
+  "shared_group_notes",
 ] as const;
 
 export const BACKUP_PREFIX = "study/";
