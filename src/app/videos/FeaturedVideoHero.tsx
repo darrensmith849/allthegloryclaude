@@ -57,7 +57,7 @@ export default function FeaturedVideoHero({ videoId }: Props) {
           className="group absolute inset-0 flex flex-col items-center justify-center"
         >
           <Image
-            src="/media/logo-dove.png"
+            src="/media/logo-dove-440.webp"
             alt=""
             width={160}
             height={160}

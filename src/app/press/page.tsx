@@ -23,7 +23,7 @@ const PRESS_AUTH_KEY = "atg:press:auth";
 //   per the artist's style rules.
 const PRESS = {
   soundCloudPreview: "https://on.soundcloud.com/hn5LMp6AsuDQgDDPm9",
-  websiteUrl: "https://www.alltheglory.co.za",
+  websiteUrl: "https://alltheglory.co.za",
   contactEmail: "daniel@alltheglory.co.za",
   releaseDate: "17 July 2026",
   focusTrack: "Luke 15:20",
@@ -236,7 +236,7 @@ export default function PressKitPage() {
                   rel="noopener noreferrer"
                   className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4"
                 >
-                  www.alltheglory.co.za
+                  alltheglory.co.za
                 </a>
               }
             />
@@ -480,7 +480,7 @@ export default function PressKitPage() {
                   className="text-[var(--colour-amber-soft)] hover:text-[var(--colour-amber)] transition-colors underline decoration-[var(--colour-amber)]/30 underline-offset-4"
                   onClick={() => fireLinkClick("Press website", PRESS.websiteUrl)}
                 >
-                  www.alltheglory.co.za
+                  alltheglory.co.za
                 </a>
               }
             />

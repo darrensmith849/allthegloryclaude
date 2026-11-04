@@ -839,15 +839,8 @@ export default function AlbumPage() {
             <div className="mt-10 text-[11px] uppercase tracking-[0.22em] text-white/55 leading-relaxed space-y-1.5">
               <p>
                 <span className="whitespace-nowrap">Engineered &amp; Produced by</span>{" "}
-                <a
-                  href="https://www.optimusik.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/80 hover:text-[var(--colour-amber)] transition-colors whitespace-nowrap"
-                  onClick={() => fireLinkClick("Simba Moyo", "https://www.optimusik.com/")}
-                >
-                  Simba Moyo ↗
-                </a>
+                {/* optimusik.com expired (Aug 2026) - his name stays, without the dead link. */}
+                <span className="text-white/80 whitespace-nowrap">Simba Moyo</span>
                 {" · "}
                 <a
                   href="https://soundbetter.com/profiles/9495-riffi-wacho"

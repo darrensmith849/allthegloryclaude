@@ -19,7 +19,8 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
-  axes: ["opsz", "SOFT"],
+  // opsz only: the SOFT axis was never used and nearly doubled the file.
+  axes: ["opsz"],
 });
 
 // Clean modern sans for body copy.
@@ -38,7 +39,9 @@ const structuredData = {
       "@id": `${site.url}#artist`,
       name: site.name,
       url: site.url,
-      sameAs: Object.values(site.socials),
+      sameAs: Object.values(site.socials).filter(Boolean),
+      genre: ["Christian", "Worship"],
+      description: site.description,
       image: `${site.url}/og-dove.jpg`,
     },
     {
@@ -62,7 +65,9 @@ const structuredData = {
       "@id": `${site.url}#website`,
       url: site.url,
       name: site.name,
+      alternateName: "AllTheGlory",
       description: site.description,
+      inLanguage: "en",
       publisher: { "@id": `${site.url}#artist` },
     },
   ],
@@ -70,11 +75,13 @@ const structuredData = {
 
 export const metadata: Metadata = {
   title: {
-    default: site.name,
+    default: `${site.name} - Worship music and a chronological Bible study`,
     template: `%s - ${site.name}`,
   },
   description: site.description,
   metadataBase: new URL(site.url),
+  // Google Search Console - proves the site is ours (a public code, not a secret).
+  verification: { google: "A02WyKWqJ-rELfX-bUWRiqhxXENqAvHvDsIGniA8IFQ" },
   icons: { icon: "/favicon.png", apple: "/favicon.png" },
   alternates: {
     canonical: "/",

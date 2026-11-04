@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 export default function StickyBackdrop() {
   const pathname = usePathname();
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const isDashboard = pathname?.startsWith("/dashboard") || pathname?.startsWith("/study") || pathname?.startsWith("/daniel-jenkins") || pathname?.startsWith("/websites");
   // Lightning video runs as part of the painted backdrop ONLY on the
   // home page, so it reads as part of the hero scene as the visitor
   // lands. Other pages keep the calmer clouds + stars only. The footer
@@ -39,7 +39,8 @@ export default function StickyBackdrop() {
   // made scrolling feel sluggish. Rendering it once keeps the scene
   // identical at rest while leaving scroll completely native and snappy.
 
-  if (isDashboard) return <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]" />;
+  // The dashboard and The Study have their own light / dark theme (dashboard.css).
+  if (isDashboard) return <div className="dash-app-backdrop fixed inset-0 -z-50" />;
 
   return (
     <div className="fixed inset-0 -z-50 bg-[var(--colour-bg)]">

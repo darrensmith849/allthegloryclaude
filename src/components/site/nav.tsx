@@ -24,8 +24,8 @@ export default function Nav() {
   // The private dashboard has its own chrome; /press is an unlisted
   // press-kit landing meant to read as a standalone share link, not a
   // gateway into the rest of the site. Neither shows the public nav.
-  if (pathname?.startsWith("/dashboard")) return null;
-  if (pathname?.startsWith("/press")) return null;
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study")) return null;
+  if (pathname?.startsWith("/press") || pathname?.startsWith("/daniel-jenkins") || pathname?.startsWith("/websites")) return null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-colour-bg/75 backdrop-blur-xl border-b border-white/5">
@@ -45,13 +45,13 @@ export default function Nav() {
           className="group flex items-center gap-3 font-display text-[17px] md:text-[18px] tracking-tight text-white/95 hover:text-[var(--colour-amber)] transition-colors"
           aria-label="All The Glory - home"
         >
-          {/* Dove + sunburst logo — same transparent PNG as the /contact
+          {/* Dove + sunburst logo — same transparent dove as the /contact
               hero (black field chroma-keyed out via
               scripts/dove-transparent.mjs), so the mark floats next to
               the wordmark instead of sitting inside a dark circle.
               Wider (44px) to give the dove room to read at small size. */}
           <Image
-            src="/media/logo-dove.png"
+            src="/media/logo-dove-440.webp"
             alt=""
             width={88}
             height={88}
@@ -63,7 +63,7 @@ export default function Nav() {
         </Link>
 
         {/* Desktop */}
-        <div className="hidden md:flex items-center gap-7 lg:gap-9">
+        <div className="hidden md:flex items-center gap-5 lg:gap-8 xl:gap-9">
           {site.nav.map((item) => {
             const active = isCurrent(pathname, item.href);
             return (
@@ -71,7 +71,7 @@ export default function Nav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative group text-[11px] font-medium uppercase tracking-[0.22em] transition-colors duration-200 ${
+                className={`relative group whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.22em] transition-colors duration-200 ${
                   active
                     ? "text-white"
                     : "text-white/55 hover:text-white/90"

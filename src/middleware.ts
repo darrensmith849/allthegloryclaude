@@ -1,20 +1,69 @@
-// Private-dashboard gate - currently disabled.
+// Private-dashboard gate: every /dashboard page and the dashboard's own
+// APIs need a valid admin session cookie (see src/lib/admin-auth.ts) - or,
+// for the owner's team and his family, their Study session, and only for
+// their part (src/lib/team.ts).
+// Pages without one go to /dashboard/login - which asks for a new password
+// the first time - and APIs answer 401.
 //
-// The route is still excluded from search engines via `robots: { index: false,
-// follow: false }` in src/app/dashboard/layout.tsx. Anyone who knows the URL
-// can open it, which is what the owner asked for.
-//
-// To turn protection back on, replace this file with a Basic-Auth or cookie
-// gate that checks env vars (DASHBOARD_PASSWORD etc.) and set the matcher
-// below to "/dashboard/:path*".
+// The public site and its APIs (track, contact, verse, donations) are not
+// matched and stay open. The Study's member APIs (/api/study/*) check their
+// own member session (src/lib/study/members.ts). The dashboard is also kept out of search engines
+// via `robots` in src/app/dashboard/layout.tsx.
 
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { isSignedIn } from "@/lib/admin-auth";
+import { getMember } from "@/lib/study/members";
+import { PERSONAL_HOME, personalAllowed, teamAllowed } from "@/lib/team";
 
-export function middleware() {
-  return NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+  if (pathname === "/dashboard/login") return NextResponse.next();
+  if (await isSignedIn(req.headers.get("cookie"))) return NextResponse.next();
+
+  // The owner's team (signed in with their Study account): only their part.
+  // Family (his sister): only her own dashboard.
+  const member = await getMember(req).catch(() => null);
+  if (member?.team || member?.personal) {
+    if (member.team ? teamAllowed(pathname) : personalAllowed(pathname)) return NextResponse.next();
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "That part of the dashboard is just for Daniel." }, { status: 403 });
+    }
+    const home = req.nextUrl.clone();
+    home.pathname = member.team ? "/dashboard/community" : PERSONAL_HOME;
+    home.search = "";
+    return NextResponse.redirect(home);
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Please log in to the dashboard." }, { status: 401 });
+  }
+  const login = req.nextUrl.clone();
+  login.pathname = "/dashboard/login";
+  login.search = "";
+  login.searchParams.set("next", `${pathname}${search}`);
+  return NextResponse.redirect(login);
 }
 
 export const config = {
-  // Empty matcher = middleware never runs.
-  matcher: [],
+  matcher: [
+    "/dashboard",
+    "/dashboard/:path*",
+    "/api/dashboard-state",
+    "/api/study-notes",
+    "/api/words",
+    "/api/study-days",
+    "/api/study-names",
+    "/api/study-bin",
+    "/api/owner-reminders",
+    "/api/owner-videos",
+    "/api/owner-notices",
+    "/api/word-fill",
+    "/api/sermons",
+    "/api/sermon-notes",
+    "/api/reading",
+    "/api/reading-notes",
+    "/api/analytics",
+    "/api/members",
+    "/api/members/:path*",
+  ],
 };
