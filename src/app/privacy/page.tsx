@@ -77,7 +77,11 @@ export default function PrivacyPage() {
                 trust; the group&rsquo;s leader can take someone out. If you
                 leave, your notes come out of the group. Removed notes and closed
                 groups are erased after 30 days, and are gone from the backups
-                within a year.
+                within a year. Each device you open the link on keeps the key
+                so the group opens by itself; logging out leaves it there, and
+                deleting your account on that device wipes it. Our pages only
+                run the site&rsquo;s own code and won&rsquo;t load scripts from
+                other websites, which helps keep that key on your device.
               </li>
               <li>
                 <strong className="text-white/85">When you share in The Study</strong>{" "}

@@ -21,6 +21,17 @@ export function PrivacyCard() {
         </p>
       </div>
       <div className="shared-privacy-row">
+        <h3>The key stays on your device</h3>
+        <p>
+          Once you open a group&apos;s link, this phone or computer remembers the key so the group opens by itself. Logging out
+          leaves it there; deleting your account on this device wipes it from this device. Don&apos;t open a group&apos;s link on a computer other people use.
+        </p>
+        <p>
+          Our pages only run the site&apos;s own code and won&apos;t load scripts from other websites, which helps keep that key on
+          your device.
+        </p>
+      </div>
+      <div className="shared-privacy-row">
         <h3>Your own journal - private</h3>
         <p>
           Nobody else sees it unless you share a note yourself. Daniel and the team have no page, button or download that shows it -
