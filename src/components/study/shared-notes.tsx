@@ -323,7 +323,7 @@ function StartGroup({ memberId, memberName, onStarted }: { memberId: string; mem
             className="dash-input"
             value={name}
             maxLength={80}
-            placeholder="e.g. Tuesday girls"
+            placeholder="e.g. Tuesday Bible group"
             onChange={(e) => setName(e.target.value)}
           />
         </div>
@@ -334,6 +334,7 @@ function StartGroup({ memberId, memberName, onStarted }: { memberId: string; mem
           <input id="shared-new-me" className="dash-input" value={myName} maxLength={60} onChange={(e) => setMyName(e.target.value)} />
         </div>
       </div>
+      <p className="dash-word-hint mt-3">You&apos;ll get your group&apos;s link straight away, with a button to copy it and send it to friends.</p>
       <button type="button" className="dash-btn dash-btn-primary mt-3" onClick={start} disabled={busy}>
         {busy ? "Starting…" : "Start the group"}
       </button>
@@ -347,7 +348,7 @@ function PasteLink({ onLink }: { onLink: (invite: Invite) => void }) {
   const [error, setError] = useState<string | null>(null);
   return (
     <>
-      <p className="dash-word-hint">Opened your link somewhere else, or on another device? Paste the whole link here.</p>
+      <p className="dash-word-hint">Did a friend send you a group link? Paste all of it here to join. (Your own group&apos;s link is on the group, with a Copy button.)</p>
       <div className="flex gap-2 flex-wrap mt-3">
         <input
           className="dash-input shared-paste"
@@ -363,6 +364,7 @@ function PasteLink({ onLink }: { onLink: (invite: Invite) => void }) {
           type="button"
           className="dash-btn dash-btn-ghost"
           onClick={() => {
+            if (!text.trim()) return setError("Paste the link your friend sent you first.");
             const link = parseInvite(text);
             if (!link) return setError("That isn't a whole group link - copy all of it and try again.");
             setText("");
