@@ -49,6 +49,14 @@ const GETS = [
   { title: "Daniel's notes", text: "Read what Daniel saw in each day's reading." },
   { title: "Videos from our calls", text: "Daniel and Reggie go through the readings once or twice a week." },
   { title: "Go deeper", text: "The Hebrew and Greek behind the words, and the names of God." },
+  {
+    title: "Shared notes with friends",
+    text: "Start a private group, send the link to a friend, and see each other's notes side by side for every reading day.",
+  },
+  {
+    title: "Private and locked",
+    text: "Group notes are locked on your own device - only people with your group's link can read them, not Daniel and not the team.",
+  },
 ];
 
 export default function TheStudyPage() {
@@ -284,7 +292,7 @@ export default function TheStudyPage() {
             {GETS.map((g, i) => (
               <motion.div key={g.title} {...fade(0.1 + i * 0.06)} className="panel-scrim px-6 py-5">
                 <h3 className="font-display text-xl text-white">{g.title.replace("Daniel", author)}</h3>
-                <p className="mt-1 text-sm text-white/65 leading-relaxed">{g.text.replace("Daniel saw", `${author} saw`)}</p>
+                <p className="mt-1 text-sm text-white/65 leading-relaxed">{g.text.replace("Daniel saw", `${author} saw`).replace("not Daniel", `not ${author}`)}</p>
               </motion.div>
             ))}
           </div>

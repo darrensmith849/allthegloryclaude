@@ -359,6 +359,27 @@ export default function StudyHome() {
       )}
       {weekly?.memoryVerse && <MemoryVerse verse={weekly.memoryVerse} reflectionId={weekly.id} author={weekly.author ?? author} />}
 
+      {me.member && (
+        <Link href="/study/shared" className="study-weekly study-shared-promo">
+          <span className="eyebrow eyebrow-amber">New · Shared notes</span>
+          <span className="study-weekly-title">Read with a friend and compare notes</span>
+          <span className="study-weekly-text">
+            Start a private group and send the link to a friend. They join free, and you can all see each other&apos;s notes for
+            every reading day.
+          </span>
+          <span className="study-weekly-text">
+            🔒 Locked on your own device - only people with your group&apos;s link can read them. Not {author ?? "Daniel"}, not the
+            team.
+          </span>
+          <span className="study-weekly-go">Start a group →</span>
+        </Link>
+      )}
+      {me.member && (
+        <p className="study-how-private">
+          <Link href="/privacy#shared-notes">How your notes are kept private</Link>
+        </p>
+      )}
+
       {me.member && <AppCard hideKey={`atg:study:${me.member.id}:appCardHidden`} />}
 
       {invite && (
