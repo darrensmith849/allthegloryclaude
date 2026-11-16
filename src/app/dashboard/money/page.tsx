@@ -3,7 +3,7 @@
 // Money - Daniel's own spending tracker (not for the team, never members).
 // Laid out like a private-banking app, most important first: his money (the
 // total, the account and the cash in hand - tap either to change it - and
-// Add income / Add expense, with one tap on what he usually buys), then the
+// Add income / Add expense), then the
 // month's activity (every entry editable), then where the money went - each
 // kind of spending, and how the month compares to last month. Around them:
 // the calendar, day by day (each day keeps its own entries, with the balance
@@ -14,7 +14,9 @@
 // "It's in". Saved with the rest of the dashboard.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DeleteButton, EntryEdit, editingFor, Figure, KindTab, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
+import { DeleteButton, EntryEdit, editingFor, Figure, FoldButton, KindTab, WalletToggle, type Editing } from "@/components/dashboard/money-panels";
+import { BudgetCard } from "@/components/dashboard/money-budget";
+import { ShoppingCard } from "@/components/dashboard/money-shopping";
 import { useDashboard } from "@/lib/dashboard/storage";
 import { useDashUser } from "@/lib/dashboard/who";
 import type { MoneyEntry, MoneyExpected } from "@/lib/dashboard/types";
@@ -22,7 +24,12 @@ import {
   allCategories,
   balance,
   blankMoney,
+  budgetMonth,
+  lineFor,
+  savedTotal,
+  startingBudget,
   CASH_OUT,
+  changeEntry,
   dayBalances,
   daySums,
   daysIn,
@@ -55,12 +62,12 @@ import {
   toCsv,
   uid,
   usualAmounts,
-  usualBuys,
 } from "@/lib/dashboard/money";
 
 const STARTING_BALANCE = 1912; // what Daniel had in the account when this began
 const MONEY_IN = ["Salary", "Transfer", "Gift", "Other"];
 const RECENT = 10; // entries in Recent activity before "Show all"
+const KINDS_SHOWN = 5; // kinds in Where it went before "Show all"
 
 const parseAmount = (v: string) => {
   const n = Number(String(v).replace(/[^0-9.]/g, ""));
@@ -86,6 +93,30 @@ const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 =
 type Form = { mode: "spend"; category: string; cash: boolean } | { mode: "add"; cash: boolean; expected?: boolean } | { mode: "move" } | null;
 type Sheet = "income" | "expense" | "expected";
 type Tool = "recurring" | "fuel" | "gym";
+
+// The cards folded away on this device (just their heading shows).
+function useFolds(): [(id: string) => boolean, (id: string) => void] {
+  const [folded, setFolded] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("atg:money:folded");
+      if (v) setFolded(v.split(",").filter(Boolean));
+    } catch {
+      // no storage - all open
+    }
+  }, []);
+  const toggle = (id: string) =>
+    setFolded((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem("atg:money:folded", next.join(","));
+      } catch {
+        // not remembered
+      }
+      return next;
+    });
+  return [(id) => folded.includes(id), toggle];
+}
 
 // A small remembered choice on this device (which calendar view, which tab).
 function useRemembered<T extends string>(key: string, initial: T, allowed: readonly T[]): [T, (v: T) => void] {
@@ -124,6 +155,18 @@ export default function MoneyPage() {
       update((d) => void (d.money = user?.role === "personal" ? blankMoney() : startingMoney(STARTING_BALANCE)));
   }, [ready, synced, state.money, update, user]);
 
+  // Daniel's budget (salary, fuel allowance and the lines from his spreadsheet),
+  // once - family sets up her own from the Budget card.
+  useEffect(() => {
+    if (!money || !synced || money.budget || user === undefined || user?.role === "personal") return;
+    update((d) => {
+      if (!d.money || d.money.budget) return;
+      const { budget, categories } = startingBudget(d.money);
+      d.money.budget = budget;
+      if (categories.length) d.money.categories = [...(d.money.categories ?? []), ...categories];
+    });
+  }, [money, synced, update, user]);
+
   // Regular debits that have come due come off by themselves (on the latest copy, once).
   useEffect(() => {
     if (!money || !synced) return;
@@ -151,13 +194,21 @@ export default function MoneyPage() {
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<number | null>(null);
   const [month, setMonth] = useState(monthOf(today));
-  const [only, setOnly] = useState<string | null>(null); // the month's list, one kind only
+  // The month's list, some kinds only (one from Where it went, a budget line's from the Budget).
+  const [onlyKinds, setOnlyKinds] = useState<string[] | null>(null);
+  const only = onlyKinds ? onlyKinds.join(", ") : null;
+  const setOnly = (c: string | null) => setOnlyKinds(c ? [c] : null);
   const [view, setView] = useState<"all" | "in" | "out">("all"); // the month: everything, money in, or spending
   const [showAll, setShowAll] = useState(false);
+  const [isFolded, toggleFold] = useFolds();
+  const fold = (id: string, label: string) => <FoldButton folded={isFolded(id)} onClick={() => toggleFold(id)} label={label} />;
+  const [allKinds, setAllKinds] = useState(false); // Where it went: every kind, not just the biggest
   // The day open in the calendar - what's added goes on this day (today unless another is picked).
   const [day, setDay] = useState(today);
   const [calMonth, setCalMonth] = useState(monthOf(today));
   const [calView, setCalView] = useRemembered("atg:money:calView", "month", ["month", "year"] as const);
+  // What he paid with last - a new expense starts there (cash, now he's spending cash).
+  const [wallet, setWallet] = useRemembered("atg:money:wallet", "account", ["account", "cash"] as const);
   const [tool, setTool] = useRemembered<Tool>("atg:money:tool", "recurring", ["recurring", "fuel", "gym"] as const);
   const pickDay = (d: string) => {
     const next = d > today ? today : d;
@@ -234,7 +285,7 @@ export default function MoneyPage() {
     if (entry.date !== day) pickDay(entry.date);
     say(
       entry.kind === "add"
-        ? `${dollars(entry.amount)} added${entry.cash ? " to your cash" : ""}`
+        ? `${dollars(entry.amount)} added${entry.cash ? ` to your cash - ${dollars(cashBalance({ ...money!, entries: [...money!.entries, entry] }))} on hand now` : ""}`
         : entry.kind === "move"
           ? `${dollars(entry.amount)} moved from your account to cash`
           : `${dollars(entry.amount)} ${entry.note ? `at ${entry.note}` : `on ${entry.category.toLowerCase()}`} - taken off${entry.cash ? " your cash" : ""}`,
@@ -254,6 +305,7 @@ export default function MoneyPage() {
       addExpected({ amount: n, note: note.trim() || undefined, date, ...(form.cash ? { cash: true } : {}) });
       return closeSheet();
     }
+    if (form.mode === "spend") setWallet(form.cash ? "cash" : "account");
     const reading = form.mode === "spend" && form.category === FUEL ? parseKm(km) : null;
     addEntry({
       kind: form.mode,
@@ -282,11 +334,13 @@ export default function MoneyPage() {
     );
   }
   // It came in: now it's an ordinary money-in entry, on the day open in the calendar.
-  function receiveExpected(id: string) {
+  // `cash` - where it actually landed (the account or the wallet), whatever was guessed when it was noted.
+  function receiveExpected(id: string, cash?: boolean) {
     const x = money?.expected?.find((y) => y.id === id);
     if (!x) return;
     const now = new Date().toISOString();
-    const entry: MoneyEntry = { id: uid(), kind: "add", amount: x.amount, category: "Money in", note: x.note, date: day, at: now, ...(x.cash ? { cash: true } : {}) };
+    const intoCash = cash ?? x.cash === true;
+    const entry: MoneyEntry = { id: uid(), kind: "add", amount: x.amount, category: "Money in", note: x.note, date: day, at: now, ...(intoCash ? { cash: true } : {}) };
     update((d) => {
       if (!d.money) return;
       d.money.entries.push(entry);
@@ -295,7 +349,7 @@ export default function MoneyPage() {
     });
     setMonth(monthOf(entry.date));
     setExpEdit(null);
-    say(`${dollars(x.amount)} in${x.note ? ` from ${x.note}` : ""} - added to your ${x.cash ? "cash" : "balance"}`, () =>
+    say(`${dollars(x.amount)} in${x.note ? ` from ${x.note}` : ""} - added to your ${intoCash ? "cash" : "account"}`, () =>
       update((d) => {
         const e = d.money?.entries.find((y) => y.id === entry.id);
         if (e) e.deletedAt = new Date().toISOString();
@@ -386,6 +440,7 @@ export default function MoneyPage() {
     update((d) => {
       const x = d.money?.entries.find((y) => y.id === editing.id);
       if (!x) return;
+      changeEntry(x, (x) => {
       x.amount = n;
       if (x.kind !== "set") {
         x.category = editing.category;
@@ -399,19 +454,20 @@ export default function MoneyPage() {
           else delete x.cash;
         }
       }
+      });
     });
     setEditing(null);
   }
   function removeEntry(id: string) {
     update((d) => {
       const x = d.money?.entries.find((y) => y.id === id);
-      if (x) x.deletedAt = new Date().toISOString();
+      if (x) changeEntry(x, (x) => void (x.deletedAt = new Date().toISOString()));
     });
     setEditing(null);
     say("Deleted - your balance is back to what it was without it", () =>
       update((d) => {
         const x = d.money?.entries.find((y) => y.id === id);
-        if (x) delete x.deletedAt;
+        if (x) changeEntry(x, (x) => void delete x.deletedAt);
       }),
     );
   }
@@ -428,7 +484,7 @@ export default function MoneyPage() {
       });
     }
     setNewCat(null);
-    openForm({ mode: "spend", category: c, cash: false });
+    openForm({ mode: "spend", category: c, cash: wallet === "cash" });
   }
 
   // ── Regular debits ──────────────────────────────────────────────
@@ -489,7 +545,7 @@ export default function MoneyPage() {
   const days = useMemo(() => {
     if (!money) return [];
     const shown = (e: MoneyEntry) =>
-      view === "in" ? e.kind === "add" : view === "out" || only ? e.kind === "spend" && (!only || e.category === only) : true;
+      view === "in" ? e.kind === "add" : view === "out" || only ? e.kind === "spend" && (!onlyKinds || onlyKinds.includes(e.category)) : true;
     const list = money.entries
       .filter((e) => !e.deletedAt && monthOf(e.date) === month && shown(e))
       .sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
@@ -502,7 +558,7 @@ export default function MoneyPage() {
       if (e.kind === "add") g.in += e.amount;
     }
     return out;
-  }, [money, month, only, view]);
+  }, [money, month, onlyKinds, view]);
   // Where the month's money came from (by what was noted, e.g. "Salary").
   const inParts = useMemo(() => {
     if (!money) return [];
@@ -516,7 +572,6 @@ export default function MoneyPage() {
   }, [money, month]);
   const coming = useMemo(() => (money ? stillToCome(money, today) : []), [money, today]);
   const expected = useMemo(() => (money ? expectedIncome(money) : []), [money]);
-  const buys = useMemo(() => (money ? usualBuys(money) : []), [money]);
 
   if (synced === false && !money) {
     return <p className="dash-word-hint">Couldn&apos;t load your money page - check your connection and refresh.</p>;
@@ -536,6 +591,15 @@ export default function MoneyPage() {
   const fuelNow = fuelLog(money, monthOf(today));
   const gymNow = kindLog(money, GYM, monthOf(today));
   const left = summary.in - summary.total;
+  // What's left in a kind's budget line, in the month being added to.
+  const budgetNow = money.budget ? budgetMonth(money, monthOf(day)) : null;
+  const leftIn = (c: string) => {
+    const line = lineFor(money, c);
+    const r = line && budgetNow?.rows.find((x) => x.line.id === line.id);
+    if (!r) return null;
+    return { line: line.name, over: r.over > 0, text: r.over > 0 ? `${dollars(r.over)} over` : `${dollars(r.left)} left` };
+  };
+  const savedNow = savedTotal(money);
   const expectedTotal = expected.reduce((t, x) => t + x.amount, 0);
   const expectedInMonth = expected.filter((x) => monthOf(x.date) === month).reduce((t, x) => t + x.amount, 0);
   const whenText = (d: string) => {
@@ -637,6 +701,15 @@ export default function MoneyPage() {
     const el = activityRef.current;
     if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  // A budget line shows only its kinds in the activity.
+  const showKinds = (kinds: string[]) => {
+    setOnlyKinds(kinds.length ? kinds : null);
+    if (isFolded("activity")) toggleFold("activity");
+    setView("out");
+    setShowAll(false);
+    const el = activityRef.current;
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const partMax = Math.max(1, ...(view === "in" ? inParts.map((p) => p.amount) : summary.parts.map((p) => p.amount)));
 
   const kindProps = {
@@ -728,6 +801,11 @@ export default function MoneyPage() {
             <span className="money-form-what">
               {form.mode === "spend" && <i style={{ background: colourFor(money, form.category) }} aria-hidden />}
               {form.mode === "spend" ? form.category : "Cash out - from your account into cash"}
+              {form.mode === "spend" && leftIn(form.category) && (
+                <em className={`money-form-left ${leftIn(form.category)!.over ? "is-over" : ""}`}>
+                  {leftIn(form.category)!.text} in {leftIn(form.category)!.line}
+                </em>
+              )}
               <button type="button" className="money-link" onClick={() => setForm(null)}>
                 Change
               </button>
@@ -806,7 +884,7 @@ export default function MoneyPage() {
         </datalist>
       </div>
       {form.mode === "add" && form.expected && (
-        <p className="money-hint">Kept to one side - your balance doesn&apos;t change until you tap “It&apos;s in” when it arrives.</p>
+        <p className="money-hint">Kept to one side - your balance doesn&apos;t change until it arrives and you tap “In · account” or “In · cash”.</p>
       )}
       <div className="money-form-actions">
         <button type="submit" className="money-btn is-primary">
@@ -845,7 +923,8 @@ export default function MoneyPage() {
 
   // Day by day: the calendar, and the open day.
   const calendarCard = (
-    <section className="money-card money-calendar" aria-labelledby="money-calendar-title">
+    <section className={`money-card money-calendar ${isFolded("calendar") ? "is-folded" : ""}`} aria-labelledby="money-calendar-title">
+      {fold("calendar", "Day by day")}
       <header className="money-card-head">
         <div>
           <h2 id="money-calendar-title" className="money-card-title">
@@ -1037,7 +1116,15 @@ export default function MoneyPage() {
 
   // Recurring payments, Fuel and Gym fees - one card, three tabs.
   const toolsCard = (
-    <section className="money-card money-tools" aria-label="Recurring payments, fuel and gym fees">
+    <section className={`money-card money-tools ${isFolded("tools") ? "is-folded" : ""}`} aria-label="Recurring payments, fuel and gym fees">
+      {fold("tools", "Regular payments, fuel and gym")}
+      {isFolded("tools") && (
+        <header className="money-card-head">
+          <div>
+            <h2 className="money-card-title">Regular payments, fuel &amp; gym</h2>
+          </div>
+        </header>
+      )}
       <div className="money-tabs" role="tablist" aria-label="Recurring payments, fuel and gym fees">
         {tools.map((t) => (
           <button
@@ -1225,10 +1312,17 @@ export default function MoneyPage() {
               <dt>This month</dt>
               <dd>{dollars(thisMonth.total)}</dd>
             </div>
-            <div>
-              <dt>Daily average</dt>
-              <dd>{dollars(thisMonth.perDay)}</dd>
-            </div>
+            {money.budget || savedNow !== 0 ? (
+              <div>
+                <dt>Saved</dt>
+                <dd className="money-stat-saved">{dollars(savedNow)}</dd>
+              </div>
+            ) : (
+              <div>
+                <dt>Daily average</dt>
+                <dd>{dollars(thisMonth.perDay)}</dd>
+              </div>
+            )}
           </dl>
         </div>
 
@@ -1273,7 +1367,7 @@ export default function MoneyPage() {
             </div>
             {sheet === "expected" && (
               <>
-                <p className="money-sheet-ask">Not in your balance yet. Tap “It&apos;s in” when it arrives and it&apos;s added then.</p>
+                <p className="money-sheet-ask">Not in your balance yet. When it arrives, tap where it went - your account or cash - and it&apos;s added there.</p>
                 <div className="money-exp-list">
                   {expected.map((x) =>
                     expEdit?.id === x.id ? (
@@ -1332,9 +1426,14 @@ export default function MoneyPage() {
                           </span>
                           <span className="money-tx-amount">+{dollars(x.amount)}</span>
                         </button>
-                        <button type="button" className="money-btn money-exp-in" onClick={() => receiveExpected(x.id)}>
-                          It&apos;s in
-                        </button>
+                        <span className="money-exp-ins" role="group" aria-label="It's in - where did it go?">
+                          <button type="button" className="money-btn money-exp-in" onClick={() => receiveExpected(x.id, false)} title="It's in - into your account">
+                            In · account
+                          </button>
+                          <button type="button" className="money-btn money-exp-in" onClick={() => receiveExpected(x.id, true)} title="It's in - as cash, into your wallet">
+                            In · cash
+                          </button>
+                        </span>
                       </div>
                     ),
                   )}
@@ -1357,11 +1456,11 @@ export default function MoneyPage() {
                 <p className="money-sheet-ask">What was it for?</p>
                 <div className="money-kinds" role="group" aria-label="What did you spend on?">
                   {cats.map((c) => (
-                    <button key={c} type="button" className="money-kind" onClick={() => openForm(c === CASH_OUT ? { mode: "move" } : { mode: "spend", category: c, cash: false })}>
+                    <button key={c} type="button" className="money-kind" onClick={() => openForm(c === CASH_OUT ? { mode: "move" } : { mode: "spend", category: c, cash: wallet === "cash" })}>
                       <i style={{ background: colourFor(money, c) }} aria-hidden />
                       <span>
                         {c}
-                        {c === CASH_OUT && <em>account → cash</em>}
+                        {c === CASH_OUT ? <em>account → cash</em> : leftIn(c) && <em className={leftIn(c)!.over ? "is-over" : ""}>{leftIn(c)!.text}</em>}
                       </span>
                     </button>
                   ))}
@@ -1387,26 +1486,6 @@ export default function MoneyPage() {
           </div>
         )}
 
-        {buys.length > 0 && (
-          <div className="money-usual" role="group" aria-label="Log it again">
-            <span className="money-label">Usual buys - one tap logs it</span>
-            <div className="money-usual-row">
-              {buys.map((b) => (
-                <button
-                  key={`${b.category}|${b.amount}|${b.note ?? ""}|${b.cash ? "cash" : ""}`}
-                  type="button"
-                  className="money-usual-btn"
-                  onClick={() => addEntry({ kind: "spend", amount: b.amount, category: b.category, note: b.note, date: day, ...(b.cash ? { cash: true } : {}) })}
-                >
-                  <i style={{ background: colourFor(money, b.category) }} aria-hidden />
-                  <span>{b.note || b.category}</span>
-                  <strong>{shortDollars(b.amount)}</strong>
-                  {b.cash && <em>cash</em>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
       {toastBox}
 
@@ -1460,7 +1539,7 @@ export default function MoneyPage() {
               {dollars(Math.abs(left))}
             </strong>
           </div>
-          <div className="money-figure is-static">
+          <div className="money-figure is-static money-figure-perday">
             <span>Spent a day</span>
             <strong>{dollars(summary.perDay)}</strong>
           </div>
@@ -1469,7 +1548,8 @@ export default function MoneyPage() {
 
       <div className="money-grid">
         <div className="money-col">
-          <section className="money-card money-activity" ref={activityRef} aria-labelledby="money-activity-title">
+          <section className={`money-card money-activity ${isFolded("activity") ? "is-folded" : ""}`} ref={activityRef} aria-labelledby="money-activity-title">
+            {fold("activity", "Recent activity")}
             <header className="money-card-head">
               <div>
                 <h2 id="money-activity-title" className="money-card-title">
@@ -1493,7 +1573,7 @@ export default function MoneyPage() {
             </header>
             {only && (
               <div className="money-only">
-                <i style={{ background: colourFor(money, only) }} aria-hidden />
+                <i style={{ background: colourFor(money, onlyKinds![0]) }} aria-hidden />
                 <span>
                   Only <strong>{only}</strong>
                 </span>
@@ -1532,7 +1612,10 @@ export default function MoneyPage() {
         </div>
 
         <div className="money-col">
-          <section className="money-card money-breakdown" aria-labelledby="money-breakdown-title">
+          <BudgetCard money={money} month={month} today={today} update={update} say={say} onShow={showKinds} fold={fold("budget", "Budget")} folded={isFolded("budget")} />
+          <ShoppingCard money={money} update={update} fold={fold("shopping", "Shopping list")} folded={isFolded("shopping")} />
+          <section className={`money-card money-breakdown ${isFolded("breakdown") ? "is-folded" : ""}`} aria-labelledby="money-breakdown-title">
+            {fold("breakdown", "Where it went")}
             <header className="money-card-head">
               <div>
                 <h2 id="money-breakdown-title" className="money-card-title">
@@ -1577,7 +1660,7 @@ export default function MoneyPage() {
                   ))}
                 </div>
                 <ul className="money-bars">
-                  {summary.parts.map((p) => (
+                  {(allKinds ? summary.parts : summary.parts.slice(0, KINDS_SHOWN)).map((p) => (
                     <li key={p.category}>
                       <button type="button" className={`money-bar ${only === p.category ? "is-on" : ""}`} onClick={() => pickKind(p.category)} aria-pressed={only === p.category}>
                         <span className="money-bar-name">
@@ -1595,7 +1678,11 @@ export default function MoneyPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="money-hint">Tap a kind to see only those in Recent activity.</p>
+                {summary.parts.length > KINDS_SHOWN && (
+                  <button type="button" className="money-link money-more" onClick={() => setAllKinds(!allKinds)}>
+                    {allKinds ? "Show fewer" : `Show all ${summary.parts.length} kinds`}
+                  </button>
+                )}
               </>
             )}
           </section>

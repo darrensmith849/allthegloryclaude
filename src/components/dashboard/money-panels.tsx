@@ -357,3 +357,14 @@ export function KindTab({
     </div>
   );
 }
+
+// Folds a Money card away to just its heading, or opens it again.
+export function FoldButton({ folded, onClick, label }: { folded: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" className={`money-fold ${folded ? "is-folded" : ""}`} onClick={onClick} aria-expanded={!folded} aria-label={`${folded ? "Open" : "Fold away"} ${label}`} title={folded ? "Open" : "Fold away"}>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+        <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}

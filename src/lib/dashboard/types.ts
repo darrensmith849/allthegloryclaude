@@ -413,6 +413,10 @@ export interface MoneyEntry {
   at: string; // when it was entered (ISO) - counts toward the balance if after start.at
   sub?: string; // the regular debit it came from
   deletedAt?: string; // removed (kept, never wiped)
+  // Changes made to it later (amount, account/cash, deleted): how much each
+  // moved the account and the cash, and when - so a balance typed in before
+  // the change still moves with it.
+  changes?: { at: string; acct: number; cash: number }[];
 }
 export interface MoneySub {
   id: string;
@@ -437,7 +441,49 @@ export interface MoneyExpected {
   entry?: string; // the "add" entry it became
   deletedAt?: string; // removed (kept, never wiped)
 }
+// The monthly budget: the salary, and a line for each thing it pays for - a
+// line covers one or more kinds of spending ("Entertainment & extras" =
+// Coffee + Eating out). A line marked `allowance` is paid for by an allowance
+// on top of the salary (the fuel allowance), not out of it.
+export interface MoneyBudgetLine {
+  id: string;
+  name: string;
+  amount: number; // a month
+  categories: string[];
+  allowance?: boolean;
+  removedAt?: string; // removed (kept, never wiped)
+}
+export interface MoneyBudget {
+  from?: ISODate; // the budget began (or began again) this day - spending before it doesn't count
+  salary: number; // a month
+  lines: MoneyBudgetLine[];
+}
+// Money put aside out of what was left in a budget line (or the salary not
+// budgeted - line "rest"). Still in the account: it's marked as not for
+// spending. A negative amount is savings taken back out.
+export interface MoneySaving {
+  id: string;
+  amount: number;
+  ym: string; // the month it was left over from (YYYY-MM)
+  line?: string; // the budget line it came from, "rest", or none (taken out)
+  note?: string;
+  at: string; // when (ISO)
+  deletedAt?: string; // removed (kept, never wiped)
+}
+// The shopping list: things to get. Ticked off once got, they stay on as
+// things got before, so one tap puts them back on for next time.
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  need: boolean; // on the list now (false: got it - kept for next time)
+  at: string; // added (ISO)
+  gotAt?: string; // last ticked off
+  deletedAt?: string; // removed (kept, never wiped)
+}
 export interface MoneyState {
+  shopping?: ShoppingItem[];
+  budget?: MoneyBudget;
+  savings?: MoneySaving[];
   start: { amount: number; at: string };
   entries: MoneyEntry[];
   subs: MoneySub[];

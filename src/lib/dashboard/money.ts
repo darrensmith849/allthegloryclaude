@@ -2,7 +2,7 @@
 // re-use of what he usually buys, and the regular debits that come off by
 // themselves. Plain dollars, his account.
 
-import type { MoneyEntry, MoneyExpected, MoneyState, MoneySub } from "./types";
+import type { MoneyBudget, MoneyBudgetLine, MoneyEntry, MoneyExpected, MoneyState, MoneySub } from "./types";
 
 export const SPEND_CATEGORIES = [
   "Coffee",
@@ -90,21 +90,53 @@ const live = (e: MoneyEntry) => !e.deletedAt;
 const byDay = (a: MoneyEntry, b: MoneyEntry) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at);
 const cents = (n: number) => Math.round(n * 100) / 100;
 
+// What an entry does to the account and to the cash in hand.
+export function effect(e: MoneyEntry): { acct: number; cash: number } {
+  if (e.deletedAt || e.kind === "set") return { acct: 0, cash: 0 };
+  const a = e.amount;
+  if (e.cash) return { acct: 0, cash: e.kind === "spend" ? -a : a };
+  if (e.kind === "move") return { acct: -a, cash: a }; // drawn from the account into cash
+  return { acct: e.kind === "add" ? a : -a, cash: 0 };
+}
+
+// Change an entry (its amount, account or cash, delete it), keeping a note of
+// how that moved the account and the cash - see walk().
+export function changeEntry(e: MoneyEntry, change: (e: MoneyEntry) => void, at = new Date().toISOString()) {
+  const before = effect(e);
+  change(e);
+  const after = effect(e);
+  const acct = cents(after.acct - before.acct);
+  const cash = cents(after.cash - before.cash);
+  if (acct || cash) e.changes = [...(e.changes ?? []), { at, acct, cash }];
+}
+
 // The account and the cash in hand, walked through the entries day by day
-// (in the order entered within a day). An entry for an earlier day counts
-// on that day - so one logged late, after a balance was set that already
-// included it, isn't taken off twice.
+// (in the order entered within a day). A balance typed in ("set" - the bank's
+// figure, or the wallet counted) holds everything logged before it; anything
+// logged or changed after it was typed in still moves it - even for an
+// earlier day, like yesterday's pay logged today, or an old amount corrected.
+// The starting balance works the same way.
 function walk(m: MoneyState, pick: (e: MoneyEntry) => boolean = () => true): { acct: number; cash: number } {
   let acct = m.start.amount;
   let cash = 0;
-  for (const e of m.entries.filter((x) => live(x) && pick(x)).sort(byDay)) {
-    if (e.cash) {
-      cash = e.kind === "set" ? e.amount : e.kind === "spend" ? cash - e.amount : cash + e.amount;
-      continue;
+  const seen: MoneyEntry[] = [];
+  // How much an entry has moved one side since a moment: all of it if it was
+  // logged after, else only the changes made to it after.
+  const since = (e: MoneyEntry, at: string, side: "acct" | "cash") =>
+    e.at > at ? effect(e)[side] : (e.changes ?? []).filter((c) => c.at > at).reduce((t, c) => t + c[side], 0);
+  const list = m.entries.filter((x) => (live(x) || x.changes?.length) && pick(x)).sort(byDay);
+  for (const e of list) {
+    if (e.kind === "set" && !e.deletedAt) {
+      const side = e.cash ? "cash" : "acct";
+      const v = e.amount + seen.reduce((t, x) => t + since(x, e.at, side), 0);
+      if (side === "cash") cash = v;
+      else acct = v;
+    } else {
+      const f = effect(e);
+      cash += f.cash;
+      acct += e.at < m.start.at ? since(e, m.start.at, "acct") : f.acct; // before the page began - in the starting balance
     }
-    if (e.kind === "move") cash += e.amount; // drawn from the account into cash
-    if (e.at < m.start.at) continue; // before the page began - already in the starting balance
-    acct = e.kind === "set" ? e.amount : e.kind === "add" ? acct + e.amount : acct - e.amount; // spend and move take off
+    seen.push(e);
   }
   return { acct: cents(acct), cash: cents(cash) };
 }
@@ -335,4 +367,118 @@ export function startingMoney(amount: number, today = localDate()): MoneyState {
     { name: "Account maintenance fee", amount: 90, day: 30, category: "Bank fees" },
   ].map((s) => newSub(s, today));
   return { start: { amount, at: new Date().toISOString() }, entries: [], subs };
+}
+
+// ── The budget ──────────────────────────────────────────────────
+// A salary, and a line for each thing it pays for. A line marked as an
+// allowance (fuel) is paid for on top of the salary. What a line doesn't
+// spend in a month can be put aside as savings; spending past a line, or on
+// a kind no line covers, comes out of the salary nobody budgeted ("the rest").
+
+export const REST = "rest"; // savings from the salary not budgeted
+
+export const budgetLines = (m: MoneyState): MoneyBudgetLine[] => (m.budget?.lines ?? []).filter((l) => !l.removedAt);
+export const lineFor = (m: MoneyState, category: string) => budgetLines(m).find((l) => l.categories.includes(category));
+
+const liveSavings = (m: MoneyState) => (m.savings ?? []).filter((x) => !x.deletedAt);
+export const savedTotal = (m: MoneyState) => cents(liveSavings(m).reduce((t, x) => t + x.amount, 0));
+export const savedFrom = (m: MoneyState, ym: string, line: string) =>
+  cents(liveSavings(m).filter((x) => x.ym === ym && x.line === line).reduce((t, x) => t + x.amount, 0));
+
+export interface BudgetRow {
+  line: MoneyBudgetLine;
+  spent: number;
+  saved: number; // put aside from this line this month
+  left: number; // still to spend (0 once over)
+  over: number; // spent past the line
+}
+
+export function budgetMonth(m: MoneyState, ym: string) {
+  const lines = budgetLines(m);
+  const salary = m.budget?.salary ?? 0;
+  const byCat = new Map<string, number>();
+  const from = m.budget?.from ?? "";
+  for (const e of m.entries)
+    if (live(e) && e.kind === "spend" && monthOf(e.date) === ym && e.date >= from) byCat.set(e.category, (byCat.get(e.category) ?? 0) + e.amount);
+  const covered = new Set(lines.flatMap((l) => l.categories));
+  const rows: BudgetRow[] = lines.map((line) => {
+    const spent = cents(line.categories.reduce((t, c) => t + (byCat.get(c) ?? 0), 0));
+    const saved = savedFrom(m, ym, line.id);
+    const room = line.amount - saved - spent;
+    return { line, spent, saved, left: cents(Math.max(0, room)), over: cents(Math.max(0, -room)) };
+  });
+  const outside = [...byCat.entries()]
+    .filter(([c]) => !covered.has(c))
+    .map(([category, amount]) => ({ category, amount: cents(amount) }))
+    .sort((a, b) => b.amount - a.amount);
+  const outsideTotal = cents(outside.reduce((t, x) => t + x.amount, 0));
+  const allowance = cents(lines.filter((l) => l.allowance).reduce((t, l) => t + l.amount, 0));
+  const fromSalary = cents(lines.filter((l) => !l.allowance).reduce((t, l) => t + l.amount, 0));
+  const unplanned = cents(salary - fromSalary); // the salary no line has
+  const overTotal = cents(rows.reduce((t, r) => t + r.over, 0));
+  const restSaved = savedFrom(m, ym, REST);
+  // The rest: what's left of the unbudgeted salary after spending no line
+  // covers, going over a line, and what's already been put aside from it.
+  const restRoom = unplanned - outsideTotal - overTotal - restSaved;
+  const planned = cents(fromSalary + allowance);
+  const spent = cents(rows.reduce((t, r) => t + r.spent, 0) + outsideTotal);
+  return {
+    from: from || null,
+    started: !from || ym >= monthOf(from), // a month before the budget began has no budget
+    salary,
+    allowance,
+    income: cents(salary + allowance),
+    planned,
+    unplanned,
+    rows,
+    outside,
+    outsideTotal,
+    overTotal,
+    restSaved,
+    restLeft: cents(Math.max(0, restRoom)),
+    restOver: cents(Math.max(0, -restRoom)), // the whole month is past the salary and allowance
+    spent,
+    // Everything that could still be put aside this month.
+    canSave: cents(rows.reduce((t, r) => t + r.left, 0) + Math.max(0, restRoom)),
+  };
+}
+
+// Daniel's budget, from his spreadsheet (Budget Portfolio) and his salary
+// from November 2026: $2,000 a month, plus a $200 fuel allowance on top that
+// pays for fuel. Subscriptions and bank fees follow his regular debits. Kinds
+// the budget needs that aren't there yet are added to his own kinds.
+export function startingBudget(m: MoneyState): { budget: MoneyBudget; categories: string[] } {
+  const have = allCategories(m);
+  const added: string[] = [];
+  const kind = (name: string, match?: RegExp) => {
+    const found = have.find((c) => c.toLowerCase() === name.toLowerCase()) ?? (match ? have.find((c) => match.test(c)) : undefined);
+    if (found) return found;
+    if (!added.includes(name)) added.push(name);
+    return name;
+  };
+  const subsIn = (cats: string[]) =>
+    cents(m.subs.filter((s) => s.active && !s.removedAt && cats.includes(s.category)).reduce((t, s) => t + s.amount, 0));
+  const line = (name: string, amount: number, categories: string[], allowance = false): MoneyBudgetLine => ({
+    id: uid(),
+    name,
+    amount,
+    categories,
+    ...(allowance ? { allowance: true } : {}),
+  });
+  const gym = [GYM, "Golf"];
+  const lines = [
+    line("Rent", 550, [kind("Rent")]),
+    line("Groceries", 300, ["Groceries"]),
+    line("Medical aid", 266, [kind("Medical aid", /medical/i)]),
+    line("Entertainment & extras", 200, ["Coffee", "Eating out"]),
+    line("Fuel", 200, [FUEL], true),
+    line("Golf & gym", Math.max(80, Math.ceil(subsIn(gym))), gym),
+    line("Vehicle repairs & servicing", 80, [kind("Vehicle repairs", /repair|servic/i)]),
+    line("Washing", 60, [kind("Cleaning and Washing", /^(?!car).*wash/i)]),
+    line("Car wash", 20, [kind("Car wash", /car ?wash/i)]),
+    line("Internet & phone", 26, ["Phone & data"]),
+    line("Subscriptions", Math.max(15, Math.ceil(subsIn(["Subscriptions"]))), ["Subscriptions"]),
+    line("Bank fees", Math.ceil(subsIn(["Bank fees"])) || 90, ["Bank fees"]),
+  ];
+  return { budget: { salary: 2000, lines }, categories: added };
 }
