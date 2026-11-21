@@ -128,6 +128,7 @@ export default function SocialDock() {
   if (
     pathname?.startsWith("/dashboard") ||
     pathname?.startsWith("/study") ||
+    pathname?.startsWith("/money-tracker") ||
     pathname?.startsWith("/album") ||
     pathname?.startsWith("/press") ||
     pathname?.startsWith("/daniel-jenkins") ||

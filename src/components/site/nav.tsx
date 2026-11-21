@@ -24,7 +24,7 @@ export default function Nav() {
   // The private dashboard has its own chrome; /press is an unlisted
   // press-kit landing meant to read as a standalone share link, not a
   // gateway into the rest of the site. Neither shows the public nav.
-  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study")) return null;
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/study") || pathname?.startsWith("/money-tracker")) return null;
   if (pathname?.startsWith("/press") || pathname?.startsWith("/daniel-jenkins") || pathname?.startsWith("/websites")) return null;
 
   return (
