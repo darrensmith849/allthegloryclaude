@@ -5788,3 +5788,12 @@ button.shared-group-card:hover { border-color: var(--colour-amber); }
 .shared-pop-state { flex: none; font-size: 12.5px; font-weight: 600; color: var(--colour-amber); }
 .shared-pop-hint { font-size: 13px; line-height: 1.45; color: var(--colour-ink-quiet); }
 .shared-pop-hint a { color: var(--colour-amber); font-weight: 600; text-decoration: underline; }
+
+/* The friends' Money tracker (/money-tracker): the Money screen with no
+ * sidebar, so one column, centred. */
+.dash-root.money-solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+.money-solo .dash-main {
+  margin-inline: auto;
+}

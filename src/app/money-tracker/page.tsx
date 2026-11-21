@@ -7,6 +7,7 @@
 import { useRef, useState } from "react";
 import { MoneyView } from "@/components/dashboard/money-view";
 import { ThemeToggle } from "@/components/study/theme-toggle";
+import { TrackerInstallCard } from "@/components/money-tracker/install-card";
 import { useTrackerStore } from "@/lib/money-tracker/store";
 import type { DashUser } from "@/lib/dashboard/who";
 
@@ -50,6 +51,7 @@ export default function MoneyTrackerPage() {
           This browser isn&apos;t keeping your figures (a private window?). Open this page in a normal window so nothing is lost.
         </p>
       )}
+      <TrackerInstallCard />
       <MoneyView store={store} user={FRIEND} />
       <section className="dash-card mt-8 p-5" aria-label="Where your money is kept">
         <div className="eyebrow eyebrow-amber">🔒 Private to this device</div>

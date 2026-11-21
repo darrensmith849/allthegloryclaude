@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   title: "Money Tracker",
   description: "Your own budget and spending tracker. Private to this device.",
   robots: { index: false, follow: false },
+  // Its own Home Screen app: public/money-tracker-manifest.webmanifest.
+  manifest: "/money-tracker-manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/dashboard-app/favicon.png", sizes: "64x64", type: "image/png" }],
+    apple: "/dashboard-app/apple-icon.png",
+  },
   appleWebApp: { capable: true, title: "Money", statusBarStyle: "default" },
 };
 
@@ -18,7 +24,7 @@ export default function MoneyTrackerLayout({ children }: { children: React.React
   return (
     <div className={readFont.variable}>
       <ThemeScript />
-      <div className="dash-root">
+      <div className="dash-root money-solo">
         <main className="dash-main">{children}</main>
       </div>
     </div>
