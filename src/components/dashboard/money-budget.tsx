@@ -350,6 +350,15 @@ export function BudgetCard({
         </button>
       </header>
 
+      {!folded && !money.budget!.salary && money.budget!.lines.every((l) => l.removedAt || !l.amount) && (
+        <div className="money-budget-done money-budget-fresh">
+          <span>Fill in your budget: what comes in each month and what you allow for each thing. Remove any line you don&apos;t need, or add your own.</span>
+          <button type="button" className="money-btn is-primary" onClick={() => setDraft(draftOf(money.budget!))}>
+            Fill it in
+          </button>
+        </div>
+      )}
+
       {!b.from && month === monthOf(today) && (
         <div className="money-budget-done money-budget-fresh">
           <span>Starting fresh? Only spending from today will count.</span>

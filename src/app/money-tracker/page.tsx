@@ -4,11 +4,11 @@
 // their own balance and budget, in rand), saved only in their own browser.
 // See src/lib/money-tracker/store.ts.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MoneyView } from "@/components/dashboard/money-view";
 import { ThemeToggle } from "@/components/study/theme-toggle";
 import { TrackerInstallCard } from "@/components/money-tracker/install-card";
-import { useTrackerStore } from "@/lib/money-tracker/store";
+import { useTrackerStore, withStarterBudget } from "@/lib/money-tracker/store";
 import type { DashUser } from "@/lib/dashboard/who";
 
 const FRIEND: DashUser = { role: "personal", name: "", memberId: "" };
@@ -17,6 +17,13 @@ export default function MoneyTrackerPage() {
   const { store, saved, backup, restore } = useTrackerStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState<string | null>(null);
+
+  // A new tracker gets the starter budget (the basics at R0) once - after
+  // that it's theirs to change, even if they remove every line.
+  const money = store.state.money;
+  useEffect(() => {
+    if (money && !money.budget) store.update((d) => void (d.money = d.money && withStarterBudget(d.money)));
+  }, [money, store]);
 
   function saveBackup() {
     const b = backup();

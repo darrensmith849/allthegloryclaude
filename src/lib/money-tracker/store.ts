@@ -7,7 +7,8 @@
 // and Daniel's own Money is never touched.
 
 import { useCallback, useEffect, useState } from "react";
-import { emptyState, type DashboardState, type MoneyState } from "@/lib/dashboard/types";
+import { emptyState, type DashboardState, type MoneyBudgetLine, type MoneyState } from "@/lib/dashboard/types";
+import { localDate, uid } from "@/lib/dashboard/money";
 
 const KEY = "atg:money-tracker:v1";
 
@@ -77,4 +78,38 @@ export function useTrackerStore() {
   }, []);
 
   return { store: { state, update, ready, synced }, saved, backup, restore };
+}
+
+// A starter budget for a new tracker: the everyday basics at R0, each tied to
+// the kinds of spending it covers. Friends fill in their amounts, remove what
+// they don't need and add their own on the Budget card. Kinds that aren't
+// built in (Rent, Electricity & water, ...) are added as their own kinds.
+const BASICS: { name: string; kinds: string[] }[] = [
+  { name: "Rent or bond", kinds: ["Rent"] },
+  { name: "Groceries", kinds: ["Groceries"] },
+  { name: "Electricity & water", kinds: ["Electricity & water"] },
+  { name: "Transport & fuel", kinds: ["Fuel", "Tolls & transport"] },
+  { name: "Phone, data & wifi", kinds: ["Phone & data"] },
+  { name: "Medical aid", kinds: ["Medical aid"] },
+  { name: "Insurance", kinds: ["Insurance"] },
+  { name: "Debt & loan repayments", kinds: ["Debt repayments"] },
+  { name: "School & kids", kinds: ["School & kids"] },
+  { name: "Clothing", kinds: ["Clothing"] },
+  { name: "Eating out & coffee", kinds: ["Eating out", "Coffee"] },
+  { name: "Subscriptions", kinds: ["Subscriptions"] },
+  { name: "Gym & sport", kinds: ["Gym fees"] },
+  { name: "Giving & tithe", kinds: ["Giving"] },
+  { name: "Bank fees", kinds: ["Bank fees"] },
+];
+const BUILT_IN = new Set(["Groceries", "Fuel", "Tolls & transport", "Phone & data", "Eating out", "Coffee", "Subscriptions", "Gym fees", "Bank fees"]);
+
+export function withStarterBudget(money: MoneyState): MoneyState {
+  if (money.budget) return money;
+  const lines: MoneyBudgetLine[] = BASICS.map((b) => ({ id: uid(), name: b.name, amount: 0, categories: b.kinds }));
+  const extra = BASICS.flatMap((b) => b.kinds).filter((k) => !BUILT_IN.has(k));
+  return {
+    ...money,
+    budget: { from: localDate(), salary: 0, lines },
+    categories: [...new Set([...(money.categories ?? []), ...extra])],
+  };
 }

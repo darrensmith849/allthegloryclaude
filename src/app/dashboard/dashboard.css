@@ -5797,3 +5797,10 @@ button.shared-group-card:hover { border-color: var(--colour-amber); }
 .money-solo .dash-main {
   margin-inline: auto;
 }
+
+/* Budget editor: the amount fills its column (it was a fixed 150px in a
+ * 110-130px column, so it ran past the card's edge). */
+.money-budget-edit-top .money-amount { min-width: 0; display: flex; }
+.money .money-budget-edit-top .money-amount input.dash-input { width: 100%; min-width: 0; }
+/* Keep a tile's label clear of its ✎ on narrow phones. */
+.money-tile > .money-label { padding-right: 18px; }
