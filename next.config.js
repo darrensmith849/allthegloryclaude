@@ -85,6 +85,12 @@ const nextConfig = {
         ],
       },
       {
+        // The friends' Money tracker: phones (and its Home Screen app) always
+        // check for the newest version instead of showing an old saved copy.
+        source: '/money-tracker',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
         source: '/media/:path*',
         headers: [
           {
