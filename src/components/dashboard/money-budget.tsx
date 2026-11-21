@@ -46,6 +46,7 @@ export function BudgetCard({
 }) {
   const [open, setOpen] = useState<string | null>(null); // the line tapped open
   const [draft, setDraft] = useState<Draft | null>(null); // changing the budget
+  const [quick, setQuick] = useState<Draft | null>(null); // filling in a budget that's still all 0
   const [takeOut, setTakeOut] = useState<{ amount: string; note: string } | null>(null);
   const [quiet, setQuiet] = useState(false); // the lines nothing's gone on yet, shown
 
@@ -118,6 +119,12 @@ export function BudgetCard({
   function saveDraft(e: React.FormEvent) {
     e.preventDefault();
     if (!draft) return;
+    saveFrom(draft);
+    setDraft(null);
+    say("Budget saved");
+  }
+
+  function saveFrom(draft: Draft) {
     const salary = parse(draft.salary) ?? 0;
     const lines = draft.lines
       .map((l) => ({ ...l, name: l.name.trim(), n: parse(l.amount) }))
@@ -138,8 +145,6 @@ export function BudgetCard({
       const old = before.filter((b) => b.removedAt);
       d.money.budget = { ...(draft.from ? { from: draft.from } : {}), salary, lines: [...kept, ...gone, ...old] };
     });
-    setDraft(null);
-    say("Budget saved");
   }
 
   if (!money.budget) {
@@ -176,6 +181,75 @@ export function BudgetCard({
   const cats = allCategories(money).filter((c) => c !== CASH_OUT);
   const quietCount = b.rows.filter((r) => r.spent + r.saved === 0).length;
   const allowanceNames = b.rows.filter((r) => r.line.allowance).map((r) => r.line.name.toLowerCase());
+
+  // ── A budget still all at 0 (a new one, or the Money tracker's starter
+  // lines): every line listed with a box for its amount, nothing else. ──
+  const fresh = !money.budget.salary && money.budget.lines.every((l) => l.removedAt || !l.amount);
+  if (fresh && !draft && !folded) {
+    const q = quick ?? draftOf(money.budget);
+    const setQLine = (i: number, patch: Partial<Draft["lines"][number]>) => setQuick({ ...q, lines: q.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
+    const total = q.lines.filter((l) => !l.allowance).reduce((t, l) => t + (parse(l.amount) ?? 0), 0);
+    const left = (parse(q.salary) ?? 0) - total;
+    const blank = (v: string) => (v === "0" ? "" : v);
+    return (
+      <section className={`money-card money-budget ${folded ? "is-folded" : ""}`} aria-labelledby="money-budget-title">
+        {fold}
+        <form
+          className="money-budget-quick"
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveFrom({ ...q, lines: q.lines.map((l) => ({ ...l, amount: l.amount.trim() || "0" })) });
+            setQuick(null);
+            say("Budget saved");
+          }}
+        >
+          <header className="money-card-head">
+            <div>
+              <h2 id="money-budget-title" className="money-card-title">
+                Budget
+              </h2>
+              <p className="money-card-sub">Fill in what comes in and what you allow for each thing a month. Remove anything you don&apos;t need.</p>
+            </div>
+          </header>
+          <label className="money-quick-row is-income">
+            <span className="money-quick-name">Income a month</span>
+            <span className="money-quick-amt">
+              <span aria-hidden>{currencySymbol()}</span>
+              <input className="dash-input" inputMode="decimal" placeholder="0" value={blank(q.salary)} onChange={(e) => setQuick({ ...q, salary: e.target.value })} />
+            </span>
+          </label>
+          <div className="money-quick-lines">
+            {q.lines.map((l, i) => (
+              <div key={l.id} className="money-quick-row">
+                <input className="dash-input money-quick-name" value={l.name} placeholder="Name" aria-label="Name" onChange={(e) => setQLine(i, { name: e.target.value })} />
+                <span className="money-quick-amt">
+                  <span aria-hidden>{currencySymbol()}</span>
+                  <input className="dash-input" inputMode="decimal" placeholder="0" aria-label={`${l.name || "Line"} a month`} value={blank(l.amount)} onChange={(e) => setQLine(i, { amount: e.target.value })} />
+                </span>
+                <button type="button" className="money-quick-x" aria-label={`Remove ${l.name || "this line"}`} onClick={() => setQuick({ ...q, lines: q.lines.filter((_, j) => j !== i) })}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="money-link" onClick={() => setQuick({ ...q, lines: [...q.lines, { id: uid(), name: "", amount: "", categories: [], allowance: false }] })}>
+            + Add a line
+          </button>
+          <p className="money-hint">
+            Budgeted {dollars(total)} · {left < 0 ? `over your income by ${dollars(-left)}` : `${dollars(left)} not budgeted`}
+          </p>
+          <div className="money-quick-actions">
+            <button type="submit" className="money-btn is-primary">
+              Save budget
+            </button>
+            <button type="button" className="money-link" onClick={() => setDraft(q)}>
+              More options
+            </button>
+          </div>
+        </form>
+      </section>
+    );
+  }
 
   // ── Changing the budget ──
   if (draft) {
@@ -349,15 +423,6 @@ export function BudgetCard({
           Change
         </button>
       </header>
-
-      {!folded && !money.budget!.salary && money.budget!.lines.every((l) => l.removedAt || !l.amount) && (
-        <div className="money-budget-done money-budget-fresh">
-          <span>Fill in your budget: what comes in each month and what you allow for each thing. Remove any line you don&apos;t need, or add your own.</span>
-          <button type="button" className="money-btn is-primary" onClick={() => setDraft(draftOf(money.budget!))}>
-            Fill it in
-          </button>
-        </div>
-      )}
 
       {!b.from && month === monthOf(today) && (
         <div className="money-budget-done money-budget-fresh">

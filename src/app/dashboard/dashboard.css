@@ -5804,3 +5804,23 @@ button.shared-group-card:hover { border-color: var(--colour-amber); }
 .money .money-budget-edit-top .money-amount input.dash-input { width: 100%; min-width: 0; }
 /* Keep a tile's label clear of its ✎ on narrow phones. */
 .money-tile > .money-label { padding-right: 18px; }
+
+/* Budget still all at 0: one row per line - name, amount, remove. */
+.money-budget-quick { display: flex; flex-direction: column; gap: 12px; }
+.money-quick-lines { display: flex; flex-direction: column; gap: 8px; }
+.money-quick-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 120px) 36px; align-items: center; gap: 8px; }
+.money-quick-row.is-income { grid-template-columns: minmax(0, 1fr) minmax(0, 120px) 36px; font-weight: 600; color: var(--colour-ink-strong); }
+.money-quick-row .dash-input { min-height: 42px; border-radius: 12px; font-size: 16px; width: 100%; min-width: 0; }
+.money-quick-amt { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.money-quick-amt > span { color: var(--colour-ink-quiet); }
+.money-quick-amt input { text-align: right; font-variant-numeric: tabular-nums; }
+.money-quick-x { width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgb(var(--tint-rgb) / calc(0.16 * var(--tint-k))); color: var(--colour-ink-quiet); font-size: 18px; line-height: 1; }
+.money-quick-x:hover { color: rgb(var(--bad-rgb)); border-color: rgb(var(--bad-rgb) / 0.4); }
+.money-quick-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+@media (max-width: 420px) {
+  .money-quick-row, .money-quick-row.is-income { grid-template-columns: minmax(0, 1fr) minmax(0, 96px) 32px; gap: 6px; }
+  .money-quick-x { width: 32px; height: 32px; }
+}
+/* Any date or text box in the Money forms stays inside its card on a phone. */
+.money .money-field { min-width: 0; }
+.money .money-field .dash-input { width: 100%; min-width: 0; max-width: 100%; }

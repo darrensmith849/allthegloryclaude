@@ -1,14 +1,15 @@
 "use client";
 
 // /money-tracker - Daniel's Money screen for friends: starts empty (they set
-// their own balance and budget, in rand), saved only in their own browser.
+// their own balance and budget, in US dollars - or rand if they choose),
+// saved only in their own browser.
 // See src/lib/money-tracker/store.ts.
 
 import { useEffect, useRef, useState } from "react";
 import { MoneyView } from "@/components/dashboard/money-view";
 import { ThemeToggle } from "@/components/study/theme-toggle";
 import { TrackerInstallCard } from "@/components/money-tracker/install-card";
-import { useTrackerStore, withStarterBudget } from "@/lib/money-tracker/store";
+import { inDollarsOnce, useTrackerStore, withStarterBudget } from "@/lib/money-tracker/store";
 import type { DashUser } from "@/lib/dashboard/who";
 
 const FRIEND: DashUser = { role: "personal", name: "", memberId: "" };
@@ -22,8 +23,12 @@ export default function MoneyTrackerPage() {
   // that it's theirs to change, even if they remove every line.
   const money = store.state.money;
   useEffect(() => {
-    if (money && !money.budget) store.update((d) => void (d.money = d.money && withStarterBudget(d.money)));
+    if (!money) return;
+    const usd = inDollarsOnce(money);
+    if (usd || !money.budget) store.update((d) => void (d.money = d.money && withStarterBudget(usd ? { ...d.money, currency: "USD" } : d.money)));
   }, [money, store]);
+  const currency = money?.currency ?? "USD";
+  const setCurrency = (c: "USD" | "ZAR") => store.update((d) => void (d.money && (d.money.currency = c)));
 
   function saveBackup() {
     const b = backup();
@@ -66,6 +71,15 @@ export default function MoneyTrackerPage() {
           Everything you enter stays in this browser on this phone or computer. Nobody else can see it, not even All The Glory. Clearing your
           browser data deletes it, so save a backup now and then. On a phone, use Add to Home Screen to keep it like an app.
         </p>
+        <div className="flex gap-2 flex-wrap items-center mt-3" role="group" aria-label="Currency">
+          <span className="dash-word-hint">Currency:</span>
+          <button type="button" className={`dash-btn ${currency === "USD" ? "dash-btn-primary" : "dash-btn-ghost"}`} aria-pressed={currency === "USD"} onClick={() => setCurrency("USD")}>
+            $ US dollars
+          </button>
+          <button type="button" className={`dash-btn ${currency === "ZAR" ? "dash-btn-primary" : "dash-btn-ghost"}`} aria-pressed={currency === "ZAR"} onClick={() => setCurrency("ZAR")}>
+            R Rand
+          </button>
+        </div>
         <div className="flex gap-2 flex-wrap mt-3">
           <button type="button" className="dash-btn dash-btn-primary" onClick={saveBackup}>
             Save a backup

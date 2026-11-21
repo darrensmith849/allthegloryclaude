@@ -85,14 +85,14 @@ export function useTrackerStore() {
 // they don't need and add their own on the Budget card. Kinds that aren't
 // built in (Rent, Electricity & water, ...) are added as their own kinds.
 const BASICS: { name: string; kinds: string[] }[] = [
-  { name: "Rent or bond", kinds: ["Rent"] },
+  { name: "Rent", kinds: ["Rent"] },
   { name: "Groceries", kinds: ["Groceries"] },
   { name: "Electricity & water", kinds: ["Electricity & water"] },
   { name: "Transport & fuel", kinds: ["Fuel", "Tolls & transport"] },
   { name: "Phone, data & wifi", kinds: ["Phone & data"] },
   { name: "Medical aid", kinds: ["Medical aid"] },
   { name: "Insurance", kinds: ["Insurance"] },
-  { name: "Debt & loan repayments", kinds: ["Debt repayments"] },
+  { name: "Debts & loans", kinds: ["Debt repayments"] },
   { name: "School & kids", kinds: ["School & kids"] },
   { name: "Clothing", kinds: ["Clothing"] },
   { name: "Eating out & coffee", kinds: ["Eating out", "Coffee"] },
@@ -112,4 +112,17 @@ export function withStarterBudget(money: MoneyState): MoneyState {
     budget: { from: localDate(), salary: 0, lines },
     categories: [...new Set([...(money.categories ?? []), ...extra])],
   };
+}
+
+// The tracker is in US dollars. Trackers started before that (in rand by
+// default) switch once; after that the friend's own choice stands.
+const USD_ONCE = "atg:money-tracker:usdDefault";
+export function inDollarsOnce(money: MoneyState): MoneyState | null {
+  try {
+    if (window.localStorage.getItem(USD_ONCE)) return null;
+    window.localStorage.setItem(USD_ONCE, "1");
+  } catch {
+    return null;
+  }
+  return money.currency === "USD" ? null : { ...money, currency: "USD" };
 }
