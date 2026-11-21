@@ -44,3 +44,8 @@ export function utcDayKey(d: Date = new Date()): string {
 
 // "Active now" = distinct sessions seen in the last 5 minutes.
 export const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
+
+/** How many rows a D1 write changed (0 when unknown). */
+export function changesOf(result: unknown): number {
+  return Number((result as { meta?: { changes?: number } } | null)?.meta?.changes ?? 0);
+}

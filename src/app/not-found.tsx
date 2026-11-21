@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LostWayBack } from "@/components/site/lost-way-back";
 
 export const metadata = {
   title: "Page not found",
@@ -7,6 +8,7 @@ export const metadata = {
 export default function NotFound() {
   return (
     <main className="bg-transparent">
+      <LostWayBack />
       <div className="mx-auto w-full max-w-2xl px-6 pt-36 md:pt-44 pb-24 min-h-[78vh] flex flex-col items-center text-center">
         <div className="eyebrow eyebrow-amber">404</div>
 
@@ -25,6 +27,7 @@ export default function NotFound() {
         </p>
 
         <div className="mt-9 flex flex-wrap gap-3 justify-center">
+          <LostWayBack button />
           <Link href="/" className="btn btn-primary">
             Return home →
           </Link>

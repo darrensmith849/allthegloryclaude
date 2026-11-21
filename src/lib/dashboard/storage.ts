@@ -3,9 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { DashboardState, emptyState, recommendedDaysFor } from "./types";
 
-const KEY = "atg:dashboard:v1";
-const TS_KEY = "atg:dashboard:v1:ts"; // last-modified epoch ms (for last-write-wins)
 const API = "/api/dashboard-state"; // durable D1-backed sync
+
+// Whose dashboard this device is keeping: the owner's (no cookie - the keys
+// as they always were), or family's own (cookie atg-who = "member:<id>", set
+// when she logs in - src/lib/team.ts). The server decides whose data it
+// sends from the session and says so; if that's someone else, the page
+// switches keys and reloads before anything is read or sent.
+function who(): string {
+  if (typeof document === "undefined") return "owner";
+  const m = document.cookie.match(/(?:^|;\s*)atg-who=([A-Za-z0-9:_-]+)/);
+  return m ? m[1] : "owner";
+}
+const keyFor = (w: string) => (w === "owner" ? "atg:dashboard:v1" : `atg:dashboard:v1:${w}`);
+let KEY = keyFor(who());
+let TS_KEY = `${KEY}:ts`; // last-modified epoch ms (for last-write-wins)
+let switching = false; // a different person's copy is on its way in - send nothing
 
 // Lazy reader so we don't blow up during SSR / build.
 function read(): DashboardState {
@@ -47,6 +60,7 @@ function read(): DashboardState {
     }
     merged.settings.schedule = migrated;
     if (!merged.scheduleExtras) merged.scheduleExtras = {};
+    if (!Array.isArray(merged.words)) merged.words = [];
 
     // ── Habit day-of-week migration ────────────────────────────
     // Existing habits without daysOfWeek inherit the recommended default for
@@ -101,14 +115,14 @@ function schedulePush() {
   }, 1500);
 }
 function pushNow() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || switching) return;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (raw === null) return;
     fetch(API, {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ json: raw, updatedAt: localTs() }),
+      body: JSON.stringify({ json: raw, updatedAt: localTs(), who: who() }),
       keepalive: true,
     }).catch(() => {});
   } catch {
@@ -121,12 +135,23 @@ function pushNow() {
 //   - local newer / remote empty      → seed/update D1 from local
 // The server also refuses to let an empty state overwrite a non-empty one,
 // so a fresh browser (e.g. the bare domain) can never wipe your history.
-async function hydrateFromD1(apply: (s: DashboardState) => void) {
-  if (typeof window === "undefined") return;
+// Resolves true once the durable copy has been read (and adopted if newer).
+async function hydrateFromD1(apply: (s: DashboardState) => void): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   try {
     const res = await fetch(API, { cache: "no-store" });
-    if (!res.ok) return;
-    const data = (await res.json()) as { json?: string | null; updatedAt?: number };
+    if (!res.ok) return false;
+    const data = (await res.json()) as { json?: string | null; updatedAt?: number; who?: string };
+    // Someone else's dashboard on this device (e.g. family logged in where
+    // the owner was): keep theirs under their own key, then start again.
+    if (data?.who && data.who !== who()) {
+      switching = true;
+      document.cookie = `atg-who=${data.who === "owner" ? "" : data.who}; Path=/; Secure; SameSite=Lax; Max-Age=${data.who === "owner" ? 0 : 90 * 86_400}`;
+      KEY = keyFor(data.who);
+      TS_KEY = `${KEY}:ts`;
+      window.location.reload();
+      return false;
+    }
     const remoteTs = Number(data?.updatedAt ?? 0) || 0;
     const lTs = localTs();
 
@@ -150,8 +175,10 @@ async function hydrateFromD1(apply: (s: DashboardState) => void) {
       }
       pushNow();
     }
+    return true;
   } catch {
     // offline / transient — the local cache still works; we'll sync next time.
+    return false;
   }
 }
 
@@ -166,6 +193,10 @@ function broadcast(state: DashboardState) {
 export function useDashboard() {
   const [state, setState] = useState<DashboardState>(() => emptyState());
   const [ready, setReady] = useState(false);
+  // The durable copy has been read: true, or false while loading / offline.
+  // Anything that writes by itself on load (Money's debits) waits for this,
+  // so a device with an old copy can't overwrite newer changes.
+  const [synced, setSynced] = useState<boolean | null>(null);
 
   useEffect(() => {
     setState(read());
@@ -175,7 +206,7 @@ export function useDashboard() {
     hydrateFromD1((next) => {
       setState(next);
       broadcast(next);
-    });
+    }).then(setSynced);
 
     const sync = (next: DashboardState) => setState(next);
     listeners.add(sync);
@@ -210,7 +241,7 @@ export function useDashboard() {
     [],
   );
 
-  return { state, update, ready };
+  return { state, update, ready, synced };
 }
 
 // Standalone helpers for places where you just need to read once.

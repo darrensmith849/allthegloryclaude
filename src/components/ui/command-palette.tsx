@@ -35,6 +35,9 @@ export default function CommandPalette() {
   // /press is the unlisted press-kit landing - visitors shouldn't be
   // able to ⌘K their way into the rest of the site from there.
   const isPress = pathname?.startsWith("/press") ?? false;
+  // The private dashboard has its own ⌘K palette - stand down there so the
+  // two don't open on top of each other and fight over focus.
+  const isDashboard = pathname?.startsWith("/dashboard") ?? false;
 
   // All navigable targets, deduped by href.
   const items = useMemo<Item[]>(() => {
@@ -62,6 +65,7 @@ export default function CommandPalette() {
 
   // Global hotkeys: ⌘K / Ctrl+K to open, Esc handled inside when open.
   useEffect(() => {
+    if (isDashboard) return;
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === "k") {
@@ -71,7 +75,7 @@ export default function CommandPalette() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [isDashboard]);
 
   // Focus the input when the palette opens; reset state on close.
   useEffect(() => {
@@ -113,7 +117,7 @@ export default function CommandPalette() {
     : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
 
   // Skip the ⌘K palette entirely on the press-kit landing.
-  if (isPress) return null;
+  if (isPress || isDashboard) return null;
 
   return (
     <AnimatePresence>

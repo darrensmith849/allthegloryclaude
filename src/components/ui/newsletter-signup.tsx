@@ -2,12 +2,13 @@
 
 /**
  * Newsletter signup — posts the email to our own /api/contact route, which
- * sends the notification through Brevo from our authenticated domain so it
+ * sends the notification through Cloudflare from our own domain so it
  * reaches the inbox instead of spam. Each sign-up arrives as an email to the
  * All The Glory inbox.
  *
  * (History: posted to /api/subscribe→Resend, then directly to Web3Forms,
- * now /api/contact→Brevo — matching the contact form.)
+ * then /api/contact→Brevo, now /api/contact→Cloudflare — matching the
+ * contact form.)
  */
 
 import { useState } from "react";

@@ -76,13 +76,6 @@ export function recommendedDaysFor(habitId: string): number[] {
   return RECOMMENDED_DAYS[habitId] ?? ALL_DAYS;
 }
 
-// Special-purpose flags that aren't toggled by the user as normal habits -
-// these are quota-style "allowed-day" markers.
-export const ALLOWED_FLAGS = {
-  socialMedia: "_socialMediaAllowed",
-  tradingCharts: "_tradingChartsAllowed",
-} as const;
-
 export function emptyHabits(): DayHabits {
   return {};
 }
@@ -251,15 +244,38 @@ export const DEFAULT_GUITAR_WEEK: GuitarWeekRow[] = [
   { id: "gw-sun", day: "Sun", focus: "Rest / worship", drill: "Quiet play. No metronome, just worship.", minutes: 20 },
 ];
 
-// ─── Bible reading log ─────────────────────────────────────────────
-export interface BibleDayLog {
-  planDay?: number;
-  passage?: string;
-  minutes?: number;
-  learned?: string;
-  notes?: string;
-  prayer?: string;
-  verseOfTheDay?: string;
+// ─── Word journal ─────────────────────────────────────────────────
+// Words from the Bible saved for deeper study: the word as it reads in
+// English, what the Hebrew/Greek original means, the plain English
+// meaning, one short line applying it to life (all filled in for the
+// user by /api/word-fill), and an optional comment of their own.
+export type WordLanguage = "hebrew" | "greek";
+
+export interface KeyVerse {
+  ref: string; // "Ephesians 2:4"
+  text: string; // Berean Standard Bible
+}
+
+export interface BibleWord {
+  id: string;
+  word: string; // as it reads in the English Bible, e.g. "Mercy"
+  language: WordLanguage;
+  original?: string; // original script, e.g. "חֶסֶד"
+  translit?: string; // e.g. "chesed"
+  strongs?: string; // e.g. "H2617"
+  originalMeaning: string; // what the Hebrew / Greek word means
+  meaningSource?: string; // e.g. "Thayer's Greek Lexicon"
+  englishMeaning: string; // plain English meaning
+  repeated?: string; // why the word is said twice (or more) in the verse, e.g. "Lord, Lord"
+  application: string; // one short sentence applying it to life
+  reference?: string; // where it was found, e.g. "Psalm 136:1"
+  day?: ISODate; // the reading-plan day it was studied on (Study Notes)
+  keyVerses?: KeyVerse[]; // verses that use this Hebrew / Greek word
+  comment?: string; // the user's own note, added at the end
+  deletedAt?: string; // in the Recycle bin since
+  purgedAt?: string; // emptied from the Recycle bin (members' are then erased overnight)
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Sessions ─────────────────────────────────────────────────────
@@ -290,12 +306,7 @@ export interface BookMeta {
 // ─── Settings ─────────────────────────────────────────────────────
 export interface Settings {
   greetingName: string;
-  startDate: ISODate;
-  startPlanDay: number;
-  socialMediaPerWeek: number;
-  tradingChartsPerMonth: number;
   phoneOffHour: number;
-  bibleReadingHour: number;
   schedule: ScheduleRow[];
   habits: HabitDef[];
   guitarWeek: GuitarWeekRow[];
@@ -305,10 +316,7 @@ export interface Settings {
   // shows the future start week until the user actually reaches it.
   guitarCourseStartDate: ISODate;
   taskTags: TaskTag[]; // user-added; concatenated with DEFAULT_TASK_TAGS
-  planOverrides: Record<number, string>; // planDay -> passage override
   goals: {
-    bibleStreakTarget: number;
-    cleanStreakTarget: number;
     bookWordTarget: number;
     guitarMinutesPerWeek: number;
   };
@@ -333,22 +341,14 @@ function computeNextMonday(): ISODate {
 export function defaultSettings(): Settings {
   return {
     greetingName: "Daniel",
-    startDate: new Date().toISOString().slice(0, 10),
-    startPlanDay: 63,
-    socialMediaPerWeek: 2,
-    tradingChartsPerMonth: 1,
     phoneOffHour: 19,
-    bibleReadingHour: 7,
     schedule: DEFAULT_SCHEDULE,
     habits: DEFAULT_HABITS,
     guitarWeek: DEFAULT_GUITAR_WEEK,
     guitarCourse: DEFAULT_GUITAR_COURSE,
     guitarCourseStartDate: computeNextMonday(),
     taskTags: [],
-    planOverrides: {},
     goals: {
-      bibleStreakTarget: 30,
-      cleanStreakTarget: 90,
       bookWordTarget: 60_000,
       guitarMinutesPerWeek: 180,
     },
@@ -395,43 +395,122 @@ export function resolveCourse(settings: Settings): CourseLesson[] {
   return settings.guitarCourse?.length ? settings.guitarCourse : DEFAULT_GUITAR_COURSE;
 }
 
-// ─── 40-Day Fast ──────────────────────────────────────────────────
-// A bounded streak plan — typically 40 days, the biblical fast length —
-// where the user abstains from a small set of categories (social media,
-// movies, etc.) and ticks each one off per day. Separate from the
-// open-ended habit system so it has its own start date + length + grid
-// and doesn't pollute the daily habits map.
-export interface FastCategory {
-  id: string;
-  label: string;
-}
-
-export interface Fast {
-  startDate: ISODate;
-  days: number; // 40 by default
-  categories: FastCategory[];
-  // per-date → per-categoryId boolean. true = kept clean that day.
-  checks: Record<ISODate, Record<string, boolean>>;
-}
-
-export const DEFAULT_FAST_CATEGORIES: FastCategory[] = [
-  { id: "socials", label: "Social media" },
-  { id: "movies", label: "Movies & TV" },
-  { id: "youtube", label: "YouTube" },
-  { id: "news", label: "News" },
-];
-
-export function defaultFast(startDate: ISODate): Fast {
-  return {
-    startDate,
-    days: 40,
-    categories: DEFAULT_FAST_CATEGORIES,
-    checks: {},
-  };
-}
-
 // ─── Root state ───────────────────────────────────────────────────
+// ── Money (Daniel only) ─────────────────────────────────────────
+// Spending and the account balance. The balance starts at `start.amount`
+// and runs through every entry since `start.at` in the order entered: spend
+// takes off, add puts on, "set" makes it match the bank from then on. Regular debits (Spotify etc.) are
+// taken off by themselves on their day each month (src/lib/dashboard/money.ts).
+export interface MoneyEntry {
+  id: string;
+  kind: "spend" | "add" | "set" | "move"; // "set": the balance was set to `amount` (to match the bank); "move": cash taken out of the account into cash
+  amount: number; // dollars, always positive
+  km?: number; // fuel: the car's mileage (km on the clock) when he filled up
+  cash?: boolean; // paid with / added to cash in hand, not the account
+  category: string; // "Coffee" ... (or "Money in" for adds)
+  note?: string;
+  date: ISODate; // the day it happened
+  at: string; // when it was entered (ISO) - counts toward the balance if after start.at
+  sub?: string; // the regular debit it came from
+  deletedAt?: string; // removed (kept, never wiped)
+  // Changes made to it later (amount, account/cash, deleted): how much each
+  // moved the account and the cash, and when - so a balance typed in before
+  // the change still moves with it.
+  changes?: { at: string; acct: number; cash: number }[];
+}
+export interface MoneySub {
+  id: string;
+  name: string;
+  amount: number;
+  day: number; // day of the month it comes off (1-31; short months use their last day)
+  category: string;
+  active: boolean;
+  lastPaid: string; // YYYY-MM it was last taken off
+  removedAt?: string; // removed from the list (kept, never wiped)
+}
+// Income he expects to come in (a salary, an invoice) - kept to one side:
+// no balance changes until he marks it as in, which adds a normal "add" entry.
+export interface MoneyExpected {
+  id: string;
+  amount: number; // dollars
+  note?: string; // where from
+  date: ISODate; // when he expects it
+  cash?: boolean; // into cash in hand, not the account
+  at: string; // when it was noted (ISO)
+  receivedAt?: string; // marked as come in
+  entry?: string; // the "add" entry it became
+  deletedAt?: string; // removed (kept, never wiped)
+}
+// The monthly budget: the salary, and a line for each thing it pays for - a
+// line covers one or more kinds of spending ("Entertainment & extras" =
+// Coffee + Eating out). A line marked `allowance` is paid for by an allowance
+// on top of the salary (the fuel allowance), not out of it.
+export interface MoneyBudgetLine {
+  id: string;
+  name: string;
+  amount: number; // a month
+  categories: string[];
+  allowance?: boolean;
+  removedAt?: string; // removed (kept, never wiped)
+}
+export interface MoneyBudget {
+  from?: ISODate; // the budget began (or began again) this day - spending before it doesn't count
+  salary: number; // a month
+  lines: MoneyBudgetLine[];
+}
+// Money put aside out of what was left in a budget line (or the salary not
+// budgeted - line "rest"). Still in the account: it's marked as not for
+// spending. A negative amount is savings taken back out.
+export interface MoneySaving {
+  id: string;
+  amount: number;
+  ym: string; // the month it was left over from (YYYY-MM)
+  line?: string; // the budget line it came from, "rest", or none (taken out)
+  note?: string;
+  at: string; // when (ISO)
+  deletedAt?: string; // removed (kept, never wiped)
+}
+// The shopping list: things to get. Ticked off once got, they stay on as
+// things got before, so one tap puts them back on for next time.
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  need: boolean; // on the list now (false: got it - kept for next time)
+  at: string; // added (ISO)
+  gotAt?: string; // last ticked off
+  deletedAt?: string; // removed (kept, never wiped)
+}
+export interface MoneyState {
+  shopping?: ShoppingItem[];
+  budget?: MoneyBudget;
+  savings?: MoneySaving[];
+  start: { amount: number; at: string };
+  entries: MoneyEntry[];
+  subs: MoneySub[];
+  categories?: string[]; // his own kinds of spending, besides the built-in ones
+  expected?: MoneyExpected[]; // income still to come in - not in any balance
+  currency?: "USD" | "ZAR"; // shown in dollars (Daniel's, the default) or rand (family's)
+}
+
+// A simple to-do list (family's own dashboard - /dashboard/todo): things to
+// do once, and things done every day, ticked afresh each morning (each day's
+// ticks are kept). Removed items are kept, never wiped.
+export interface TodoItem {
+  id: string;
+  title: string;
+  daily: boolean; // every day - ticked again each morning
+  at: string; // added (ISO)
+  doneAt?: string; // a one-off thing, ticked off (ISO)
+  deletedAt?: string; // removed (kept, never wiped)
+}
+export interface TodoState {
+  items: TodoItem[];
+  days: Record<ISODate, string[]>; // the every-day things ticked on each day
+}
+
 export interface DashboardState {
+  money?: MoneyState;
+  todo?: TodoState;
   tasks: Task[];
   habits: Record<ISODate, DayHabits>;
   // Per-day "is this schedule row done?" checks, keyed by row id.
@@ -443,7 +522,8 @@ export interface DashboardState {
   // Per-date custom rows the user adds directly on a specific day
   // (e.g. weekend plans). Merged after the global day-of-week schedule.
   scheduleExtras: Record<ISODate, ScheduleRow[]>;
-  bibleLogs: Record<ISODate, BibleDayLog>;
+  // The word journal - newest first.
+  words: BibleWord[];
   // When the user clicks "Complete the day" we stamp this map with the ISO
   // timestamp it was sealed at. A day key in here means the day is "closed"
   // - Today shows a recap instead of the action buttons, and the calendar
@@ -452,10 +532,6 @@ export interface DashboardState {
   guitar: GuitarSession[];
   book: { meta: BookMeta; sessions: BookSession[] };
   settings: Settings;
-  rewardsClaimed: Record<string, ISODate>;
-  // Active 40-day fast (null when no fast has been started). Populated
-  // on first visit to /dashboard/fast.
-  fast: Fast | null;
 }
 
 export function emptyState(): DashboardState {
@@ -464,7 +540,7 @@ export function emptyState(): DashboardState {
     habits: {},
     scheduleChecks: {},
     scheduleExtras: {},
-    bibleLogs: {},
+    words: [],
     dayCompleted: {},
     guitar: [],
     book: {
@@ -476,7 +552,5 @@ export function emptyState(): DashboardState {
       sessions: [],
     },
     settings: defaultSettings(),
-    rewardsClaimed: {},
-    fast: null,
   };
 }

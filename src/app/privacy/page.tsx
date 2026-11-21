@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 // Plain-English privacy policy, specific to what this site actually does
-// (contact form + newsletter via Brevo, donations via Paystack, light
+// (contact form + newsletter emails via Cloudflare, donations via Paystack, light
 // first-party analytics, Cloudflare hosting, YouTube embeds). Not legal
 // advice — review before relying on it.
 
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <h1 className="font-display mt-4 text-4xl md:text-6xl font-normal text-white tracking-tight">
             Privacy Policy
           </h1>
-          <p className="mt-4 text-sm text-white/55">Last updated: 7 July 2026</p>
+          <p className="mt-4 text-sm text-white/55">Last updated: 3 October 2026</p>
         </header>
 
         <div className="mt-10 md:mt-14 panel-scrim panel-flush-mobile p-7 md:p-10 space-y-9">
@@ -52,6 +52,47 @@ export default function PrivacyPage() {
                 subscribe</strong> — your name (if you give it), email address
                 and message, so we can reply or send the occasional update you
                 asked for.
+              </li>
+              <li>
+                <strong className="text-white/85">When you join The Study</strong>{" "}
+                — your name, email address and password (kept only in scrambled,
+                hashed form), and the notes and words you write in your journal,
+                which are private to you. We and the team have no page, button
+                or download that shows them, only how many you have saved; other
+                members can&rsquo;t see them unless you share a note yourself;
+                and they are left out of any copy we download. They are kept in
+                the site&rsquo;s protected database and its private backups. We only email you updates if you tick
+                the box to say yes. You can download everything or delete your
+                account and all of it from your Account page at any time.
+              </li>
+              <li id="shared-notes">
+                <strong className="text-white/85">When you use Shared notes</strong>{" "}
+                — a note you share with your group, your group&rsquo;s name and
+                your name in it are locked on your own device before they are
+                sent. The key is part of your group&rsquo;s link, in the part
+                browsers never send to a server, so all we store is scrambled
+                text that we cannot read. We can see that a group exists, who is
+                in it, how many notes it has and when they were written. Anyone
+                who has the link can join, so share it only with people you
+                trust; the group&rsquo;s leader can take someone out. If you
+                leave, your notes come out of the group. Removed notes and closed
+                groups are erased after 30 days, and are gone from the backups
+                within a year. Each device you open the link on keeps the key
+                so the group opens by itself; logging out leaves it there, and
+                deleting your account on that device wipes it. Our pages only
+                run the site&rsquo;s own code and won&rsquo;t load scripts from
+                other websites, which helps keep that key on your device.
+              </li>
+              <li>
+                <strong className="text-white/85">When you share in The Study</strong>{" "}
+                — your journal notes are only ever shared if you choose to share
+                one with your own group (above). A testimony you choose to
+                send is shown only to other signed-in members (never on the public
+                site), after we have read and approved it, with your first name or
+                anonymously as you choose, and you can remove it at any time.
+                Questions you ask go privately to us and the helpers we trust;
+                an answer may be shared with members as a Q&amp;A without your
+                name. Replies to the weekly check-in are private to us.
               </li>
               <li>
                 <strong className="text-white/85">When you donate</strong> —
@@ -86,18 +127,15 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2 marker:text-[var(--colour-amber)]/60">
               <li>
-                <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer" className={ext}>Brevo</a>{" "}
-                &mdash; delivers contact‑form and newsletter submissions to our
-                inbox.
-              </li>
-              <li>
                 <a href="https://paystack.com/terms" target="_blank" rel="noopener noreferrer" className={ext}>Paystack</a>{" "}
                 &mdash; securely processes donations.
               </li>
               <li>
                 <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" className={ext}>Cloudflare</a>{" "}
                 &mdash; hosting, security and content delivery (processes IP
-                addresses).
+                addresses), and sending the site&rsquo;s emails: contact‑form
+                and newsletter submissions to our inbox, and The Study&rsquo;s
+                welcome and password‑reset emails.
               </li>
               <li>
                 <strong className="text-white/85">Our email host</strong>{" "}
@@ -125,6 +163,13 @@ export default function PrivacyPage() {
               We keep contact messages and donation records for as long as we
               need them for the purposes above, and analytics for a limited
               period. You can ask us to delete your information at any time.
+            </p>
+            <p className="mt-4">
+              The Study keeps your journal for as long as you have an account.
+              So nothing is ever lost, a private backup copy is made every
+              night; those copies are kept for one year, so when you delete
+              your account it is gone from the backups within a year too.
+              Passwords are never included in backups.
             </p>
           </Section>
 

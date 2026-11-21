@@ -3,7 +3,8 @@
   // (full-stack Next.js via OpenNext). https://opennext.js.org/cloudflare
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "allthegloryclaude",
-  "main": ".open-next/worker.js",
+  // OpenNext's worker plus a nightly backup job (custom-worker.ts).
+  "main": "custom-worker.ts",
   "compatibility_date": "2025-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -29,6 +30,28 @@
       "database_id": "6154f7e2-beb7-43ea-9243-8e631b7f45f0"
     }
   ],
+  // Workers AI - writes the "For my life" line in the dashboard's word
+  // journal (/api/word-fill). 10,000 free neurons a day, about 80 words.
+  "ai": {
+    "binding": "AI"
+  },
+  // Every email the site sends (contact form, newsletter notes, The Study's
+  // member emails): Cloudflare Email Sending. No API key — the binding is the
+  // credential. alltheglory.co.za is onboarded for sending. See
+  // src/lib/email/send.ts.
+  "send_email": [{ "name": "EMAIL" }],
+  // Private bucket for nightly backups of The Study (never public; see
+  // src/lib/study/backup-core.ts). Backups are kept for good.
+  "r2_buckets": [
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "alltheglory-backups"
+    }
+  ],
+  // Nightly backup at 02:00 UTC (04:00 in South Africa).
+  "triggers": {
+    "crons": ["0 2 * * *", "0 * * * *"]
+  },
   "observability": {
     "enabled": true
   }

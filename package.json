@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "preview:cloudflare": "opennextjs-cloudflare build && wrangler dev",
-    "deploy:cloudflare": "opennextjs-cloudflare build && wrangler deploy"
+    "preview:cloudflare": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && wrangler dev",
+    "deploy:cloudflare": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && wrangler deploy"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.1",

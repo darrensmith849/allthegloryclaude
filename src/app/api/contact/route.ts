@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server";
+import { getDb } from "@/lib/analytics/store";
+import { sendEmail } from "@/lib/email/send";
+import { sendWebsitesAutoReply } from "@/lib/email/websites-autoreply";
+import { noteEmail } from "@/lib/study/mail";
+import { subscribeStmt } from "@/lib/study/members";
 
 /**
  * Contact-form + newsletter delivery — sends the submission to the site
- * owner's inbox as a transactional email through Brevo.
+ * owner's inbox as a transactional email, through Cloudflare Email Sending
+ * (src/lib/email/send.ts).
  *
- * This replaced Web3Forms (2026-07-07). Web3Forms sent from its own shared
- * `web3forms.com` servers, so Host-H's spam filter kept binning the
- * notifications. Brevo sends from our own authenticated domain
- * (alltheglory.co.za — SPF + DKIM + DMARC all pass), so mail lands in the
- * inbox instead of Junk.
+ * Web3Forms did this until 2026-07-07, then Brevo until 2026-10-05.
+ * Web3Forms sent from its own shared `web3forms.com` servers, so Host-H's
+ * spam filter kept binning the notifications. Sending from our own domain
+ * (alltheglory.co.za — SPF + DKIM + DMARC all pass) keeps mail in the inbox
+ * instead of Junk.
  *
- * Requires BREVO_API_KEY (a Cloudflare Worker secret in production;
- * .dev.vars locally). The key is used server-side only — it never reaches
- * the browser.
+ * Newsletter sign-ups are also kept on the owner's email list (D1
+ * email_list), downloadable from /dashboard/members.
  */
 
-const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Where submissions land, and who they appear to come from. The sender must
-// be on the domain we authenticated in Brevo so DKIM/DMARC align.
+// be on the domain onboarded for sending so DKIM/DMARC align.
 const RECIPIENT = { email: "daniel@alltheglory.co.za", name: "All The Glory" };
 const SENDER = { email: "notify@alltheglory.co.za", name: "All The Glory Website" };
 
@@ -31,14 +35,6 @@ function esc(s: string) {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Messaging isn't configured yet. Please email us directly." },
-      { status: 500 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -65,6 +61,14 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  // A newsletter sign-up is saved to the owner's email list first; that's
+  // what matters, so it succeeds even if the "new sign-up" note to the owner
+  // can't be sent.
+  let saved = false;
+  if (kind === "newsletter") {
+    const db = await getDb();
+    if (db) saved = await subscribeStmt(db, email.toLowerCase(), name || null, "newsletter").run().then(() => true, () => false);
+  }
   if (kind === "contact" && message.length < 10) {
     return NextResponse.json(
       { error: "Message must be at least 10 characters." },
@@ -72,10 +76,15 @@ export async function POST(req: Request) {
     );
   }
 
+  // Enquiries from Daniel's web design page (/websites) are flagged so they
+  // stand out from album-site messages.
+  const fromWebsites = rec.source === "websites";
   const subject =
     kind === "newsletter"
       ? "New newsletter signup — All The Glory"
-      : `New message from ${name || "someone"} (All The Glory)`;
+      : fromWebsites
+        ? `New website enquiry from ${name || "someone"}`
+        : `New message from ${name || "someone"} (All The Glory)`;
 
   const rows =
     kind === "newsletter"
@@ -89,7 +98,7 @@ export async function POST(req: Request) {
   const htmlContent = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a">
       <h2 style="margin:0 0 4px">${kind === "newsletter" ? "New newsletter signup" : "New website message"}</h2>
-      <p style="margin:0 0 16px;color:#666">From the All The Glory website.</p>
+      <p style="margin:0 0 16px;color:#666">${fromWebsites ? "From your websites page (alltheglory.co.za/websites)." : "From the All The Glory website."}</p>
       ${rows
         .map(
           ([label, value]) =>
@@ -102,38 +111,35 @@ export async function POST(req: Request) {
     .map(([label, value]) => `${label}: ${value}`)
     .join("\n")}`;
 
-  try {
-    const res = await fetch(BREVO_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "content-type": "application/json",
-        accept: "application/json",
-      },
-      body: JSON.stringify({
-        sender: SENDER,
-        to: [RECIPIENT],
-        replyTo: { email, name: name || email },
-        subject,
-        htmlContent,
-        textContent,
-      }),
-    });
+  const result = await sendEmail({
+    to: RECIPIENT,
+    from: SENDER,
+    replyTo: { email, name: name || email },
+    subject,
+    html: htmlContent,
+    text: textContent,
+  });
+  await noteEmail(kind === "newsletter" ? "To you: new newsletter sign-up" : "To you: website message", result);
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error("Brevo send failed", res.status, detail);
-      return NextResponse.json(
-        { error: "We couldn't send your message right now. Please try again." },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch {
+  if (!result.ok) {
+    if (saved) return NextResponse.json({ success: true });
+    const unconfigured = result.status === "not_configured";
     return NextResponse.json(
-      { error: "Network error. Please try again." },
-      { status: 502 },
+      {
+        error: unconfigured
+          ? "Messaging isn't configured yet. Please email us directly."
+          : "We couldn't send your message right now. Please try again.",
+      },
+      { status: unconfigured ? 500 : 502 },
     );
   }
+
+  // Websites enquiries also get an instant "thanks, I've got it" from Daniel.
+  // Best effort: the enquiry already reached him, so this never fails the form.
+  if (kind === "contact" && fromWebsites) {
+    const reply = await sendWebsitesAutoReply(await getDb(), { email, name }, message).catch(() => null);
+    if (reply) await noteEmail("To them: websites enquiry auto-reply", reply);
+  }
+
+  return NextResponse.json({ success: true });
 }

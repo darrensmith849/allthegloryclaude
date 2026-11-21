@@ -37,3 +37,621 @@ CREATE TABLE IF NOT EXISTS dashboard_state (
   json       TEXT NOT NULL,
   updated_at INTEGER NOT NULL     -- epoch ms; last-write-wins
 );
+
+-- The dashboard state as it stood at the end of each day (UTC), kept
+-- forever - a year-by-year record and a restore point if anything goes wrong.
+CREATE TABLE IF NOT EXISTS dashboard_state_history (
+  day        TEXT PRIMARY KEY,    -- YYYY-MM-DD
+  json       TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Bible study notes from the private dashboard (/dashboard/notes). One row
+-- per note so the list can grow without limit. Ordered by reading-plan day,
+-- then page, then position (the order the owner arranges them in).
+-- Nothing is ever removed: deleting sets deleted_at (restorable from
+-- "Recently deleted"), and every edit keeps the old version in
+-- study_note_versions.
+-- day/position/deleted_at were added after the table first shipped; on an
+-- existing database run:
+--   ALTER TABLE study_notes ADD COLUMN day TEXT;
+--   ALTER TABLE study_notes ADD COLUMN position REAL;
+--   ALTER TABLE study_notes ADD COLUMN deleted_at INTEGER;
+--   ALTER TABLE study_notes ADD COLUMN private INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS study_notes (
+  id         TEXT PRIMARY KEY,
+  day        TEXT,                -- reading-plan day, YYYY-MM-DD (nullable)
+  page       INTEGER,             -- chronological Bible page (nullable)
+  seq        INTEGER NOT NULL,    -- order written
+  position   REAL,                -- order within a day/page; starts as seq
+  deleted_at INTEGER,             -- epoch ms when moved to Recently deleted
+  private    INTEGER NOT NULL DEFAULT 0, -- 1 = never included when the study is shared
+  starred_at INTEGER,             -- starred as a highlight (ALTER TABLE study_notes ADD COLUMN starred_at INTEGER)
+  book       INTEGER,             -- 1-66, canonical order (nullable)
+  chapter    INTEGER,
+  verse      INTEGER,
+  verse_end  INTEGER,
+  text       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,    -- epoch ms
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_study_notes_order ON study_notes(page, seq);
+CREATE INDEX IF NOT EXISTS idx_study_notes_updated ON study_notes(updated_at);
+CREATE INDEX IF NOT EXISTS idx_study_notes_day ON study_notes(day, position, seq);
+
+-- Each reading day's own details: a title and key takeaway, and whether the
+-- day is included when the study is shared. Edits keep their old version.
+CREATE TABLE IF NOT EXISTS study_days (
+  day        TEXT PRIMARY KEY,    -- YYYY-MM-DD
+  title      TEXT,
+  takeaway   TEXT,
+  shared     INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL,    -- epoch ms
+  read_at    INTEGER,             -- ticked "read" (ALTER TABLE study_days ADD COLUMN read_at INTEGER)
+  starred_at INTEGER,             -- starred as a favourite day (ALTER TABLE study_days ADD COLUMN starred_at INTEGER)
+  video      TEXT                 -- the session's YouTube link (ALTER TABLE study_days ADD COLUMN video TEXT)
+);
+CREATE TABLE IF NOT EXISTS study_day_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  day      TEXT NOT NULL,
+  title    TEXT,
+  takeaway TEXT,
+  shared   INTEGER,
+  video    TEXT,                   -- (ALTER TABLE study_day_versions ADD COLUMN video TEXT)
+  saved_at INTEGER NOT NULL
+);
+
+-- Every earlier version of an edited study note, so an edit never loses text.
+CREATE TABLE IF NOT EXISTS study_note_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id   TEXT NOT NULL,
+  day       TEXT,
+  page      INTEGER,
+  book      INTEGER,
+  chapter   INTEGER,
+  verse     INTEGER,
+  verse_end INTEGER,
+  text      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL      -- epoch ms the version was replaced
+);
+CREATE INDEX IF NOT EXISTS idx_study_note_versions_note ON study_note_versions(note_id, saved_at);
+
+-- Failed dashboard logins, for brute-force lockout (/api/admin/login).
+-- Rows older than a day are cleared on each failure.
+CREATE TABLE IF NOT EXISTS login_attempts (
+  ip TEXT NOT NULL,
+  ts INTEGER NOT NULL             -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_ts ON login_attempts(ip, ts);
+
+-- Dashboard admin password, set on the dashboard's login screen. Only a
+-- PBKDF2-SHA256 hash with a random salt is stored. One row: id='owner'.
+CREATE TABLE IF NOT EXISTS admin_auth (
+  id         TEXT PRIMARY KEY,
+  hash       TEXT NOT NULL,       -- base64url
+  salt       TEXT NOT NULL,       -- base64url
+  iterations INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL     -- epoch ms
+);
+
+-- Word journal entries (dashboard Word Journal / Study Notes), one row per
+-- word so the journal can grow for years. json is the full entry. Nothing
+-- is ever removed: deleting sets deleted_at, and edits keep the old version
+-- in study_word_versions. Words saved before this table existed are copied
+-- in from the dashboard_state blob the first time /api/words is read.
+CREATE TABLE IF NOT EXISTS study_words (
+  id         TEXT PRIMARY KEY,
+  day        TEXT,                -- reading day it was studied on (nullable)
+  word       TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,    -- epoch ms
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER              -- epoch ms when moved to Recently deleted
+);
+CREATE INDEX IF NOT EXISTS idx_study_words_day ON study_words(day);
+CREATE INDEX IF NOT EXISTS idx_study_words_updated ON study_words(updated_at);
+
+CREATE TABLE IF NOT EXISTS study_word_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  word_id  TEXT NOT NULL,
+  json     TEXT NOT NULL,
+  saved_at INTEGER NOT NULL       -- epoch ms the version was replaced
+);
+CREATE INDEX IF NOT EXISTS idx_study_word_versions_word ON study_word_versions(word_id, saved_at);
+
+-- ── The Study: member accounts ───────────────────────────────────
+-- People who join /study get their own journal (notes, words, day titles)
+-- in the member_* tables, kept apart from the owner's study_* tables so a
+-- member's data can never touch the owner's. Every member_* row carries
+-- member_id and every query filters on it.
+
+CREATE TABLE IF NOT EXISTS members (
+  id          TEXT PRIMARY KEY,
+  email       TEXT NOT NULL UNIQUE,  -- lower-cased
+  name        TEXT NOT NULL,
+  hash        TEXT NOT NULL,         -- PBKDF2-SHA256, base64url
+  salt        TEXT NOT NULL,
+  iterations  INTEGER NOT NULL,
+  invite_code TEXT,                  -- the invite used to join, if any
+  created_at  INTEGER NOT NULL,      -- epoch ms
+  last_seen   INTEGER,
+  disabled_at INTEGER,               -- set by the owner; can't log in
+  role        TEXT,                  -- 'helper' = may answer members' questions (ALTER TABLE members ADD COLUMN role TEXT)
+  notices_seen_at INTEGER            -- when they last opened the bell (ALTER TABLE members ADD COLUMN notices_seen_at INTEGER)
+);
+
+-- Logged-in devices. Only a SHA-256 of the cookie token is stored.
+CREATE TABLE IF NOT EXISTS member_sessions (
+  token_hash TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_sessions_member ON member_sessions(member_id);
+
+-- Invite links the owner makes on /dashboard/members.
+CREATE TABLE IF NOT EXISTS member_invites (
+  code       TEXT PRIMARY KEY,
+  label      TEXT,
+  max_uses   INTEGER,                -- NULL = unlimited
+  uses       INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  revoked_at INTEGER,
+  member_id  TEXT,                   -- a member's own "invite a friend" link (ALTER TABLE member_invites ADD COLUMN member_id TEXT)
+  role       TEXT                    -- 'team' = whoever uses it joins Daniel's team (ALTER TABLE member_invites ADD COLUMN role TEXT)
+);
+CREATE INDEX IF NOT EXISTS idx_member_invites_member ON member_invites(member_id);
+
+-- One-time password reset links the owner makes for a member.
+CREATE TABLE IF NOT EXISTS member_resets (
+  token_hash TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+
+-- Owner's switches for the study: signup ('invite' | 'open' | 'closed'),
+-- reading ('off' | 'members' | 'public'), author, intro, and hold
+-- ({"from","to"}: days kept from readers until their date next year).
+CREATE TABLE IF NOT EXISTS study_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS member_notes (
+  id         TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  day        TEXT,
+  page       INTEGER,
+  seq        INTEGER NOT NULL,
+  position   REAL,
+  deleted_at INTEGER,
+  private    INTEGER NOT NULL DEFAULT 0,
+  starred_at INTEGER,             -- (ALTER TABLE member_notes ADD COLUMN starred_at INTEGER)
+  book       INTEGER,
+  chapter    INTEGER,
+  verse      INTEGER,
+  verse_end  INTEGER,
+  text       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_notes_member ON member_notes(member_id, updated_at);
+
+CREATE TABLE IF NOT EXISTS member_note_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id   TEXT NOT NULL,
+  member_id TEXT NOT NULL,
+  day       TEXT,
+  page      INTEGER,
+  book      INTEGER,
+  chapter   INTEGER,
+  verse     INTEGER,
+  verse_end INTEGER,
+  text      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_note_versions_member ON member_note_versions(member_id, note_id);
+
+CREATE TABLE IF NOT EXISTS member_words (
+  member_id  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  day        TEXT,
+  word       TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  PRIMARY KEY (member_id, id)
+);
+CREATE INDEX IF NOT EXISTS idx_member_words_updated ON member_words(member_id, updated_at);
+
+CREATE TABLE IF NOT EXISTS member_word_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id TEXT NOT NULL,
+  word_id   TEXT NOT NULL,
+  json      TEXT NOT NULL,
+  saved_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_word_versions_member ON member_word_versions(member_id, word_id);
+
+CREATE TABLE IF NOT EXISTS member_days (
+  member_id  TEXT NOT NULL,
+  day        TEXT NOT NULL,
+  title      TEXT,
+  takeaway   TEXT,
+  shared     INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL,
+  read_at    INTEGER,              -- ticked "read" (ALTER TABLE member_days ADD COLUMN read_at INTEGER)
+  starred_at INTEGER,              -- starred as a favourite day (ALTER TABLE member_days ADD COLUMN starred_at INTEGER)
+  PRIMARY KEY (member_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS member_day_versions (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id TEXT NOT NULL,
+  day       TEXT NOT NULL,
+  title     TEXT,
+  takeaway  TEXT,
+  shared    INTEGER,
+  saved_at  INTEGER NOT NULL
+);
+
+-- AI word fills used per day, per member and in total, so members share
+-- the free Workers AI allowance fairly. who = member id or '*members'.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  day TEXT NOT NULL,                 -- YYYY-MM-DD (UTC)
+  who TEXT NOT NULL,
+  n   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, who)
+);
+
+-- One email list for the owner: the site's newsletter sign-ups and Study
+-- members who ticked "send me updates". Only people who asked are on it;
+-- unsubscribing keeps the row with unsubscribed_at so it's never re-added
+-- by mistake, and deleting a Study account removes it.
+CREATE TABLE IF NOT EXISTS email_list (
+  email           TEXT PRIMARY KEY,     -- lower-cased
+  name            TEXT,
+  source          TEXT NOT NULL,        -- 'newsletter' | 'study'
+  subscribed_at   INTEGER NOT NULL,     -- epoch ms
+  unsubscribed_at INTEGER
+);
+
+-- ── The Study: members-only sharing ───────────────────────────────
+-- Reflections on a day's reading and testimonies. Members only - never on
+-- the public site. Each post needs the member's consent tick, can be
+-- anonymous, waits for the owner's approval before anyone sees it, and can
+-- be withdrawn (deleted) by its author at any time.
+CREATE TABLE IF NOT EXISTS community_posts (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL,                    -- 'reflection' | 'testimony'
+  member_id   TEXT NOT NULL,
+  author_name TEXT,                             -- first name; NULL = anonymous
+  day         TEXT,                             -- reflection: reading day YYYY-MM-DD
+  ref         TEXT,                             -- reflection: passage, e.g. "John 4:10"
+  title       TEXT,                             -- testimony: optional title
+  text        TEXT NOT NULL,
+  note_id     TEXT,                             -- reflection: the journal note it was shared from
+  status      TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'approved' | 'declined'
+  consent_at  INTEGER NOT NULL,
+  created_at  INTEGER NOT NULL,
+  reviewed_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_community_status ON community_posts(status, kind, created_at);
+CREATE INDEX IF NOT EXISTS idx_community_member ON community_posts(member_id);
+
+CREATE TABLE IF NOT EXISTS community_reports (
+  post_id    TEXT NOT NULL,
+  member_id  TEXT NOT NULL,
+  reason     TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (post_id, member_id)
+);
+
+-- The owner's weekly reflection, and members' replies to its check-in
+-- question - private: only the owner reads replies.
+CREATE TABLE IF NOT EXISTS weekly_reflections (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  body         TEXT NOT NULL,
+  question     TEXT,
+  memory_verse TEXT,               -- the week's memory verse, e.g. "John 4:14" (ALTER TABLE weekly_reflections ADD COLUMN memory_verse TEXT)
+  author_name  TEXT,               -- who wrote it: the owner, or a team member (ALTER TABLE weekly_reflections ADD COLUMN author_name TEXT)
+  published_at INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  deleted_at   INTEGER
+);
+CREATE TABLE IF NOT EXISTS checkin_replies (
+  id            TEXT PRIMARY KEY,
+  reflection_id TEXT NOT NULL,
+  member_id     TEXT NOT NULL,
+  text          TEXT NOT NULL,
+  created_at    INTEGER NOT NULL,
+  read_at       INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_checkin_reflection ON checkin_replies(reflection_id, created_at);
+
+
+-- Members' questions. Asked privately; only the owner or a helper answers.
+-- Members can't comment on anything. The owner (or a helper) may publish an
+-- answered question as a Q&A for all members - the asker is never named.
+CREATE TABLE IF NOT EXISTS community_questions (
+  id            TEXT PRIMARY KEY,
+  member_id     TEXT NOT NULL,
+  asker_name    TEXT,                          -- first name, seen only by the owner / helpers
+  text          TEXT NOT NULL,
+  ref           TEXT,                          -- optional passage, e.g. "John 4:10"
+  status        TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'answered'
+  answer        TEXT,
+  answered_by   TEXT,                          -- 'owner' or the helper's member id
+  answerer_name TEXT,
+  answered_at   INTEGER,
+  published     INTEGER NOT NULL DEFAULT 0,    -- 1 = shown to all members as a Q&A
+  created_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_questions_status ON community_questions(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_questions_member ON community_questions(member_id);
+
+
+-- A member's private prayer list. Answered prayers keep the date and how.
+-- Removing one moves it to deleted_at (restorable); account deletion removes all.
+CREATE TABLE IF NOT EXISTS member_prayers (
+  id          TEXT PRIMARY KEY,
+  member_id   TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  ref         TEXT,                  -- a verse they're praying, optional
+  answered_at INTEGER,               -- epoch ms
+  answer      TEXT,                  -- how it was answered, optional
+  deleted_at  INTEGER,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_prayers_member ON member_prayers(member_id, created_at);
+
+-- Memory verses a member has ticked as known by heart.
+CREATE TABLE IF NOT EXISTS member_memory (
+  member_id     TEXT NOT NULL,
+  ref           TEXT NOT NULL,       -- "John 4:14"
+  reflection_id TEXT,
+  known_at      INTEGER NOT NULL,
+  PRIMARY KEY (member_id, ref)
+);
+
+-- Daily reading reminders: one row per device that turned them on (a Web
+-- Push subscription). Sent hourly by the Cron Trigger in custom-worker.ts
+-- at the member's chosen local hour; no message body, so nothing personal
+-- passes through the push service.
+CREATE TABLE IF NOT EXISTS member_reminders (
+  endpoint   TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  hour       INTEGER NOT NULL,       -- local hour, 0-23
+  tz         TEXT NOT NULL,          -- IANA time zone, e.g. Africa/Johannesburg
+  last_sent  TEXT,                   -- local date last sent, YYYY-MM-DD
+  failures   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_member_reminders_member ON member_reminders(member_id);
+
+-- Bible names saved to a reading day from "Look up a name" (the owner's,
+-- and each member's own). Removing one sets deleted_at - never erased.
+CREATE TABLE IF NOT EXISTS study_names (
+  id         TEXT PRIMARY KEY,
+  day        TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  meaning    TEXT,
+  about      TEXT,
+  created_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS study_names_day ON study_names (day);
+CREATE TABLE IF NOT EXISTS member_names (
+  id         TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL,
+  day        TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  meaning    TEXT,
+  about      TEXT,
+  created_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS member_names_member ON member_names (member_id, day);
+
+-- The Recycle bin: deleted notes / words / names / prayers can be restored
+-- for 30 days. Emptying one sets purged_at; members' emptied (or 30-day-old)
+-- items are erased nightly (src/lib/study/bin-erase.ts), the owner's never.
+--   ALTER TABLE study_notes ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_notes ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE study_words ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_words ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE study_names ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_names ADD COLUMN purged_at INTEGER;
+--   ALTER TABLE member_prayers ADD COLUMN purged_at INTEGER;
+
+-- Members' suggestions (Community > Suggest something): private to the owner
+-- and his team, who mark them seen / done and can reply. Never erased by the
+-- owner; a member's own go with their account if they delete it.
+CREATE TABLE IF NOT EXISTS member_suggestions (
+  id          TEXT PRIMARY KEY,
+  member_id   TEXT NOT NULL,
+  member_name TEXT,
+  kind        TEXT,                -- 'dashboard' | 'study' | 'other'
+  text        TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  seen_at     INTEGER,
+  done_at     INTEGER,
+  reply       TEXT,
+  replied_by  TEXT,
+  deleted_at  INTEGER              -- taken back by the member
+);
+CREATE INDEX IF NOT EXISTS member_suggestions_member ON member_suggestions (member_id, created_at);
+
+-- What's new, for members' bell: each session video Daniel posts (one call
+-- can cover several days: day .. day_to), and notes Daniel writes to
+-- everyone from the Members page. Members' phones with notifications on get
+-- an alert too (src/lib/study/notices.ts).
+CREATE TABLE IF NOT EXISTS study_notices (
+  id         TEXT PRIMARY KEY,
+  kind       TEXT NOT NULL,          -- 'video' | 'message'
+  day        TEXT NOT NULL,          -- the first day it's on, YYYY-MM-DD (a message: the day it was posted)
+  day_to     TEXT,                   -- the last day the call covered
+  video      TEXT,
+  message    TEXT,                   -- a message's words (ALTER TABLE study_notices ADD COLUMN message TEXT)
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_study_notices_created ON study_notices(created_at);
+
+-- Finished word look-ups (Study a word), so the same word on the same verse
+-- comes back at once (src/lib/dashboard/word-fill.ts). Kept 60 days.
+CREATE TABLE IF NOT EXISTS word_fill_cache (
+  key        TEXT PRIMARY KEY,   -- word|reference|pick|only
+  json       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+-- Sermons (/dashboard/sermons): the owner's private sermon notes - a
+-- YouTube link, the sermon's name, notes, and verses / words saved from it
+-- (items = JSON array). Never hard-deleted: deleted_at moves one to
+-- "Recently deleted". Earlier versions are kept in sermon_versions (at most
+-- one every 15 minutes while typing, so autosave doesn't flood it).
+CREATE TABLE IF NOT EXISTS sermons (
+  id          TEXT PRIMARY KEY,
+  title       TEXT NOT NULL DEFAULT '',
+  preacher    TEXT NOT NULL DEFAULT '',
+  url         TEXT NOT NULL DEFAULT '',
+  listened_on TEXT,                 -- YYYY-MM-DD
+  notes       TEXT NOT NULL DEFAULT '',
+  items       TEXT NOT NULL DEFAULT '[]',
+  created_at  INTEGER NOT NULL,     -- epoch ms
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_sermons_updated ON sermons(updated_at);
+CREATE TABLE IF NOT EXISTS sermon_versions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  sermon_id  TEXT NOT NULL,
+  json       TEXT NOT NULL,         -- the sermon as it was before an edit
+  saved_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_versions ON sermon_versions(sermon_id, saved_at);
+
+-- A sermon's notes, one row per saved note (like study_notes, but by sermon
+-- rather than reading day). Never hard-deleted (deleted_at); every edit
+-- keeps the earlier text in sermon_note_versions.
+CREATE TABLE IF NOT EXISTS sermon_notes (
+  id         TEXT PRIMARY KEY,
+  sermon_id  TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  position   REAL NOT NULL,         -- order within the sermon
+  created_at INTEGER NOT NULL,      -- epoch ms
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_notes ON sermon_notes(sermon_id, position);
+CREATE TABLE IF NOT EXISTS sermon_note_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id  TEXT NOT NULL,
+  text     TEXT NOT NULL,           -- the note as it was before an edit
+  saved_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sermon_note_versions ON sermon_note_versions(note_id, saved_at);
+
+-- Reading (/dashboard/reading): the owner's private book notes. A book has
+-- chapters (each with its headings, a key takeaway and a "read" tick) and
+-- notes saved one by one, each tied to a chapter (or the whole book) and
+-- optionally one of the chapter's headings. Never hard-deleted (deleted_at);
+-- edits keep the earlier text in book_note_versions / book_chapter_versions.
+CREATE TABLE IF NOT EXISTS books (
+  id          TEXT PRIMARY KEY,
+  title       TEXT NOT NULL DEFAULT '',
+  author      TEXT NOT NULL DEFAULT '',
+  subtitle    TEXT NOT NULL DEFAULT '',
+  started_on  TEXT,                 -- YYYY-MM-DD
+  finished_on TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE TABLE IF NOT EXISTS book_chapters (
+  id         TEXT PRIMARY KEY,
+  book_id    TEXT NOT NULL,
+  position   REAL NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'chapter', -- 'front' (note to the reader, introduction) or 'chapter'
+  title      TEXT NOT NULL,
+  headings   TEXT NOT NULL DEFAULT '[]',      -- JSON array of the chapter's headings
+  takeaway   TEXT NOT NULL DEFAULT '',        -- the owner's one-line summary of the chapter
+  read_at    INTEGER,                         -- ticked as read
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_book_chapters ON book_chapters(book_id, position);
+CREATE TABLE IF NOT EXISTS book_chapter_versions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  chapter_id TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  saved_at   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS book_notes (
+  id         TEXT PRIMARY KEY,
+  book_id    TEXT NOT NULL,
+  chapter_id TEXT,                  -- NULL = about the whole book
+  heading    TEXT,                  -- one of the chapter's headings (optional)
+  text       TEXT NOT NULL,
+  position   REAL NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_book_notes ON book_notes(book_id, chapter_id, position);
+CREATE TABLE IF NOT EXISTS book_note_versions (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id  TEXT NOT NULL,
+  text     TEXT NOT NULL,
+  heading  TEXT,
+  saved_at INTEGER NOT NULL
+);
+
+-- Shared notes (/study/shared): small private groups of friends who share
+-- notes and compare them. Everything people write here is locked in their
+-- browser before it's sent (src/lib/study/shared-groups.ts) with a key that
+-- lives in the group's link, after the "#" - the part of a link browsers never
+-- send to a server. So every sealed_* column holds scrambled text the site
+-- can't read. All the server knows is that a group exists, who's in it, how
+-- many notes it has and when they were written.
+CREATE TABLE IF NOT EXISTS shared_groups (
+  id          TEXT PRIMARY KEY,
+  sealed_name TEXT NOT NULL,
+  sealed_link TEXT NOT NULL,          -- the join code, so members can show the link again
+  link_hash   TEXT NOT NULL,          -- SHA-256 of the join code
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER                 -- closed; erased after 30 days
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_shared_groups_link ON shared_groups(link_hash);
+
+-- The group's leader is whoever has been in it longest (so a group never
+-- loses its leader when someone leaves or deletes their account).
+CREATE TABLE IF NOT EXISTS shared_group_members (
+  group_id    TEXT NOT NULL,
+  member_id   TEXT NOT NULL,
+  sealed_name TEXT NOT NULL,          -- what they're called in this group
+  joined_at   INTEGER NOT NULL,
+  left_at     INTEGER,
+  removed_at  INTEGER,                -- taken out by the leader: can't come back
+  PRIMARY KEY (group_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_shared_group_members_member ON shared_group_members(member_id);
+
+CREATE TABLE IF NOT EXISTS shared_group_notes (
+  id         TEXT PRIMARY KEY,
+  group_id   TEXT NOT NULL,
+  member_id  TEXT NOT NULL,
+  sealed     TEXT NOT NULL,           -- the note, its day and its passage
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER                  -- erased after 30 days
+);
+CREATE INDEX IF NOT EXISTS idx_shared_group_notes_group ON shared_group_notes(group_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_shared_group_notes_member ON shared_group_notes(member_id);
