@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { MoneyView } from "@/components/dashboard/money-view";
 import { ThemeToggle } from "@/components/study/theme-toggle";
 import { TrackerInstallCard } from "@/components/money-tracker/install-card";
-import { inDollarsOnce, useTrackerStore, withStarterBudget } from "@/lib/money-tracker/store";
+import { inDollarsOnce, markStarterDone, needsStarter, useTrackerStore, withStarterBudget } from "@/lib/money-tracker/store";
 import type { DashUser } from "@/lib/dashboard/who";
 
 const FRIEND: DashUser = { role: "personal", name: "", memberId: "" };
@@ -25,7 +25,14 @@ export default function MoneyTrackerPage() {
   useEffect(() => {
     if (!money) return;
     const usd = inDollarsOnce(money);
-    if (usd || !money.budget) store.update((d) => void (d.money = d.money && withStarterBudget(usd ? { ...d.money, currency: "USD" } : d.money)));
+    const starter = needsStarter(money);
+    markStarterDone();
+    if (usd || starter)
+      store.update((d) => {
+        if (!d.money) return;
+        if (usd) d.money.currency = "USD";
+        if (starter) d.money = withStarterBudget(d.money);
+      });
   }, [money, store]);
   const currency = money?.currency ?? "USD";
   const setCurrency = (c: "USD" | "ZAR") => store.update((d) => void (d.money && (d.money.currency = c)));

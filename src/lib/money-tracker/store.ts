@@ -103,13 +103,34 @@ const BASICS: { name: string; kinds: string[] }[] = [
 ];
 const BUILT_IN = new Set(["Groceries", "Fuel", "Tolls & transport", "Phone & data", "Eating out", "Coffee", "Subscriptions", "Gym fees", "Bank fees"]);
 
+// Once per device: a tracker with no budget, or a budget with no lines (one
+// set up before the starter list existed), gets the basics. After that it's
+// theirs - removing every line leaves it empty.
+const STARTER_ONCE = "atg:money-tracker:starterAdded";
+export function needsStarter(money: MoneyState): boolean {
+  try {
+    if (window.localStorage.getItem(STARTER_ONCE)) return false;
+  } catch {
+    return !money.budget;
+  }
+  return !money.budget || money.budget.lines.every((l) => l.removedAt);
+}
+export function markStarterDone() {
+  try {
+    window.localStorage.setItem(STARTER_ONCE, "1");
+  } catch {
+    // private window - the budget itself shows it's done
+  }
+}
+
 export function withStarterBudget(money: MoneyState): MoneyState {
-  if (money.budget) return money;
+  const live = money.budget?.lines.filter((l) => !l.removedAt) ?? [];
+  if (live.length) return money;
   const lines: MoneyBudgetLine[] = BASICS.map((b) => ({ id: uid(), name: b.name, amount: 0, categories: b.kinds }));
   const extra = BASICS.flatMap((b) => b.kinds).filter((k) => !BUILT_IN.has(k));
   return {
     ...money,
-    budget: { from: localDate(), salary: 0, lines },
+    budget: { from: money.budget?.from ?? localDate(), salary: money.budget?.salary ?? 0, lines: [...lines, ...(money.budget?.lines ?? [])] },
     categories: [...new Set([...(money.categories ?? []), ...extra])],
   };
 }
